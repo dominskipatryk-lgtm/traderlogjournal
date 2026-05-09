@@ -4405,7 +4405,6 @@ async function doRegister() {
   const pass  = document.getElementById('reg-pass')?.value||'';
   const pass2 = document.getElementById('reg-pass2')?.value||'';
 
-  // Walidacja
   if (!login || !email || !pass) return showAuthError('Wypełnij wszystkie wymagane pola');
   if (!/^[a-zA-Z0-9_.-]{3,30}$/.test(login)) return showAuthError('Login: 3-30 znaków, tylko litery/cyfry/._-');
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return showAuthError('Nieprawidłowy format email');
@@ -4415,55 +4414,37 @@ async function doRegister() {
   const btn = document.querySelector('#register-form .btn-primary');
   if (btn) { btn.textContent = '⏳ Tworzę konto...'; btn.disabled = true; }
 
+  const done = (err) => { if (btn) { btn.textContent = 'Utwórz konto'; btn.disabled = false; } if (err) showAuthError(err); };
+
   try {
-    // Sprawdź czy login jest wolny
-    const chkRes = await fetch('https://ygrkcynyduuflzvbkkvo.supabase.co/rest/v1/profiles?login=eq.' + encodeURIComponent(login) + '&select=id', {
+    // Inicjalizuj Supabase jeśli nie jest
+    if (!_sb) initSupabase();
+    if (!_sb) return done('Brak połączenia z serwerem. Odśwież stronę.');
+
+    // Sprawdź czy login wolny
+    const chk = await fetch('https://ygrkcynyduuflzvbkkvo.supabase.co/rest/v1/profiles?login=eq.' + encodeURIComponent(login) + '&select=id&limit=1', {
       headers: { 'apikey': 'sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK', 'Authorization': 'Bearer sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK' }
     });
-    const existing = await chkRes.json();
-    if (existing?.length > 0) {
-      if (btn) { btn.textContent = 'Utwórz konto'; btn.disabled = false; }
-      return showAuthError('Ten login jest już zajęty');
-    }
+    const existing = await chk.json();
+    if (existing?.length > 0) return done('Ten login jest już zajęty');
 
-    // Zarejestruj przez Supabase Auth
-    const { data, error } = await _sb.auth.signUp({
-      email, password: pass,
-      options: { data: { login, name: name || login } }
-    });
+    // Zarejestruj w Supabase Auth
+    const { data, error } = await _sb.auth.signUp({ email, password: pass, options: { data: { login, name: name||login } } });
+    if (error) return done('Błąd: ' + error.message);
 
-    if (error) {
-      if (btn) { btn.textContent = 'Utwórz konto'; btn.disabled = false; }
-      return showAuthError('Błąd rejestracji: ' + error.message);
-    }
-
-    // Zapisz profil
+    // Utwórz profil
     if (data.user) {
       await fetch('https://ygrkcynyduuflzvbkkvo.supabase.co/rest/v1/profiles', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': 'sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK',
-          'Authorization': 'Bearer sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK',
-          'Prefer': 'return=minimal'
-        },
-        body: JSON.stringify({
-          id: data.user.id,
-          login, name: name || login,
-          email, role: 'user',
-          active: false
-        })
+        headers: { 'Content-Type': 'application/json', 'apikey': 'sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK', 'Authorization': 'Bearer sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK', 'Prefer': 'return=minimal' },
+        body: JSON.stringify({ id: data.user.id, login, name: name||login, email, role: 'user', active: false })
       });
     }
 
-    if (btn) { btn.textContent = 'Utwórz konto'; btn.disabled = false; }
+    done();
     switchAuthTab('login');
-    showAuthSuccess('✓ Konto założone! Poczekaj na aktywację przez administratora. Otrzymasz email gdy konto zostanie aktywowane.');
-
-  } catch(e) {
-    if (btn) { btn.textContent = 'Utwórz konto'; btn.disabled = false; }
-    showAuthError('Błąd: ' + e.message);
-  }
+    showAuthSuccess('✓ Konto założone! Poczekaj na aktywację przez administratora.');
+  } catch(e) { done('Błąd: ' + e.message); }
 }
 
 // ── Forgot password flow ─────────────────────────────────────────────────────
@@ -8013,47 +7994,67 @@ async function appInit() {
       const sessRes = await _sb.auth.getSession();
       const session = sessRes.data?.session;
       if (session && session.user) {
-        // Zalogowany przez Supabase - wczytaj dane
-        const profRes = await _sb.from('profiles').select('*').eq('id', session.user.id).single();
-        let profile = profRes.data;
+        const userId = session.user.id;
+        const userEmail = session.user.email;
+        const isGoogle = session.user.app_metadata?.provider === 'google';
+
+        // Pobierz profil przez REST API (działa zawsze)
+        const profRes = await fetch('https://ygrkcynyduuflzvbkkvo.supabase.co/rest/v1/profiles?id=eq.' + userId + '&select=*', {
+          headers: { 'apikey': 'sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK', 'Authorization': 'Bearer sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK' }
+        });
+        let profiles = await profRes.json();
+        let profile = profiles?.[0];
+
         if (!profile) {
-          // Nowy użytkownik (np. przez Google) - utwórz profil
-          var login = (session.user.email||'').split('@')[0].replace(/[^a-z0-9_.-]/gi,'_').slice(0,30);
-          var insRes = await _sb.from('profiles').insert({
-            id: session.user.id, login: login,
-            name: session.user.user_metadata?.full_name || login,
-            email: session.user.email, role: 'user'
-          }).select().single();
-          profile = insRes.data;
-        }
-        if (profile) {
-          // Zapisz lokalnie i zaloguj
-          const users = getUsers();
-          if (!users[profile.login]) {
-            users[profile.login] = {
-              pass: '__supabase__', name: profile.name || profile.login,
-              email: profile.email || session.user.email,
-              role: profile.role || 'user', subscription: 'active',
-              supabaseId: session.user.id, createdAt: Date.now(),
-            };
-            saveUsers(users);
-          }
-          users[profile.login].supabaseId = session.user.id;
-          if (profile.role === 'admin') {
-            users[profile.login].role = 'admin';
-            users[profile.login].subscription = 'admin';
-          }
-          saveUsers(users);
-          await sbSyncDown(session.user.id);
-          loginAs(profile.login, users[profile.login]);
-          // Nasłuchuj zmian auth
-          _sb.auth.onAuthStateChange(async (event, sess) => {
-            if (event === 'SIGNED_OUT') doLogout();
+          // Nowy użytkownik przez Google - utwórz profil i od razu aktywuj
+          var login = (userEmail||'').split('@')[0].replace(/[^a-z0-9_.-]/gi,'_').slice(0,30);
+          var name = session.user.user_metadata?.full_name || login;
+          await fetch('https://ygrkcynyduuflzvbkkvo.supabase.co/rest/v1/profiles', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': 'sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK',
+              'Authorization': 'Bearer sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK',
+              'Prefer': 'return=representation'
+            },
+            body: JSON.stringify({
+              id: userId, login, name, email: userEmail,
+              role: 'user', active: true
+            })
           });
-          return; // nie pokazuj ekranu logowania
+          profile = { id: userId, login, name, email: userEmail, role: 'user', active: true };
         }
+
+        // Sprawdź czy konto aktywne (admini zawsze mają dostęp)
+        if (profile.role !== 'admin' && profile.active === false) {
+          await _sb.auth.signOut();
+          showAuthScreen();
+          showAuthError('Konto oczekuje na aktywację przez administratora.');
+          return;
+        }
+
+        // Zaloguj
+        const users = getUsers();
+        users[profile.login] = {
+          pass: '__supabase__',
+          name: profile.name || profile.login,
+          email: profile.email || userEmail,
+          role: profile.role || 'user',
+          subscription: profile.role === 'admin' ? 'admin' : 'active',
+          supabaseId: userId,
+          createdAt: Date.now(),
+        };
+        saveUsers(users);
+        await sbSyncDown(userId);
+        loginAs(profile.login, users[profile.login]);
+
+        // Nasłuchuj wylogowania
+        _sb.auth.onAuthStateChange((event) => {
+          if (event === 'SIGNED_OUT') doLogout();
+        });
+        return;
       }
-    } catch(e) { console.warn('Supabase session check error:', e.message); }
+    } catch(e) { console.warn('Session check error:', e.message); }
   }
 
   // Zawsze pokazuj ekran logowania
