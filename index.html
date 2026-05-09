@@ -4340,31 +4340,23 @@ async function doRegister() {
   const invCode = (document.getElementById('reg-invite')?.value||'').trim().toUpperCase();
   if (!invCode) return showAuthError('Wymagany kod zaproszenia');
   
-  // Sprawdź kod zaproszenia - najpierw Supabase, potem lokalnie
+  // Sprawdź kod zaproszenia w Supabase przez fetch
   let invValid = false;
   let invId = null;
-
-  if (_sb) {
-    try {
-      const { data: invData } = await _sb.from('invitations')
-        .select('*')
-        .eq('code', invCode)
-        .is('used_by', null)
-        .gte('expires_at', new Date().toISOString())
-        .single();
-      if (invData) { invValid = true; invId = invData.id; }
-    } catch(e) { console.warn('Invite check error:', e.message); }
-  }
-
-  // Fallback - sprawdź lokalnie (dla kont bez Supabase)
-  if (!invValid) {
-    const db = getDB();
-    const invitations = db.invitations || [];
-    const localInv = invitations.find(i =>
-      i.code === invCode && !i.usedBy && Date.now() < i.expiresAt
-    );
-    if (localInv) invValid = true;
-  }
+  try {
+    const now = new Date().toISOString();
+    const url = 'https://ygrkcynyduuflzvbkkvo.supabase.co/rest/v1/invitations?code=eq.' + encodeURIComponent(invCode) + '&used_by=is.null&expires_at=gte.' + encodeURIComponent(now) + '&select=id,code&limit=1';
+    const res = await fetch(url, {
+      headers: {
+        'apikey': 'sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK',
+        'Authorization': 'Bearer sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK'
+      }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.length > 0) { invValid = true; invId = data[0].id; }
+    }
+  } catch(e) { console.warn('Invite check error:', e.message); }
 
   if (!invValid) return showAuthError('Nieprawidłowy lub wygasły kod zaproszenia');
   
@@ -4384,11 +4376,16 @@ async function doRegister() {
   if (emailTaken) return showAuthError('Ten e-mail jest już zarejestrowany');
   users[login] = { pass, name: name || login, email, role: 'user', subscription: 'active', createdAt: Date.now() };
   // Oznacz zaproszenie jako użyte
-  if (_sb && invId) {
-    _sb.from('invitations').update({
-      used_by: login,
-      used_at: new Date().toISOString()
-    }).eq('id', invId).then(() => {});
+  if (invId) {
+    fetch('https://ygrkcynyduuflzvbkkvo.supabase.co/rest/v1/invitations?id=eq.' + invId, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': 'sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK',
+        'Authorization': 'Bearer sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK'
+      },
+      body: JSON.stringify({ used_by: login, used_at: new Date().toISOString() })
+    }).catch(()=>{});
   }
   const _db2 = getDB();
   if (_db2.invitations) {
@@ -7804,33 +7801,35 @@ async function adminGenerateInviteLocal() {
 
   const expiresAt = new Date(Date.now() + 7*24*60*60*1000).toISOString();
 
-  // Zapisz w Supabase (żeby inni użytkownicy mogli użyć)
-  if (_sb) {
-    const { error } = await _sb.from('invitations').insert({
-      code,
-      expires_at: expiresAt,
-      created_by: null,
+  // Zapisz w Supabase przez fetch (działa nawet gdy _sb jest null)
+  try {
+    const res = await fetch('https://ygrkcynyduuflzvbkkvo.supabase.co/rest/v1/invitations', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': 'sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK',
+        'Authorization': 'Bearer sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({ code, expires_at: expiresAt })
     });
-    if (error) {
-      console.warn('Supabase invite error:', error.message);
+    if (!res.ok) {
+      const err = await res.text();
+      console.warn('Invite save error:', err);
+      toast('Błąd zapisu kodu: ' + res.status, 'error');
+      return;
     }
+    console.log('Kod zapisany w Supabase:', code);
+  } catch(e) {
+    console.warn('Invite fetch error:', e.message);
+    toast('Błąd połączenia z serwerem', 'error');
+    return;
   }
-
-  // Zapisz też lokalnie jako backup
-  const db = getDB();
-  if (!db.invitations) db.invitations = [];
-  db.invitations.push({
-    code, createdAt: Date.now(),
-    expiresAt: Date.now() + 7*24*60*60*1000,
-    usedBy: null
-  });
-  saveDB(db);
 
   // Skopiuj do schowka
   navigator.clipboard?.writeText(code).catch(()=>{});
   toast('Kod zaproszenia: ' + code + ' (skopiowany!)', 'success');
   renderInviteCodes();
-  renderAdmin();
 }
 
 async function renderInviteCodes() {
