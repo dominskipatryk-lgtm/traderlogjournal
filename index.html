@@ -694,12 +694,6 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
         ✓ Rejestracja bezpłatna · Bez karty kredytowej
       </div>
       <div class="form-group">
-        <label class="form-label" style="color:var(--accent)">Kod zaproszenia *</label>
-        <input class="form-input" id="reg-invite" type="text" placeholder="XXXX-XXXX-XXXX"
-          style="font-family:var(--font-mono);letter-spacing:2px;text-transform:uppercase;font-size:15px"
-          oninput="this.value=this.value.toUpperCase()">
-      </div>
-      <div class="form-group">
         <label class="form-label">Login *</label>
         <input class="form-input" id="reg-user" type="text" placeholder="wybierz login (bez spacji)" autocomplete="username">
       </div>
@@ -3433,75 +3427,123 @@ function updateAdminNav() {
   if (btn) btn.style.display = isAdmin() ? 'block' : 'none';
 }
 
-function renderAdmin() {
+async function renderAdmin() {
   if (!isAdmin()) { toast('Brak uprawnień', 'error'); return; }
-  const users = getUsers();
-  const db = getDB();
+  const el = document.getElementById('admin-content');
+  if (!el) return;
+  el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text3)">⏳ Ładowanie...</div>';
 
-  // Stats
-  const allUsers = Object.entries(users);
-  let totalTrades = 0, totalAccounts = 0;
-  allUsers.forEach(([u]) => {
-    const accs = (db.accounts||{})[u] || [];
-    totalAccounts += accs.length;
-    accs.forEach(a => { totalTrades += ((db.trades||{})[u+'_'+a.id]||[]).length; });
-  });
-  document.getElementById('admin-stats-row').innerHTML = [
-    { label: 'Użytkownicy', val: allUsers.length, color: 'var(--accent)' },
-    { label: 'Konta tradingowe', val: totalAccounts, color: 'var(--blue)' },
-    { label: 'Transakcji łącznie', val: totalTrades, color: 'var(--amber)' },
-    { label: 'Administratorzy', val: allUsers.filter(([,u])=>u.role==='admin').length, color: 'var(--red)' },
-  ].map(s => `<div class="stat-card">
-    <div class="stat-label">${s.label}</div>
-    <div class="stat-value" style="color:${s.color}">${s.val}</div>
-  </div>`).join('');
-
-  // Users table
-  document.getElementById('admin-users-table').innerHTML = `
-    <table class="user-table">
-      <thead><tr>
-        <th>Login</th><th>Nazwa</th><th>Rola</th><th>Konta</th><th>Transakcji</th><th>Akcje</th>
-      </tr></thead>
-      <tbody>${allUsers.map(([login, u]) => {
-        const accs = (db.accounts||{})[login] || [];
-        let trades = 0;
-        accs.forEach(a => { trades += ((db.trades||{})[login+'_'+a.id]||[]).length; });
-        const isMe = login === state.currentUser;
-        return `<tr>
-          <td class="mono" style="font-weight:600">
-            ${login} ${isMe?'<span style="font-size:10px;color:var(--text3)">(Ty)</span>':''}
-            ${u.recoveryRequest?`<span title="Prośba o reset hasła: ${new Date(u.recoveryRequest.requestedAt).toLocaleString('pl-PL')}" style="display:inline-flex;align-items:center;gap:3px;background:var(--red-dim);color:var(--red);border:1px solid var(--red);border-radius:4px;padding:1px 6px;font-size:10px;font-weight:600;margin-left:4px;cursor:pointer" onclick="adminHandleRecovery('${login}')">🔔 Reset hasła</span>`:''}
-          </td>
-          <td>${u.name||'—'}</td>
-          <td><span class="${u.role==='admin'?'role-admin':'role-user'}">${u.role==='admin'?'👑 Admin':'👤 Trader'}</span></td>
-          <td><td class="user-stat">${accs.length}</td>
-          <td class="user-stat">${trades}</td>
-          <td><div class="action-btns">
-            <button class="icon-btn" onclick="adminEditUser('${login}')" title="Edytuj">✏️</button>
-            <button class="icon-btn" onclick="adminResetPass('${login}')" title="Resetuj hasło">🔑</button>
-            ${!isMe ? `<button class="icon-btn del" onclick="adminDeleteUser('${login}')" title="Usuń">🗑</button>` : ''}
-          </div></td>
-        </tr>`;
-      }).join('')}</tbody>
-    </table>`;
-
-  // Info box
-  renderInviteCodes();
-  const infoBox = document.getElementById('admin-info-box');
-  if (infoBox) {
-    const version = IS_ELECTRON ? '1.0.0 (Desktop)' : '1.0.0 (Web)';
-    infoBox.innerHTML = `Wersja: <strong>${version}</strong><br>
-      Użytkownik: <strong>${state.currentUser}</strong><br>
-      Środowisko: <strong>${IS_ELECTRON ? 'Electron' : 'Przeglądarka'}</strong>`;
-  }
-
-  // DB path (Electron only)
-  if (IS_ELECTRON) {
-    window.electronAPI.getDBPath().then(p => {
-      const el = document.getElementById('db-path-info');
-      if (el) el.textContent = '📁 ' + p;
+  // Pobierz wszystkich użytkowników z Supabase
+  let users = [];
+  try {
+    const res = await fetch('https://ygrkcynyduuflzvbkkvo.supabase.co/rest/v1/profiles?select=*&order=created_at', {
+      headers: { 'apikey': 'sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK', 'Authorization': 'Bearer sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK' }
     });
+    users = await res.json() || [];
+  } catch(e) {
+    // Fallback do localStorage
+    users = Object.entries(getUsers()).map(([login, u]) => ({
+      login, name: u.name, role: u.role, email: u.email,
+      active: true, created_at: new Date(u.createdAt).toISOString()
+    }));
   }
+
+  const active   = users.filter(u => u.active !== false);
+  const pending  = users.filter(u => u.active === false);
+  const admins   = users.filter(u => u.role === 'admin');
+
+  // Transakcje
+  const localUsers = getUsers();
+  const db = getDB();
+  let totalTrades = 0;
+  Object.keys(db).forEach(k => {
+    if (k.startsWith('trades_')) totalTrades += (db[k]||[]).length;
+  });
+
+  el.innerHTML = `
+    <!-- Stats -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
+      ${[
+        ['👥 Użytkownicy', active.length],
+        ['⏳ Oczekujących', pending.length],
+        ['👑 Adminów', admins.length],
+        ['📊 Transakcji', totalTrades],
+      ].map(([label, val]) => `
+        <div class="summary-card" style="text-align:center">
+          <div class="summary-card-title">${label}</div>
+          <div style="font-size:32px;font-weight:800;color:var(--accent)">${val}</div>
+        </div>`).join('')}
+    </div>
+
+    ${pending.length > 0 ? `
+    <!-- Oczekujący na aktywację -->
+    <div class="summary-card" style="margin-bottom:16px;border:1px solid var(--amber)">
+      <div class="summary-card-title" style="color:var(--amber)">⏳ Oczekują na aktywację (${pending.length})</div>
+      <table style="width:100%;font-size:13px;border-collapse:collapse;margin-top:10px">
+        <thead><tr style="color:var(--text3);font-size:11px;border-bottom:1px solid var(--border)">
+          <th style="text-align:left;padding:6px">Login</th>
+          <th style="text-align:left;padding:6px">Email</th>
+          <th style="text-align:center;padding:6px">Data rejestracji</th>
+          <th style="text-align:center;padding:6px">Akcje</th>
+        </tr></thead>
+        <tbody>
+          ${pending.map(u => `<tr style="border-bottom:1px solid rgba(255,255,255,.04)">
+            <td style="padding:7px 6px;font-weight:700">${u.login}</td>
+            <td style="padding:7px 6px;color:var(--text2)">${u.email||'—'}</td>
+            <td style="padding:7px 6px;text-align:center;color:var(--text3);font-size:11px">${new Date(u.created_at).toLocaleDateString('pl-PL')}</td>
+            <td style="padding:7px 6px;text-align:center">
+              <button onclick="adminActivateUser('${u.id}')" class="btn-sm btn-accent" style="font-size:11px;padding:4px 10px">✓ Aktywuj</button>
+              <button onclick="adminDeleteUser('${u.id}','${u.login}')" class="btn-sm" style="font-size:11px;padding:4px 10px;margin-left:4px;color:var(--red)">✗ Odrzuć</button>
+            </td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>` : ''}
+
+    <!-- Aktywni użytkownicy -->
+    <div class="summary-card">
+      <div class="summary-card-title">✅ Aktywni użytkownicy (${active.length})</div>
+      <table style="width:100%;font-size:13px;border-collapse:collapse;margin-top:10px">
+        <thead><tr style="color:var(--text3);font-size:11px;border-bottom:1px solid var(--border)">
+          <th style="text-align:left;padding:6px">Login</th>
+          <th style="text-align:left;padding:6px">Email</th>
+          <th style="text-align:center;padding:6px">Rola</th>
+          <th style="text-align:center;padding:6px">Ostatnie logowanie</th>
+          <th style="text-align:center;padding:6px">Akcje</th>
+        </tr></thead>
+        <tbody>
+          ${active.map(u => `<tr style="border-bottom:1px solid rgba(255,255,255,.04)">
+            <td style="padding:7px 6px;font-weight:700">${u.login}</td>
+            <td style="padding:7px 6px;color:var(--text2)">${u.email||'—'}</td>
+            <td style="padding:7px 6px;text-align:center">
+              <span style="background:${u.role==='admin'?'var(--accent-dim)':'var(--bg3)'};color:${u.role==='admin'?'var(--accent)':'var(--text2)'};padding:2px 8px;border-radius:4px;font-size:11px">
+                ${u.role==='admin'?'👑 Admin':'👤 Trader'}
+              </span>
+            </td>
+            <td style="padding:7px 6px;text-align:center;color:var(--text3);font-size:11px">${u.last_login ? new Date(u.last_login).toLocaleDateString('pl-PL') : '—'}</td>
+            <td style="padding:7px 6px;text-align:center">
+              ${u.role !== 'admin' ? `<button onclick="adminDeleteUser('${u.id}','${u.login}')" class="icon-btn" title="Usuń" style="color:var(--red)">🗑</button>` : ''}
+            </td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Dane i backup -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px">
+      <div class="summary-card">
+        <div class="summary-card-title">💾 Dane i backup</div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
+          <button class="btn-sm btn-accent" onclick="adminExport()" style="width:100%">📤 Eksportuj wszystkie dane</button>
+          <button class="btn-sm" onclick="manualBackupImport()" style="width:100%">📥 Importuj dane (backup)</button>
+        </div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-card-title" style="color:var(--red)">⚠️ Strefa niebezpieczna</div>
+        <div style="font-size:12px;color:var(--text2);margin:8px 0">Usuwa wszystkie dane. Nieodwracalne!</div>
+        <button class="btn-sm" onclick="adminNuke()" style="width:100%;color:var(--red);border-color:var(--red)">🗑 Wyczyść całą bazę</button>
+      </div>
+    </div>`;
 }
 
 function openAddUserModal() {
@@ -3563,24 +3605,6 @@ function adminResetPass(login) {
   toast(`Hasło zmienione dla ${login}`, 'success');
 }
 
-function adminDeleteUser(login) {
-  if (login === state.currentUser) return toast('Nie możesz usunąć swojego konta', 'error');
-  if (!confirm(`Usunąć użytkownika "${login}" i WSZYSTKIE jego dane? Tego nie można cofnąć!`)) return;
-  const users = getUsers();
-  delete users[login];
-  saveUsers(users);
-  // Remove accounts and trades
-  const db = getDB();
-  if (db.accounts) delete db.accounts[login];
-  // Remove trades
-  if (db.trades) {
-    Object.keys(db.trades).forEach(k => { if (k.startsWith(login + '_')) delete db.trades[k]; });
-  }
-  if (db['_symbols_' + login]) delete db['_symbols_' + login];
-  saveDB(db);
-  renderAdmin();
-  toast(`Użytkownik ${login} usunięty`, 'success');
-}
 
 function adminNukeAll() {
   if (!confirm('UWAGA! Usunąć WSZYSTKIE dane wszystkich użytkowników?\nTego nie można cofnąć!')) return;
@@ -4306,114 +4330,140 @@ function showAuthSuccess(msg) {
   setTimeout(() => el.style.display = 'none', 5000);
 }
 
-function doLogin() {
-  const raw  = document.getElementById('login-user').value.trim();
-  const pass = document.getElementById('login-pass').value;
+async function doLogin() {
+  const raw  = (document.getElementById('login-user')?.value||'').trim();
+  const pass = document.getElementById('login-pass')?.value||'';
   if (!raw || !pass) return showAuthError('Uzupełnij login i hasło');
   if (!checkLoginRateLimit(raw)) return;
-  const users = getUsers();
-  // Find by login or email
-  let username = null;
-  if (users[raw]) { username = raw; }
-  else {
-    // search by email
-    const found = Object.entries(users).find(([,u]) => u.email && u.email.toLowerCase() === raw.toLowerCase());
-    if (found) username = found[0];
-  }
-  if (!username) {
-    return showAuthError('Nie znaleziono użytkownika');
-  }
-  if (users[username].pass !== pass) return showAuthError('Nieprawidłowe hasło');
-  // Sync with Supabase after login
-  if (_sb && users[username]?.supabaseId) {
-    sbSyncDown(users[username].supabaseId).catch(e => console.warn('Sync error:', e));
-    // Also sign in to Supabase session
-    const email = users[username].email;
-    if (email && !email.endsWith('@traderlogjournal.local')) {
-      _sb.auth.signInWithPassword({ email, password: pass }).catch(()=>{});
+
+  const btn = document.querySelector('#login-form .btn-primary');
+  if (btn) { btn.textContent = '⏳ Logowanie...'; btn.disabled = true; }
+
+  try {
+    // Znajdź email po loginie lub użyj bezpośrednio jako email
+    let email = raw;
+    if (!raw.includes('@')) {
+      const res = await fetch('https://ygrkcynyduuflzvbkkvo.supabase.co/rest/v1/profiles?login=eq.' + encodeURIComponent(raw) + '&select=email', {
+        headers: { 'apikey': 'sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK', 'Authorization': 'Bearer sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK' }
+      });
+      const profiles = await res.json();
+      if (!profiles?.length || !profiles[0].email) {
+        if (btn) { btn.textContent = 'Zaloguj się'; btn.disabled = false; }
+        return showAuthError('Nie znaleziono użytkownika');
+      }
+      email = profiles[0].email;
     }
+
+    // Zaloguj przez Supabase
+    const { data, error } = await _sb.auth.signInWithPassword({ email, password: pass });
+    if (btn) { btn.textContent = 'Zaloguj się'; btn.disabled = false; }
+    if (error) return showAuthError('Nieprawidłowy login lub hasło');
+
+    // Sprawdź profil i active
+    const profRes = await fetch('https://ygrkcynyduuflzvbkkvo.supabase.co/rest/v1/profiles?id=eq.' + data.user.id + '&select=*', {
+      headers: { 'apikey': 'sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK', 'Authorization': 'Bearer sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK' }
+    });
+    const profiles = await profRes.json();
+    const profile = profiles?.[0];
+
+    if (!profile) {
+      await _sb.auth.signOut();
+      return showAuthError('Profil nie istnieje. Skontaktuj się z administratorem.');
+    }
+
+    // Sprawdź czy konto jest aktywowane (admini zawsze mają dostęp)
+    if (profile.role !== 'admin' && profile.active === false) {
+      await _sb.auth.signOut();
+      return showAuthError('Konto oczekuje na aktywację przez administratora.');
+    }
+
+    // Zapisz lokalnie i zaloguj
+    const users = getUsers();
+    users[profile.login] = {
+      pass: '__supabase__',
+      name: profile.name || profile.login,
+      email: profile.email || email,
+      role: profile.role || 'user',
+      subscription: profile.role === 'admin' ? 'admin' : 'active',
+      supabaseId: data.user.id,
+      createdAt: Date.now(),
+    };
+    saveUsers(users);
+    await sbSyncDown(data.user.id);
+    loginAs(profile.login, users[profile.login]);
+
+  } catch(e) {
+    if (btn) { btn.textContent = 'Zaloguj się'; btn.disabled = false; }
+    showAuthError('Błąd logowania: ' + e.message);
   }
-  loginAs(username, users[username]);
 }
 
 async function doRegister() {
-  const invCode = (document.getElementById('reg-invite')?.value||'').trim().toUpperCase();
-  if (!invCode) return showAuthError('Wymagany kod zaproszenia');
-  
-  // Sprawdź kod zaproszenia w Supabase przez fetch
-  let invValid = false;
-  let invId = null;
-  try {
-    const now = new Date().toISOString();
-    const url = 'https://ygrkcynyduuflzvbkkvo.supabase.co/rest/v1/invitations?code=eq.' + encodeURIComponent(invCode) + '&used_by=is.null&expires_at=gte.' + encodeURIComponent(now) + '&select=id,code&limit=1';
-    const res = await fetch(url, {
-      headers: {
-        'apikey': 'sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK',
-        'Authorization': 'Bearer sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK'
-      }
-    });
-    if (res.ok) {
-      const data = await res.json();
-      if (data && data.length > 0) { invValid = true; invId = data[0].id; }
-    }
-  } catch(e) { console.warn('Invite check error:', e.message); }
+  const login = (document.getElementById('reg-user')?.value||'').trim().toLowerCase();
+  const email = (document.getElementById('reg-email')?.value||'').trim().toLowerCase();
+  const name  = (document.getElementById('reg-name')?.value||'').trim();
+  const pass  = document.getElementById('reg-pass')?.value||'';
+  const pass2 = document.getElementById('reg-pass2')?.value||'';
 
-  if (!invValid) return showAuthError('Nieprawidłowy lub wygasły kod zaproszenia');
-  
-  const login = document.getElementById('reg-user').value.trim().toLowerCase();
-  const email = document.getElementById('reg-email').value.trim().toLowerCase();
-  const name  = document.getElementById('reg-name').value.trim();
-  const pass  = document.getElementById('reg-pass').value;
-  const pass2 = document.getElementById('reg-pass2').value;
-  if (!login || !pass || !email) return showAuthError('Login, e-mail i hasło są wymagane');
-  if (!/^[a-z0-9_]{3,20}$/.test(login)) return showAuthError('Login: 3-20 znaków, tylko litery/cyfry/podkreślnik');
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return showAuthError('Nieprawidłowy format e-mail');
-  if (pass.length < 6) return showAuthError('Hasło min. 6 znaków');
-  if (pass !== pass2)  return showAuthError('Hasła nie są identyczne');
-  const users = getUsers();
-  if (users[login]) return showAuthError('Login zajęty — wybierz inny');
-  const emailTaken = Object.values(users).find(u => u.email && u.email.toLowerCase() === email);
-  if (emailTaken) return showAuthError('Ten e-mail jest już zarejestrowany');
-  users[login] = { pass, name: name || login, email, role: 'user', subscription: 'active', createdAt: Date.now() };
-  // Oznacz zaproszenie jako użyte
-  if (invId) {
-    fetch('https://ygrkcynyduuflzvbkkvo.supabase.co/rest/v1/invitations?id=eq.' + invId, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': 'sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK',
-        'Authorization': 'Bearer sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK'
-      },
-      body: JSON.stringify({ used_by: login, used_at: new Date().toISOString() })
-    }).catch(()=>{});
+  // Walidacja
+  if (!login || !email || !pass) return showAuthError('Wypełnij wszystkie wymagane pola');
+  if (!/^[a-zA-Z0-9_.-]{3,30}$/.test(login)) return showAuthError('Login: 3-30 znaków, tylko litery/cyfry/._-');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return showAuthError('Nieprawidłowy format email');
+  if (pass.length < 6) return showAuthError('Hasło minimum 6 znaków');
+  if (pass !== pass2) return showAuthError('Hasła nie są zgodne');
+
+  const btn = document.querySelector('#register-form .btn-primary');
+  if (btn) { btn.textContent = '⏳ Tworzę konto...'; btn.disabled = true; }
+
+  try {
+    // Sprawdź czy login jest wolny
+    const chkRes = await fetch('https://ygrkcynyduuflzvbkkvo.supabase.co/rest/v1/profiles?login=eq.' + encodeURIComponent(login) + '&select=id', {
+      headers: { 'apikey': 'sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK', 'Authorization': 'Bearer sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK' }
+    });
+    const existing = await chkRes.json();
+    if (existing?.length > 0) {
+      if (btn) { btn.textContent = 'Utwórz konto'; btn.disabled = false; }
+      return showAuthError('Ten login jest już zajęty');
+    }
+
+    // Zarejestruj przez Supabase Auth
+    const { data, error } = await _sb.auth.signUp({
+      email, password: pass,
+      options: { data: { login, name: name || login } }
+    });
+
+    if (error) {
+      if (btn) { btn.textContent = 'Utwórz konto'; btn.disabled = false; }
+      return showAuthError('Błąd rejestracji: ' + error.message);
+    }
+
+    // Zapisz profil
+    if (data.user) {
+      await fetch('https://ygrkcynyduuflzvbkkvo.supabase.co/rest/v1/profiles', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': 'sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK',
+          'Authorization': 'Bearer sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({
+          id: data.user.id,
+          login, name: name || login,
+          email, role: 'user',
+          active: false
+        })
+      });
+    }
+
+    if (btn) { btn.textContent = 'Utwórz konto'; btn.disabled = false; }
+    switchAuthTab('login');
+    showAuthSuccess('✓ Konto założone! Poczekaj na aktywację przez administratora. Otrzymasz email gdy konto zostanie aktywowane.');
+
+  } catch(e) {
+    if (btn) { btn.textContent = 'Utwórz konto'; btn.disabled = false; }
+    showAuthError('Błąd: ' + e.message);
   }
-  const _db2 = getDB();
-  if (_db2.invitations) {
-    const _inv = _db2.invitations.find(i => i.code === invCode);
-    if (_inv) { _inv.usedBy = login; _inv.usedAt = Date.now(); }
-    saveDB(_db2);
-  }
-  
-  // Register in Supabase if available
-  if (_sb) {
-    try {
-      const sbUser = await sbRegister(email || login + '@traderlogjournal.local', pass, login, name || login);
-      if (sbUser) {
-        users[login].supabaseId = sbUser.id;
-        // Mark invite as used
-        const inv = await sbCheckInvite(invCode);
-        if (inv) await _sb.from('invitations').update({ used_by: sbUser.id, used_at: new Date().toISOString() }).eq('id', inv.id);
-        // Create profile
-        await _sb.from('profiles').upsert({ id: sbUser.id, login, name: name||login, email: email||null, role: 'user' });
-      }
-    } catch(e) { console.warn('Supabase register error:', e.message); }
-  }
-  saveUsers(users);
-  const regMsg = _lang === 'en'
-    ? 'Account created! Logging in... \n⚠️ Remember: Save your recovery code in Settings!'
-    : 'Konto utworzone! Logowanie...\n⚠️ Pamiętaj: Zapisz kod odzyskiwania w Ustawieniach!';
-  showAuthSuccess(regMsg);
-  setTimeout(() => loginAs(login, users[login]), 1500);
 }
 
 // ── Forgot password flow ─────────────────────────────────────────────────────
@@ -7875,6 +7925,43 @@ async function renderInviteCodes() {
       <span style="font-size:10px;color:${color}">${status}</span>
     </div>`;
   }).join('');
+}
+
+
+// ── Admin: aktywacja użytkownika ─────────────────────────────────────────────
+async function adminActivateUser(userId) {
+  try {
+    const res = await fetch('https://ygrkcynyduuflzvbkkvo.supabase.co/rest/v1/profiles?id=eq.' + userId, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': 'sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK',
+        'Authorization': 'Bearer sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK'
+      },
+      body: JSON.stringify({ active: true })
+    });
+    if (res.ok) {
+      toast('✓ Użytkownik aktywowany', 'success');
+      renderAdmin();
+    } else {
+      toast('Błąd aktywacji', 'error');
+    }
+  } catch(e) { toast('Błąd: ' + e.message, 'error'); }
+}
+
+async function adminDeleteUser(userId, login) {
+  if (!confirm('Usunąć użytkownika ' + login + '? Tej operacji nie można cofnąć.')) return;
+  try {
+    await fetch('https://ygrkcynyduuflzvbkkvo.supabase.co/rest/v1/profiles?id=eq.' + userId, {
+      method: 'DELETE',
+      headers: {
+        'apikey': 'sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK',
+        'Authorization': 'Bearer sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK'
+      }
+    });
+    toast('Użytkownik usunięty', 'success');
+    renderAdmin();
+  } catch(e) { toast('Błąd: ' + e.message, 'error'); }
 }
 
 // ===== INIT =====
