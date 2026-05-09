@@ -7089,7 +7089,16 @@ async function testApiConnection() {
 
 const _SB_URL  = 'https://ygrkcynyduuflzvbkkvo.supabase.co';
 const _SB_ANON = 'sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK';
+
+// Inicjalizuj Supabase natychmiast
 let _sb = null;
+(function tryInitNow() {
+  const lib = window.supabase || window.Supabase;
+  if (lib && lib.createClient) {
+    _sb = lib.createClient(_SB_URL, _SB_ANON);
+    console.log('✓ Supabase ready');
+  }
+})();
 
 // Inicjalizacja Supabase
 function initSupabase() {
