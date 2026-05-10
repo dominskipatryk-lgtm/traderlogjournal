@@ -865,6 +865,49 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 
     <!-- SUMMARY -->
     <div id="page-summary" class="page">
+      <!-- KALENDARZ TRANSAKCJI -->
+      <div style="margin-bottom:28px">
+        
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <div>
+          <div class="page-title" data-i18n="cal_title">Kalendarz Transakcji</div>
+          <div class="page-subtitle" id="s-cal-subtitle">Kliknij w dzień aby zobaczyć transakcje</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <select class="filter-select" id="s-cal-view-mode" onchange="renderCalendar()" style="font-size:13px">
+            <option value="month">Widok miesięczny</option>
+            <option value="year">Widok roczny</option>
+          </select>
+        </div>
+      </div>
+      <!-- Nav row -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+        <button class="btn-sm" id="s-cal-prev" onclick="calNav(-1)">← Poprzedni</button>
+        <div id="s-cal-period-label" style="font-family:var(--font-head);font-size:20px;font-weight:700;letter-spacing:-0.5px"></div>
+        <button class="btn-sm" id="s-cal-next" onclick="calNav(1)">Następny →</button>
+      </div>
+      <!-- Legend -->
+      <div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap" id="s-cal-legend">
+        <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)"><div style="width:10px;height:10px;border-radius:50%;background:var(--green)"></div>Win</div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)"><div style="width:10px;height:10px;border-radius:50%;background:var(--red)"></div>Loss</div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)"><div style="width:10px;height:10px;border-radius:50%;background:var(--amber)"></div>Otwarta</div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)"><div style="width:10px;height:10px;border-radius:50%;background:var(--border2)"></div>Brak transakcji</div>
+        <div id="s-cal-monthly-stats" style="margin-left:auto;font-size:12px;color:var(--text2)"></div>
+      </div>
+      <!-- Calendar grid -->
+      <div id="s-cal-grid"></div>
+      <!-- Day detail panel -->
+      <div id="s-cal-day-panel" style="display:none;margin-top:20px">
+        <div class="table-wrap">
+          <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+            <div id="s-cal-day-title" style="font-family:var(--font-head);font-size:16px;font-weight:700"></div>
+            <button onclick="document.getElementById('s-cal-day-panel').style.display='none'" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px">✕</button>
+          </div>
+          <div id="s-cal-day-trades"></div>
+        </div>
+      </div>
+      </div>
+      <!-- PODSUMOWANIE -->
       <div class="page-title">Podsumowanie konta</div>
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
         <div class="page-subtitle" id="summary-subtitle">Szczegółowe statystyki</div>
@@ -1541,7 +1584,10 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
       <div class="page-title" data-i18n="adm_title">Panel Administratora</div>
       <div class="page-subtitle" data-i18n="adm_subtitle">Zarządzaj użytkownikami i danymi systemu</div>
       <div id="admin-content">
-        <!-- TRADE MODAL -->
+        <div style="text-align:center;padding:40px;color:var(--text3)">⏳ Ładowanie...</div>
+    </div>
+
+<!-- TRADE MODAL -->
 <div class="modal-overlay" id="trade-modal">
   <div class="modal">
     <div class="modal-header">
@@ -2068,7 +2114,7 @@ function showPage(page) {
   });
   if (page === 'dashboard') renderDashboard();
   if (page === 'trades') renderTrades();
-  if (page === 'summary') renderSummary();
+  if (page === 'summary') { renderSummary(); setTimeout(renderCalendarSummary, 100); }
   if (page === 'accounts') renderAccounts();
   if (page === 'drafts') renderDraftsPage();
   if (page === 'analysis') renderAnalysisList();
@@ -3868,7 +3914,7 @@ function buildTradeMap() {
 }
 
 function renderCalendar() {
-  if (!document.getElementById('page-calendar')?.classList.contains('active')) return;
+  // Renderuj zawsze gdy wywołany
   const mode = document.getElementById('cal-view-mode')?.value || 'month';
   const map  = buildTradeMap();
   const acc  = getAccounts().find(a => a.id === state.currentAccountId);
@@ -4065,13 +4111,19 @@ function calClickDay(key) {
   if (!data) return;
   calSelectedDate = key;
   openCalDay(key, data);
-  renderCalendar();
+  // Renderuj właściwy kalendarz zależnie od aktywnej strony
+  const summaryActive = document.getElementById('page-summary')?.classList.contains('active');
+  if (summaryActive) renderCalendarSummary();
+  else renderCalendar();
 }
 
 function openCalDay(key, data) {
-  const panel = document.getElementById('cal-day-panel');
-  const title = document.getElementById('cal-day-title');
-  const list  = document.getElementById('cal-day-trades');
+  // Wykryj czy jesteśmy w Summary (prefix s-) czy Calendar (bez prefix)
+  const summaryActive = document.getElementById('page-summary')?.classList.contains('active');
+  const prefix = summaryActive ? 's-' : '';
+  const panel = document.getElementById(prefix + 'cal-day-panel');
+  const title = document.getElementById(prefix + 'cal-day-title');
+  const list  = document.getElementById(prefix + 'cal-day-trades');
   if (!panel || !title || !list) return;
 
   const [y, m, d] = key.split('-');
@@ -9623,6 +9675,71 @@ function updatePropSplitPreview() {
 
 // Zapisz brokerKey do konta
 const _origSaveAccount = typeof saveAccountUI === 'function' ? null : null;
+
+
+// ── Kalendarz w Podsumowaniu ──────────────────────────────────────────────────
+function renderCalendarSummary() {
+  const mode = document.getElementById('s-cal-view-mode')?.value || 'month';
+  const map  = buildTradeMap();
+  const acc  = getAccounts().find(a => a.id === state.currentAccountId);
+  const subtitleEl = document.getElementById('s-cal-subtitle');
+  if (subtitleEl) subtitleEl.textContent = acc ? acc.name + ' · ' + (acc.broker||'') : 'Wybierz konto';
+  if (mode === 'year') renderCalendarYearSummary(map);
+  else renderCalendarMonthSummary(map);
+}
+
+function renderCalendarMonthSummary(map) {
+  // Użyj oryginalnej logiki ale z prefix s-
+  const todayStr = todayLocalStr();
+  const firstDay = new Date(calYear, calMonth, 1);
+  const lastDay  = new Date(calYear, calMonth + 1, 0);
+  const labelEl  = document.getElementById('s-cal-period-label');
+  if (labelEl) labelEl.textContent = CAL_MONTHS_PL[calMonth] + ' ' + calYear;
+
+  // Skopiuj rendering z renderCalendarMonth ale z s- prefixem
+  const statsEl = document.getElementById('s-cal-monthly-stats');
+  const gridEl  = document.getElementById('s-cal-grid');
+  if (!gridEl) return;
+
+  // Statystyki miesiąca
+  const monthTrades = Object.entries(map)
+    .filter(([d]) => {
+      const dd = new Date(d);
+      return dd.getMonth() === calMonth && dd.getFullYear() === calYear;
+    })
+    .flatMap(([, ts]) => ts);
+
+  const wins   = monthTrades.filter(t => t.pnl > 0).length;
+  const losses = monthTrades.filter(t => t.pnl <= 0 && t.status === 'closed').length;
+  const pnl    = monthTrades.reduce((s, t) => s + (t.pnl || 0), 0);
+
+  if (statsEl) statsEl.innerHTML = `
+    <span>Transakcji: <b>${monthTrades.length}</b></span> &nbsp;
+    <span style="color:var(--green)">W: <b>${wins}</b></span> &nbsp;
+    <span style="color:var(--red)">L: <b>${losses}</b></span> &nbsp;
+    <span style="color:${pnl>=0?'var(--accent)':'var(--red)'}">P&L: <b>${pnl>=0?'+':''}${fmt(pnl)}</b></span>`;
+
+  // Grid
+  const startDow = (firstDay.getDay() + 6) % 7;
+  let html = CAL_DAYS_PL.map(d => `<div class="cal-day-header">${d}</div>`).join('');
+  for (let i = 0; i < startDow; i++) html += '<div class="cal-day cal-empty"></div>';
+  for (let day = 1; day <= lastDay.getDate(); day++) {
+    const dateStr = calYear + '-' + String(calMonth+1).padStart(2,'0') + '-' + String(day).padStart(2,'0');
+    const trades  = map[dateStr] || [];
+    html += calCellHTML(dateStr, trades, todayStr, true);
+  }
+  gridEl.innerHTML = html;
+}
+
+function renderCalendarYearSummary(map) {
+  const gridEl = document.getElementById('s-cal-year-grid');
+  if (!gridEl) { renderCalendarMonthSummary(map); return; }
+  // Użyj oryginalnej renderCalendarYear logiki
+  renderCalendarYear(map);
+  // Skopiuj wynik
+  const origGrid = document.getElementById('cal-year-grid');
+  if (origGrid) gridEl.innerHTML = origGrid.innerHTML;
+}
 
 // ===== INIT =====
 async function appInit() {
