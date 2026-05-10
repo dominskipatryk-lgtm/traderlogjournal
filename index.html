@@ -631,7 +631,27 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 .color-swatch { width: 24px; height: 24px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: all .15s; }
 .color-swatch.selected { border-color: #fff; transform: scale(1.1); }
 .color-row { display: flex; gap: 8px; flex-wrap: wrap; }
-</style>
+
+    .routine-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-bottom: 6px;
+      border: 1px solid transparent;
+      transition: all .15s;
+    }
+    .routine-item:hover { background: var(--bg3); border-color: var(--border); }
+    .routine-item.done { background: rgba(0,212,161,.08); border-color: rgba(0,212,161,.2); }
+    .routine-item.done .routine-title { text-decoration: line-through; color: var(--text3); }
+    .routine-icon { font-size: 20px; min-width: 28px; text-align: center; margin-top: 1px; }
+    .routine-title { font-size: 13px; font-weight: 600; color: var(--text); line-height: 1.3; }
+    .routine-sub { font-size: 11px; color: var(--text3); margin-top: 2px; line-height: 1.4; }
+    .routine-item.done .routine-icon::after { content: " ✓"; font-size: 12px; color: var(--accent); }
+
+  </style>
 </head>
 <body>
 
@@ -1022,6 +1042,14 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
             Klucz API: <a href="https://console.anthropic.com" target="_blank" style="color:var(--accent)">console.anthropic.com</a>
             → API Keys → Create Key · Koszt: ~$0.001 / screenshot
           </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-section-title">🎯 Strategie tradingowe</div>
+          <p style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.6">
+            Zdefiniuj swoje strategie i ich założenia. Podczas analizy odznacz punkty checklisty aby nie pominąć żadnego warunku.
+          </p>
+          <button class="btn-sm btn-accent" onclick="openStrategyManager()" style="font-size:12px">🎯 Zarządzaj strategiami</button>
         </div>
 
         <div class="settings-section">
@@ -1496,6 +1524,14 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
         </div>
 
         <div class="settings-section">
+          <div class="settings-section-title">🎯 Strategie tradingowe</div>
+          <p style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.6">
+            Zdefiniuj swoje strategie i ich założenia. Podczas analizy odznacz punkty checklisty aby nie pominąć żadnego warunku.
+          </p>
+          <button class="btn-sm btn-accent" onclick="openStrategyManager()" style="font-size:12px">🎯 Zarządzaj strategiami</button>
+        </div>
+
+        <div class="settings-section">
           <div class="settings-section-title">📊 Raport miesięczny</div>
           <p style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.6">
             Generuj raport do rozliczeń z urzędem skarbowym. Zawiera zestawienie wszystkich transakcji, zyski/straty i podatek do zapłaty.
@@ -1950,7 +1986,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
         </div>
         <div class="form-group-modal">
           <label class="form-label-modal" data-i18n="trade_dir">Kierunek</label>
-          <select class="form-select-modal" id="t-dir" onchange="autoPnl()">
+          <select class="form-select-modal" id="t-dir" onchange="autoPnl();updateCommissionDisplay();updateSwapDisplay()" onchange="autoPnl()">
             <option value="LONG">LONG</option>
             <option value="SHORT">SHORT</option>
           </select>
@@ -2323,6 +2359,7 @@ function genId() { return Date.now().toString(36) + Math.random().toString(36).s
 function loginAs(username, userData) {
   try {
   state.currentUser = username;
+  setTimeout(showRoutineModal, 800);
   document.getElementById('auth-screen').style.display = 'none';
   document.getElementById('app').style.display = 'flex';
   document.getElementById('topbar-username').textContent = userData.name || username;
@@ -7932,7 +7969,27 @@ function buildReportHTML(d) {
   .tax-amount { font-size: 18px; font-weight: 700; color: #e74c3c; }
   .footer { margin-top: 30px; font-size: 10px; color: #999; text-align: center; border-top: 1px solid #eee; padding-top: 10px; }
   @media print { body { padding: 10mm; } @page { margin: 10mm; } }
-</style>
+
+    .routine-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-bottom: 6px;
+      border: 1px solid transparent;
+      transition: all .15s;
+    }
+    .routine-item:hover { background: var(--bg3); border-color: var(--border); }
+    .routine-item.done { background: rgba(0,212,161,.08); border-color: rgba(0,212,161,.2); }
+    .routine-item.done .routine-title { text-decoration: line-through; color: var(--text3); }
+    .routine-icon { font-size: 20px; min-width: 28px; text-align: center; margin-top: 1px; }
+    .routine-title { font-size: 13px; font-weight: 600; color: var(--text); line-height: 1.3; }
+    .routine-sub { font-size: 11px; color: var(--text3); margin-top: 2px; line-height: 1.4; }
+    .routine-item.done .routine-icon::after { content: " ✓"; font-size: 12px; color: var(--accent); }
+
+  </style>
 </head>
 <body>
 <div class="header">
@@ -8005,6 +8062,212 @@ function buildReportHTML(d) {
 <div class="footer">
   TraderLogJournal · traderlogjournal.com · Raport wygenerowany automatycznie · ${new Date().toLocaleString('pl-PL')}
 </div>
+
+    <!-- DAILY ROUTINE MODAL -->
+    <div class="modal-overlay" id="routine-modal" style="z-index:10000">
+      <div class="modal" style="max-width:720px;padding:0;overflow:hidden">
+        <div style="background:linear-gradient(135deg,#0a0a1a 0%,#1a1a2e 100%);padding:24px 28px 20px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div style="font-family:var(--font-head);font-size:22px;font-weight:800;color:white">
+                Trader <span style="color:var(--accent)">Routine</span>
+              </div>
+              <div style="font-size:12px;color:var(--text3);margin-top:2px">Dzisiejsza rutyna tradera · <span id="routine-date"></span></div>
+            </div>
+            <button onclick="closeRoutineModal()" style="background:rgba(255,255,255,.1);border:none;color:white;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px">✕</button>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0">
+          <!-- BEFORE SESSION -->
+          <div style="padding:20px 24px;border-right:1px solid var(--border)">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:14px">⬛ Before Session</div>
+
+            <div class="routine-item" onclick="toggleRoutine(this)">
+              <div class="routine-icon">📖</div>
+              <div>
+                <div class="routine-title">Read your journal</div>
+                <div class="routine-sub">Set goal for the day</div>
+              </div>
+            </div>
+
+            <div class="routine-item" onclick="toggleRoutine(this)">
+              <div class="routine-icon">📰</div>
+              <div>
+                <div class="routine-title">Check economic events</div>
+                <div class="routine-sub">Schedule time for Session</div>
+              </div>
+            </div>
+
+            <div class="routine-item" onclick="toggleRoutine(this)">
+              <div class="routine-icon">🎯</div>
+              <div>
+                <div class="routine-title">Choose strategy to trade</div>
+                <div class="routine-sub">When / Why / How to use it?</div>
+              </div>
+            </div>
+
+            <div class="routine-item" onclick="toggleRoutine(this)">
+              <div class="routine-icon">🧠</div>
+              <div>
+                <div class="routine-title">Build intuition — Trader's Mindset</div>
+                <div class="routine-sub">Visualize best & worst setups</div>
+              </div>
+            </div>
+
+            <div class="routine-item" onclick="toggleRoutine(this)">
+              <div class="routine-icon">📊</div>
+              <div>
+                <div class="routine-title">Time for Charts</div>
+                <div class="routine-sub">Prepare charts · Turn off your phone</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- AFTER SESSION -->
+          <div style="padding:20px 24px">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--amber);margin-bottom:14px">⬛ After Session</div>
+
+            <div class="routine-item" onclick="toggleRoutine(this)">
+              <div class="routine-icon">📸</div>
+              <div>
+                <div class="routine-title">Save screenshots of charts</div>
+                <div class="routine-sub">Add to journal · Summarize · Conclude</div>
+              </div>
+            </div>
+
+            <div class="routine-item" onclick="toggleRoutine(this)">
+              <div class="routine-icon">🖥️</div>
+              <div>
+                <div class="routine-title">Set-ups · Scenarios · Opportunities</div>
+                <div class="routine-sub">Good set-ups? Which ones? Describe!</div>
+              </div>
+            </div>
+
+            <div class="routine-item" onclick="toggleRoutine(this)">
+              <div class="routine-icon">✅</div>
+              <div>
+                <div class="routine-title">Sum up goals for the day</div>
+                <div class="routine-sub">What works? What lacks? What to improve?</div>
+              </div>
+            </div>
+
+            <div class="routine-item" onclick="toggleRoutine(this)">
+              <div class="routine-icon">☕</div>
+              <div>
+                <div class="routine-title">Break & Relax</div>
+                <div class="routine-sub">Healthy food · 30 min break · Walk · Nap</div>
+              </div>
+            </div>
+
+            <div class="routine-item" onclick="toggleRoutine(this)">
+              <div class="routine-icon">📈</div>
+              <div>
+                <div class="routine-title">Learn & Grow as a Trader</div>
+                <div class="routine-sub">Market Replay · Fast habit building</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div style="padding:14px 24px;background:var(--bg);border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+          <div id="routine-progress" style="font-size:12px;color:var(--text3)">0/10 ukończonych</div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <label style="font-size:12px;color:var(--text3);display:flex;align-items:center;gap:6px;cursor:pointer">
+              <input type="checkbox" id="routine-no-show-today" style="cursor:pointer">
+              Nie pokazuj dziś
+            </label>
+            <button onclick="closeRoutineModal()" class="btn-sm btn-accent">Zaczynam! 🚀</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- STRATEGY MANAGER MODAL -->
+    <div class="modal-overlay" id="strategy-modal">
+      <div class="modal" style="max-width:600px">
+        <div class="modal-header">
+          <div class="modal-title">🎯 Moje strategie</div>
+          <button class="modal-close" onclick="closeModal('strategy-modal')">✕</button>
+        </div>
+        <div class="modal-body">
+          <div style="margin-bottom:16px">
+            <button class="btn-sm btn-accent" onclick="openNewStrategy()">+ Dodaj strategię</button>
+          </div>
+          <div id="strategy-list-container">
+            <div style="color:var(--text3);font-size:13px">Ładowanie...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STRATEGY EDITOR MODAL -->
+    <div class="modal-overlay" id="strategy-editor-modal">
+      <div class="modal" style="max-width:620px">
+        <div class="modal-header">
+          <div class="modal-title" id="strategy-editor-title">Nowa strategia</div>
+          <button class="modal-close" onclick="closeModal('strategy-editor-modal')">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group-modal">
+            <label class="form-label-modal">Nazwa strategii *</label>
+            <input class="form-input-modal" id="str-name" placeholder="np. Price Action Breakout, London Kill Zone...">
+          </div>
+          <div class="form-group-modal">
+            <label class="form-label-modal">Opis / cel strategii</label>
+            <textarea class="form-input-modal" id="str-desc" rows="2" placeholder="Krótki opis strategii..."></textarea>
+          </div>
+          <div class="form-group-modal">
+            <label class="form-label-modal" style="display:flex;justify-content:space-between">
+              <span>Checklist — założenia strategii</span>
+              <button onclick="addStrategyPoint()" class="btn-sm" style="font-size:11px;padding:2px 8px">+ Dodaj punkt</button>
+            </label>
+            <div id="strategy-points-list" style="display:flex;flex-direction:column;gap:6px;margin-top:6px"></div>
+            <div style="font-size:11px;color:var(--text3);margin-top:8px">
+              💡 Przykłady: "Trend wyższy TF", "Struktura rynku potwierdziona", "RR minimum 1:2", "Sesja londyńska/NY"
+            </div>
+          </div>
+          <input type="hidden" id="str-id">
+        </div>
+        <div class="modal-footer">
+          <button class="btn-sm" onclick="closeModal('strategy-editor-modal')">Anuluj</button>
+          <button class="btn-sm btn-accent" onclick="saveStrategy()">✓ Zapisz strategię</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- STRATEGY CHECKLIST MODAL (przy analizie/transakcji) -->
+    <div class="modal-overlay" id="strategy-checklist-modal">
+      <div class="modal" style="max-width:500px">
+        <div class="modal-header">
+          <div class="modal-title">✅ Checklist strategii</div>
+          <button class="modal-close" onclick="closeModal('strategy-checklist-modal')">✕</button>
+        </div>
+        <div class="modal-body">
+          <div id="checklist-strategy-name" style="font-size:13px;color:var(--accent);font-weight:700;margin-bottom:14px"></div>
+          <div id="checklist-points" style="display:flex;flex-direction:column;gap:8px"></div>
+          <div id="checklist-progress-bar" style="margin-top:16px">
+            <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text3);margin-bottom:6px">
+              <span>Postęp</span>
+              <span id="checklist-score">0/0</span>
+            </div>
+            <div style="background:var(--bg3);border-radius:4px;height:6px">
+              <div id="checklist-bar" style="background:var(--accent);height:6px;border-radius:4px;transition:width .3s;width:0%"></div>
+            </div>
+          </div>
+          <div id="checklist-warning" style="display:none;background:rgba(255,100,0,.1);border:1px solid var(--amber);border-radius:8px;padding:10px;margin-top:12px;font-size:12px;color:var(--amber)">
+            ⚠️ Nie wszystkie warunki są spełnione. Czy na pewno chcesz kontynuować?
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-sm" onclick="closeModal('strategy-checklist-modal')">Zamknij</button>
+          <button class="btn-sm btn-accent" onclick="applyChecklist()">✓ Potwierdź i kontynuuj</button>
+        </div>
+      </div>
+    </div>
+
 </body>
 </html>`;
 }
@@ -8425,6 +8688,547 @@ async function adminDeleteUser(userId, login) {
   } catch(e) { toast('Błąd: ' + e.message, 'error'); }
 }
 
+
+// ===== KALKULATOR KOSZTÓW AXI =====
+
+// Prowizje brokerów (round trip gdzie dotyczy)
+const BROKER_COMMISSIONS = {
+  // AXI
+  'axi_standard': { name: 'Axi Standard', type: 'spread',     commission: 0,    spreadPips: 1.2,  currency: 'USD', unit: 'lot' },
+  'axi_pro':      { name: 'Axi Pro',      type: 'commission', commission: 7.0,  spreadPips: 0.1,  currency: 'USD', unit: 'lot' },
+  'axi_elite':    { name: 'Axi Elite',    type: 'commission', commission: 3.5,  spreadPips: 0.0,  currency: 'USD', unit: 'lot' },
+  // OKX
+  'okx_spot':     { name: 'OKX Spot',     type: 'percent',    makerPct: 0.08,   takerPct: 0.10,   currency: 'USD', unit: 'value' },
+  'okx_futures':  { name: 'OKX Futures',  type: 'percent',    makerPct: 0.02,   takerPct: 0.05,   currency: 'USD', unit: 'value' },
+  // Bybit
+  'bybit_spot':   { name: 'Bybit Spot',   type: 'percent',    makerPct: 0.10,   takerPct: 0.10,   currency: 'USD', unit: 'value' },
+  'bybit_fut':    { name: 'Bybit Futures',type: 'percent',    makerPct: 0.02,   takerPct: 0.055,  currency: 'USD', unit: 'value' },
+  'bybit_eu':     { name: 'Bybit EU',     type: 'percent',    makerPct: 0.10,   takerPct: 0.10,   currency: 'USD', unit: 'value' },
+  // FTMO (prop firm - prowizja = % zysku który zostaje u firmy)
+  'ftmo_80':      { name: 'FTMO 80/20',   type: 'profit_split', traderPct: 80,  currency: 'USD', unit: 'profit' },
+  'ftmo_90':      { name: 'FTMO 90/10',   type: 'profit_split', traderPct: 90,  currency: 'USD', unit: 'profit' },
+  // MFA Traders (prop firm - podobny model)
+  'mfa_80':       { name: 'MFA Traders',  type: 'profit_split', traderPct: 80,  currency: 'USD', unit: 'profit' },
+  // MEXC
+  'mexc_spot':    { name: 'MEXC Spot',        type: 'percent', makerPct: 0.00,  takerPct: 0.05,  currency: 'USD', unit: 'value' },
+  'mexc_futures': { name: 'MEXC Futures',     type: 'percent', makerPct: 0.00,  takerPct: 0.02,  currency: 'USD', unit: 'value' },
+  // Capital.com (spread-only)
+  'capital_std':  { name: 'Capital.com',      type: 'spread',  commission: 0,   spreadPips: 0.6, currency: 'USD', unit: 'lot' },
+  // Binance
+  'binance_spot': { name: 'Binance Spot',     type: 'percent', makerPct: 0.10,  takerPct: 0.10,  currency: 'USD', unit: 'value' },
+  'binance_fut':  { name: 'Binance Futures',  type: 'percent', makerPct: 0.02,  takerPct: 0.05,  currency: 'USD', unit: 'value' },
+  'binance_eu':   { name: 'Binance EU',       type: 'percent', makerPct: 0.10,  takerPct: 0.10,  currency: 'USD', unit: 'value' },
+  // TradingView brokers
+  'pepperstone':  { name: 'Pepperstone',      type: 'spread',  commission: 0,   spreadPips: 0.7, currency: 'USD', unit: 'lot' },
+  'ic_markets':   { name: 'IC Markets',       type: 'commission', commission: 7.0, spreadPips: 0.0, currency: 'USD', unit: 'lot' },
+  'fp_markets':   { name: 'FP Markets',       type: 'commission', commission: 6.0, spreadPips: 0.0, currency: 'USD', unit: 'lot' },
+  'blackbull':    { name: 'BlackBull Markets',type: 'commission', commission: 6.0, spreadPips: 0.0, currency: 'USD', unit: 'lot' },
+  'saxo_bank':    { name: 'Saxo Bank',        type: 'spread',  commission: 0,   spreadPips: 0.8, currency: 'USD', unit: 'lot' },
+  'interactive':  { name: 'Interactive Brokers', type: 'commission', commission: 2.0, spreadPips: 0.0, currency: 'USD', unit: 'lot' },
+  'bitget':       { name: 'Bitget',           type: 'percent', makerPct: 0.02,  takerPct: 0.06,  currency: 'USD', unit: 'value' },
+  'tradestation': { name: 'TradeStation',     type: 'commission', commission: 5.0, spreadPips: 0.0, currency: 'USD', unit: 'lot' },
+};
+
+// Stara zmienna dla kompatybilności
+const AXI_COMMISSIONS = {
+  'standard': BROKER_COMMISSIONS['axi_standard'],
+  'pro':      BROKER_COMMISSIONS['axi_pro'],
+  'elite':    BROKER_COMMISSIONS['axi_elite'],
+};
+
+// Wartość pipsa dla popularnych instrumentów (per 1 lot, w USD)
+const PIP_VALUES = {
+  'EURUSD': 10, 'GBPUSD': 10, 'AUDUSD': 10, 'NZDUSD': 10,
+  'USDCAD': 7.7, 'USDCHF': 11.2, 'USDJPY': 9.1,
+  'GBPJPY': 9.1, 'EURJPY': 9.1, 'XAUUSD': 10,
+  'XAGUSD': 50, 'US30': 1, 'US500': 10, 'NAS100': 1,
+  'BTCUSD': 1, 'ETHUSD': 1,
+};
+
+function calcBrokerCost(symbol, size, pnl, brokerKey, orderType) {
+  if (!brokerKey) brokerKey = 'axi_standard';
+  const broker = BROKER_COMMISSIONS[brokerKey] || BROKER_COMMISSIONS['axi_standard'];
+  const sym = (symbol||'').toUpperCase();
+  const pipVal = PIP_VALUES[sym] || 10;
+  let cost = 0;
+
+  if (broker.type === 'commission') {
+    // Stała prowizja per lot (round trip)
+    cost = broker.commission * (size || 0);
+  } else if (broker.type === 'spread') {
+    // Koszt spreadu w pipsach
+    cost = broker.spreadPips * pipVal * (size || 0);
+  } else if (broker.type === 'percent') {
+    // Prowizja procentowa od wartości transakcji
+    const isTaker = orderType !== 'maker';
+    const pct = isTaker ? broker.takerPct : broker.makerPct;
+    // Przybliżona wartość transakcji
+    const tradeValue = (size || 0) * pipVal * 100; // uproszczone
+    cost = tradeValue * pct / 100;
+  } else if (broker.type === 'profit_split') {
+    // Prop firm - koszt = % zysku który idzie do firmy
+    if (pnl && pnl > 0) {
+      cost = pnl * (100 - broker.traderPct) / 100;
+    } else {
+      return null;
+    }
+  }
+  return cost > 0 ? cost : null;
+}
+
+// Alias dla kompatybilności wstecznej
+function calcAxiCost(symbol, size, accountType) {
+  const keyMap = { 'standard': 'axi_standard', 'pro': 'axi_pro', 'elite': 'axi_elite' };
+  return calcBrokerCost(symbol, size, 0, keyMap[accountType] || 'axi_standard', 'taker');
+}
+
+function detectBrokerKey(brokerName) {
+  if (!brokerName) return null;
+  const b = brokerName.toLowerCase();
+  // Axi
+  if (b.includes('axi') && b.includes('pro')) return 'axi_pro';
+  if (b.includes('axi') && b.includes('elite')) return 'axi_elite';
+  if (b.includes('axi')) return 'axi_standard';
+  // OKX
+  if (b.includes('okx') && (b.includes('fut') || b.includes('perp'))) return 'okx_futures';
+  if (b.includes('okx')) return 'okx_spot';
+  // Bybit
+  if (b.includes('bybit') && b.includes('eu')) return 'bybit_eu';
+  if (b.includes('bybit') && (b.includes('fut') || b.includes('perp'))) return 'bybit_fut';
+  if (b.includes('bybit')) return 'bybit_spot';
+  // FTMO / MFA
+  if (b.includes('ftmo') && b.includes('90')) return 'ftmo_90';
+  if (b.includes('ftmo')) return 'ftmo_80';
+  if (b.includes('mfa')) return 'mfa_80';
+  // MEXC
+  if (b.includes('mexc') && (b.includes('fut') || b.includes('perp'))) return 'mexc_futures';
+  if (b.includes('mexc')) return 'mexc_spot';
+  // Capital.com
+  if (b.includes('capital')) return 'capital_std';
+  // Binance
+  if (b.includes('binance') && b.includes('eu')) return 'binance_eu';
+  if (b.includes('binance') && (b.includes('fut') || b.includes('perp'))) return 'binance_fut';
+  if (b.includes('binance')) return 'binance_spot';
+  // TradingView brokers
+  if (b.includes('pepperstone')) return 'pepperstone';
+  if (b.includes('ic market') || b.includes('icmarket')) return 'ic_markets';
+  if (b.includes('fp market') || b.includes('fpmarket')) return 'fp_markets';
+  if (b.includes('blackbull') || b.includes('black bull')) return 'blackbull';
+  if (b.includes('saxo')) return 'saxo_bank';
+  if (b.includes('interactive') || b.includes('ibkr')) return 'interactive';
+  if (b.includes('bitget')) return 'bitget';
+  if (b.includes('tradestation')) return 'tradestation';
+  return null;
+}
+
+function updateCommissionDisplay() {
+  const symbol = (document.getElementById('t-symbol')?.value||'').trim().toUpperCase();
+  const size   = parseFloat(document.getElementById('t-size')?.value) || 0;
+  const pnl    = parseFloat(document.getElementById('t-pnl')?.value) || 0;
+
+  const commEl = document.getElementById('commission-display');
+  const netEl  = document.getElementById('net-pnl-display');
+  if (!commEl || !netEl) return;
+
+  const accounts = getAccounts();
+  const acc = accounts.find(a => a.id === state.currentAccountId);
+  const brokerKey = detectBrokerKey(acc?.broker || acc?.name || '');
+
+  if (!brokerKey) { commEl.textContent = ''; netEl.textContent = ''; return; }
+
+  const broker = BROKER_COMMISSIONS[brokerKey];
+  const cost = calcBrokerCost(symbol, size, pnl, brokerKey, 'taker');
+  if (!cost || cost <= 0) { commEl.textContent = ''; netEl.textContent = ''; return; }
+
+  const netPnl = pnl - cost;
+  const isProfit = broker.type === 'profit_split';
+  commEl.innerHTML = isProfit
+    ? `<span style="color:var(--text3)">${broker.name}</span> · Twój udział: <strong style="color:var(--accent)">${broker.traderPct}%</strong>`
+    : `Prowizja (${broker.name}): <strong style="color:var(--red)">-$${cost.toFixed(2)}</strong>`;
+  netEl.innerHTML = `P&L netto: <strong style="color:${netPnl >= 0 ? 'var(--green)' : 'var(--red)'}">${netPnl >= 0 ? '+' : ''}$${netPnl.toFixed(2)}</strong>`;
+}
+
+
+// ===== SWAPY WEEKENDOWE =====
+// Potrójny swap naliczany w środę dla pozycji trzymanych przez weekend
+// Stawki dzienne są przybliżone - różnią się w zależności od instrumentu i kierunku
+
+const SWAP_INFO = {
+  // Forex - swap dzienny przybliżony (w pipsach per lot)
+  'EURUSD': { long: -0.52, short: 0.14, tripleDay: 'Środa' },
+  'GBPUSD': { long: -0.30, short: -0.22, tripleDay: 'Środa' },
+  'USDJPY': { long: 0.96,  short: -1.78, tripleDay: 'Środa' },
+  'USDCHF': { long: 0.54,  short: -1.20, tripleDay: 'Środa' },
+  'AUDUSD': { long: -0.44, short: 0.06,  tripleDay: 'Środa' },
+  'NZDUSD': { long: -0.38, short: 0.01,  tripleDay: 'Środa' },
+  'USDCAD': { long: -0.38, short: -0.12, tripleDay: 'Środa' },
+  'EURGBP': { long: -0.28, short: 0.06,  tripleDay: 'Środa' },
+  'EURJPY': { long: 0.28,  short: -1.10, tripleDay: 'Środa' },
+  'GBPJPY': { long: 0.56,  short: -1.78, tripleDay: 'Środa' },
+  // Metale
+  'XAUUSD': { long: -3.50, short: 1.80,  tripleDay: 'Środa' },
+  'XAGUSD': { long: -1.20, short: 0.30,  tripleDay: 'Środa' },
+  // Indeksy (swap dzienny w punktach)
+  'US30':   { long: -3.10, short: 0.85,  tripleDay: 'Piątek' },
+  'US500':  { long: -0.20, short: 0.05,  tripleDay: 'Piątek' },
+  'NAS100': { long: -0.50, short: 0.10,  tripleDay: 'Piątek' },
+  'UK100':  { long: -1.80, short: 0.50,  tripleDay: 'Piątek' },
+  'GER40':  { long: -1.50, short: 0.40,  tripleDay: 'Piątek' },
+};
+
+// Oblicz koszt swapu za trzymanie pozycji
+function calcSwapCost(symbol, dir, lots, days) {
+  if (!symbol || !lots || !days) return null;
+  const sym = symbol.toUpperCase();
+  const swap = SWAP_INFO[sym];
+  if (!swap) return null;
+
+  const pipVal = PIP_VALUES[sym] || 10;
+  const dailyPips = dir === 'LONG' ? swap.long : swap.short;
+  const dailyCost = dailyPips * (pipVal / 10) * lots; // koszt dzienny w USD
+
+  // Potrójny swap w środę (lub piątek dla indeksów)
+  let totalCost = dailyCost * days;
+  // Jeśli trzymamy przez środę - dodaj podwójną stawkę (bo środa = 3x zamiast 1x)
+  const tradeDate = document.getElementById('t-date')?.value;
+  if (tradeDate) {
+    const start = new Date(tradeDate);
+    const today = new Date();
+    let extraTriple = 0;
+    for (let d = new Date(start); d <= today; d.setDate(d.getDate()+1)) {
+      const dayOfWeek = d.getDay();
+      if (swap.tripleDay === 'Środa' && dayOfWeek === 3) extraTriple++;
+      if (swap.tripleDay === 'Piątek' && dayOfWeek === 5) extraTriple++;
+    }
+    totalCost = dailyCost * days + dailyCost * 2 * extraTriple; // +2x za każdą środę
+  }
+
+  return {
+    dailyCost: dailyCost.toFixed(2),
+    totalCost: totalCost.toFixed(2),
+    tripleDay: swap.tripleDay,
+    hasTriple: totalCost !== dailyCost * days
+  };
+}
+
+function updateSwapDisplay() {
+  const symbol = (document.getElementById('t-symbol')?.value||'').trim().toUpperCase();
+  const dir    = document.getElementById('t-dir')?.value || 'LONG';
+  const size   = parseFloat(document.getElementById('t-size')?.value) || 0;
+  const status = document.getElementById('t-status')?.value || 'open';
+
+  const swapEl = document.getElementById('swap-cost-display');
+  if (!swapEl) return;
+
+  if (!symbol || !size || status === 'closed') { swapEl.style.display = 'none'; return; }
+
+  const swap = SWAP_INFO[symbol];
+  if (!swap) { swapEl.style.display = 'none'; return; }
+
+  const pipVal = PIP_VALUES[symbol] || 10;
+  const dailyPips = dir === 'LONG' ? swap.long : swap.short;
+  const dailyCost = (dailyPips * (pipVal / 10) * size).toFixed(2);
+  const weekendCost = (parseFloat(dailyCost) * 3).toFixed(2); // 3x swap środa/piątek
+
+  const isPositive = parseFloat(dailyCost) > 0;
+  swapEl.style.display = 'block';
+  swapEl.innerHTML = `
+    <div style="background:var(--bg);border-radius:8px;padding:10px;margin-top:8px;font-size:12px">
+      <div style="font-weight:600;color:var(--text2);margin-bottom:6px">💱 Swap (koszt nocny)</div>
+      <div style="display:flex;justify-content:space-between;padding:2px 0">
+        <span style="color:var(--text3)">Dzienny:</span>
+        <span style="color:${isPositive?'var(--green)':'var(--red)'}"><strong>${isPositive?'+':''}${dailyCost} USD</strong></span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:2px 0">
+        <span style="color:var(--text3)">Potrójny (${swap.tripleDay}):</span>
+        <span style="color:${parseFloat(weekendCost)>0?'var(--green)':'var(--red)'}"><strong>${parseFloat(weekendCost)>0?'+':''}${weekendCost} USD</strong></span>
+      </div>
+      <div style="font-size:10px;color:var(--text3);margin-top:4px">
+        ⚠️ Potrójny swap naliczany w ${swap.tripleDay} obejmuje weekendowe przetrzymanie. Stawki orientacyjne.
+      </div>
+    </div>`;
+}
+
+
+// ===== DAILY ROUTINE =====
+
+function showRoutineModal() {
+  const today = new Date().toDateString();
+  // Sprawdź czy już pokazano dziś
+  const lastShown = localStorage.getItem('_routine_shown_' + (state.currentUser||''));
+  const noShowToday = localStorage.getItem('_routine_no_show_' + (state.currentUser||''));
+  
+  if (noShowToday === today) return; // Użytkownik zaznaczył "nie pokazuj dziś"
+  if (lastShown === today) return;  // Już pokazano dziś
+  
+  // Ustaw datę
+  const dateEl = document.getElementById('routine-date');
+  if (dateEl) dateEl.textContent = new Date().toLocaleDateString('pl-PL', {weekday:'long', day:'numeric', month:'long'});
+  
+  // Wyczyść checkboxy
+  document.querySelectorAll('.routine-item').forEach(el => el.classList.remove('done'));
+  updateRoutineProgress();
+  
+  // Pokaż modal
+  const modal = document.getElementById('routine-modal');
+  if (modal) modal.classList.add('open');
+  
+  // Zapisz że pokazano
+  localStorage.setItem('_routine_shown_' + (state.currentUser||''), today);
+}
+
+function closeRoutineModal() {
+  const modal = document.getElementById('routine-modal');
+  if (modal) modal.classList.remove('open');
+  
+  // Zapisz "nie pokazuj dziś" jeśli zaznaczono
+  const noShow = document.getElementById('routine-no-show-today');
+  if (noShow?.checked) {
+    localStorage.setItem('_routine_no_show_' + (state.currentUser||''), new Date().toDateString());
+  }
+}
+
+function toggleRoutine(el) {
+  el.classList.toggle('done');
+  updateRoutineProgress();
+}
+
+function updateRoutineProgress() {
+  const total = document.querySelectorAll('.routine-item').length;
+  const done  = document.querySelectorAll('.routine-item.done').length;
+  const el = document.getElementById('routine-progress');
+  if (el) {
+    el.textContent = done + '/' + total + ' ukończonych';
+    el.style.color = done === total ? 'var(--accent)' : 'var(--text3)';
+  }
+}
+
+
+// ===== MENEDŻER STRATEGII =====
+
+function getStrategies() {
+  const db = getDB();
+  return db['strategies_' + (state.currentUser||'')] || [];
+}
+
+function saveStrategies(strategies) {
+  const db = getDB();
+  db['strategies_' + (state.currentUser||'')] = strategies;
+  saveDB(db);
+}
+
+function openStrategyManager() {
+  renderStrategyList();
+  openModal('strategy-modal');
+}
+
+function renderStrategyList() {
+  const el = document.getElementById('strategy-list-container');
+  if (!el) return;
+  const strategies = getStrategies();
+  if (!strategies.length) {
+    el.innerHTML = `<div style="text-align:center;padding:30px;color:var(--text3)">
+      <div style="font-size:32px;margin-bottom:8px">🎯</div>
+      <div>Brak strategii — dodaj pierwszą!</div>
+    </div>`;
+    return;
+  }
+  el.innerHTML = strategies.map(s => `
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div style="font-weight:700;font-size:14px;color:var(--text)">${s.name}</div>
+          ${s.desc ? `<div style="font-size:12px;color:var(--text3);margin-top:2px">${s.desc}</div>` : ''}
+          <div style="font-size:11px;color:var(--text3);margin-top:6px">${s.points?.length||0} punktów checklisty</div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button onclick="openEditStrategy('${s.id}')" class="icon-btn" title="Edytuj">✏️</button>
+          <button onclick="deleteStrategy('${s.id}')" class="icon-btn" title="Usuń" style="color:var(--red)">🗑</button>
+        </div>
+      </div>
+      ${s.points?.length ? `
+      <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:4px">
+        ${s.points.map(p => `<span style="background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:11px;color:var(--text2)">${p}</span>`).join('')}
+      </div>` : ''}
+    </div>
+  `).join('');
+}
+
+function openNewStrategy() {
+  document.getElementById('str-id').value = '';
+  document.getElementById('str-name').value = '';
+  document.getElementById('str-desc').value = '';
+  document.getElementById('strategy-points-list').innerHTML = '';
+  document.getElementById('strategy-editor-title').textContent = 'Nowa strategia';
+  // Dodaj 3 puste punkty na start
+  addStrategyPoint('Trend wyższy TF potwierdzony');
+  addStrategyPoint('Struktura rynku — BOS/ChoCH widoczny');
+  addStrategyPoint('RR minimum 1:2');
+  openModal('strategy-editor-modal');
+  setTimeout(() => document.getElementById('str-name')?.focus(), 100);
+}
+
+function openEditStrategy(id) {
+  const strategies = getStrategies();
+  const s = strategies.find(x => x.id === id);
+  if (!s) return;
+  document.getElementById('str-id').value = s.id;
+  document.getElementById('str-name').value = s.name;
+  document.getElementById('str-desc').value = s.desc || '';
+  document.getElementById('strategy-editor-title').textContent = 'Edytuj strategię';
+  const list = document.getElementById('strategy-points-list');
+  list.innerHTML = '';
+  (s.points||[]).forEach(p => addStrategyPoint(p));
+  openModal('strategy-editor-modal');
+}
+
+function addStrategyPoint(text) {
+  const list = document.getElementById('strategy-points-list');
+  if (!list) return;
+  const idx = list.children.length;
+  const div = document.createElement('div');
+  div.style.cssText = 'display:flex;gap:6px;align-items:center';
+  div.innerHTML = `
+    <span style="color:var(--text3);font-size:12px;min-width:18px">${idx+1}.</span>
+    <input class="form-input-modal" type="text" value="${text||''}" placeholder="Opisz warunek strategii..."
+      style="flex:1;font-size:13px;padding:8px 10px" onkeydown="if(event.key==='Enter'){event.preventDefault();addStrategyPoint('');}">
+    <button onclick="this.parentElement.remove();renumberPoints()" class="icon-btn" style="color:var(--red);font-size:14px">✕</button>`;
+  list.appendChild(div);
+  if (!text) setTimeout(() => div.querySelector('input')?.focus(), 50);
+}
+
+function renumberPoints() {
+  const list = document.getElementById('strategy-points-list');
+  if (!list) return;
+  Array.from(list.children).forEach((div, i) => {
+    const num = div.querySelector('span');
+    if (num) num.textContent = (i+1) + '.';
+  });
+}
+
+function saveStrategy() {
+  const name = document.getElementById('str-name')?.value?.trim();
+  if (!name) return toast('Podaj nazwę strategii', 'error');
+  const desc = document.getElementById('str-desc')?.value?.trim();
+  const points = Array.from(document.getElementById('strategy-points-list')?.querySelectorAll('input')||[])
+    .map(i => i.value.trim()).filter(Boolean);
+  const id = document.getElementById('str-id')?.value;
+  const strategies = getStrategies();
+  if (id) {
+    const idx = strategies.findIndex(s => s.id === id);
+    if (idx >= 0) strategies[idx] = { ...strategies[idx], name, desc, points };
+  } else {
+    strategies.push({ id: genId(), name, desc, points, createdAt: Date.now() });
+  }
+  saveStrategies(strategies);
+  closeModal('strategy-editor-modal');
+  renderStrategyList();
+  toast('Strategia zapisana ✓', 'success');
+}
+
+function deleteStrategy(id) {
+  if (!confirm('Usunąć strategię?')) return;
+  const strategies = getStrategies().filter(s => s.id !== id);
+  saveStrategies(strategies);
+  renderStrategyList();
+  toast('Strategia usunięta', 'success');
+}
+
+// ── Checklist przy analizie / transakcji ─────────────────────────────────────
+let _checklistCallback = null;
+
+function openStrategyChecklist(strategyId, callback) {
+  const strategies = getStrategies();
+  const s = strategyId
+    ? strategies.find(x => x.id === strategyId)
+    : strategies[0]; // użyj pierwszej jeśli nie podano
+  if (!s) { toast('Brak strategii — dodaj w Ustawieniach', 'error'); return; }
+
+  document.getElementById('checklist-strategy-name').textContent = '🎯 ' + s.name;
+  const container = document.getElementById('checklist-points');
+  container.innerHTML = (s.points||[]).map((p, i) => `
+    <div onclick="toggleChecklistPoint(this)" style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:8px;cursor:pointer;border:1px solid var(--border);background:var(--bg3);transition:all .15s"
+      onmouseover="this.style.borderColor='var(--accent)'" onmouseout="if(!this.classList.contains('checked'))this.style.borderColor='var(--border)'">
+      <div style="width:20px;height:20px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s" class="check-circle">
+        <span style="display:none;color:var(--accent);font-size:12px">✓</span>
+      </div>
+      <span style="font-size:13px;color:var(--text)">${i+1}. ${p}</span>
+    </div>
+  `).join('');
+
+  _checklistCallback = callback;
+  updateChecklistProgress();
+  closeModal('strategy-checklist-modal');
+  document.getElementById('strategy-checklist-modal').classList.add('open');
+}
+
+function toggleChecklistPoint(el) {
+  const circle = el.querySelector('.check-circle');
+  const tick   = el.querySelector('.check-circle span');
+  if (el.classList.toggle('checked')) {
+    el.style.background = 'rgba(0,212,161,.08)';
+    el.style.borderColor = 'var(--accent)';
+    circle.style.borderColor = 'var(--accent)';
+    circle.style.background = 'var(--accent)';
+    if (tick) tick.style.display = 'block';
+  } else {
+    el.style.background = 'var(--bg3)';
+    el.style.borderColor = 'var(--border)';
+    circle.style.borderColor = 'var(--border)';
+    circle.style.background = 'transparent';
+    if (tick) tick.style.display = 'none';
+  }
+  updateChecklistProgress();
+}
+
+function updateChecklistProgress() {
+  const total   = document.querySelectorAll('#checklist-points > div').length;
+  const checked = document.querySelectorAll('#checklist-points > div.checked').length;
+  const score   = document.getElementById('checklist-score');
+  const bar     = document.getElementById('checklist-bar');
+  const warning = document.getElementById('checklist-warning');
+  if (score) score.textContent = checked + '/' + total;
+  if (bar)   bar.style.width = total ? (checked/total*100) + '%' : '0%';
+  if (warning) warning.style.display = (total > 0 && checked < total) ? 'block' : 'none';
+}
+
+function applyChecklist() {
+  const total   = document.querySelectorAll('#checklist-points > div').length;
+  const checked = document.querySelectorAll('#checklist-points > div.checked').length;
+  const score   = checked + '/' + total;
+  closeModal('strategy-checklist-modal');
+  if (_checklistCallback) _checklistCallback(score, checked === total);
+  _checklistCallback = null;
+}
+
+function openChecklistForAnalysis() {
+  const strategies = getStrategies();
+  if (!strategies.length) {
+    toast('Najpierw dodaj strategię w Ustawieniach → Strategie', 'error');
+    return;
+  }
+  if (strategies.length === 1) {
+    openStrategyChecklist(strategies[0].id, (score, allDone) => {
+      const noteEl = document.getElementById('an-pre') || document.getElementById('t-pre');
+      if (noteEl) noteEl.value = (noteEl.value ? noteEl.value + '\n' : '') + '[Checklist ' + strategies[0].name + ': ' + score + ']';
+      if (!allDone) toast('Uwaga: nie wszystkie warunki zaznaczone!', 'error');
+      else toast('Wszystkie warunki spełnione ✓', 'success');
+    });
+  } else {
+    // Pokaż wybór strategii
+    const sel = strategies.map((s, i) => i + ': ' + s.name).join('\n');
+    const idx = parseInt(prompt('Wybierz strategię:\n' + sel) || '0');
+    if (!isNaN(idx) && strategies[idx]) {
+      openStrategyChecklist(strategies[idx].id, (score, allDone) => {
+        const noteEl = document.getElementById('an-pre') || document.getElementById('t-pre');
+        if (noteEl) noteEl.value = (noteEl.value ? noteEl.value + '\n' : '') + '[Checklist ' + strategies[idx].name + ': ' + score + ']';
+        if (!allDone) toast('Uwaga: nie wszystkie warunki zaznaczone!', 'error');
+        else toast('Wszystkie warunki spełnione ✓', 'success');
+      });
+    }
+  }
+}
+
 // ===== INIT =====
 async function appInit() {
   initLang();
@@ -8573,5 +9377,211 @@ function showNoUsersHint() {
   // Nowi użytkownicy dostają rolę 'user', nie admin
 }
 </script>
+
+    <!-- DAILY ROUTINE MODAL -->
+    <div class="modal-overlay" id="routine-modal" style="z-index:10000">
+      <div class="modal" style="max-width:720px;padding:0;overflow:hidden">
+        <div style="background:linear-gradient(135deg,#0a0a1a 0%,#1a1a2e 100%);padding:24px 28px 20px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div style="font-family:var(--font-head);font-size:22px;font-weight:800;color:white">
+                Trader <span style="color:var(--accent)">Routine</span>
+              </div>
+              <div style="font-size:12px;color:var(--text3);margin-top:2px">Dzisiejsza rutyna tradera · <span id="routine-date"></span></div>
+            </div>
+            <button onclick="closeRoutineModal()" style="background:rgba(255,255,255,.1);border:none;color:white;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px">✕</button>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0">
+          <!-- BEFORE SESSION -->
+          <div style="padding:20px 24px;border-right:1px solid var(--border)">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:14px">⬛ Before Session</div>
+
+            <div class="routine-item" onclick="toggleRoutine(this)">
+              <div class="routine-icon">📖</div>
+              <div>
+                <div class="routine-title">Read your journal</div>
+                <div class="routine-sub">Set goal for the day</div>
+              </div>
+            </div>
+
+            <div class="routine-item" onclick="toggleRoutine(this)">
+              <div class="routine-icon">📰</div>
+              <div>
+                <div class="routine-title">Check economic events</div>
+                <div class="routine-sub">Schedule time for Session</div>
+              </div>
+            </div>
+
+            <div class="routine-item" onclick="toggleRoutine(this)">
+              <div class="routine-icon">🎯</div>
+              <div>
+                <div class="routine-title">Choose strategy to trade</div>
+                <div class="routine-sub">When / Why / How to use it?</div>
+              </div>
+            </div>
+
+            <div class="routine-item" onclick="toggleRoutine(this)">
+              <div class="routine-icon">🧠</div>
+              <div>
+                <div class="routine-title">Build intuition — Trader's Mindset</div>
+                <div class="routine-sub">Visualize best & worst setups</div>
+              </div>
+            </div>
+
+            <div class="routine-item" onclick="toggleRoutine(this)">
+              <div class="routine-icon">📊</div>
+              <div>
+                <div class="routine-title">Time for Charts</div>
+                <div class="routine-sub">Prepare charts · Turn off your phone</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- AFTER SESSION -->
+          <div style="padding:20px 24px">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--amber);margin-bottom:14px">⬛ After Session</div>
+
+            <div class="routine-item" onclick="toggleRoutine(this)">
+              <div class="routine-icon">📸</div>
+              <div>
+                <div class="routine-title">Save screenshots of charts</div>
+                <div class="routine-sub">Add to journal · Summarize · Conclude</div>
+              </div>
+            </div>
+
+            <div class="routine-item" onclick="toggleRoutine(this)">
+              <div class="routine-icon">🖥️</div>
+              <div>
+                <div class="routine-title">Set-ups · Scenarios · Opportunities</div>
+                <div class="routine-sub">Good set-ups? Which ones? Describe!</div>
+              </div>
+            </div>
+
+            <div class="routine-item" onclick="toggleRoutine(this)">
+              <div class="routine-icon">✅</div>
+              <div>
+                <div class="routine-title">Sum up goals for the day</div>
+                <div class="routine-sub">What works? What lacks? What to improve?</div>
+              </div>
+            </div>
+
+            <div class="routine-item" onclick="toggleRoutine(this)">
+              <div class="routine-icon">☕</div>
+              <div>
+                <div class="routine-title">Break & Relax</div>
+                <div class="routine-sub">Healthy food · 30 min break · Walk · Nap</div>
+              </div>
+            </div>
+
+            <div class="routine-item" onclick="toggleRoutine(this)">
+              <div class="routine-icon">📈</div>
+              <div>
+                <div class="routine-title">Learn & Grow as a Trader</div>
+                <div class="routine-sub">Market Replay · Fast habit building</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div style="padding:14px 24px;background:var(--bg);border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+          <div id="routine-progress" style="font-size:12px;color:var(--text3)">0/10 ukończonych</div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <label style="font-size:12px;color:var(--text3);display:flex;align-items:center;gap:6px;cursor:pointer">
+              <input type="checkbox" id="routine-no-show-today" style="cursor:pointer">
+              Nie pokazuj dziś
+            </label>
+            <button onclick="closeRoutineModal()" class="btn-sm btn-accent">Zaczynam! 🚀</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- STRATEGY MANAGER MODAL -->
+    <div class="modal-overlay" id="strategy-modal">
+      <div class="modal" style="max-width:600px">
+        <div class="modal-header">
+          <div class="modal-title">🎯 Moje strategie</div>
+          <button class="modal-close" onclick="closeModal('strategy-modal')">✕</button>
+        </div>
+        <div class="modal-body">
+          <div style="margin-bottom:16px">
+            <button class="btn-sm btn-accent" onclick="openNewStrategy()">+ Dodaj strategię</button>
+          </div>
+          <div id="strategy-list-container">
+            <div style="color:var(--text3);font-size:13px">Ładowanie...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STRATEGY EDITOR MODAL -->
+    <div class="modal-overlay" id="strategy-editor-modal">
+      <div class="modal" style="max-width:620px">
+        <div class="modal-header">
+          <div class="modal-title" id="strategy-editor-title">Nowa strategia</div>
+          <button class="modal-close" onclick="closeModal('strategy-editor-modal')">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group-modal">
+            <label class="form-label-modal">Nazwa strategii *</label>
+            <input class="form-input-modal" id="str-name" placeholder="np. Price Action Breakout, London Kill Zone...">
+          </div>
+          <div class="form-group-modal">
+            <label class="form-label-modal">Opis / cel strategii</label>
+            <textarea class="form-input-modal" id="str-desc" rows="2" placeholder="Krótki opis strategii..."></textarea>
+          </div>
+          <div class="form-group-modal">
+            <label class="form-label-modal" style="display:flex;justify-content:space-between">
+              <span>Checklist — założenia strategii</span>
+              <button onclick="addStrategyPoint()" class="btn-sm" style="font-size:11px;padding:2px 8px">+ Dodaj punkt</button>
+            </label>
+            <div id="strategy-points-list" style="display:flex;flex-direction:column;gap:6px;margin-top:6px"></div>
+            <div style="font-size:11px;color:var(--text3);margin-top:8px">
+              💡 Przykłady: "Trend wyższy TF", "Struktura rynku potwierdziona", "RR minimum 1:2", "Sesja londyńska/NY"
+            </div>
+          </div>
+          <input type="hidden" id="str-id">
+        </div>
+        <div class="modal-footer">
+          <button class="btn-sm" onclick="closeModal('strategy-editor-modal')">Anuluj</button>
+          <button class="btn-sm btn-accent" onclick="saveStrategy()">✓ Zapisz strategię</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- STRATEGY CHECKLIST MODAL (przy analizie/transakcji) -->
+    <div class="modal-overlay" id="strategy-checklist-modal">
+      <div class="modal" style="max-width:500px">
+        <div class="modal-header">
+          <div class="modal-title">✅ Checklist strategii</div>
+          <button class="modal-close" onclick="closeModal('strategy-checklist-modal')">✕</button>
+        </div>
+        <div class="modal-body">
+          <div id="checklist-strategy-name" style="font-size:13px;color:var(--accent);font-weight:700;margin-bottom:14px"></div>
+          <div id="checklist-points" style="display:flex;flex-direction:column;gap:8px"></div>
+          <div id="checklist-progress-bar" style="margin-top:16px">
+            <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text3);margin-bottom:6px">
+              <span>Postęp</span>
+              <span id="checklist-score">0/0</span>
+            </div>
+            <div style="background:var(--bg3);border-radius:4px;height:6px">
+              <div id="checklist-bar" style="background:var(--accent);height:6px;border-radius:4px;transition:width .3s;width:0%"></div>
+            </div>
+          </div>
+          <div id="checklist-warning" style="display:none;background:rgba(255,100,0,.1);border:1px solid var(--amber);border-radius:8px;padding:10px;margin-top:12px;font-size:12px;color:var(--amber)">
+            ⚠️ Nie wszystkie warunki są spełnione. Czy na pewno chcesz kontynuować?
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-sm" onclick="closeModal('strategy-checklist-modal')">Zamknij</button>
+          <button class="btn-sm btn-accent" onclick="applyChecklist()">✓ Potwierdź i kontynuuj</button>
+        </div>
+      </div>
+    </div>
+
 </body>
 </html>
