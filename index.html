@@ -4552,7 +4552,7 @@ async function doLogin() {
       createdAt: Date.now(),
     };
     saveUsers(users);
-    await sbSyncDown(data.user.id);
+    await sbSyncDown(data.user.id, profile.login);
     loginAs(profile.login, users[profile.login]);
 
   } catch(e) {
@@ -7305,23 +7305,27 @@ async function sbGetSession() {
 
 // ── Sync funkcje ─────────────────────────────────────────────────────────────
 // Po zalogowaniu - pobierz dane z Supabase i zapisz lokalnie
-async function sbSyncDown(userId) {
+async function sbSyncDown(userId, userLogin) {
   if (!_sb || !userId) return;
   try {
     // Sync accounts
     const { data: accounts } = await _sb.from('accounts').select('*').eq('user_id', userId);
     if (accounts?.length) {
       const db = getDB();
-      if (!db.accounts) db.accounts = {};
-      accounts.forEach(a => {
-        db.accounts[a.id] = {
-          id: a.id, name: a.name, broker: a.broker,
-          type: a.type, capital: a.capital,
-          strategy: a.strategy, color: a.color,
+      // Zapisz konta w formacie zgodnym z getAccounts() - klucz to currentUser
+      const loginKey = userLogin || state.currentUser || db.currentUser;
+      if (loginKey) {
+        if (!db.accounts) db.accounts = {};
+        db.accounts[loginKey] = accounts.map(a => ({
+          id: a.id, name: a.name, broker: a.broker || '',
+          brokerKey: a.broker_key || '', spread: a.spread || null,
+          traderPct: a.trader_pct || null,
+          type: a.type || 'forex', capital: parseFloat(a.capital) || 0,
+          strategy: a.strategy || '', color: a.color || '#00d4a1',
           createdAt: new Date(a.created_at).getTime()
-        };
-      });
-      saveDB(db);
+        }));
+        saveDB(db);
+      }
     }
     
     // Sync trades for each account
@@ -7330,6 +7334,7 @@ async function sbSyncDown(userId) {
       const { data: trades } = await _sb.from('trades').select('*').in('account_id', accIds);
       if (trades?.length) {
         const db = getDB();
+        const tradeLoginKey = loginKey || userLogin || state.currentUser;
         trades.forEach(t => {
           const key = 'trades_' + t.account_id;
           if (!db[key]) db[key] = [];
