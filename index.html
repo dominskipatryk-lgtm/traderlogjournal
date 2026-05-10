@@ -1206,6 +1206,40 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
           <div class="modal-title" id="analysis-modal-title">Nowa analiza</div>
           <button class="modal-close" onclick="closeModal('analysis-modal')">✕</button>
         </div>
+        <!-- Strategy + Setup bar -->
+        <div style="padding:10px 20px;background:var(--bg);border-bottom:1px solid var(--border)">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+            <span style="font-size:11px;color:var(--text3);white-space:nowrap;min-width:70px">🎯 Strategia:</span>
+            <select id="an-strategy-select" onchange="onStrategyChange('an')"
+              style="flex:1;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer">
+              <option value="">— Wybierz strategię —</option>
+            </select>
+            <button id="an-checklist-btn" onclick="openChecklistFromForm('an')"
+              style="display:none;background:var(--accent);color:#000;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">
+              ✅ Checklist
+            </button>
+            <div id="an-checklist-score" style="font-size:11px;white-space:nowrap"></div>
+          </div>
+          <div id="an-setup-row" style="display:none;align-items:center;gap:8px">
+            <span style="font-size:11px;color:var(--text3);white-space:nowrap;min-width:70px">📐 Setup:</span>
+            <select id="an-setup-select" onchange="onSetupChange('an')"
+              style="flex:1;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer">
+              <option value="">— Wybierz setup —</option>
+            </select>
+            <button onclick="openSetupManager(document.getElementById('an-strategy-select').value)"
+              style="background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;white-space:nowrap">
+              ⚙ Zarządzaj
+            </button>
+          </div>
+          <div id="an-setup-screenshots-bar" style="display:none;margin-top:8px">
+            <div style="font-size:11px;color:var(--text3);margin-bottom:4px">📸 Screenshoty setupu:</div>
+            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap" id="an-setup-screenshots-list"></div>
+            <label style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--accent);margin-top:4px;padding:3px 8px;border:1px dashed var(--accent);border-radius:6px">
+              + Dodaj screenshot
+              <input type="file" accept="image/*" multiple style="display:none" onchange="addSetupScreenshots('an', this)">
+            </label>
+          </div>
+        </div>
         <div class="modal-body">
           <input type="hidden" id="an-id">
           <div class="form-grid">
@@ -1685,6 +1719,40 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
           <div class="modal-title" id="analysis-modal-title">Nowa analiza</div>
           <button class="modal-close" onclick="closeModal('analysis-modal')">✕</button>
         </div>
+        <!-- Strategy + Setup bar -->
+        <div style="padding:10px 20px;background:var(--bg);border-bottom:1px solid var(--border)">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+            <span style="font-size:11px;color:var(--text3);white-space:nowrap;min-width:70px">🎯 Strategia:</span>
+            <select id="an-strategy-select" onchange="onStrategyChange('an')"
+              style="flex:1;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer">
+              <option value="">— Wybierz strategię —</option>
+            </select>
+            <button id="an-checklist-btn" onclick="openChecklistFromForm('an')"
+              style="display:none;background:var(--accent);color:#000;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">
+              ✅ Checklist
+            </button>
+            <div id="an-checklist-score" style="font-size:11px;white-space:nowrap"></div>
+          </div>
+          <div id="an-setup-row" style="display:none;align-items:center;gap:8px">
+            <span style="font-size:11px;color:var(--text3);white-space:nowrap;min-width:70px">📐 Setup:</span>
+            <select id="an-setup-select" onchange="onSetupChange('an')"
+              style="flex:1;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer">
+              <option value="">— Wybierz setup —</option>
+            </select>
+            <button onclick="openSetupManager(document.getElementById('an-strategy-select').value)"
+              style="background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;white-space:nowrap">
+              ⚙ Zarządzaj
+            </button>
+          </div>
+          <div id="an-setup-screenshots-bar" style="display:none;margin-top:8px">
+            <div style="font-size:11px;color:var(--text3);margin-bottom:4px">📸 Screenshoty setupu:</div>
+            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap" id="an-setup-screenshots-list"></div>
+            <label style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--accent);margin-top:4px;padding:3px 8px;border:1px dashed var(--accent);border-radius:6px">
+              + Dodaj screenshot
+              <input type="file" accept="image/*" multiple style="display:none" onchange="addSetupScreenshots('an', this)">
+            </label>
+          </div>
+        </div>
         <div class="modal-body">
           <input type="hidden" id="an-id">
           <div class="form-grid">
@@ -1951,6 +2019,40 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
     <div class="modal-header">
       <div class="modal-title" id="modal-title">Nowa transakcja</div>
       <button class="modal-close" onclick="closeModal('trade-modal')">✕</button>
+    </div>
+    <!-- Strategy + Setup bar -->
+    <div style="padding:10px 20px;background:var(--bg);border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <span style="font-size:11px;color:var(--text3);white-space:nowrap;min-width:70px">🎯 Strategia:</span>
+        <select id="trade-strategy-select" onchange="onStrategyChange('trade')"
+          style="flex:1;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer">
+          <option value="">— Wybierz strategię —</option>
+        </select>
+        <button id="trade-checklist-btn" onclick="openChecklistFromForm('trade')"
+          style="display:none;background:var(--accent);color:#000;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">
+          ✅ Checklist
+        </button>
+        <div id="trade-checklist-score" style="font-size:11px;white-space:nowrap"></div>
+      </div>
+      <div id="trade-setup-row" style="display:none;align-items:center;gap:8px">
+        <span style="font-size:11px;color:var(--text3);white-space:nowrap;min-width:70px">📐 Setup:</span>
+        <select id="trade-setup-select" onchange="onSetupChange('trade')"
+          style="flex:1;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer">
+          <option value="">— Wybierz setup —</option>
+        </select>
+        <button onclick="openSetupManager(document.getElementById('trade-strategy-select').value)"
+          style="background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;white-space:nowrap">
+          ⚙ Zarządzaj
+        </button>
+      </div>
+      <div id="trade-setup-screenshots-bar" style="display:none;margin-top:8px">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:4px">📸 Screenshoty setupu:</div>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap" id="trade-setup-screenshots-list"></div>
+        <label style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--accent);margin-top:4px;padding:3px 8px;border:1px dashed var(--accent);border-radius:6px">
+          + Dodaj screenshot
+          <input type="file" accept="image/*" multiple style="display:none" onchange="addSetupScreenshots('trade', this)">
+        </label>
+      </div>
     </div>
     <div class="modal-body">
       <input type="hidden" id="trade-id">
@@ -2914,7 +3016,7 @@ function openTradeModal() {
   renderScreenshotPreviews();
   toggleCloseFields();
   setAutosaveDot('idle');
-  openModal('trade-modal');
+  openModal('trade-modal'); setTimeout(populateStrategySelects, 150);
   applyTfModeUI();
   hookFormAutoSave();
 }
@@ -6838,7 +6940,7 @@ function openNewAnalysis() {
   renderAnScreenshots();
   renderAnLinkedTrades('');
   anSetAutosaveDot('idle');
-  openModal('analysis-modal');
+  openModal('analysis-modal'); setTimeout(populateStrategySelects, 150);
 }
 
 function openEditAnalysis(id) {
@@ -8268,6 +8370,66 @@ function buildReportHTML(d) {
       </div>
     </div>
 
+
+    <!-- SETUP MANAGER MODAL -->
+    <div class="modal-overlay" id="setup-manager-modal">
+      <div class="modal" style="max-width:620px">
+        <div class="modal-header">
+          <div class="modal-title">📐 Setupy strategii: <span id="setup-manager-strategy-name" style="color:var(--accent)"></span></div>
+          <button class="modal-close" onclick="closeModal('setup-manager-modal')">✕</button>
+        </div>
+        <div class="modal-body">
+          <div style="margin-bottom:14px">
+            <button class="btn-sm btn-accent" onclick="openNewSetup()">+ Dodaj setup</button>
+            <span style="font-size:12px;color:var(--text3);margin-left:10px">Każdy setup może mieć własny checklist i screenshoty wzorcowe</span>
+          </div>
+          <div id="setup-list-container"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETUP EDITOR MODAL -->
+    <div class="modal-overlay" id="setup-editor-modal">
+      <div class="modal" style="max-width:640px">
+        <div class="modal-header">
+          <div class="modal-title" id="setup-editor-title">Nowy setup</div>
+          <button class="modal-close" onclick="closeModal('setup-editor-modal')">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group-modal">
+            <label class="form-label-modal">Nazwa setupu *</label>
+            <input class="form-input-modal" id="setup-name" placeholder="np. BOS + FVG retest, London Killzone Sweep...">
+          </div>
+          <div class="form-group-modal">
+            <label class="form-label-modal">Opis setupu</label>
+            <textarea class="form-input-modal" id="setup-desc" rows="2" placeholder="Kiedy wchodzisz? Co widzisz na wykresie?"></textarea>
+          </div>
+          <div class="form-group-modal">
+            <label class="form-label-modal" style="display:flex;justify-content:space-between">
+              <span>Checklist setupu</span>
+              <button onclick="addSetupPoint()" class="btn-sm" style="font-size:11px;padding:2px 8px">+ Dodaj punkt</button>
+            </label>
+            <div id="setup-points-list" style="display:flex;flex-direction:column;gap:6px;margin-top:6px"></div>
+          </div>
+          <div class="form-group-modal">
+            <label class="form-label-modal">📸 Screenshoty wzorcowe (przykłady setupu)</label>
+            <div id="setup-ref-screenshots" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px"></div>
+            <label style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--accent);padding:6px 12px;border:1px dashed var(--accent);border-radius:8px">
+              📸 Dodaj screenshot wzorcowy
+              <input type="file" accept="image/*" multiple style="display:none" onchange="addSetupRefScreenshots(this)">
+            </label>
+            <div style="font-size:11px;color:var(--text3);margin-top:6px">Wklej screeny idealnych przykładów tego setupu — będą widoczne przy analizie jako wzorzec</div>
+          </div>
+          <input type="hidden" id="setup-id">
+          <input type="hidden" id="setup-strategy-id">
+        </div>
+        <div class="modal-footer">
+          <button class="btn-sm" onclick="closeModal('setup-editor-modal')">Anuluj</button>
+          <button class="btn-sm btn-accent" onclick="saveSetup()">✓ Zapisz setup</button>
+        </div>
+      </div>
+    </div>
+
 </body>
 </html>`;
 }
@@ -9229,6 +9391,408 @@ function openChecklistForAnalysis() {
   }
 }
 
+
+// ── Pasek strategii w modalach ────────────────────────────────────────────────
+function populateStrategySelects() {
+  const strategies = getStrategies();
+  ['an-strategy-select', 'trade-strategy-select'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const current = sel.value;
+    sel.innerHTML = '<option value="">— Wybierz strategię —</option>' +
+      strategies.map(s => `<option value="${s.id}">${s.name}${s.points?.length?' ('+s.points.length+' pkt checklist)':''}</option>`).join('');
+    if (current) { sel.value = current; }
+    const prefix = id.includes('an-') ? 'an' : 'trade';
+    updateChecklistBtn(prefix);
+    if (current) {
+      const setupRow = document.getElementById(prefix + '-setup-row');
+      if (setupRow) { setupRow.style.display = 'flex'; populateSetupSelect(prefix, current); }
+    }
+  });
+  // Reset session screenshots
+  _setupSessionScreenshots = { an: [], trade: [] };
+}
+
+function updateChecklistBtn(prefix) {
+  const sel   = document.getElementById(prefix + '-strategy-select');
+  const btn   = document.getElementById(prefix + '-checklist-btn');
+  const score = document.getElementById(prefix + '-checklist-score');
+  if (!sel || !btn) return;
+  const hasStrategy = sel.value !== '';
+  btn.style.display = hasStrategy ? 'block' : 'none';
+  if (!hasStrategy && score) score.textContent = '';
+}
+
+function openChecklistFromForm(prefix) {
+  const sel = document.getElementById(prefix + '-strategy-select');
+  if (!sel?.value) return;
+  const strategies = getStrategies();
+  const s = strategies.find(x => x.id === sel.value);
+  if (!s) return;
+
+  // Reset checklisty
+  const scoreEl = document.getElementById(prefix + '-checklist-score');
+
+  openStrategyChecklist(s.id, (score, allDone) => {
+    if (scoreEl) {
+      scoreEl.textContent = allDone ? '✓ ' + score : '⚠ ' + score;
+      scoreEl.style.color = allDone ? 'var(--accent)' : 'var(--amber)';
+    }
+    // Zapisz wynik do pola notatek
+    const noteEl = document.getElementById(prefix === 'an' ? 'an-pre' : 't-pre');
+    if (noteEl) {
+      const tag = '[Checklist ' + s.name + ': ' + score + (allDone ? ' ✓' : ' ⚠') + ']';
+      if (!noteEl.value.includes('[Checklist')) {
+        noteEl.value = noteEl.value ? noteEl.value + '\n' + tag : tag;
+      } else {
+        noteEl.value = noteEl.value.replace(/\[Checklist[^\]]+\]/, tag);
+      }
+    }
+    if (!allDone) toast('⚠ Nie wszystkie warunki zaznaczone!', 'error');
+    else toast('✓ Wszystkie warunki strategii spełnione!', 'success');
+  });
+}
+
+// Nadpisz openNewAnalysis żeby wypełniało select
+// Strategy populate called from openNewAnalysis hook
+
+// Nadpisz openTradeModal żeby wypełniało select
+// Strategy populate called from openTradeModal hook
+
+
+// ===== MENEDŻER SETUPÓW =====
+
+let _currentSetupScreenshots = []; // {id, dataUrl} - screeny wzorcowe edytowanego setupu
+
+function getSetups(strategyId) {
+  const db = getDB();
+  return (db['setups_' + (state.currentUser||'')] || []).filter(s => s.strategyId === strategyId);
+}
+
+function getAllSetups() {
+  const db = getDB();
+  return db['setups_' + (state.currentUser||'')] || [];
+}
+
+function saveAllSetups(setups) {
+  const db = getDB();
+  db['setups_' + (state.currentUser||'')] = setups;
+  saveDB(db);
+}
+
+function openSetupManager(strategyId) {
+  if (!strategyId) return toast('Najpierw wybierz strategię', 'error');
+  const strategies = getStrategies();
+  const strategy = strategies.find(s => s.id === strategyId);
+  if (!strategy) return;
+
+  document.getElementById('setup-manager-strategy-name').textContent = strategy.name;
+  document.getElementById('setup-manager-modal').dataset.strategyId = strategyId;
+  renderSetupList(strategyId);
+  openModal('setup-manager-modal');
+}
+
+function renderSetupList(strategyId) {
+  const el = document.getElementById('setup-list-container');
+  if (!el) return;
+  const setups = getSetups(strategyId);
+  if (!setups.length) {
+    el.innerHTML = `<div style="text-align:center;padding:24px;color:var(--text3)">
+      <div style="font-size:28px;margin-bottom:8px">📐</div>
+      <div>Brak setupów — dodaj pierwszy setup dla tej strategii</div>
+    </div>`;
+    return;
+  }
+  el.innerHTML = setups.map(s => `
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:14px">${s.name}</div>
+          ${s.desc ? `<div style="font-size:12px;color:var(--text3);margin-top:3px">${s.desc}</div>` : ''}
+          <div style="font-size:11px;color:var(--text3);margin-top:4px">
+            ${s.points?.length||0} pkt checklist · ${s.screenshots?.length||0} screenshotów wzorcowych
+          </div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button onclick="openEditSetup('${s.id}')" class="icon-btn" title="Edytuj">✏️</button>
+          <button onclick="deleteSetup('${s.id}')" class="icon-btn" style="color:var(--red)" title="Usuń">🗑</button>
+        </div>
+      </div>
+      ${s.screenshots?.length ? `
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">
+        ${s.screenshots.slice(0,4).map(img => `
+          <img src="${img}" style="width:80px;height:55px;object-fit:cover;border-radius:6px;cursor:pointer;border:1px solid var(--border)"
+            onclick="openLightbox('${img}')" title="Kliknij aby powiększyć">
+        `).join('')}
+        ${s.screenshots.length > 4 ? `<div style="width:80px;height:55px;background:var(--bg);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--text3)">+${s.screenshots.length-4}</div>` : ''}
+      </div>` : ''}
+    </div>
+  `).join('');
+}
+
+function openNewSetup() {
+  const strategyId = document.getElementById('setup-manager-modal')?.dataset.strategyId;
+  if (!strategyId) return;
+  document.getElementById('setup-id').value = '';
+  document.getElementById('setup-strategy-id').value = strategyId;
+  document.getElementById('setup-name').value = '';
+  document.getElementById('setup-desc').value = '';
+  document.getElementById('setup-points-list').innerHTML = '';
+  document.getElementById('setup-ref-screenshots').innerHTML = '';
+  document.getElementById('setup-editor-title').textContent = 'Nowy setup';
+  _currentSetupScreenshots = [];
+  // Domyślne punkty
+  addSetupPoint('Struktura rynku potwierdzona (BOS/ChoCH)');
+  addSetupPoint('POI zidentyfikowany na wyższym TF');
+  addSetupPoint('Wejście na niższym TF z potwierdzeniem');
+  openModal('setup-editor-modal');
+  setTimeout(() => document.getElementById('setup-name')?.focus(), 100);
+}
+
+function openEditSetup(id) {
+  const setups = getAllSetups();
+  const s = setups.find(x => x.id === id);
+  if (!s) return;
+  document.getElementById('setup-id').value = s.id;
+  document.getElementById('setup-strategy-id').value = s.strategyId;
+  document.getElementById('setup-name').value = s.name;
+  document.getElementById('setup-desc').value = s.desc || '';
+  document.getElementById('setup-editor-title').textContent = 'Edytuj setup: ' + s.name;
+  const list = document.getElementById('setup-points-list');
+  list.innerHTML = '';
+  (s.points||[]).forEach(p => addSetupPoint(p));
+  _currentSetupScreenshots = (s.screenshots||[]).map((url, i) => ({id: 'ss_'+i, dataUrl: url}));
+  renderSetupRefScreenshots();
+  openModal('setup-editor-modal');
+}
+
+function addSetupPoint(text) {
+  const list = document.getElementById('setup-points-list');
+  if (!list) return;
+  const idx = list.children.length;
+  const div = document.createElement('div');
+  div.style.cssText = 'display:flex;gap:6px;align-items:center';
+  div.innerHTML = `
+    <span style="color:var(--text3);font-size:12px;min-width:18px">${idx+1}.</span>
+    <input class="form-input-modal" type="text" value="${(text||'').replace(/"/g,'&quot;')}" placeholder="Warunek wejścia..."
+      style="flex:1;font-size:13px;padding:8px 10px" onkeydown="if(event.key==='Enter'){event.preventDefault();addSetupPoint('');}">
+    <button onclick="this.parentElement.remove()" class="icon-btn" style="color:var(--red)">✕</button>`;
+  list.appendChild(div);
+  if (!text) setTimeout(() => div.querySelector('input')?.focus(), 50);
+}
+
+function addSetupRefScreenshots(input) {
+  const files = Array.from(input.files);
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      _currentSetupScreenshots.push({ id: 'ss_' + Date.now() + Math.random(), dataUrl: e.target.result });
+      renderSetupRefScreenshots();
+    };
+    reader.readAsDataURL(file);
+  });
+  input.value = '';
+}
+
+function renderSetupRefScreenshots() {
+  const el = document.getElementById('setup-ref-screenshots');
+  if (!el) return;
+  el.innerHTML = _currentSetupScreenshots.map(s => `
+    <div style="position:relative;display:inline-block">
+      <img src="${s.dataUrl}" style="width:100px;height:70px;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:pointer"
+        onclick="openLightbox('${s.dataUrl}')">
+      <button onclick="removeSetupScreenshot('${s.id}')"
+        style="position:absolute;top:-6px;right:-6px;background:var(--red);color:white;border:none;border-radius:50%;width:18px;height:18px;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
+    </div>
+  `).join('');
+}
+
+function removeSetupScreenshot(id) {
+  _currentSetupScreenshots = _currentSetupScreenshots.filter(s => s.id !== id);
+  renderSetupRefScreenshots();
+}
+
+function saveSetup() {
+  const name = document.getElementById('setup-name')?.value?.trim();
+  if (!name) return toast('Podaj nazwę setupu', 'error');
+  const strategyId = document.getElementById('setup-strategy-id')?.value;
+  if (!strategyId) return;
+  const desc   = document.getElementById('setup-desc')?.value?.trim();
+  const points = Array.from(document.getElementById('setup-points-list')?.querySelectorAll('input')||[])
+    .map(i => i.value.trim()).filter(Boolean);
+  const screenshots = _currentSetupScreenshots.map(s => s.dataUrl);
+  const id = document.getElementById('setup-id')?.value;
+  const setups = getAllSetups();
+  if (id) {
+    const idx = setups.findIndex(s => s.id === id);
+    if (idx >= 0) setups[idx] = { ...setups[idx], name, desc, points, screenshots };
+  } else {
+    setups.push({ id: genId(), strategyId, name, desc, points, screenshots, createdAt: Date.now() });
+  }
+  saveAllSetups(setups);
+  closeModal('setup-editor-modal');
+  renderSetupList(strategyId);
+  toast('Setup zapisany ✓', 'success');
+  // Odśwież dropdowny
+  const strId = strategyId;
+  ['an', 'trade'].forEach(prefix => {
+    const sel = document.getElementById(prefix + '-strategy-select');
+    if (sel?.value === strId) populateSetupSelect(prefix, strId);
+  });
+}
+
+function deleteSetup(id) {
+  if (!confirm('Usunąć setup?')) return;
+  const strategyId = getAllSetups().find(s => s.id === id)?.strategyId;
+  saveAllSetups(getAllSetups().filter(s => s.id !== id));
+  if (strategyId) renderSetupList(strategyId);
+  toast('Setup usunięty', 'success');
+}
+
+// ── Wybór setupu w formularzu ─────────────────────────────────────────────────
+function onStrategyChange(prefix) {
+  const sel = document.getElementById(prefix + '-strategy-select');
+  const strategyId = sel?.value;
+  updateChecklistBtn(prefix);
+
+  const setupRow = document.getElementById(prefix + '-setup-row');
+  const screenshotsBar = document.getElementById(prefix + '-setup-screenshots-bar');
+  const scoreEl = document.getElementById(prefix + '-checklist-score');
+  if (scoreEl) scoreEl.textContent = '';
+
+  if (strategyId) {
+    populateSetupSelect(prefix, strategyId);
+    if (setupRow) setupRow.style.display = 'flex';
+  } else {
+    if (setupRow) setupRow.style.display = 'none';
+    if (screenshotsBar) screenshotsBar.style.display = 'none';
+  }
+}
+
+function populateSetupSelect(prefix, strategyId) {
+  const sel = document.getElementById(prefix + '-setup-select');
+  if (!sel) return;
+  const setups = getSetups(strategyId);
+  sel.innerHTML = '<option value="">— Wybierz setup —</option>' +
+    setups.map(s => `<option value="${s.id}">${s.name}${s.points?.length ? ' ('+s.points.length+' pkt)' : ''}</option>`).join('');
+}
+
+function onSetupChange(prefix) {
+  const setupSel   = document.getElementById(prefix + '-setup-select');
+  const screenshotsBar = document.getElementById(prefix + '-setup-screenshots-bar');
+  const screensList    = document.getElementById(prefix + '-setup-screenshots-list');
+  const setupId = setupSel?.value;
+
+  if (!setupId) {
+    if (screenshotsBar) screenshotsBar.style.display = 'none';
+    return;
+  }
+
+  const setup = getAllSetups().find(s => s.id === setupId);
+  if (!setup) return;
+
+  // Pokaż screenshoty wzorcowe setupu
+  if (screenshotsBar) screenshotsBar.style.display = 'block';
+  if (screensList && setup.screenshots?.length) {
+    screensList.innerHTML = setup.screenshots.map(img => `
+      <img src="${img}" style="width:70px;height:50px;object-fit:cover;border-radius:5px;cursor:pointer;border:1px solid var(--border)"
+        onclick="openLightbox('${img}')" title="Screenshot wzorcowy — kliknij aby powiększyć">
+    `).join('') + `<span style="font-size:10px;color:var(--text3);align-self:center">↑ Wzorce</span>`;
+  } else if (screensList) {
+    screensList.innerHTML = '<span style="font-size:11px;color:var(--text3)">Brak screenshotów wzorcowych</span>';
+  }
+
+  // Jeśli setup ma checklist — otwórz automatycznie
+  if (setup.points?.length > 0) {
+    setTimeout(() => {
+      const btn = document.getElementById(prefix + '-checklist-btn');
+      if (btn) {
+        btn.style.background = 'var(--amber)';
+        btn.textContent = '⚠ Checklist!';
+        setTimeout(() => {
+          btn.style.background = 'var(--accent)';
+          btn.textContent = '✅ Checklist';
+        }, 2000);
+      }
+      // Otwórz checklist setupu
+      openSetupChecklist(prefix, setup);
+    }, 300);
+  }
+}
+
+function openSetupChecklist(prefix, setup) {
+  // Użyj ogólnego checklistModal ale z punktami setupu
+  const strategies = getStrategies();
+  // Tymczasowo stwórz obiekt "strategii" z punktami setupu
+  const tempStrategy = { ...setup, id: setup.id + '_temp' };
+  const origStrategies = getStrategies();
+  // Patch strategies temporarily
+  const db = getDB();
+  const key = 'strategies_' + (state.currentUser||'');
+  db[key] = [...origStrategies, tempStrategy];
+  saveDB(db);
+
+  openStrategyChecklist(setup.id + '_temp', (score, allDone) => {
+    // Przywróć oryginalne strategie
+    const db2 = getDB();
+    db2[key] = origStrategies;
+    saveDB(db2);
+
+    const scoreEl = document.getElementById(prefix + '-checklist-score');
+    if (scoreEl) {
+      scoreEl.textContent = (allDone ? '✓ ' : '⚠ ') + score;
+      scoreEl.style.color = allDone ? 'var(--accent)' : 'var(--amber)';
+    }
+    const noteEl = document.getElementById(prefix === 'an' ? 'an-pre' : 't-pre');
+    if (noteEl) {
+      const tag = '[Setup: ' + setup.name + ' ' + score + (allDone ? ' ✓' : ' ⚠') + ']';
+      noteEl.value = noteEl.value ? noteEl.value.replace(/\[Setup:[^\]]+\]/,'') + '\n' + tag : tag;
+    }
+    if (!allDone) toast('⚠ Nie wszystkie warunki setupu zaznaczone!', 'error');
+    else toast('✓ Setup potwierdzony!', 'success');
+  });
+}
+
+// Screenshoty dodawane podczas analizy/transakcji (nie wzorcowe)
+let _setupSessionScreenshots = { an: [], trade: [] };
+
+function addSetupScreenshots(prefix, input) {
+  const files = Array.from(input.files);
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      _setupSessionScreenshots[prefix].push({ id: genId(), dataUrl: e.target.result });
+      renderSessionScreenshots(prefix);
+    };
+    reader.readAsDataURL(file);
+  });
+  input.value = '';
+}
+
+function renderSessionScreenshots(prefix) {
+  const el = document.getElementById(prefix + '-setup-screenshots-list');
+  if (!el) return;
+  const screens = _setupSessionScreenshots[prefix];
+  const existing = el.querySelectorAll('.session-screenshot');
+  existing.forEach(e => e.remove());
+  screens.forEach(s => {
+    const div = document.createElement('div');
+    div.className = 'session-screenshot';
+    div.style.cssText = 'position:relative;display:inline-block';
+    div.innerHTML = `
+      <img src="${s.dataUrl}" style="width:70px;height:50px;object-fit:cover;border-radius:5px;cursor:pointer;border:2px solid var(--accent)"
+        onclick="openLightbox('${s.dataUrl}')" title="Twój screenshot">
+      <button onclick="removeSessionScreenshot('${prefix}','${s.id}')"
+        style="position:absolute;top:-5px;right:-5px;background:var(--red);color:white;border:none;border-radius:50%;width:16px;height:16px;font-size:9px;cursor:pointer">✕</button>`;
+    el.insertBefore(div, el.querySelector('label'));
+  });
+}
+
+function removeSessionScreenshot(prefix, id) {
+  _setupSessionScreenshots[prefix] = _setupSessionScreenshots[prefix].filter(s => s.id !== id);
+  renderSessionScreenshots(prefix);
+}
+
 // ===== INIT =====
 async function appInit() {
   initLang();
@@ -9579,6 +10143,66 @@ function showNoUsersHint() {
         <div class="modal-footer">
           <button class="btn-sm" onclick="closeModal('strategy-checklist-modal')">Zamknij</button>
           <button class="btn-sm btn-accent" onclick="applyChecklist()">✓ Potwierdź i kontynuuj</button>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- SETUP MANAGER MODAL -->
+    <div class="modal-overlay" id="setup-manager-modal">
+      <div class="modal" style="max-width:620px">
+        <div class="modal-header">
+          <div class="modal-title">📐 Setupy strategii: <span id="setup-manager-strategy-name" style="color:var(--accent)"></span></div>
+          <button class="modal-close" onclick="closeModal('setup-manager-modal')">✕</button>
+        </div>
+        <div class="modal-body">
+          <div style="margin-bottom:14px">
+            <button class="btn-sm btn-accent" onclick="openNewSetup()">+ Dodaj setup</button>
+            <span style="font-size:12px;color:var(--text3);margin-left:10px">Każdy setup może mieć własny checklist i screenshoty wzorcowe</span>
+          </div>
+          <div id="setup-list-container"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETUP EDITOR MODAL -->
+    <div class="modal-overlay" id="setup-editor-modal">
+      <div class="modal" style="max-width:640px">
+        <div class="modal-header">
+          <div class="modal-title" id="setup-editor-title">Nowy setup</div>
+          <button class="modal-close" onclick="closeModal('setup-editor-modal')">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group-modal">
+            <label class="form-label-modal">Nazwa setupu *</label>
+            <input class="form-input-modal" id="setup-name" placeholder="np. BOS + FVG retest, London Killzone Sweep...">
+          </div>
+          <div class="form-group-modal">
+            <label class="form-label-modal">Opis setupu</label>
+            <textarea class="form-input-modal" id="setup-desc" rows="2" placeholder="Kiedy wchodzisz? Co widzisz na wykresie?"></textarea>
+          </div>
+          <div class="form-group-modal">
+            <label class="form-label-modal" style="display:flex;justify-content:space-between">
+              <span>Checklist setupu</span>
+              <button onclick="addSetupPoint()" class="btn-sm" style="font-size:11px;padding:2px 8px">+ Dodaj punkt</button>
+            </label>
+            <div id="setup-points-list" style="display:flex;flex-direction:column;gap:6px;margin-top:6px"></div>
+          </div>
+          <div class="form-group-modal">
+            <label class="form-label-modal">📸 Screenshoty wzorcowe (przykłady setupu)</label>
+            <div id="setup-ref-screenshots" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px"></div>
+            <label style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--accent);padding:6px 12px;border:1px dashed var(--accent);border-radius:8px">
+              📸 Dodaj screenshot wzorcowy
+              <input type="file" accept="image/*" multiple style="display:none" onchange="addSetupRefScreenshots(this)">
+            </label>
+            <div style="font-size:11px;color:var(--text3);margin-top:6px">Wklej screeny idealnych przykładów tego setupu — będą widoczne przy analizie jako wzorzec</div>
+          </div>
+          <input type="hidden" id="setup-id">
+          <input type="hidden" id="setup-strategy-id">
+        </div>
+        <div class="modal-footer">
+          <button class="btn-sm" onclick="closeModal('setup-editor-modal')">Anuluj</button>
+          <button class="btn-sm btn-accent" onclick="saveSetup()">✓ Zapisz setup</button>
         </div>
       </div>
     </div>
