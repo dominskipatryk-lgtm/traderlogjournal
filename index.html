@@ -801,7 +801,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
       <button class="nav-btn" onclick="showPage('drafts')" id="nav-drafts">📝 Szkice <span id="nav-draft-badge" style="display:none;background:var(--amber);color:#000;border-radius:10px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:2px"></span></button>
       <button class="nav-btn" onclick="showPage('analysis')" data-i18n="nav_analysis">🔍 Analiza</button>
       <button class="nav-btn" onclick="showPage('calendar')" data-i18n="nav_calendar">📅 Kalendarz</button>
-      <button class="nav-btn" onclick="showPage('calculator')" data-i18n="nav_calculator">🔢 Kalkulator</button>
+      <button class="nav-btn" onclick="showPage('tools')" id="nav-tools">🛠 Narzędzia</button>
       <button class="nav-btn" onclick="showPage('admin')" id="nav-admin" style="display:none">⚙️ Admin</button>
     </nav>
     <div class="topbar-right">
@@ -884,8 +884,26 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
     </div>
 
     <!-- CALCULATOR PAGE -->
-    <div id="page-calculator" class="page">
-      <div class="page-title" data-i18n="page_calc">Kalkulator Pozycji</div>
+    <div id="page-tools" class="page">
+      <!-- NARZĘDZIA — zakładki -->
+      <div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:24px">
+        <button class="tools-tab active" onclick="switchToolsTab('calculator')" id="ttab-calculator"
+          style="padding:10px 20px;background:none;border:none;color:var(--text);font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid var(--accent);margin-bottom:-2px">
+          🔢 Kalkulator pozycji
+        </button>
+        <button class="tools-tab" onclick="switchToolsTab('strategies')" id="ttab-strategies"
+          style="padding:10px 20px;background:none;border:none;color:var(--text3);font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px">
+          🎯 Strategie i Setupy
+        </button>
+        <button class="tools-tab" onclick="switchToolsTab('brokers')" id="ttab-brokers"
+          style="padding:10px 20px;background:none;border:none;color:var(--text3);font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px">
+          💱 Kalkulator prowizji
+        </button>
+      </div>
+
+      <!-- TAB: Kalkulator pozycji -->
+      <div id="tools-tab-calculator">
+        <div class="page-title" data-i18n="page_calc">Kalkulator Pozycji</div>
       <div class="page-subtitle" data-i18n="calc_subtitle">Przeliczaj jednostki TradingView na loty · zarządzaj ryzykiem i R:R</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:960px">
         <div class="summary-card" style="grid-column:1/-1">
@@ -951,7 +969,68 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 
 
     <!-- SETTINGS PAGE -->
-    <div id="page-settings" class="page">
+    <div 
+      </div>
+
+      <!-- TAB: Strategie i Setupy -->
+      <div id="tools-tab-strategies" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+          <div>
+            <div class="page-title">🎯 Strategie i Setupy</div>
+            <div class="page-subtitle">Zdefiniuj swoje strategie, setupy i ich założenia</div>
+          </div>
+          <button class="btn-sm btn-accent" onclick="openNewStrategyInline()">+ Nowa strategia</button>
+        </div>
+        <div id="tools-strategies-container">
+          <div style="color:var(--text3);font-size:13px;text-align:center;padding:40px">⏳ Ładowanie...</div>
+        </div>
+      </div>
+
+      <!-- TAB: Kalkulator prowizji -->
+      <div id="tools-tab-brokers" style="display:none">
+        <div class="page-title" style="margin-bottom:20px">💱 Kalkulator kosztów transakcji</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+          <div class="summary-card">
+            <div class="summary-card-title">Dane transakcji</div>
+            <div style="display:flex;flex-direction:column;gap:10px;margin-top:12px">
+              <div>
+                <label class="form-label" style="font-size:11px">Broker</label>
+                <select id="bc-broker" onchange="calcBrokerPreview()"
+                  style="width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px 8px;font-size:13px">
+                  <option value="">— Wybierz brokera —</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label" style="font-size:11px">Instrument</label>
+                <input id="bc-symbol" type="text" placeholder="np. EURUSD, XAUUSD, BTCUSD"
+                  oninput="calcBrokerPreview()"
+                  style="width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px 8px;font-size:13px">
+              </div>
+              <div>
+                <label class="form-label" style="font-size:11px">Wolumen (loty)</label>
+                <input id="bc-size" type="number" step="0.01" placeholder="1.00"
+                  oninput="calcBrokerPreview()"
+                  style="width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px 8px;font-size:13px">
+              </div>
+              <div>
+                <label class="form-label" style="font-size:11px">P&L brutto (USD)</label>
+                <input id="bc-pnl" type="number" step="any" placeholder="0.00"
+                  oninput="calcBrokerPreview()"
+                  style="width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px 8px;font-size:13px">
+              </div>
+            </div>
+          </div>
+          <div class="summary-card">
+            <div class="summary-card-title">Wynik kalkulacji</div>
+            <div id="bc-result" style="margin-top:12px;color:var(--text3);font-size:13px;text-align:center;padding:20px">
+              Wybierz brokera i wpisz dane...
+            </div>
+          </div>
+        </div>
+      </div>
+
+    
+    <div class="page" id="page-settings" class="page">
       <div class="page-title" data-i18n="sett_title">Ustawienia konta</div>
       <div class="page-subtitle" id="settings-subtitle"></div>
       <div style="max-width:600px">
@@ -2309,7 +2388,31 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
       </div>
       <div class="form-group-modal" style="margin-bottom:16px">
         <label class="form-label-modal">Broker / Giełda</label>
-        <input class="form-input-modal" id="acc-broker" placeholder="np. Capital.com, Binance">
+        <select class="form-select-modal" id="acc-broker-key" onchange="onAccBrokerChange()" style="margin-bottom:6px">
+          <option value="">— Wybierz brokera —</option>
+        </select>
+        <input class="form-input-modal" id="acc-broker" placeholder="Nazwa brokera (auto-wypełniana)" style="font-size:12px">
+      </div>
+      <div class="form-group-modal" style="margin-bottom:16px" id="acc-spread-row">
+        <label class="form-label-modal" style="display:flex;justify-content:space-between">
+          <span>Spread (pips) — edytowalny</span>
+          <span id="acc-spread-default" style="font-size:10px;color:var(--text3)"></span>
+        </label>
+        <input class="form-input-modal" id="acc-spread" type="number" step="0.01" placeholder="np. 1.2">
+        <div style="font-size:11px;color:var(--text3);margin-top:3px">Spread zmienia się — wpisz aktualny aby prowizja była dokładna</div>
+      </div>
+      <div class="form-group-modal" style="margin-bottom:16px;display:none" id="acc-trader-pct-row">
+        <label class="form-label-modal" style="display:flex;justify-content:space-between">
+          <span>Twój udział w zysku (%)</span>
+          <span style="font-size:10px;color:var(--amber)">Prop Firm</span>
+        </label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input class="form-input-modal" id="acc-trader-pct" type="number" min="1" max="99" step="1"
+            placeholder="np. 80" style="flex:1" oninput="updatePropSplitPreview()">
+          <span style="font-size:13px;color:var(--text2)">%</span>
+        </div>
+        <div id="prop-split-preview" style="font-size:11px;color:var(--text3);margin-top:6px"></div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">MFA widełki: 60–90% · FTMO: 80–90%</div>
       </div>
       <div class="form-group-modal" style="margin-bottom:16px">
         <label class="form-label-modal">Kapitał startowy (USD)</label>
@@ -2524,6 +2627,8 @@ function showPage(page) {
   if (page === 'calendar') renderCalendar();
   if (page === 'calculator') { pageCalcInstrChange(); }
   if (page === 'admin') renderAdmin();
+  if (page === 'tools') { switchToolsTab('calculator'); }
+  if (page === 'calculator') { showPage('tools'); return; }
 }
 
 function renderAll() {
@@ -8870,7 +8975,15 @@ const BROKER_COMMISSIONS = {
   'ftmo_80':      { name: 'FTMO 80/20',   type: 'profit_split', traderPct: 80,  currency: 'USD', unit: 'profit' },
   'ftmo_90':      { name: 'FTMO 90/10',   type: 'profit_split', traderPct: 90,  currency: 'USD', unit: 'profit' },
   // MFA Traders (prop firm - podobny model)
-  'mfa_80':       { name: 'MFA Traders',  type: 'profit_split', traderPct: 80,  currency: 'USD', unit: 'profit' },
+  'mfa_60':       { name: 'MFA Traders 60%', type: 'profit_split', traderPct: 60, currency: 'USD', unit: 'profit' },
+  'mfa_70':       { name: 'MFA Traders 70%', type: 'profit_split', traderPct: 70, currency: 'USD', unit: 'profit' },
+  'mfa_75':       { name: 'MFA Traders 75%', type: 'profit_split', traderPct: 75, currency: 'USD', unit: 'profit' },
+  'mfa_80':       { name: 'MFA Traders 80%', type: 'profit_split', traderPct: 80, currency: 'USD', unit: 'profit' },
+  'mfa_85':       { name: 'MFA Traders 85%', type: 'profit_split', traderPct: 85, currency: 'USD', unit: 'profit' },
+  'mfa_90':       { name: 'MFA Traders 90%', type: 'profit_split', traderPct: 90, currency: 'USD', unit: 'profit' },
+  'mfa_custom':   { name: 'MFA Traders (własny %)', type: 'profit_split', traderPct: 80, currency: 'USD', unit: 'profit' },
+  'ftmo_custom':  { name: 'FTMO (własny %)', type: 'profit_split', traderPct: 80, currency: 'USD', unit: 'profit' },
+  'prop_custom':  { name: 'Prop Firm (własny %)', type: 'profit_split', traderPct: 80, currency: 'USD', unit: 'profit' },
   // MEXC
   'mexc_spot':    { name: 'MEXC Spot',        type: 'percent', makerPct: 0.00,  takerPct: 0.05,  currency: 'USD', unit: 'value' },
   'mexc_futures': { name: 'MEXC Futures',     type: 'percent', makerPct: 0.00,  takerPct: 0.02,  currency: 'USD', unit: 'value' },
@@ -8994,11 +9107,17 @@ function updateCommissionDisplay() {
 
   const accounts = getAccounts();
   const acc = accounts.find(a => a.id === state.currentAccountId);
-  const brokerKey = detectBrokerKey(acc?.broker || acc?.name || '');
-
+  // Użyj brokerKey z konta (zapisany przy tworzeniu) lub wykryj z nazwy
+  const brokerKey = acc?.brokerKey || detectBrokerKey(acc?.broker || acc?.name || '');
   if (!brokerKey) { commEl.textContent = ''; netEl.textContent = ''; return; }
 
   const broker = BROKER_COMMISSIONS[brokerKey];
+  if (!broker) { commEl.textContent = ''; netEl.textContent = ''; return; }
+
+  // Spread z konta
+  if (acc?.spread && broker.type === 'spread') broker.spreadPips = acc.spread;
+  // Udział tradera z konta (prop firm)
+  if (acc?.traderPct && broker.type === 'profit_split') broker.traderPct = acc.traderPct;
   const cost = calcBrokerCost(symbol, size, pnl, brokerKey, 'taker');
   if (!cost || cost <= 0) { commEl.textContent = ''; netEl.textContent = ''; return; }
 
@@ -9792,6 +9911,266 @@ function removeSessionScreenshot(prefix, id) {
   _setupSessionScreenshots[prefix] = _setupSessionScreenshots[prefix].filter(s => s.id !== id);
   renderSessionScreenshots(prefix);
 }
+
+
+// ===== ZAKŁADKA NARZĘDZIA =====
+
+function switchToolsTab(tab) {
+  ['calculator','strategies','brokers'].forEach(t => {
+    const el = document.getElementById('tools-tab-' + t);
+    const btn = document.getElementById('ttab-' + t);
+    if (el) el.style.display = t === tab ? 'block' : 'none';
+    if (btn) {
+      btn.style.color = t === tab ? 'var(--text)' : 'var(--text3)';
+      btn.style.borderBottomColor = t === tab ? 'var(--accent)' : 'transparent';
+    }
+  });
+  if (tab === 'strategies') renderToolsStrategies();
+  if (tab === 'brokers') initBrokerCalc();
+}
+
+// Renderuj strategie i setupy w zakładce Narzędzia
+function renderToolsStrategies() {
+  const el = document.getElementById('tools-strategies-container');
+  if (!el) return;
+  const strategies = getStrategies();
+
+  if (!strategies.length) {
+    el.innerHTML = `<div style="text-align:center;padding:60px;color:var(--text3)">
+      <div style="font-size:48px;margin-bottom:12px">🎯</div>
+      <div style="font-size:16px;font-weight:600;margin-bottom:8px">Brak strategii</div>
+      <div style="font-size:13px;margin-bottom:20px">Dodaj pierwszą strategię i zdefiniuj jej setupy</div>
+      <button class="btn-sm btn-accent" onclick="openNewStrategyInline()">+ Dodaj pierwszą strategię</button>
+    </div>`;
+    return;
+  }
+
+  el.innerHTML = strategies.map(s => {
+    const setups = getSetups(s.id);
+    return `
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;margin-bottom:16px;overflow:hidden">
+      <!-- Nagłówek strategii -->
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;background:var(--bg3);border-bottom:1px solid var(--border)">
+        <div>
+          <div style="font-family:var(--font-head);font-size:16px;font-weight:700">🎯 ${s.name}</div>
+          ${s.desc ? `<div style="font-size:12px;color:var(--text3);margin-top:2px">${s.desc}</div>` : ''}
+          <div style="font-size:11px;color:var(--text3);margin-top:4px">${s.points?.length||0} pkt checklisty · ${setups.length} setupów</div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button onclick="openSetupManager('${s.id}')" class="btn-sm btn-accent" style="font-size:11px">+ Setup</button>
+          <button onclick="openEditStrategy('${s.id}')" class="icon-btn" title="Edytuj strategię">✏️</button>
+          <button onclick="deleteStrategy('${s.id}')" class="icon-btn" style="color:var(--red)" title="Usuń">🗑</button>
+        </div>
+      </div>
+
+      <!-- Checklist strategii -->
+      ${s.points?.length ? `
+      <div style="padding:12px 20px;border-bottom:1px solid var(--border)">
+        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Checklist strategii</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          ${s.points.map((p, i) => `<span style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px">
+            <span style="color:var(--accent);font-weight:700">${i+1}.</span> ${p}
+          </span>`).join('')}
+        </div>
+      </div>` : ''}
+
+      <!-- Setupy -->
+      ${setups.length ? `
+      <div style="padding:12px 20px">
+        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Setupy (${setups.length})</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px">
+          ${setups.map(setup => `
+          <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+              <div style="font-weight:600;font-size:13px">📐 ${setup.name}</div>
+              <div style="display:flex;gap:4px">
+                <button onclick="openEditSetup('${setup.id}')" class="icon-btn" style="font-size:12px" title="Edytuj">✏️</button>
+                <button onclick="deleteSetup('${setup.id}')" class="icon-btn" style="font-size:12px;color:var(--red)" title="Usuń">🗑</button>
+              </div>
+            </div>
+            ${setup.desc ? `<div style="font-size:11px;color:var(--text3);margin-bottom:8px">${setup.desc}</div>` : ''}
+            ${setup.points?.length ? `
+            <div style="font-size:11px;color:var(--text3);margin-bottom:6px">${setup.points.length} warunków checklist</div>
+            <div style="display:flex;flex-direction:column;gap:3px">
+              ${setup.points.slice(0,3).map((p,i) => `<div style="font-size:11px;color:var(--text2)"><span style="color:var(--accent)">✓</span> ${p}</div>`).join('')}
+              ${setup.points.length > 3 ? `<div style="font-size:10px;color:var(--text3)">+${setup.points.length-3} więcej...</div>` : ''}
+            </div>` : ''}
+            ${setup.screenshots?.length ? `
+            <div style="display:flex;gap:4px;margin-top:8px;flex-wrap:wrap">
+              ${setup.screenshots.slice(0,3).map(img => `
+                <img src="${img}" style="width:60px;height:42px;object-fit:cover;border-radius:4px;cursor:pointer;border:1px solid var(--border)"
+                  onclick="openLightbox('${img}')">`).join('')}
+              ${setup.screenshots.length > 3 ? `<div style="width:60px;height:42px;background:var(--bg);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--text3)">+${setup.screenshots.length-3}</div>` : ''}
+            </div>` : ''}
+          </div>`).join('')}
+        </div>
+      </div>` : `
+      <div style="padding:12px 20px;text-align:center;color:var(--text3);font-size:12px">
+        Brak setupów — <a onclick="openSetupManager('${s.id}')" style="color:var(--accent);cursor:pointer">dodaj setup</a>
+      </div>`}
+    </div>`;
+  }).join('');
+}
+
+function openNewStrategyInline() {
+  openNewStrategy();
+  // Po zapisaniu odśwież widok
+  const origSave = window._origSaveStrategy || saveStrategy;
+}
+
+// Kalkulator prowizji w zakładce Narzędzia
+function initBrokerCalc() {
+  const sel = document.getElementById('bc-broker');
+  if (!sel || sel.options.length > 1) return;
+  Object.entries(BROKER_COMMISSIONS).forEach(([key, val]) => {
+    const opt = document.createElement('option');
+    opt.value = key;
+    opt.textContent = val.name;
+    sel.appendChild(opt);
+  });
+}
+
+function calcBrokerPreview() {
+  const brokerKey = document.getElementById('bc-broker')?.value;
+  const symbol    = (document.getElementById('bc-symbol')?.value||'').toUpperCase();
+  const size      = parseFloat(document.getElementById('bc-size')?.value) || 0;
+  const pnl       = parseFloat(document.getElementById('bc-pnl')?.value) || 0;
+  const el        = document.getElementById('bc-result');
+  if (!el) return;
+
+  if (!brokerKey) { el.innerHTML = '<div style="color:var(--text3)">Wybierz brokera...</div>'; return; }
+  if (!size) { el.innerHTML = '<div style="color:var(--text3)">Wpisz wolumen...</div>'; return; }
+
+  const broker = BROKER_COMMISSIONS[brokerKey];
+  const cost   = calcBrokerCost(symbol, size, pnl, brokerKey, 'taker');
+  const netPnl = cost ? pnl - cost : pnl;
+  const pipVal = PIP_VALUES[symbol] || 10;
+
+  let html = `
+    <div style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+      <div style="font-size:12px;color:var(--text3);margin-bottom:4px">Broker</div>
+      <div style="font-size:15px;font-weight:700">${broker.name}</div>
+    </div>`;
+
+  if (broker.type === 'percent') {
+    html += `
+    <div style="display:flex;justify-content:space-between;padding:5px 0"><span style="color:var(--text2)">Maker fee:</span><span>${broker.makerPct}%</span></div>
+    <div style="display:flex;justify-content:space-between;padding:5px 0"><span style="color:var(--text2)">Taker fee:</span><span>${broker.takerPct}%</span></div>`;
+  } else if (broker.type === 'commission') {
+    html += `<div style="display:flex;justify-content:space-between;padding:5px 0"><span style="color:var(--text2)">Prowizja round-trip:</span><span>$${broker.commission}/lot</span></div>`;
+  } else if (broker.type === 'spread') {
+    html += `<div style="display:flex;justify-content:space-between;padding:5px 0"><span style="color:var(--text2)">Spread:</span><span>${broker.spreadPips} pips</span></div>`;
+  } else if (broker.type === 'profit_split') {
+    html += `<div style="display:flex;justify-content:space-between;padding:5px 0"><span style="color:var(--text2)">Twój udział:</span><span style="color:var(--accent);font-weight:700">${broker.traderPct}%</span></div>`;
+  }
+
+  if (cost !== null) {
+    html += `
+    <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+      <div style="display:flex;justify-content:space-between;padding:5px 0">
+        <span style="color:var(--text2)">Koszt / prowizja:</span>
+        <span style="color:var(--red);font-weight:700">-$${cost.toFixed(2)}</span>
+      </div>
+      ${pnl ? `
+      <div style="display:flex;justify-content:space-between;padding:5px 0">
+        <span style="color:var(--text2)">P&L brutto:</span>
+        <span style="font-weight:600">${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:6px 0;border-top:1px solid var(--border);margin-top:4px">
+        <span style="font-weight:700">P&L netto:</span>
+        <span style="font-weight:800;font-size:18px;color:${netPnl >= 0 ? 'var(--accent)' : 'var(--red)'}">${netPnl >= 0 ? '+' : ''}$${netPnl.toFixed(2)}</span>
+      </div>` : ''}
+    </div>`;
+  }
+
+  el.innerHTML = html;
+}
+
+// Patch showPage żeby obsługiwał 'tools'
+
+
+
+// ── Formularz konta — wybór brokera ──────────────────────────────────────────
+function initAccountBrokerSelect() {
+  const sel = document.getElementById('acc-broker-key');
+  if (!sel) return;
+  // Grupuj brokerów
+  const groups = {
+    'Forex / CFD': ['axi_standard','axi_pro','axi_elite','capital_std','pepperstone','ic_markets','fp_markets','blackbull','saxo_bank','interactive','tradestation'],
+    'Crypto Spot': ['okx_spot','bybit_spot','bybit_eu','mexc_spot','binance_spot','binance_eu','bitget'],
+    'Crypto Futures': ['okx_futures','bybit_fut','mexc_futures','binance_fut'],
+    'Prop Firm': ['ftmo_80','ftmo_90','ftmo_custom','mfa_60','mfa_70','mfa_75','mfa_80','mfa_85','mfa_90','mfa_custom','prop_custom'],
+  };
+  sel.innerHTML = '<option value="">— Wybierz brokera —</option>';
+  Object.entries(groups).forEach(([groupName, keys]) => {
+    const og = document.createElement('optgroup');
+    og.label = groupName;
+    keys.forEach(key => {
+      const broker = BROKER_COMMISSIONS[key];
+      if (!broker) return;
+      const opt = document.createElement('option');
+      opt.value = key;
+      opt.textContent = broker.name;
+      og.appendChild(opt);
+    });
+    sel.appendChild(og);
+  });
+}
+
+function onAccBrokerChange() {
+  const sel    = document.getElementById('acc-broker-key');
+  const key    = sel?.value;
+  const broker = key ? BROKER_COMMISSIONS[key] : null;
+  const nameEl = document.getElementById('acc-broker');
+  const spreadRow    = document.getElementById('acc-spread-row');
+  const spreadEl     = document.getElementById('acc-spread');
+  const spreadDef    = document.getElementById('acc-spread-default');
+  const traderPctRow = document.getElementById('acc-trader-pct-row');
+  const traderPctEl  = document.getElementById('acc-trader-pct');
+
+  if (broker) {
+    if (nameEl) nameEl.value = broker.name;
+
+    // Spread — dla forex/CFD
+    if (broker.type === 'spread' || broker.type === 'commission') {
+      if (spreadRow) spreadRow.style.display = 'block';
+      const defaultSpread = broker.spreadPips || 0;
+      if (spreadEl && !spreadEl.value) spreadEl.value = defaultSpread || '';
+      if (spreadDef) spreadDef.textContent = defaultSpread ? 'Domyślny: ' + defaultSpread + ' pips' : '';
+    } else {
+      if (spreadRow) spreadRow.style.display = 'none';
+    }
+
+    // Udział w zysku — dla prop firmów
+    if (broker.type === 'profit_split') {
+      if (traderPctRow) traderPctRow.style.display = 'block';
+      if (traderPctEl && !traderPctEl.value) traderPctEl.value = broker.traderPct || 80;
+      updatePropSplitPreview();
+    } else {
+      if (traderPctRow) traderPctRow.style.display = 'none';
+    }
+  } else {
+    if (nameEl) nameEl.value = '';
+    if (spreadRow) spreadRow.style.display = 'none';
+    if (traderPctRow) traderPctRow.style.display = 'none';
+  }
+}
+
+function updatePropSplitPreview() {
+  const pct = parseFloat(document.getElementById('acc-trader-pct')?.value) || 80;
+  const el  = document.getElementById('prop-split-preview');
+  if (!el) return;
+  const firmPct = 100 - pct;
+  el.innerHTML = `Ty: <strong style="color:var(--accent)">${pct}%</strong> · Firma: <strong style="color:var(--red)">${firmPct}%</strong>`;
+  // Zaktualizuj tymczasowo wartość w BROKER_COMMISSIONS dla własnego
+  const key = document.getElementById('acc-broker-key')?.value;
+  if (key && BROKER_COMMISSIONS[key]) {
+    BROKER_COMMISSIONS[key].traderPct = pct;
+  }
+}
+
+// Zapisz brokerKey do konta
+const _origSaveAccount = typeof saveAccountUI === 'function' ? null : null;
 
 // ===== INIT =====
 async function appInit() {
