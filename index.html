@@ -2528,7 +2528,9 @@ function buildTradesTable(trades) {
       <th>P&L</th><th>Setup</th><th>Status</th><th>Akcje</th>
     </tr></thead>
     <tbody>
-    ${trades.map(t => `<tr style="cursor:pointer" onclick="openDetailModal('${t.id}')">
+    ${trades.map(t => {
+      const linkedAnalysis = t.linkedAnalysisId ? getAnalyses().find(a => a.id === t.linkedAnalysisId) : null;
+      return `<tr style="cursor:pointer" onclick="openDetailModal('${t.id}')">
       <td><strong class="mono">${t.symbol}</strong></td>
       <td><span class="badge badge-${t.dir.toLowerCase()}">${t.dir}</span></td>
       <td class="mono" style="font-size:12px">${formatDate(t.date)}</td>
@@ -2536,14 +2538,18 @@ function buildTradesTable(trades) {
       <td class="mono">${t.exit ?? '—'}</td>
       <td class="mono">${t.size ?? '—'}</td>
       <td class="${t.pnl > 0 ? 'pnl-pos' : t.pnl < 0 ? 'pnl-neg' : ''}">${t.pnl != null ? (t.pnl > 0 ? '+' : '') + fmt(t.pnl) : '—'}</td>
-      <td><span class="tag">${t.setup || '—'}</span></td>
+      <td>
+        <span class="tag">${t.setup || '—'}</span>
+        ${linkedAnalysis ? `<span onclick="event.stopPropagation();openEditAnalysis('${linkedAnalysis.id}')" title="${linkedAnalysis.title}" style="display:inline-flex;align-items:center;gap:3px;font-size:10px;padding:2px 6px;border-radius:4px;background:var(--blue-dim);color:var(--blue);cursor:pointer;margin-left:4px">🔗 Analiza</span>` : ''}
+      </td>
       <td><span class="badge badge-${t.status}">${t.status === 'open' ? 'Otwarta' : 'Zamknięta'}</span></td>
       <td><div class="action-btns" onclick="event.stopPropagation()">
         <button class="icon-btn" onclick="openDetailModal('${t.id}')" title="Szczegóły">👁</button>
         <button class="icon-btn" onclick="openEditModal('${t.id}')" title="Edytuj">✏️</button>
         <button class="icon-btn del" onclick="deleteTrade('${t.id}')" title="Usuń">🗑</button>
       </div></td>
-    </tr>`).join('')}
+    </tr>`;
+    }).join('')}
     </tbody></table>`;
 }
 
@@ -3151,6 +3157,17 @@ function renderDetailModal() {
 
   <!-- RIGHT COL -->
   <div class="dv-col">
+    <!-- Powiązana analiza -->
+    ${t.linkedAnalysisId ? (() => {
+      const la = getAnalyses().find(a => a.id === t.linkedAnalysisId);
+      return la ? `<div class="dv-card" style="border-color:var(--blue);background:var(--blue-dim)">
+        <div class="dv-card-head" style="color:var(--blue)">🔗 Powiązana analiza</div>
+        <div style="font-weight:700;font-size:13px;margin-bottom:4px">${escHtml(la.title)}</div>
+        ${la.symbol?`<div style="font-size:11px;color:var(--text3);margin-bottom:6px">${la.symbol}${la.tf?' · '+la.tf:''}</div>`:''}
+        ${la.content?`<div style="font-size:12px;color:var(--text2);line-height:1.6;max-height:80px;overflow:hidden">${escHtml(la.content.slice(0,300))}${la.content.length>300?'…':''}</div>`:''}
+        <button onclick="openEditAnalysis('${la.id}')" class="btn-sm" style="margin-top:8px;font-size:11px">📖 Otwórz analizę</button>
+      </div>` : '';
+    })() : ''}
     <!-- Analiza -->
     <div class="dv-card">
       <div class="dv-card-head">📝 Analiza przed wejściem</div>
@@ -7612,37 +7629,97 @@ function saveAnalysisAsTrade() {
   const pre    = _g('an-content')||'';
   const post   = _g('an-post')||'';
   const setup  = _g('an-setup')||'';
-  const entry  = _g('an-entry')||'';
-  const sl     = _g('an-sl')||'';
-  const tp     = _g('an-tp')||'';
-  const size   = _g('an-size')||'';
   const date   = _g('an-date')||nowDatetime();
   const screens = _anScreenshots.map(s=>s.dataUrl);
   const dir    = bias==='bullish'?'LONG':bias==='bearish'?'SHORT':'LONG';
+  const analysisId = _g('an-id') || null;
+
+  // Jeśli analiza ma powiązaną transakcję — pobierz jej dane
+  const linkedTradeId = _g('an-linked-trade-id') || '';
+  let entry = _g('an-entry')||'';
+  let sl    = _g('an-sl')||'';
+  let tp    = _g('an-tp')||'';
+  let size  = _g('an-size')||'';
+  let tradeSymbol = symbol;
+  let tradeDir    = dir;
+  let tradeDate   = date;
+  let tradeTf     = tf;
+  let linkedTrade = null;
+
+  if (linkedTradeId) {
+    linkedTrade = getTrades(state.currentAccountId).find(t => t.id === linkedTradeId);
+    if (linkedTrade) {
+      entry       = linkedTrade.entry  ?? entry;
+      sl          = linkedTrade.sl     ?? sl;
+      tp          = linkedTrade.tp     ?? tp;
+      size        = linkedTrade.size   ?? size;
+      tradeSymbol = linkedTrade.symbol || tradeSymbol;
+      tradeDir    = linkedTrade.dir    || tradeDir;
+      tradeDate   = linkedTrade.date   || tradeDate;
+      tradeTf     = linkedTrade.tf     || tradeTf;
+    }
+  }
+
+  // Zapisz analizę jeśli ma tytuł
   if (title) saveAnalysis(); else closeModal('analysis-modal');
-  state.editTradeId = null;
-  state.tempScreenshots = screens.map(s=>({id:genId(),dataUrl:s}));
+
+  // Jeśli powiązana transakcja istnieje — edytuj ją zamiast tworzyć nową
+  if (linkedTrade) {
+    state.editTradeId = linkedTrade.id;
+    state.tempScreenshots = [
+      ...(linkedTrade.screenshots||[]).map(s=>({id:genId(),dataUrl:s})),
+      ...screens.map(s=>({id:genId(),dataUrl:s}))
+    ];
+    document.getElementById('trade-id').value = linkedTrade.id;
+  } else {
+    state.editTradeId = null;
+    state.tempScreenshots = screens.map(s=>({id:genId(),dataUrl:s}));
+    document.getElementById('trade-id').value = '';
+  }
+
   _pnlManual = false; _draftKey = null;
-  ['trade-id','t-exit','t-pnl'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  document.getElementById('t-symbol').value  = symbol;
-  document.getElementById('t-date').value    = date.slice(0,16);
-  document.getElementById('t-dir').value     = dir;
-  document.getElementById('t-status').value  = 'open';
+  ['t-exit','t-pnl'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+
+  document.getElementById('t-symbol').value  = tradeSymbol;
+  document.getElementById('t-date').value    = tradeDate.slice(0,16);
+  document.getElementById('t-dir').value     = tradeDir;
+  document.getElementById('t-status').value  = linkedTrade?.status || 'open';
   document.getElementById('t-entry').value   = entry;
   document.getElementById('t-sl').value      = sl;
   document.getElementById('t-tp').value      = tp;
   document.getElementById('t-size').value    = size;
-  document.getElementById('t-setup').value   = setup;
-  document.getElementById('t-pre').value     = pre;
-  document.getElementById('t-post').value    = post;
-  document.getElementById('modal-title').textContent = '📈 Transakcja z analizy: '+(symbol||title);
-  setTfFromValue(tf||'H1'); toggleCloseFields(); renderScreenshotPreviews();
+  document.getElementById('t-setup').value   = setup || linkedTrade?.setup || '';
+
+  // Treść analizy jako pre-trade, poprzednia treść transakcji jako post jeśli istnieje
+  const existingPre = linkedTrade?.pre || '';
+  document.getElementById('t-pre').value  = pre || existingPre;
+  document.getElementById('t-post').value = post || linkedTrade?.post || '';
+
+  // Ustaw powiązanie z analizą
+  const linkedIdField = document.getElementById('t-linked-analysis-id');
+  if (linkedIdField && analysisId) linkedIdField.value = analysisId;
+
+  document.getElementById('modal-title').textContent = linkedTrade
+    ? '📈 Uzupełnij transakcję z analizy: ' + (tradeSymbol||title)
+    : '📈 Nowa transakcja z analizy: ' + (tradeSymbol||title);
+
+  setTfFromValue(tradeTf||'H1');
+  toggleCloseFields();
+  renderScreenshotPreviews();
   const _pp=document.getElementById('pnl-preview'); if(_pp)_pp.textContent='';
   const _pf=document.getElementById('t-pnl'); if(_pf)_pf.style.borderColor='';
   setAutosaveDot('idle');
+
+  // Wypełnij dropdown analizy
+  setTimeout(() => {
+    populateStrategySelects();
+    document.getElementById('trade-checklist-score').textContent='';
+    if (analysisId) populateLinkedAnalysisSelect(tradeSymbol, analysisId);
+  }, 50);
+
   openModal('trade-modal'); applyTfModeUI(); hookFormAutoSave();
   if(entry&&sl) autoPnl();
-  toast('Dane z analizy przeniesione ✓','success');
+  toast(linkedTrade ? 'Transakcja uzupełniona danymi z analizy ✓' : 'Dane z analizy przeniesione ✓','success');
 }
 
 function anAutosave() {
