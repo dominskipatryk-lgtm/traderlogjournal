@@ -7497,7 +7497,8 @@ function openNewAnalysis() {
   // Pokaż Trader Routine jeśli jeszcze nie dziś
   setTimeout(showRoutineModal, 600);
   ['an-id','an-title','an-symbol','an-bias','an-content','an-levels',
-   'an-entry','an-sl','an-tp','an-size','an-setup','an-post','an-tf-ticks'].forEach(id => {
+   'an-entry','an-sl','an-tp','an-size','an-setup','an-post','an-tf-ticks',
+   'an-linked-trade-id'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = '';
   });
   const typeEl = document.getElementById('an-type');
@@ -7513,6 +7514,7 @@ function openNewAnalysis() {
   setAnTfMode('time');
   renderAnScreenshots();
   renderAnLinkedTrades('');
+  populateLinkedTradeSelect('', '');
   anSetAutosaveDot('idle');
   setTimeout(() => { populateStrategySelects(); document.getElementById('an-checklist-score').textContent=''; }, 50);
   openModal('analysis-modal');
@@ -7539,6 +7541,7 @@ function openEditAnalysis(id) {
   setAnTfFromValue(a.tf||'');
   renderAnScreenshots();
   renderAnLinkedTrades(a.symbol||'');
+  populateLinkedTradeSelect(a.symbol||'', a.linkedTradeId||'');
   anSetAutosaveDot('idle');
   anCalcRR();
   openModal('analysis-modal');
