@@ -1270,6 +1270,11 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
           <option value="review">Przegląd tygodnia</option>
           <option value="other">Inne</option>
         </select>
+        <select class="filter-select" id="analysis-filter-status" onchange="renderAnalysisList()">
+          <option value="active">Aktywne</option>
+          <option value="all">Wszystkie</option>
+          <option value="archived">Archiwum</option>
+        </select>
       </div>
       <div id="analysis-list"></div>
     </div>
@@ -1458,6 +1463,21 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
               <label class="form-label-modal">Treść analizy / Opis</label>
               <textarea class="form-input-modal" id="an-content" style="min-height:140px;line-height:1.7"
                 placeholder="Opisz swoją analizę rynku, kluczowe poziomy, scenariusze, uzasadnienie..." oninput="anAutosave()"></textarea>
+            </div>
+
+            <!-- Powiązana transakcja -->
+            <div class="form-group-modal full">
+              <label class="form-label-modal" style="display:flex;align-items:center;justify-content:space-between">
+                <span>🔗 Powiązana transakcja</span>
+                <button type="button" onclick="clearLinkedTrade()" id="an-linked-clear" style="display:none;font-size:10px;color:var(--red);background:none;border:none;cursor:pointer">✕ Usuń powiązanie</button>
+              </label>
+              <div id="an-linked-trade-display" style="display:none;background:var(--bg3);border:1px solid var(--accent);border-radius:8px;padding:8px 12px;margin-bottom:6px;cursor:pointer;font-size:12px" onclick="goToLinkedTrade()">
+                <span style="color:var(--accent)">🔗</span> <span id="an-linked-trade-title"></span>
+              </div>
+              <select class="form-select-modal" id="an-linked-trade" onchange="onLinkedTradeChange()">
+                <option value="">— Brak powiązanej transakcji —</option>
+              </select>
+              <input type="hidden" id="an-linked-trade-id">
             </div>
 
             <!-- ROW 8: Wnioski (full) -->
@@ -1822,6 +1842,19 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
         <div class="form-group-modal">
           <label class="form-label-modal" data-i18n="trade_setup">Setup / Strategia</label>
           <input class="form-input-modal" id="t-setup" placeholder="np. SMC, ICT, Breakout">
+        </div>
+        <div class="form-group-modal full">
+          <label class="form-label-modal" style="display:flex;align-items:center;justify-content:space-between">
+            <span>Powiązana analiza</span>
+            <button type="button" onclick="clearLinkedAnalysis()" id="t-linked-clear" style="display:none;font-size:10px;color:var(--red);background:none;border:none;cursor:pointer">✕ Usuń powiązanie</button>
+          </label>
+          <div id="t-linked-analysis-display" style="display:none;background:var(--bg3);border:1px solid var(--accent);border-radius:8px;padding:8px 12px;margin-bottom:6px;cursor:pointer;font-size:12px" onclick="goToLinkedAnalysis()">
+            <span style="color:var(--accent)">🔗</span> <span id="t-linked-analysis-title"></span>
+          </div>
+          <select class="form-select-modal" id="t-linked-analysis" onchange="onLinkedAnalysisChange()">
+            <option value="">— Brak powiązanej analizy —</option>
+          </select>
+          <input type="hidden" id="t-linked-analysis-id">
         </div>
         <div class="form-group-modal full">
           <label class="form-label-modal">Analiza przed wejściem</label>
@@ -2878,7 +2911,11 @@ function openTradeModal() {
   renderScreenshotPreviews();
   toggleCloseFields();
   setAutosaveDot('idle');
-  setTimeout(() => { populateStrategySelects(); document.getElementById('trade-checklist-score').textContent=''; }, 50);
+  setTimeout(() => {
+    populateStrategySelects();
+    document.getElementById('trade-checklist-score').textContent='';
+    populateLinkedAnalysisSelect('', '');
+  }, 50);
   openModal('trade-modal');
   applyTfModeUI();
   hookFormAutoSave();
@@ -2907,14 +2944,18 @@ function openEditModal(id) {
   document.getElementById('t-pre').value = t.pre || '';
   document.getElementById('t-post').value = t.post || '';
   document.getElementById('modal-title').textContent = 'Edytuj: ' + t.symbol;
-  _draftKey = 'edit_' + id; // separate draft key for edits
+  _draftKey = 'edit_' + id;
   _pnlManual = false;
   const _pp2 = document.getElementById('pnl-preview'); if(_pp2) { _pp2.textContent=''; }
   const _pf2 = document.getElementById('t-pnl'); if(_pf2) _pf2.style.borderColor='';
   renderScreenshotPreviews();
   toggleCloseFields();
   setAutosaveDot('idle');
-  setTimeout(() => { populateStrategySelects(); document.getElementById('trade-checklist-score').textContent=''; }, 50);
+  setTimeout(() => {
+    populateStrategySelects();
+    document.getElementById('trade-checklist-score').textContent='';
+    populateLinkedAnalysisSelect(t.symbol || '', t.linkedAnalysisId || '');
+  }, 50);
   openModal('trade-modal');
   applyTfModeUI();
   hookFormAutoSave();
@@ -2968,6 +3009,7 @@ function saveTrade() {
     post: document.getElementById('t-post').value,
     screenshots: state.tempScreenshots.map(s => s.dataUrl),
     mt4Ticket: parseInt(document.getElementById('t-mt4-ticket')?.value) || null,
+    linkedAnalysisId: document.getElementById('t-linked-analysis-id')?.value || null,
   };
   const trades = getTrades(state.currentAccountId);
   const idx = trades.findIndex(t => t.id === id);
@@ -6940,14 +6982,20 @@ function renderAnalysisList() {
   if (!el) return;
 
   let analyses = getAnalyses();
-  const q = (document.getElementById('analysis-search')?.value||'').toLowerCase();
-  const instr = document.getElementById('analysis-filter-instr')?.value||'';
-  const type  = document.getElementById('analysis-filter-type')?.value||'';
+  const q      = (document.getElementById('analysis-search')?.value||'').toLowerCase();
+  const instr  = document.getElementById('analysis-filter-instr')?.value||'';
+  const type   = document.getElementById('analysis-filter-type')?.value||'';
+  const status = document.getElementById('analysis-filter-status')?.value||'active';
+
+  // Filtr statusu
+  if (status === 'active')   analyses = analyses.filter(a => !a.archived);
+  if (status === 'archived') analyses = analyses.filter(a => !!a.archived);
 
   // Populate instrument filter
   const instrSel = document.getElementById('analysis-filter-instr');
   if (instrSel) {
-    const symbols = [...new Set(analyses.map(a=>a.symbol).filter(Boolean))];
+    const allAnalyses = getAnalyses();
+    const symbols = [...new Set(allAnalyses.map(a=>a.symbol).filter(Boolean))];
     const cur = instrSel.value;
     instrSel.innerHTML = '<option value="">Wszystkie instrumenty</option>' +
       symbols.map(s=>`<option value="${s}" ${cur===s?'selected':''}>${s}</option>`).join('');
@@ -6960,29 +7008,39 @@ function renderAnalysisList() {
   const sorted = [...analyses].sort((a,b) => new Date(b.date) - new Date(a.date));
 
   if (!sorted.length) {
-    el.innerHTML = emptyState('🔍', q||instr||type ? 'Brak wyników' : 'Brak analiz',
-      'Kliknij + Nowa analiza aby zapisać pierwszą notatkę analityczną');
+    el.innerHTML = emptyState('🔍', q||instr||type ? 'Brak wyników' : status==='archived' ? 'Brak zarchiwizowanych analiz' : 'Brak analiz',
+      status==='archived' ? '' : 'Kliknij + Nowa analiza aby zapisać pierwszą notatkę analityczną');
     return;
   }
+
+  // Znajdź powiązane transakcje
+  const trades = getTrades(state.currentAccountId);
 
   el.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px">
     ${sorted.map(a => {
       const tp = AN_TYPES[a.type] || AN_TYPES.other;
       const bs = a.bias ? AN_BIAS[a.bias] : null;
-      return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:18px;cursor:pointer;transition:border-color .15s" onclick="openAnalysisDetail('${a.id}')" onmouseover="this.style.borderColor='var(--border2)'" onmouseout="this.style.borderColor='var(--border)'">
+      const linkedTrade = a.linkedTradeId ? trades.find(t => t.id === a.linkedTradeId) : null;
+      const isArchived = !!a.archived;
+      return `<div style="background:var(--bg2);border:1px solid ${isArchived?'var(--border)':'var(--border)'};border-radius:12px;padding:18px;cursor:pointer;transition:border-color .15s;${isArchived?'opacity:0.6':''}" onclick="openAnalysisDetail('${a.id}')" onmouseover="this.style.borderColor='var(--border2)'" onmouseout="this.style.borderColor='var(--border)'">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px">
           <div style="flex:1;min-width:0">
-            <div style="font-family:var(--font-head);font-size:15px;font-weight:700;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.title||'(bez tytułu)'}</div>
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+              ${isArchived?'<span style="font-size:10px;background:var(--bg3);color:var(--text3);padding:1px 6px;border-radius:4px">📦 Archiwum</span>':''}
+              <div style="font-family:var(--font-head);font-size:15px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.title||'(bez tytułu)'}</div>
+            </div>
             <div style="display:flex;gap:6px;flex-wrap:wrap">
               <span class="tag" style="font-size:10px">${tp.icon} ${tp.label}</span>
               ${a.symbol?`<span class="tag" style="font-size:10px;font-family:var(--font-mono);font-weight:600">${a.symbol}</span>`:''}
               ${a.tf?`<span class="tag" style="font-size:10px">${a.tf}</span>`:''}
               ${bs?`<span style="font-size:10px;padding:2px 7px;border-radius:4px;background:${a.bias==='bullish'?'var(--green-dim)':a.bias==='bearish'?'var(--red-dim)':'var(--amber-dim)'};color:${a.bias==='bullish'?'var(--green)':a.bias==='bearish'?'var(--red)':'var(--amber)'}">${bs.icon} ${bs.label}</span>`:''}
+              ${linkedTrade?`<span style="font-size:10px;padding:2px 7px;border-radius:4px;background:var(--blue-dim);color:var(--blue)">🔗 ${linkedTrade.symbol} ${linkedTrade.dir}</span>`:''}
             </div>
           </div>
           <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;margin-left:8px;flex-shrink:0">
             <div style="font-size:11px;color:var(--text3);font-family:var(--font-mono)">${formatDate(a.date).slice(0,10)}</div>
             <div style="display:flex;gap:4px" onclick="event.stopPropagation()">
+              <button class="icon-btn" onclick="archiveAnalysis('${a.id}')" title="${isArchived?'Przywróć':'Archiwizuj'}" style="font-size:13px">${isArchived?'📤':'📦'}</button>
               <button class="icon-btn" onclick="openEditAnalysis('${a.id}')" title="Edytuj">✏️</button>
               <button class="icon-btn del" onclick="deleteAnalysis('${a.id}')" title="Usuń">🗑</button>
             </div>
@@ -7012,6 +7070,173 @@ function anSetAutosaveDot(state) {
   if (!dot) return;
   dot.className = 'autosave-dot ' + state;
   if (lbl) lbl.textContent = state==='saved'?'Szkic zapisany':state==='saving'?'Zapisuję...':'auto-zapis';
+}
+
+// ═══ ARCHIVE ANALYSES ═══
+function archiveAnalysis(id) {
+  const analyses = getAnalyses();
+  const idx = analyses.findIndex(a => a.id === id);
+  if (idx < 0) return;
+  analyses[idx].archived = !analyses[idx].archived;
+  saveAnalyses(analyses);
+  renderAnalysisList();
+  toast(analyses[idx].archived ? 'Analiza zarchiwizowana' : 'Analiza przywrócona', 'success');
+}
+
+// ═══ TRADE ↔ ANALYSIS LINKING ═══
+
+// Wypełnij dropdown analiz w formularzu transakcji
+function populateLinkedAnalysisSelect(symbol, currentLinkedId) {
+  const sel = document.getElementById('t-linked-analysis');
+  if (!sel) return;
+  const analyses = getAnalyses().filter(a => !a.archived);
+  const matching = analyses.filter(a => !symbol || a.symbol === symbol);
+  const others   = analyses.filter(a => symbol && a.symbol !== symbol);
+
+  sel.innerHTML = '<option value="">— Brak powiązanej analizy —</option>';
+  if (matching.length) {
+    const grp = document.createElement('optgroup');
+    grp.label = symbol ? symbol + ' — pasujące' : 'Analizy';
+    matching.forEach(a => {
+      const opt = document.createElement('option');
+      opt.value = a.id;
+      opt.textContent = (a.symbol ? '[' + a.symbol + '] ' : '') + a.title + ' · ' + formatDate(a.date).slice(0,10);
+      if (a.id === currentLinkedId) opt.selected = true;
+      grp.appendChild(opt);
+    });
+    sel.appendChild(grp);
+  }
+  if (others.length) {
+    const grp2 = document.createElement('optgroup');
+    grp2.label = 'Pozostałe analizy';
+    others.forEach(a => {
+      const opt = document.createElement('option');
+      opt.value = a.id;
+      opt.textContent = (a.symbol ? '[' + a.symbol + '] ' : '') + a.title + ' · ' + formatDate(a.date).slice(0,10);
+      if (a.id === currentLinkedId) opt.selected = true;
+      grp2.appendChild(opt);
+    });
+    sel.appendChild(grp2);
+  }
+
+  updateLinkedAnalysisDisplay(currentLinkedId);
+}
+
+function onLinkedAnalysisChange() {
+  const id = document.getElementById('t-linked-analysis')?.value;
+  document.getElementById('t-linked-analysis-id').value = id || '';
+  updateLinkedAnalysisDisplay(id);
+}
+
+function updateLinkedAnalysisDisplay(id) {
+  const display = document.getElementById('t-linked-analysis-display');
+  const title   = document.getElementById('t-linked-analysis-title');
+  const clearBtn = document.getElementById('t-linked-clear');
+  if (!display) return;
+  if (id) {
+    const a = getAnalyses().find(x => x.id === id);
+    if (a) {
+      title.textContent = (a.symbol ? '[' + a.symbol + '] ' : '') + a.title;
+      display.style.display = 'block';
+      clearBtn.style.display = 'inline';
+      document.getElementById('t-linked-analysis').style.display = 'none';
+      return;
+    }
+  }
+  display.style.display = 'none';
+  clearBtn.style.display = 'none';
+  document.getElementById('t-linked-analysis').style.display = 'block';
+}
+
+function clearLinkedAnalysis() {
+  document.getElementById('t-linked-analysis').value = '';
+  document.getElementById('t-linked-analysis-id').value = '';
+  updateLinkedAnalysisDisplay('');
+}
+
+function goToLinkedAnalysis() {
+  const id = document.getElementById('t-linked-analysis-id')?.value;
+  if (!id) return;
+  closeModal('trade-modal');
+  showPage('analysis');
+  setTimeout(() => openAnalysisDetail(id), 300);
+}
+
+// Wypełnij dropdown transakcji w formularzu analizy
+function populateLinkedTradeSelect(symbol, currentLinkedId) {
+  const sel = document.getElementById('an-linked-trade');
+  if (!sel) return;
+  const trades = getTrades(state.currentAccountId);
+  const matching = trades.filter(t => !symbol || t.symbol === symbol);
+  const others   = trades.filter(t => symbol && t.symbol !== symbol);
+
+  sel.innerHTML = '<option value="">— Brak powiązanej transakcji —</option>';
+  if (matching.length) {
+    const grp = document.createElement('optgroup');
+    grp.label = symbol ? symbol + ' — pasujące' : 'Transakcje';
+    matching.forEach(t => {
+      const opt = document.createElement('option');
+      opt.value = t.id;
+      opt.textContent = t.symbol + ' ' + (t.dir||'') + ' · ' + (t.date||'').slice(0,10) + (t.status==='closed'?' ✓':'');
+      if (t.id === currentLinkedId) opt.selected = true;
+      grp.appendChild(opt);
+    });
+    sel.appendChild(grp);
+  }
+  if (others.length) {
+    const grp2 = document.createElement('optgroup');
+    grp2.label = 'Pozostałe transakcje';
+    others.forEach(t => {
+      const opt = document.createElement('option');
+      opt.value = t.id;
+      opt.textContent = t.symbol + ' ' + (t.dir||'') + ' · ' + (t.date||'').slice(0,10) + (t.status==='closed'?' ✓':'');
+      if (t.id === currentLinkedId) opt.selected = true;
+      grp2.appendChild(opt);
+    });
+    sel.appendChild(grp2);
+  }
+
+  updateLinkedTradeDisplay(currentLinkedId);
+}
+
+function onLinkedTradeChange() {
+  const id = document.getElementById('an-linked-trade')?.value;
+  document.getElementById('an-linked-trade-id').value = id || '';
+  updateLinkedTradeDisplay(id);
+}
+
+function updateLinkedTradeDisplay(id) {
+  const display  = document.getElementById('an-linked-trade-display');
+  const title    = document.getElementById('an-linked-trade-title');
+  const clearBtn = document.getElementById('an-linked-clear');
+  if (!display) return;
+  if (id) {
+    const t = getTrades(state.currentAccountId).find(x => x.id === id);
+    if (t) {
+      title.textContent = t.symbol + ' ' + (t.dir||'') + ' · ' + (t.date||'').slice(0,10);
+      display.style.display = 'block';
+      clearBtn.style.display = 'inline';
+      document.getElementById('an-linked-trade').style.display = 'none';
+      return;
+    }
+  }
+  display.style.display = 'none';
+  clearBtn.style.display = 'none';
+  document.getElementById('an-linked-trade').style.display = 'block';
+}
+
+function clearLinkedTrade() {
+  document.getElementById('an-linked-trade').value = '';
+  document.getElementById('an-linked-trade-id').value = '';
+  updateLinkedTradeDisplay('');
+}
+
+function goToLinkedTrade() {
+  const id = document.getElementById('an-linked-trade-id')?.value;
+  if (!id) return;
+  closeModal('analysis-modal');
+  showPage('trades');
+  setTimeout(() => openEditModal(id), 300);
 }
 
 // ── Linked trades ─────────────────────────────────────────────────────────────
@@ -7333,6 +7558,7 @@ function saveAnalysis() {
     setup:       g('an-setup')||'',
     post:        g('an-post')||'',
     screenshots: _anScreenshots ? _anScreenshots.map(s=>s.dataUrl) : [],
+    linkedTradeId: g('an-linked-trade-id') || null,
     updatedAt:   Date.now(),
   };
   const analyses = getAnalyses();
@@ -8308,7 +8534,7 @@ function openTradeFromMT4(signal) {
     tps:       [],
     exit:      null,
     pnl:       null,
-    tf:        'H1',
+    tf:        signal.tf || 'H1',
     setup:     '',
     pre:       '[MT4 #' + signal.ticket + '] ' + signal.symbol + ' ' + signal.direction + ' @ ' + signal.entry,
     post:      '',
