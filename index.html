@@ -4,13 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TraderLogJournal</title>
-<!-- Security Headers -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js" onerror="(function(){var s=document.createElement('script');s.src='https://unpkg.com/@supabase/supabase-js@2.39.3/dist/umd/supabase.js';document.head.appendChild(s)})()"></script>
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https: data: blob:;">
-  <meta http-equiv="X-Content-Type-Options" content="nosniff">
-  <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js" 
-    onerror="(function(){var s=document.createElement('script');s.src='https://unpkg.com/@supabase/supabase-js@2.39.3/dist/umd/supabase.js';document.head.appendChild(s)})()"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -631,27 +627,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 .color-swatch { width: 24px; height: 24px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: all .15s; }
 .color-swatch.selected { border-color: #fff; transform: scale(1.1); }
 .color-row { display: flex; gap: 8px; flex-wrap: wrap; }
-
-    .routine-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 12px;
-      padding: 10px 12px;
-      border-radius: 8px;
-      cursor: pointer;
-      margin-bottom: 6px;
-      border: 1px solid transparent;
-      transition: all .15s;
-    }
-    .routine-item:hover { background: var(--bg3); border-color: var(--border); }
-    .routine-item.done { background: rgba(0,212,161,.08); border-color: rgba(0,212,161,.2); }
-    .routine-item.done .routine-title { text-decoration: line-through; color: var(--text3); }
-    .routine-icon { font-size: 20px; min-width: 28px; text-align: center; margin-top: 1px; }
-    .routine-title { font-size: 13px; font-weight: 600; color: var(--text); line-height: 1.3; }
-    .routine-sub { font-size: 11px; color: var(--text3); margin-top: 2px; line-height: 1.4; }
-    .routine-item.done .routine-icon::after { content: " ✓"; font-size: 12px; color: var(--accent); }
-
-  </style>
+</style>
 </head>
 <body>
 
@@ -682,28 +658,6 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
         </div>
       </div>
       <button class="btn-primary" type="button" onclick="doLogin()">Zaloguj się</button>
-
-      <div style="display:flex;align-items:center;gap:10px;margin:14px 0">
-        <div style="flex:1;height:1px;background:var(--border)"></div>
-        <span style="font-size:12px;color:var(--text3)">lub zaloguj przez</span>
-        <div style="flex:1;height:1px;background:var(--border)"></div>
-      </div>
-
-      <button onclick="loginWithGoogle()"
-        style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px;padding:11px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;color:var(--text)"
-        onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border2)'">
-        <svg width="18" height="18" viewBox="0 0 24 24">
-          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-        </svg>
-        Zaloguj przez Google
-      </button>
-
-
-
-
       <div class="auth-demo" style="margin-top:12px">
         <a onclick="switchAuthTab('forgot')" style="color:var(--text3)">Zapomniałem hasła?</a>
       </div>
@@ -747,13 +701,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 
     <!-- FORGOT PASSWORD -->
     <div id="forgot-form" style="display:none">
-      <div class="form-group">
-        <label class="form-label">Adres e-mail</label>
-        <input class="form-input" id="forgot-email" type="email" placeholder="twój@email.com"
-          onkeydown="if(event.key==='Enter')doForgotRequest()">
-      </div>
-      <button class="btn-primary" onclick="doForgotRequest()">📧 Wyślij link do resetowania</button>
-      <div id="forgot-result" style="margin-top:16px;display:none">
+      <div id="forgot-result" style="margin-top:0">
 
         <!-- Jedyna opcja: Kod odzyskiwania -->
         <div style="background:var(--bg3);border:1px solid var(--amber);border-radius:10px;padding:16px">
@@ -867,14 +815,14 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
     <div id="page-summary" class="page">
       <!-- KALENDARZ TRANSAKCJI -->
       <div style="margin-bottom:28px">
-        
+
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
         <div>
           <div class="page-title" data-i18n="cal_title">Kalendarz Transakcji</div>
           <div class="page-subtitle" id="s-cal-subtitle">Kliknij w dzień aby zobaczyć transakcje</div>
         </div>
         <div style="display:flex;align-items:center;gap:10px">
-          <select class="filter-select" id="s-cal-view-mode" onchange="renderCalendar()" style="font-size:13px">
+          <select class="filter-select" id="s-cal-view-mode" onchange="renderCalendarSummary()" style="font-size:13px">
             <option value="month">Widok miesięczny</option>
             <option value="year">Widok roczny</option>
           </select>
@@ -882,9 +830,9 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
       </div>
       <!-- Nav row -->
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-        <button class="btn-sm" id="s-cal-prev" onclick="calNav(-1)">← Poprzedni</button>
+        <button class="btn-sm" id="s-cal-prev" onclick="calNavSummary(-1)">← Poprzedni</button>
         <div id="s-cal-period-label" style="font-family:var(--font-head);font-size:20px;font-weight:700;letter-spacing:-0.5px"></div>
-        <button class="btn-sm" id="s-cal-next" onclick="calNav(1)">Następny →</button>
+        <button class="btn-sm" id="s-cal-next" onclick="calNavSummary(1)">Następny →</button>
       </div>
       <!-- Legend -->
       <div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap" id="s-cal-legend">
@@ -909,13 +857,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
       </div>
       <!-- PODSUMOWANIE -->
       <div class="page-title">Podsumowanie konta</div>
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
-        <div class="page-subtitle" id="summary-subtitle">Szczegółowe statystyki</div>
-        <div style="display:flex;gap:8px">
-          <button class="btn-sm btn-accent" onclick="quickReport('pdf')" style="font-size:12px">📄 Raport PDF</button>
-          <button class="btn-sm" onclick="quickReport('excel')" style="font-size:12px">📊 Excel</button>
-        </div>
-      </div>
+      <div class="page-subtitle" id="summary-subtitle">Szczegółowe statystyki</div>
       <div id="summary-content"></div>
     </div>
 
@@ -928,25 +870,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 
     <!-- CALCULATOR PAGE -->
     <div id="page-tools" class="page">
-      <!-- NARZĘDZIA — zakładki -->
-      <div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:24px">
-        <button class="tools-tab active" onclick="switchToolsTab('calculator')" id="ttab-calculator"
-          style="padding:10px 20px;background:none;border:none;color:var(--text);font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid var(--accent);margin-bottom:-2px">
-          🔢 Kalkulator pozycji
-        </button>
-        <button class="tools-tab" onclick="switchToolsTab('strategies')" id="ttab-strategies"
-          style="padding:10px 20px;background:none;border:none;color:var(--text3);font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px">
-          🎯 Strategie i Setupy
-        </button>
-        <button class="tools-tab" onclick="switchToolsTab('brokers')" id="ttab-brokers"
-          style="padding:10px 20px;background:none;border:none;color:var(--text3);font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px">
-          💱 Kalkulator prowizji
-        </button>
-      </div>
-
-      <!-- TAB: Kalkulator pozycji -->
-      <div id="tools-tab-calculator">
-        <div class="page-title" data-i18n="page_calc">Kalkulator Pozycji</div>
+      <div class="page-title" data-i18n="page_calc">Kalkulator Pozycji</div>
       <div class="page-subtitle" data-i18n="calc_subtitle">Przeliczaj jednostki TradingView na loty · zarządzaj ryzykiem i R:R</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:960px">
         <div class="summary-card" style="grid-column:1/-1">
@@ -1010,70 +934,8 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
       </div>
     </div>
 
-
     <!-- SETTINGS PAGE -->
-    <div 
-      </div>
-
-      <!-- TAB: Strategie i Setupy -->
-      <div id="tools-tab-strategies" style="display:none">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
-          <div>
-            <div class="page-title">🎯 Strategie i Setupy</div>
-            <div class="page-subtitle">Zdefiniuj swoje strategie, setupy i ich założenia</div>
-          </div>
-          <button class="btn-sm btn-accent" onclick="openNewStrategyInline()">+ Nowa strategia</button>
-        </div>
-        <div id="tools-strategies-container">
-          <div style="color:var(--text3);font-size:13px;text-align:center;padding:40px">⏳ Ładowanie...</div>
-        </div>
-      </div>
-
-      <!-- TAB: Kalkulator prowizji -->
-      <div id="tools-tab-brokers" style="display:none">
-        <div class="page-title" style="margin-bottom:20px">💱 Kalkulator kosztów transakcji</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
-          <div class="summary-card">
-            <div class="summary-card-title">Dane transakcji</div>
-            <div style="display:flex;flex-direction:column;gap:10px;margin-top:12px">
-              <div>
-                <label class="form-label" style="font-size:11px">Broker</label>
-                <select id="bc-broker" onchange="calcBrokerPreview()"
-                  style="width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px 8px;font-size:13px">
-                  <option value="">— Wybierz brokera —</option>
-                </select>
-              </div>
-              <div>
-                <label class="form-label" style="font-size:11px">Instrument</label>
-                <input id="bc-symbol" type="text" placeholder="np. EURUSD, XAUUSD, BTCUSD"
-                  oninput="calcBrokerPreview()"
-                  style="width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px 8px;font-size:13px">
-              </div>
-              <div>
-                <label class="form-label" style="font-size:11px">Wolumen (loty)</label>
-                <input id="bc-size" type="number" step="0.01" placeholder="1.00"
-                  oninput="calcBrokerPreview()"
-                  style="width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px 8px;font-size:13px">
-              </div>
-              <div>
-                <label class="form-label" style="font-size:11px">P&L brutto (USD)</label>
-                <input id="bc-pnl" type="number" step="any" placeholder="0.00"
-                  oninput="calcBrokerPreview()"
-                  style="width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px 8px;font-size:13px">
-              </div>
-            </div>
-          </div>
-          <div class="summary-card">
-            <div class="summary-card-title">Wynik kalkulacji</div>
-            <div id="bc-result" style="margin-top:12px;color:var(--text3);font-size:13px;text-align:center;padding:20px">
-              Wybierz brokera i wpisz dane...
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="page" id="page-settings">
+    <div id="page-settings" class="page">
       <div class="page-title" data-i18n="sett_title">Ustawienia konta</div>
       <div class="page-subtitle" id="settings-subtitle"></div>
       <div style="max-width:600px">
@@ -1167,47 +1029,6 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
         </div>
 
         <div class="settings-section">
-          <div class="settings-section-title">🎯 Strategie tradingowe</div>
-          <p style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.6">
-            Zdefiniuj swoje strategie i ich założenia. Podczas analizy odznacz punkty checklisty aby nie pominąć żadnego warunku.
-          </p>
-          <button class="btn-sm btn-accent" onclick="openStrategyManager()" style="font-size:12px">🎯 Zarządzaj strategiami</button>
-        </div>
-
-        <div class="settings-section">
-          <div class="settings-section-title">📊 Raport miesięczny</div>
-          <p style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.6">
-            Generuj raport do rozliczeń z urzędem skarbowym. Zawiera zestawienie wszystkich transakcji, zyski/straty i podatek do zapłaty.
-          </p>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
-            <div>
-              <label class="form-label" style="font-size:11px">Miesiąc</label>
-              <select class="filter-select" id="report-month" style="width:100%">
-                <option value="1">Styczeń</option><option value="2">Luty</option>
-                <option value="3">Marzec</option><option value="4">Kwiecień</option>
-                <option value="5">Maj</option><option value="6">Czerwiec</option>
-                <option value="7">Lipiec</option><option value="8">Sierpień</option>
-                <option value="9">Wrzesień</option><option value="10">Październik</option>
-                <option value="11">Listopad</option><option value="12">Grudzień</option>
-              </select>
-            </div>
-            <div>
-              <label class="form-label" style="font-size:11px">Rok</label>
-              <select class="filter-select" id="report-year" style="width:100%">
-                <option value="2024">2024</option>
-                <option value="2025">2025</option>
-                <option value="2026" selected>2026</option>
-              </select>
-            </div>
-          </div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button class="btn-sm btn-accent" onclick="generateReportPDF()" style="font-size:12px">📄 Pobierz PDF</button>
-            <button class="btn-sm" onclick="generateReportExcel()" style="font-size:12px">📊 Pobierz Excel</button>
-          </div>
-          <div id="report-status" style="margin-top:8px;font-size:12px;color:var(--text3)"></div>
-        </div>
-
-        <div class="settings-section">
           <div class="settings-section-title">💾 Kopia zapasowa danych</div>
           <p style="font-size:13px;color:var(--text2);margin-bottom:18px;line-height:1.6">
             Wybierz metodę tworzenia kopii zapasowej swoich transakcji. Możesz aktywować kilka jednocześnie.
@@ -1270,97 +1091,12 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
       </div>
     </div>
 
-
-    <!-- WITHDRAWAL / BALANCE MODAL -->
-    <div class="modal-overlay" id="withdrawal-modal">
-      <div class="modal" style="max-width:500px">
-        <div class="modal-header">
-          <div class="modal-title">💸 Wypłata / Bilansowanie konta</div>
-          <button class="modal-close" onclick="closeModal('withdrawal-modal')">✕</button>
-        </div>
-        <div class="modal-body">
-          <div id="balance-info" style="background:var(--bg3);border-radius:10px;padding:14px;margin-bottom:16px"></div>
-
-          <div style="margin-bottom:14px">
-            <label class="form-label-modal">Typ operacji</label>
-            <select class="form-select-modal" id="withdrawal-type" onchange="updateWithdrawalCalc()">
-              <option value="withdrawal">💸 Wypłata środków</option>
-              <option value="deposit">💰 Wpłata środków</option>
-              <option value="balance">⚖️ Bilansowanie do stanu faktycznego</option>
-            </select>
-          </div>
-
-          <div id="withdrawal-amount-section">
-            <label class="form-label-modal">Kwota (USD)</label>
-            <input class="form-input-modal" id="withdrawal-amount" type="number" step="any"
-              placeholder="0.00" oninput="updateWithdrawalCalc()">
-          </div>
-
-          <div id="balance-actual-section" style="display:none">
-            <label class="form-label-modal">Aktualny stan konta u brokera (USD)</label>
-            <input class="form-input-modal" id="balance-actual" type="number" step="any"
-              placeholder="Wpisz rzeczywisty stan konta" oninput="updateWithdrawalCalc()">
-          </div>
-
-          <div id="withdrawal-calc" style="margin-top:14px;padding:14px;background:var(--bg);border-radius:10px;display:none">
-          </div>
-
-          <div class="form-group-modal" style="margin-top:14px">
-            <label class="form-label-modal">Opis / Notatka</label>
-            <input class="form-input-modal" id="withdrawal-note" placeholder="np. Wypłata zysku za maj 2026">
-          </div>
-          <div class="form-group-modal">
-            <label class="form-label-modal">Data operacji</label>
-            <input class="form-input-modal" id="withdrawal-date" type="datetime-local">
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn-sm" onclick="closeModal('withdrawal-modal')">Anuluj</button>
-          <button class="btn-sm btn-accent" onclick="saveWithdrawal()">✓ Zatwierdź operację</button>
-        </div>
-      </div>
-    </div>
-
     <!-- ANALYSIS MODAL -->
     <div class="modal-overlay" id="analysis-modal">
       <div class="modal" style="max-width:860px">
         <div class="modal-header">
           <div class="modal-title" id="analysis-modal-title">Nowa analiza</div>
           <button class="modal-close" onclick="closeModal('analysis-modal')">✕</button>
-        </div>
-        <!-- Strategy + Setup bar -->
-        <div style="padding:10px 20px;background:var(--bg);border-bottom:1px solid var(--border)">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-            <span style="font-size:11px;color:var(--text3);white-space:nowrap;min-width:70px">🎯 Strategia:</span>
-            <select id="an-strategy-select" onchange="onStrategyChange('an')"
-              style="flex:1;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer">
-              <option value="">— Wybierz strategię —</option>
-            </select>
-            <button id="an-checklist-btn" onclick="openChecklistFromForm('an')"
-              style="display:none;background:var(--accent);color:#000;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">
-              ✅ Checklist
-            </button>
-            <div id="an-checklist-score" style="font-size:11px;white-space:nowrap"></div>
-          </div>
-          <div id="an-setup-row" style="display:none;align-items:center;gap:8px">
-            <span style="font-size:11px;color:var(--text3);white-space:nowrap;min-width:70px">📐 Setup:</span>
-            <select id="an-setup-select" onchange="onSetupChange('an')"
-              style="flex:1;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer">
-              <option value="">— Wybierz setup —</option>
-            </select>
-            <button onclick="openSetupManager(document.getElementById('an-strategy-select').value)"
-              style="background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;white-space:nowrap">
-              ⚙ Zarządzaj
-            </button>
-          </div>
-          <div id="an-setup-screenshots-bar" style="display:none;margin-top:8px">
-            <div style="font-size:11px;color:var(--text3);margin-bottom:4px">📸 Screenshoty setupu:</div>
-            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap" id="an-setup-screenshots-list"></div>
-            <label style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--accent);margin-top:4px;padding:3px 8px;border:1px dashed var(--accent);border-radius:6px">
-              + Dodaj screenshot
-              <input type="file" accept="image/*" multiple style="display:none" onchange="addSetupScreenshots('an', this)">
-            </label>
-          </div>
         </div>
         <div class="modal-body">
           <input type="hidden" id="an-id">
@@ -1581,9 +1317,39 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
     <div id="page-admin" class="page">
       <div class="page-title" data-i18n="adm_title">Panel Administratora</div>
       <div class="page-subtitle" data-i18n="adm_subtitle">Zarządzaj użytkownikami i danymi systemu</div>
-      <div id="admin-content">
-        <div style="text-align:center;padding:40px;color:var(--text3)">⏳ Ładowanie...</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:28px" id="admin-stats-row"></div>
+      <div style="display:grid;grid-template-columns:2fr 1fr;gap:20px">
+        <div>
+          <div class="section-header">
+            <div class="section-title">Użytkownicy</div>
+            <button class="btn-sm btn-accent" onclick="openAddUserModal()">+ Dodaj użytkownika</button>
+          </div>
+          <div class="table-wrap" id="admin-users-table"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div class="summary-card">
+            <div class="summary-card-title" style="color:var(--amber)">💾 Dane i backup</div>
+            <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px">
+              <button class="btn-sm btn-accent" onclick="adminExport()" style="width:100%">📤 Eksportuj wszystkie dane</button>
+              <button class="btn-sm" onclick="adminImport()" style="width:100%">📥 Importuj dane (backup)</button>
+              <div id="db-path-info" style="font-size:11px;color:var(--text3);margin-top:4px;word-break:break-all"></div>
+            </div>
+          </div>
+          <div class="summary-card">
+            <div class="summary-card-title" style="color:var(--blue)">ℹ️ Informacje</div>
+            <div style="font-size:12px;color:var(--text2);line-height:2" id="admin-info-box"></div>
+          </div>
+          <div class="summary-card" style="border-color:var(--red)">
+            <div class="summary-card-title" style="color:var(--red)">⚠️ Strefa niebezpieczna</div>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:12px">Usuwa wszystkie dane wszystkich użytkowników. Nieodwracalne!</div>
+            <button class="btn-sm" onclick="adminNukeAll()" style="width:100%;color:var(--red);border-color:var(--red)">🗑 Wyczyść całą bazę</button>
+          </div>
+        </div>
+      </div>
     </div>
+
+  </div>
+</div>
 
 <!-- TRADE MODAL -->
 <div class="modal-overlay" id="trade-modal">
@@ -1591,40 +1357,6 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
     <div class="modal-header">
       <div class="modal-title" id="modal-title">Nowa transakcja</div>
       <button class="modal-close" onclick="closeModal('trade-modal')">✕</button>
-    </div>
-    <!-- Strategy + Setup bar -->
-    <div style="padding:10px 20px;background:var(--bg);border-bottom:1px solid var(--border)">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-        <span style="font-size:11px;color:var(--text3);white-space:nowrap;min-width:70px">🎯 Strategia:</span>
-        <select id="trade-strategy-select" onchange="onStrategyChange('trade')"
-          style="flex:1;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer">
-          <option value="">— Wybierz strategię —</option>
-        </select>
-        <button id="trade-checklist-btn" onclick="openChecklistFromForm('trade')"
-          style="display:none;background:var(--accent);color:#000;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">
-          ✅ Checklist
-        </button>
-        <div id="trade-checklist-score" style="font-size:11px;white-space:nowrap"></div>
-      </div>
-      <div id="trade-setup-row" style="display:none;align-items:center;gap:8px">
-        <span style="font-size:11px;color:var(--text3);white-space:nowrap;min-width:70px">📐 Setup:</span>
-        <select id="trade-setup-select" onchange="onSetupChange('trade')"
-          style="flex:1;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer">
-          <option value="">— Wybierz setup —</option>
-        </select>
-        <button onclick="openSetupManager(document.getElementById('trade-strategy-select').value)"
-          style="background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;white-space:nowrap">
-          ⚙ Zarządzaj
-        </button>
-      </div>
-      <div id="trade-setup-screenshots-bar" style="display:none;margin-top:8px">
-        <div style="font-size:11px;color:var(--text3);margin-bottom:4px">📸 Screenshoty setupu:</div>
-        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap" id="trade-setup-screenshots-list"></div>
-        <label style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--accent);margin-top:4px;padding:3px 8px;border:1px dashed var(--accent);border-radius:6px">
-          + Dodaj screenshot
-          <input type="file" accept="image/*" multiple style="display:none" onchange="addSetupScreenshots('trade', this)">
-        </label>
-      </div>
     </div>
     <div class="modal-body">
       <input type="hidden" id="trade-id">
@@ -1660,7 +1392,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
         </div>
         <div class="form-group-modal">
           <label class="form-label-modal" data-i18n="trade_dir">Kierunek</label>
-          <select class="form-select-modal" id="t-dir" onchange="autoPnl();updateCommissionDisplay();updateSwapDisplay()" onchange="autoPnl()">
+          <select class="form-select-modal" id="t-dir" onchange="autoPnl()">
             <option value="LONG">LONG</option>
             <option value="SHORT">SHORT</option>
           </select>
@@ -1881,31 +1613,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
       </div>
       <div class="form-group-modal" style="margin-bottom:16px">
         <label class="form-label-modal">Broker / Giełda</label>
-        <select class="form-select-modal" id="acc-broker-key" onchange="onAccBrokerChange()" style="margin-bottom:6px">
-          <option value="">— Wybierz brokera —</option>
-        </select>
-        <input class="form-input-modal" id="acc-broker" placeholder="Nazwa brokera (auto-wypełniana)" style="font-size:12px">
-      </div>
-      <div class="form-group-modal" style="margin-bottom:16px" id="acc-spread-row">
-        <label class="form-label-modal" style="display:flex;justify-content:space-between">
-          <span>Spread (pips) — edytowalny</span>
-          <span id="acc-spread-default" style="font-size:10px;color:var(--text3)"></span>
-        </label>
-        <input class="form-input-modal" id="acc-spread" type="number" step="0.01" placeholder="np. 1.2">
-        <div style="font-size:11px;color:var(--text3);margin-top:3px">Spread zmienia się — wpisz aktualny aby prowizja była dokładna</div>
-      </div>
-      <div class="form-group-modal" style="margin-bottom:16px;display:none" id="acc-trader-pct-row">
-        <label class="form-label-modal" style="display:flex;justify-content:space-between">
-          <span>Twój udział w zysku (%)</span>
-          <span style="font-size:10px;color:var(--amber)">Prop Firm</span>
-        </label>
-        <div style="display:flex;gap:8px;align-items:center">
-          <input class="form-input-modal" id="acc-trader-pct" type="number" min="1" max="99" step="1"
-            placeholder="np. 80" style="flex:1" oninput="updatePropSplitPreview()">
-          <span style="font-size:13px;color:var(--text2)">%</span>
-        </div>
-        <div id="prop-split-preview" style="font-size:11px;color:var(--text3);margin-top:6px"></div>
-        <div style="font-size:11px;color:var(--text3);margin-top:4px">MFA widełki: 60–90% · FTMO: 80–90%</div>
+        <input class="form-input-modal" id="acc-broker" placeholder="np. Capital.com, Binance">
       </div>
       <div class="form-group-modal" style="margin-bottom:16px">
         <label class="form-label-modal">Kapitał startowy (USD)</label>
@@ -2057,7 +1765,6 @@ function genId() { return Date.now().toString(36) + Math.random().toString(36).s
 function loginAs(username, userData) {
   try {
   state.currentUser = username;
-  setTimeout(showRoutineModal, 800);
   document.getElementById('auth-screen').style.display = 'none';
   document.getElementById('app').style.display = 'flex';
   document.getElementById('topbar-username').textContent = userData.name || username;
@@ -2079,6 +1786,7 @@ function loginAs(username, userData) {
   renderAll();
   updateDraftBadges();
   setTimeout(initLang, 50);
+  setTimeout(showRoutineModal, 1200);
   setTimeout(checkBackupReminder, 3000);
   setTimeout(checkAutoDownload, 4000);
   setTimeout(checkRecoveryCodeReminder, 2000);
@@ -2118,8 +1826,8 @@ function showPage(page) {
   if (page === 'analysis') renderAnalysisList();
   if (page === 'settings') renderSettings();
   if (page === 'calendar') renderCalendar();
+  if (page === 'tools') { if(typeof switchToolsTab==='function') setTimeout(()=>switchToolsTab('calculator'),50); else if(typeof pageCalcInstrChange==='function') pageCalcInstrChange(); }
   if (page === 'admin') renderAdmin();
-  if (page === 'tools') { setTimeout(() => switchToolsTab('calculator'), 50); }
 }
 
 function renderAll() {
@@ -2612,7 +2320,7 @@ function openTradeModal() {
   renderScreenshotPreviews();
   toggleCloseFields();
   setAutosaveDot('idle');
-  openModal('trade-modal'); setTimeout(populateStrategySelects, 150);
+  openModal('trade-modal');
   applyTfModeUI();
   hookFormAutoSave();
 }
@@ -3374,7 +3082,6 @@ function pnlManualEdit() {
 }
 
 // Reset manual flag when opening new modal
-const _origOpenTradeModal = openTradeModal;
 
 
 // ===== SYMBOL AUTOCOMPLETE =====
@@ -3634,123 +3341,74 @@ function updateAdminNav() {
   if (btn) btn.style.display = isAdmin() ? 'block' : 'none';
 }
 
-async function renderAdmin() {
+function renderAdmin() {
   if (!isAdmin()) { toast('Brak uprawnień', 'error'); return; }
-  const el = document.getElementById('admin-content');
-  if (!el) return;
-  el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text3)">⏳ Ładowanie...</div>';
+  const users = getUsers();
+  const db = getDB();
 
-  // Pobierz wszystkich użytkowników z Supabase
-  let users = [];
-  try {
-    const res = await fetch('https://ygrkcynyduuflzvbkkvo.supabase.co/rest/v1/profiles?select=*&order=created_at', {
-      headers: { 'apikey': 'sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK', 'Authorization': 'Bearer sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK' }
-    });
-    users = await res.json() || [];
-  } catch(e) {
-    // Fallback do localStorage
-    users = Object.entries(getUsers()).map(([login, u]) => ({
-      login, name: u.name, role: u.role, email: u.email,
-      active: true, created_at: new Date(u.createdAt).toISOString()
-    }));
+  // Stats
+  const allUsers = Object.entries(users);
+  let totalTrades = 0, totalAccounts = 0;
+  allUsers.forEach(([u]) => {
+    const accs = (db.accounts||{})[u] || [];
+    totalAccounts += accs.length;
+    accs.forEach(a => { totalTrades += ((db.trades||{})[u+'_'+a.id]||[]).length; });
+  });
+  document.getElementById('admin-stats-row').innerHTML = [
+    { label: 'Użytkownicy', val: allUsers.length, color: 'var(--accent)' },
+    { label: 'Konta tradingowe', val: totalAccounts, color: 'var(--blue)' },
+    { label: 'Transakcji łącznie', val: totalTrades, color: 'var(--amber)' },
+    { label: 'Administratorzy', val: allUsers.filter(([,u])=>u.role==='admin').length, color: 'var(--red)' },
+  ].map(s => `<div class="stat-card">
+    <div class="stat-label">${s.label}</div>
+    <div class="stat-value" style="color:${s.color}">${s.val}</div>
+  </div>`).join('');
+
+  // Users table
+  document.getElementById('admin-users-table').innerHTML = `
+    <table class="user-table">
+      <thead><tr>
+        <th>Login</th><th>Nazwa</th><th>Rola</th><th>Konta</th><th>Transakcji</th><th>Akcje</th>
+      </tr></thead>
+      <tbody>${allUsers.map(([login, u]) => {
+        const accs = (db.accounts||{})[login] || [];
+        let trades = 0;
+        accs.forEach(a => { trades += ((db.trades||{})[login+'_'+a.id]||[]).length; });
+        const isMe = login === state.currentUser;
+        return `<tr>
+          <td class="mono" style="font-weight:600">
+            ${login} ${isMe?'<span style="font-size:10px;color:var(--text3)">(Ty)</span>':''}
+            ${u.recoveryRequest?`<span title="Prośba o reset hasła: ${new Date(u.recoveryRequest.requestedAt).toLocaleString('pl-PL')}" style="display:inline-flex;align-items:center;gap:3px;background:var(--red-dim);color:var(--red);border:1px solid var(--red);border-radius:4px;padding:1px 6px;font-size:10px;font-weight:600;margin-left:4px;cursor:pointer" onclick="adminHandleRecovery('${login}')">🔔 Reset hasła</span>`:''}
+          </td>
+          <td>${u.name||'—'}</td>
+          <td><span class="${u.role==='admin'?'role-admin':'role-user'}">${u.role==='admin'?'👑 Admin':'👤 Trader'}</span></td>
+          <td><td class="user-stat">${accs.length}</td>
+          <td class="user-stat">${trades}</td>
+          <td><div class="action-btns">
+            <button class="icon-btn" onclick="adminEditUser('${login}')" title="Edytuj">✏️</button>
+            <button class="icon-btn" onclick="adminResetPass('${login}')" title="Resetuj hasło">🔑</button>
+            ${!isMe ? `<button class="icon-btn del" onclick="adminDeleteUser('${login}')" title="Usuń">🗑</button>` : ''}
+          </div></td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>`;
+
+  // Info box
+  const infoBox = document.getElementById('admin-info-box');
+  if (infoBox) {
+    const version = IS_ELECTRON ? '1.0.0 (Desktop)' : '1.0.0 (Web)';
+    infoBox.innerHTML = `Wersja: <strong>${version}</strong><br>
+      Użytkownik: <strong>${state.currentUser}</strong><br>
+      Środowisko: <strong>${IS_ELECTRON ? 'Electron' : 'Przeglądarka'}</strong>`;
   }
 
-  const active   = users.filter(u => u.active !== false);
-  const pending  = users.filter(u => u.active === false);
-  const admins   = users.filter(u => u.role === 'admin');
-
-  // Transakcje
-  const localUsers = getUsers();
-  const db = getDB();
-  let totalTrades = 0;
-  Object.keys(db).forEach(k => {
-    if (k.startsWith('trades_')) totalTrades += (db[k]||[]).length;
-  });
-
-  el.innerHTML = `
-    <!-- Stats -->
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
-      ${[
-        ['👥 Użytkownicy', active.length],
-        ['⏳ Oczekujących', pending.length],
-        ['👑 Adminów', admins.length],
-        ['📊 Transakcji', totalTrades],
-      ].map(([label, val]) => `
-        <div class="summary-card" style="text-align:center">
-          <div class="summary-card-title">${label}</div>
-          <div style="font-size:32px;font-weight:800;color:var(--accent)">${val}</div>
-        </div>`).join('')}
-    </div>
-
-    ${pending.length > 0 ? `
-    <!-- Oczekujący na aktywację -->
-    <div class="summary-card" style="margin-bottom:16px;border:1px solid var(--amber)">
-      <div class="summary-card-title" style="color:var(--amber)">⏳ Oczekują na aktywację (${pending.length})</div>
-      <table style="width:100%;font-size:13px;border-collapse:collapse;margin-top:10px">
-        <thead><tr style="color:var(--text3);font-size:11px;border-bottom:1px solid var(--border)">
-          <th style="text-align:left;padding:6px">Login</th>
-          <th style="text-align:left;padding:6px">Email</th>
-          <th style="text-align:center;padding:6px">Data rejestracji</th>
-          <th style="text-align:center;padding:6px">Akcje</th>
-        </tr></thead>
-        <tbody>
-          ${pending.map(u => `<tr style="border-bottom:1px solid rgba(255,255,255,.04)">
-            <td style="padding:7px 6px;font-weight:700">${u.login}</td>
-            <td style="padding:7px 6px;color:var(--text2)">${u.email||'—'}</td>
-            <td style="padding:7px 6px;text-align:center;color:var(--text3);font-size:11px">${new Date(u.created_at).toLocaleDateString('pl-PL')}</td>
-            <td style="padding:7px 6px;text-align:center">
-              <button onclick="adminActivateUser('${u.id}')" class="btn-sm btn-accent" style="font-size:11px;padding:4px 10px">✓ Aktywuj</button>
-              <button onclick="adminDeleteUser('${u.id}','${u.login}')" class="btn-sm" style="font-size:11px;padding:4px 10px;margin-left:4px;color:var(--red)">✗ Odrzuć</button>
-            </td>
-          </tr>`).join('')}
-        </tbody>
-      </table>
-    </div>` : ''}
-
-    <!-- Aktywni użytkownicy -->
-    <div class="summary-card">
-      <div class="summary-card-title">✅ Aktywni użytkownicy (${active.length})</div>
-      <table style="width:100%;font-size:13px;border-collapse:collapse;margin-top:10px">
-        <thead><tr style="color:var(--text3);font-size:11px;border-bottom:1px solid var(--border)">
-          <th style="text-align:left;padding:6px">Login</th>
-          <th style="text-align:left;padding:6px">Email</th>
-          <th style="text-align:center;padding:6px">Rola</th>
-          <th style="text-align:center;padding:6px">Ostatnie logowanie</th>
-          <th style="text-align:center;padding:6px">Akcje</th>
-        </tr></thead>
-        <tbody>
-          ${active.map(u => `<tr style="border-bottom:1px solid rgba(255,255,255,.04)">
-            <td style="padding:7px 6px;font-weight:700">${u.login}</td>
-            <td style="padding:7px 6px;color:var(--text2)">${u.email||'—'}</td>
-            <td style="padding:7px 6px;text-align:center">
-              <span style="background:${u.role==='admin'?'var(--accent-dim)':'var(--bg3)'};color:${u.role==='admin'?'var(--accent)':'var(--text2)'};padding:2px 8px;border-radius:4px;font-size:11px">
-                ${u.role==='admin'?'👑 Admin':'👤 Trader'}
-              </span>
-            </td>
-            <td style="padding:7px 6px;text-align:center;color:var(--text3);font-size:11px">${u.last_login ? new Date(u.last_login).toLocaleDateString('pl-PL') : '—'}</td>
-            <td style="padding:7px 6px;text-align:center">
-              ${u.role !== 'admin' ? `<button onclick="adminDeleteUser('${u.id}','${u.login}')" class="icon-btn" title="Usuń" style="color:var(--red)">🗑</button>` : ''}
-            </td>
-          </tr>`).join('')}
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Dane i backup -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px">
-      <div class="summary-card">
-        <div class="summary-card-title">💾 Dane i backup</div>
-        <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
-          <button class="btn-sm btn-accent" onclick="adminExport()" style="width:100%">📤 Eksportuj wszystkie dane</button>
-          <button class="btn-sm" onclick="manualBackupImport()" style="width:100%">📥 Importuj dane (backup)</button>
-        </div>
-      </div>
-      <div class="summary-card">
-        <div class="summary-card-title" style="color:var(--red)">⚠️ Strefa niebezpieczna</div>
-        <div style="font-size:12px;color:var(--text2);margin:8px 0">Usuwa wszystkie dane. Nieodwracalne!</div>
-        <button class="btn-sm" onclick="adminNuke()" style="width:100%;color:var(--red);border-color:var(--red)">🗑 Wyczyść całą bazę</button>
-      </div>
-    </div>`;
+  // DB path (Electron only)
+  if (IS_ELECTRON) {
+    window.electronAPI.getDBPath().then(p => {
+      const el = document.getElementById('db-path-info');
+      if (el) el.textContent = '📁 ' + p;
+    });
+  }
 }
 
 function openAddUserModal() {
@@ -3812,6 +3470,20 @@ function adminResetPass(login) {
   toast(`Hasło zmienione dla ${login}`, 'success');
 }
 
+async function adminDeleteUser(userId, login) {
+  if (!confirm('Usunąć użytkownika ' + login + '? Tej operacji nie można cofnąć.')) return;
+  try {
+    await fetch('https://ygrkcynyduuflzvbkkvo.supabase.co/rest/v1/profiles?id=eq.' + userId, {
+      method: 'DELETE',
+      headers: {
+        'apikey': 'sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK',
+        'Authorization': 'Bearer sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK'
+      }
+    });
+    toast('Użytkownik usunięty', 'success');
+    renderAdmin();
+  } catch(e) { toast('Błąd: ' + e.message, 'error'); }
+}
 
 function adminNukeAll() {
   if (!confirm('UWAGA! Usunąć WSZYSTKIE dane wszystkich użytkowników?\nTego nie można cofnąć!')) return;
@@ -3912,7 +3584,7 @@ function buildTradeMap() {
 }
 
 function renderCalendar() {
-  // Renderuj zawsze gdy wywołany
+  if (!document.getElementById('page-calendar')?.classList.contains('active')) return;
   const mode = document.getElementById('cal-view-mode')?.value || 'month';
   const map  = buildTradeMap();
   const acc  = getAccounts().find(a => a.id === state.currentAccountId);
@@ -4109,19 +3781,18 @@ function calClickDay(key) {
   if (!data) return;
   calSelectedDate = key;
   openCalDay(key, data);
-  // Renderuj właściwy kalendarz zależnie od aktywnej strony
   const summaryActive = document.getElementById('page-summary')?.classList.contains('active');
   if (summaryActive) renderCalendarSummary();
   else renderCalendar();
 }
 
 function openCalDay(key, data) {
-  // Wykryj czy jesteśmy w Summary (prefix s-) czy Calendar (bez prefix)
+  // Wykryj czy jesteśmy w Summary (s- prefix) czy Calendar
   const summaryActive = document.getElementById('page-summary')?.classList.contains('active');
-  const prefix = summaryActive ? 's-' : '';
-  const panel = document.getElementById(prefix + 'cal-day-panel');
-  const title = document.getElementById(prefix + 'cal-day-title');
-  const list  = document.getElementById(prefix + 'cal-day-trades');
+  const pfx = summaryActive ? 's-' : '';
+  const panel = document.getElementById(pfx + 'cal-day-panel');
+  const title = document.getElementById(pfx + 'cal-day-title');
+  const list  = document.getElementById(pfx + 'cal-day-trades');
   if (!panel || !title || !list) return;
 
   const [y, m, d] = key.split('-');
@@ -4819,34 +4490,15 @@ function savePasswordSettings() {
   const users = getUsers();
   const u = users[state.currentUser];
   if (!u) return;
-  if (u.pass !== oldP && u.pass !== '__supabase__') { toast('Obecne hasło jest nieprawidłowe', 'error'); return; }
+  if (u.pass !== oldP) { toast('Obecne hasło jest nieprawidłowe', 'error'); return; }
   if (newP.length < 6) { toast('Nowe hasło min. 6 znaków', 'error'); return; }
   if (newP !== newP2)  { toast('Hasła nie są identyczne', 'error'); return; }
-
-  // Aktualizuj hasło w Supabase
-  if (_sb) {
-    _sb.auth.updateUser({ password: newP }).then(res => {
-      if (res.error) {
-        toast('Błąd aktualizacji hasła: ' + res.error.message, 'error');
-        return;
-      }
-      // Aktualizuj lokalnie
-      u.pass = newP;
-      saveUsers(users);
-      ['sett-old-pass','sett-new-pass','sett-new-pass2'].forEach(id => {
-        const el = document.getElementById(id); if (el) el.value = '';
-      });
-      toast('Hasło zmienione ✓ (Supabase + lokalnie)', 'success');
-    });
-  } else {
-    // Fallback - tylko lokalnie
-    u.pass = newP;
-    saveUsers(users);
-    ['sett-old-pass','sett-new-pass','sett-new-pass2'].forEach(id => {
-      const el = document.getElementById(id); if (el) el.value = '';
-    });
-    toast('Hasło zmienione ✓', 'success');
-  }
+  u.pass = newP;
+  saveUsers(users);
+  ['sett-old-pass','sett-new-pass','sett-new-pass2'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  toast('Hasło zmienione ✓', 'success');
 }
 
 function generateRecoveryCode() {
@@ -5919,33 +5571,25 @@ function manualBackupExport() {
 }
 
 function manualBackupImport() {
-  // Użyj ukrytego inputu który jest już w DOM (wymagane przez przeglądarki)
-  let inp = document.getElementById('_backup-import-input');
-  if (!inp) {
-    inp = document.createElement('input');
-    inp.type = 'file'; inp.accept = '.json';
-    inp.id = '_backup-import-input';
-    inp.style.display = 'none';
-    document.body.appendChild(inp);
-    inp.onchange = e => {
-      const f = e.target.files[0]; if (!f) return;
-      if (!confirm('Importuj dane? Obecne dane zostaną ZASTĄPIONE!')) { inp.value=''; return; }
-      const r = new FileReader();
-      r.onload = ev => {
-        try {
-          const data = JSON.parse(ev.target.result);
-          saveDB(data); _dbCache = data;
-          toast('Import zakończony ✓', 'success');
-          setTimeout(() => {
-            renderDashboard(); renderTrades(); renderSummary();
-            renderAccounts(); refreshTopbarAccount(); updateDraftBadges();
-          }, 400);
-        } catch { toast('Błąd importu — nieprawidłowy plik', 'error'); }
-      };
-      r.readAsText(f);
-      inp.value = '';
+  if (!confirm('Importuj dane? Obecne dane zostaną ZASTĄPIONE!')) return;
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = '.json';
+  inp.onchange = e => {
+    const f = e.target.files[0]; if (!f) return;
+    const r = new FileReader();
+    r.onload = ev => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        saveDB(data); _dbCache = data;
+        toast('Import zakończony ✓', 'success');
+        setTimeout(() => {
+          renderDashboard(); renderTrades(); renderSummary();
+          renderAccounts(); refreshTopbarAccount(); updateDraftBadges();
+        }, 400);
+      } catch { toast('Błąd importu — nieprawidłowy plik', 'error'); }
     };
-  }
+    r.readAsText(f);
+  };
   inp.click();
 }
 
@@ -6524,6 +6168,8 @@ function openNewAnalysis() {
   _anScreenshots = [];
   _anDraftKey = null;
   _anTfMode = 'time';
+  // Pokaż Trader Routine jeśli jeszcze nie dziś
+  setTimeout(showRoutineModal, 600);
   ['an-id','an-title','an-symbol','an-bias','an-content','an-levels',
    'an-entry','an-sl','an-tp','an-size','an-setup','an-post','an-tf-ticks'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = '';
@@ -6542,7 +6188,7 @@ function openNewAnalysis() {
   renderAnScreenshots();
   renderAnLinkedTrades('');
   anSetAutosaveDot('idle');
-  openModal('analysis-modal'); setTimeout(populateStrategySelects, 150);
+  openModal('analysis-modal');
 }
 
 function openEditAnalysis(id) {
@@ -7294,15 +6940,11 @@ async function testApiConnection() {
 }
 
 
-// ═══════════════════════════════════════════════════════════
-// SUPABASE SYNC LAYER
-// Dane są przechowywane w Supabase i synchronizowane lokalnie
-// ═══════════════════════════════════════════════════════════
 
+
+// ═══ SUPABASE CONFIG ═══
 const _SB_URL  = 'https://ygrkcynyduuflzvbkkvo.supabase.co';
 const _SB_ANON = 'sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK';
-
-// Inicjalizuj Supabase natychmiast
 let _sb = null;
 (function tryInitNow() {
   const lib = window.supabase || window.Supabase;
@@ -7312,36 +6954,45 @@ let _sb = null;
   }
 })();
 
-// Inicjalizacja Supabase
+// ═══════════════════════════════════════════════════════
+// NOWE FUNKCJE — Supabase + rozszerzenia
+// ═══════════════════════════════════════════════════════
+
+
+
+
 function initSupabase() {
-  const sb_lib = window.supabase || window.Supabase || window.supabaseJs;
-  if (sb_lib && sb_lib.createClient) {
+  // Jeśli _sb już istnieje (z tryInitNow) - tylko dodaj listenery
+  if (!_sb) {
+    const sb_lib = window.supabase || window.Supabase || window.supabaseJs;
+    if (!sb_lib || !sb_lib.createClient) {
+      console.warn('Supabase not loaded');
+      return false;
+    }
     _sb = sb_lib.createClient(_SB_URL, _SB_ANON);
-    console.log('✓ Supabase connected');
-    // Nasłuchuj zmiany auth - obsłuż Google OAuth callback
-    _sb.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth event:', event, session?.user?.email || '');
-      if (event === 'SIGNED_IN' && session && !state.currentUser) {
-        console.log('Auto-login from OAuth...');
-        setTimeout(appInit, 300);
-      }
-      if (event === 'SIGNED_OUT' && state.currentUser) {
-        doLogout();
-      }
-    });
-    return true;
   }
-  console.warn('Supabase not loaded, will retry...');
-  return false;
+  console.log('✓ Supabase connected');
+  // Nasłuchuj zmiany auth - obsłuż Google OAuth callback
+  _sb.auth.onAuthStateChange(async (event, session) => {
+    console.log('Auth event:', event, session?.user?.email || '');
+    if (event === 'SIGNED_IN' && session && !state.currentUser) {
+      setTimeout(appInit, 300);
+    }
+    if (event === 'SIGNED_OUT' && state.currentUser) {
+      doLogout();
+    }
+  });
+  return true;
 }
 
-// ── Auth przez Supabase ──────────────────────────────────────────────────────
+
 async function sbLogin(email, password) {
   if (!_sb) return null;
   const { data, error } = await _sb.auth.signInWithPassword({ email, password });
   if (error) return null;
   return data.user;
 }
+
 
 async function sbRegister(email, password, login, name) {
   if (!_sb) return null;
@@ -7353,10 +7004,12 @@ async function sbRegister(email, password, login, name) {
   return data.user;
 }
 
+
 async function sbLogout() {
   if (!_sb) return;
   await _sb.auth.signOut();
 }
+
 
 async function sbGetSession() {
   if (!_sb) return null;
@@ -7364,8 +7017,7 @@ async function sbGetSession() {
   return data.session;
 }
 
-// ── Sync funkcje ─────────────────────────────────────────────────────────────
-// Po zalogowaniu - pobierz dane z Supabase i zapisz lokalnie
+
 async function sbSyncDown(userId, userLogin) {
   if (!_sb || !userId) return;
   try {
@@ -7439,7 +7091,7 @@ async function sbSyncDown(userId, userLogin) {
   }
 }
 
-// Po zapisaniu transakcji - wyślij do Supabase
+
 async function sbSyncTrade(trade, accountId) {
   if (!_sb || !state.currentUser) return;
   const userId = getUsers()[state.currentUser]?.supabaseId;
@@ -7470,7 +7122,7 @@ async function sbSyncTrade(trade, accountId) {
   }
 }
 
-// Generuj kod zaproszenia (admin)
+
 async function sbGenerateInvite(email) {
   if (!_sb) return null;
   const code = Array.from({length:12}, () => 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'[Math.floor(Math.random()*36)]).join('').replace(/(.{4})(.{4})(.{4})/, '$1-$2-$3');
@@ -7482,7 +7134,7 @@ async function sbGenerateInvite(email) {
   return code;
 }
 
-// Sprawdź kod zaproszenia
+
 async function sbCheckInvite(code) {
   if (!_sb) return false;
   const { data } = await _sb.from('invitations')
@@ -7493,14 +7145,14 @@ async function sbCheckInvite(code) {
   return data;
 }
 
-// Admin: lista użytkowników
+
 async function sbGetAllUsers() {
   if (!_sb) return [];
   const { data } = await _sb.from('profiles').select('*').order('created_at');
   return data || [];
 }
 
-// Admin: generuj zaproszenie i wyświetl
+
 async function adminGenerateInvite() {
   const email = prompt('Email zapraszanej osoby (opcjonalne):');
   const code = await sbGenerateInvite(email);
@@ -7511,93 +7163,212 @@ async function adminGenerateInvite() {
 }
 
 
-
-// ===== SECURITY =====
-
-// Rate limiting dla logowania (max 5 prób / 15 minut)
-const _loginAttempts = {};
-function checkLoginRateLimit(identifier) {
-  const now = Date.now();
-  const key = 'login_' + identifier;
-  if (!_loginAttempts[key]) _loginAttempts[key] = { count: 0, firstAt: now };
-  const data = _loginAttempts[key];
-  // Reset po 15 minutach
-  if (now - data.firstAt > 15 * 60 * 1000) {
-    _loginAttempts[key] = { count: 0, firstAt: now };
-    return true;
-  }
-  if (data.count >= 5) {
-    const wait = Math.ceil((15 * 60 * 1000 - (now - data.firstAt)) / 60000);
-    showAuthError(`Zbyt wiele prób logowania. Poczekaj ${wait} minut.`);
-    return false;
-  }
-  data.count++;
-  return true;
-}
-
-// XSS sanitizer dla danych użytkownika
-function sanitize(str) {
-  if (!str) return '';
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#x27;')
-    .replace(/\//g, '&#x2F;');
-}
-
-// Walidacja danych wejściowych
-function validateLogin(login) {
-  return /^[a-zA-Z0-9_.-]{3,30}$/.test(login);
-}
-function validateEmail(email) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
-function validatePassword(pass) {
-  return pass && pass.length >= 6 && pass.length <= 128;
-}
-
-// Ochrona przed kliknięciem w linki zewnętrzne (clickjacking)
-document.addEventListener('click', e => {
-  const a = e.target.closest('a[href]');
-  if (a && a.href && !a.href.startsWith(window.location.origin) && !a.target) {
-    a.setAttribute('target', '_blank');
-    a.setAttribute('rel', 'noopener noreferrer');
-  }
-});
-
-// Auto-wylogowanie po 8 godzinach nieaktywności
-let _lastActivity = Date.now();
-let _inactivityTimer = null;
-const INACTIVITY_LIMIT = 8 * 60 * 60 * 1000; // 8h
-
-function resetInactivityTimer() {
-  _lastActivity = Date.now();
-  clearTimeout(_inactivityTimer);
-  _inactivityTimer = setTimeout(() => {
-    if (state.currentUser) {
-      toast('Wylogowano z powodu nieaktywności', 'error');
-      doLogout();
+async function adminActivateUser(userId) {
+  try {
+    const res = await fetch('https://ygrkcynyduuflzvbkkvo.supabase.co/rest/v1/profiles?id=eq.' + userId, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': 'sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK',
+        'Authorization': 'Bearer sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK'
+      },
+      body: JSON.stringify({ active: true })
+    });
+    if (res.ok) {
+      toast('✓ Użytkownik aktywowany', 'success');
+      renderAdmin();
+    } else {
+      toast('Błąd aktywacji', 'error');
     }
-  }, INACTIVITY_LIMIT);
+  } catch(e) { toast('Błąd: ' + e.message, 'error'); }
 }
 
-['click', 'keypress', 'mousemove', 'touchstart'].forEach(ev => {
-  document.addEventListener(ev, resetInactivityTimer, { passive: true });
-});
 
-// Ukryj szczegóły błędów w konsoli (produkcja)
-const _origConsoleError = console.error;
-console.error = (...args) => {
-  // Nie loguj wrażliwych danych
-  const str = args.join(' ');
-  if (str.includes('password') || str.includes('token') || str.includes('key')) return;
-  _origConsoleError(...args);
-};
+async function handlePasswordResetRedirect() {
+  const params = new URLSearchParams(window.location.hash.replace('#', '?'));
+  const accessToken  = params.get('access_token');
+  const refreshToken = params.get('refresh_token');
+  const type = params.get('type');
+
+  if (type === 'recovery' && accessToken && _sb) {
+    // Ustaw sesję z tokenem resetu
+    await _sb.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+    // Pokaż formularz nowego hasła
+    showPasswordResetForm();
+  }
+}
 
 
-// ===== RAPORT MIESIĘCZNY =====
+async function submitPasswordReset() {
+  const p1 = document.getElementById('reset-pass1')?.value || '';
+  const p2 = document.getElementById('reset-pass2')?.value || '';
+  const errEl = document.getElementById('reset-err');
+  if (p1.length < 6) { if (errEl) { errEl.textContent = 'Hasło min. 6 znaków'; errEl.style.display='block'; } return; }
+  if (p1 !== p2) { if (errEl) { errEl.textContent = 'Hasła nie są zgodne'; errEl.style.display='block'; } return; }
+  if (!_sb) return;
+  const { error } = await _sb.auth.updateUser({ password: p1 });
+  if (error) {
+    if (errEl) { errEl.textContent = error.message; errEl.style.display='block'; }
+  } else {
+    document.querySelector('[style*="position:fixed"]')?.remove();
+    toast('✓ Hasło zmienione! Zaloguj się.', 'success');
+    // Clear hash
+    window.history.replaceState({}, '', window.location.pathname);
+  }
+}
+
+
+function showRoutineModal() {
+  const today = new Date().toDateString();
+  // Sprawdź czy już pokazano dziś
+  const lastShown = localStorage.getItem('_routine_shown_' + (state.currentUser||''));
+  const noShowToday = localStorage.getItem('_routine_no_show_' + (state.currentUser||''));
+  
+  if (noShowToday === today) return; // Użytkownik zaznaczył "nie pokazuj dziś"
+  if (lastShown === today) return;  // Już pokazano dziś
+  
+  // Ustaw datę
+  const dateEl = document.getElementById('routine-date');
+  if (dateEl) dateEl.textContent = new Date().toLocaleDateString('pl-PL', {weekday:'long', day:'numeric', month:'long'});
+  
+  // Wyczyść checkboxy
+  document.querySelectorAll('.routine-item').forEach(el => el.classList.remove('done'));
+  updateRoutineProgress();
+  
+  // Pokaż modal
+  const modal = document.getElementById('routine-modal');
+  if (modal) modal.classList.add('open');
+  
+  // Zapisz że pokazano
+  localStorage.setItem('_routine_shown_' + (state.currentUser||''), today);
+}
+
+
+function closeRoutineModal() {
+  const modal = document.getElementById('routine-modal');
+  if (modal) modal.classList.remove('open');
+  
+  // Zapisz "nie pokazuj dziś" jeśli zaznaczono
+  const noShow = document.getElementById('routine-no-show-today');
+  if (noShow?.checked) {
+    localStorage.setItem('_routine_no_show_' + (state.currentUser||''), new Date().toDateString());
+  }
+}
+
+
+function toggleRoutine(el) {
+  el.classList.toggle('done');
+  updateRoutineProgress();
+}
+
+
+function updateRoutineProgress() {
+  const total = document.querySelectorAll('.routine-item').length;
+  const done  = document.querySelectorAll('.routine-item.done').length;
+  const el = document.getElementById('routine-progress');
+  if (el) {
+    el.textContent = done + '/' + total + ' ukończonych';
+    el.style.color = done === total ? 'var(--accent)' : 'var(--text3)';
+  }
+}
+
+
+function generateReportPDF() {
+  const month = parseInt(document.getElementById('report-month')?.value || new Date().getMonth() + 1);
+  const year  = parseInt(document.getElementById('report-year')?.value || new Date().getFullYear());
+  const d = getReportData(month, year);
+  const statusEl = document.getElementById('report-status');
+  if (!d.trades.length) {
+    if (statusEl) statusEl.textContent = 'Brak zamkniętych transakcji w tym miesiącu';
+    return;
+  }
+  if (statusEl) statusEl.textContent = '⏳ Generuję PDF...';
+
+  // Build HTML report and convert to printable PDF
+  const html = buildReportHTML(d);
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+  setTimeout(() => { win.print(); }, 500);
+  if (statusEl) statusEl.textContent = '✓ Raport otwarty — użyj Ctrl+P → Zapisz jako PDF';
+}
+
+
+function generateReportExcel() {
+  const month = parseInt(document.getElementById('report-month')?.value || new Date().getMonth() + 1);
+  const year  = parseInt(document.getElementById('report-year')?.value || new Date().getFullYear());
+  const d = getReportData(month, year);
+  const statusEl = document.getElementById('report-status');
+
+  if (!d.trades.length) {
+    if (statusEl) statusEl.textContent = 'Brak zamkniętych transakcji w tym miesiącu';
+    return;
+  }
+  if (statusEl) statusEl.textContent = '⏳ Generuję Excel...';
+
+  // Build CSV with Excel-compatible format (BOM for Polish characters)
+  const MONTHS_PL = ['','Styczeń','Luty','Marzec','Kwiecień','Maj','Czerwiec',
+                     'Lipiec','Sierpień','Wrzesień','Październik','Listopad','Grudzień'];
+
+  const fmt2 = n => n != null ? Number(n).toFixed(2) : '';
+  const dateStr = dt => new Date(dt).toLocaleDateString('pl-PL');
+
+  const rows = [
+    // Nagłówek raportu
+    [`TraderLogJournal — Raport miesięczny: ${MONTHS_PL[month]} ${year}`],
+    [`Konto: ${d.acc?.name || '—'}`, `Broker: ${d.acc?.broker || '—'}`],
+    [`Data generowania: ${new Date().toLocaleDateString('pl-PL')}`],
+    [],
+    // Podsumowanie
+    ['PODSUMOWANIE'],
+    ['Liczba transakcji', d.tradeCount],
+    ['Transakcji zyskownych', d.wins],
+    ['Transakcji stratnych', d.losses],
+    ['Win Rate (%)', d.winRate],
+    ['Zysk brutto (USD)', d.totalGross.toFixed(2)],
+    ['Strata brutto (USD)', d.totalLoss.toFixed(2)],
+    ['Wynik netto (USD)', d.totalPnl.toFixed(2)],
+    [],
+    // Podatek
+    ['INFORMACJA PODATKOWA (uproszczona)'],
+    ['Podstawa opodatkowania (USD)', d.taxBase.toFixed(2)],
+    ['Podatek Belki 19% (USD)', d.tax.toFixed(2)],
+    ['UWAGA: Skonsultuj z doradcą podatkowym'],
+    [],
+    // Nagłówki tabeli transakcji
+    ['ZESTAWIENIE TRANSAKCJI'],
+    ['Data', 'Instrument', 'Kierunek', 'Status', 'Cena wejścia', 'Cena wyjścia',
+     'SL', 'TP', 'Wolumen', 'P&L (USD)', 'Timeframe', 'Setup', 'Analiza przed', 'Wnioski'],
+    // Transakcje
+    ...d.trades.map(t => [
+      dateStr(t.date), t.symbol, t.dir, t.status === 'closed' ? 'Zamknięta' : 'Otwarta',
+      fmt2(t.entry), fmt2(t.exit), fmt2(t.sl), fmt2(t.tp),
+      t.size || '', fmt2(t.pnl), t.tf || '', t.setup || '',
+      (t.pre || '').replace(/\n/g, ' '), (t.post || '').replace(/\n/g, ' ')
+    ]),
+    [],
+    ['Wygenerowano przez TraderLogJournal — traderlogjournal.com'],
+  ];
+
+  // Convert to CSV
+  const csv = rows.map(row =>
+    row.map(cell => {
+      const s = String(cell ?? '');
+      return s.includes(',') || s.includes('"') || s.includes('\n')
+        ? '"' + s.replace(/"/g, '""') + '"'
+        : s;
+    }).join(';')  // semicolon for Polish Excel
+  ).join('\r\n');
+
+  // Download with UTF-8 BOM (required for Polish chars in Excel)
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `TraderLogJournal_Raport_${MONTHS_PL[month]}_${year}.csv`;
+  a.click();
+  if (statusEl) statusEl.textContent = `✓ Plik pobrany — otwórz w Excel (separatorem jest średnik ";")`;
+}
+
 
 function getReportData(month, year) {
   // Pobierz wszystkie transakcje z aktywnego konta za dany miesiąc
@@ -7633,26 +7404,6 @@ function getReportData(month, year) {
   };
 }
 
-// ── PDF Raport ────────────────────────────────────────────────────────────────
-function generateReportPDF() {
-  const month = parseInt(document.getElementById('report-month')?.value || new Date().getMonth() + 1);
-  const year  = parseInt(document.getElementById('report-year')?.value || new Date().getFullYear());
-  const d = getReportData(month, year);
-  const statusEl = document.getElementById('report-status');
-  if (!d.trades.length) {
-    if (statusEl) statusEl.textContent = 'Brak zamkniętych transakcji w tym miesiącu';
-    return;
-  }
-  if (statusEl) statusEl.textContent = '⏳ Generuję PDF...';
-
-  // Build HTML report and convert to printable PDF
-  const html = buildReportHTML(d);
-  const win = window.open('', '_blank');
-  win.document.write(html);
-  win.document.close();
-  setTimeout(() => { win.print(); }, 500);
-  if (statusEl) statusEl.textContent = '✓ Raport otwarty — użyj Ctrl+P → Zapisz jako PDF';
-}
 
 function buildReportHTML(d) {
   const fmt2 = n => n != null ? new Intl.NumberFormat('pl-PL', {minimumFractionDigits:2,maximumFractionDigits:2}).format(n) : '—';
@@ -8052,82 +7803,6 @@ function buildReportHTML(d) {
 </html>`;
 }
 
-// ── Excel Raport ──────────────────────────────────────────────────────────────
-function generateReportExcel() {
-  const month = parseInt(document.getElementById('report-month')?.value || new Date().getMonth() + 1);
-  const year  = parseInt(document.getElementById('report-year')?.value || new Date().getFullYear());
-  const d = getReportData(month, year);
-  const statusEl = document.getElementById('report-status');
-
-  if (!d.trades.length) {
-    if (statusEl) statusEl.textContent = 'Brak zamkniętych transakcji w tym miesiącu';
-    return;
-  }
-  if (statusEl) statusEl.textContent = '⏳ Generuję Excel...';
-
-  // Build CSV with Excel-compatible format (BOM for Polish characters)
-  const MONTHS_PL = ['','Styczeń','Luty','Marzec','Kwiecień','Maj','Czerwiec',
-                     'Lipiec','Sierpień','Wrzesień','Październik','Listopad','Grudzień'];
-
-  const fmt2 = n => n != null ? Number(n).toFixed(2) : '';
-  const dateStr = dt => new Date(dt).toLocaleDateString('pl-PL');
-
-  const rows = [
-    // Nagłówek raportu
-    [`TraderLogJournal — Raport miesięczny: ${MONTHS_PL[month]} ${year}`],
-    [`Konto: ${d.acc?.name || '—'}`, `Broker: ${d.acc?.broker || '—'}`],
-    [`Data generowania: ${new Date().toLocaleDateString('pl-PL')}`],
-    [],
-    // Podsumowanie
-    ['PODSUMOWANIE'],
-    ['Liczba transakcji', d.tradeCount],
-    ['Transakcji zyskownych', d.wins],
-    ['Transakcji stratnych', d.losses],
-    ['Win Rate (%)', d.winRate],
-    ['Zysk brutto (USD)', d.totalGross.toFixed(2)],
-    ['Strata brutto (USD)', d.totalLoss.toFixed(2)],
-    ['Wynik netto (USD)', d.totalPnl.toFixed(2)],
-    [],
-    // Podatek
-    ['INFORMACJA PODATKOWA (uproszczona)'],
-    ['Podstawa opodatkowania (USD)', d.taxBase.toFixed(2)],
-    ['Podatek Belki 19% (USD)', d.tax.toFixed(2)],
-    ['UWAGA: Skonsultuj z doradcą podatkowym'],
-    [],
-    // Nagłówki tabeli transakcji
-    ['ZESTAWIENIE TRANSAKCJI'],
-    ['Data', 'Instrument', 'Kierunek', 'Status', 'Cena wejścia', 'Cena wyjścia',
-     'SL', 'TP', 'Wolumen', 'P&L (USD)', 'Timeframe', 'Setup', 'Analiza przed', 'Wnioski'],
-    // Transakcje
-    ...d.trades.map(t => [
-      dateStr(t.date), t.symbol, t.dir, t.status === 'closed' ? 'Zamknięta' : 'Otwarta',
-      fmt2(t.entry), fmt2(t.exit), fmt2(t.sl), fmt2(t.tp),
-      t.size || '', fmt2(t.pnl), t.tf || '', t.setup || '',
-      (t.pre || '').replace(/\n/g, ' '), (t.post || '').replace(/\n/g, ' ')
-    ]),
-    [],
-    ['Wygenerowano przez TraderLogJournal — traderlogjournal.com'],
-  ];
-
-  // Convert to CSV
-  const csv = rows.map(row =>
-    row.map(cell => {
-      const s = String(cell ?? '');
-      return s.includes(',') || s.includes('"') || s.includes('\n')
-        ? '"' + s.replace(/"/g, '""') + '"'
-        : s;
-    }).join(';')  // semicolon for Polish Excel
-  ).join('\r\n');
-
-  // Download with UTF-8 BOM (required for Polish chars in Excel)
-  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `TraderLogJournal_Raport_${MONTHS_PL[month]}_${year}.csv`;
-  a.click();
-  if (statusEl) statusEl.textContent = `✓ Plik pobrany — otwórz w Excel (separatorem jest średnik ";")`;
-}
-
 
 function quickReport(type) {
   const now = new Date();
@@ -8141,67 +7816,6 @@ function quickReport(type) {
 }
 
 
-// ── Obsługa resetu hasła przez link email ────────────────────────────────────
-async function handlePasswordResetRedirect() {
-  const params = new URLSearchParams(window.location.hash.replace('#', '?'));
-  const accessToken  = params.get('access_token');
-  const refreshToken = params.get('refresh_token');
-  const type = params.get('type');
-
-  if (type === 'recovery' && accessToken && _sb) {
-    // Ustaw sesję z tokenem resetu
-    await _sb.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
-    // Pokaż formularz nowego hasła
-    showPasswordResetForm();
-  }
-}
-
-function showPasswordResetForm() {
-  const overlay = document.createElement('div');
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
-  overlay.innerHTML = `
-    <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:32px;max-width:400px;width:100%">
-      <div style="font-family:var(--font-head);font-size:20px;font-weight:700;margin-bottom:6px;color:var(--accent)">🔑 Nowe hasło</div>
-      <div style="font-size:13px;color:var(--text2);margin-bottom:20px">Wpisz nowe hasło dla swojego konta.</div>
-      <input class="form-input" id="reset-pass1" type="password" placeholder="Nowe hasło (min. 6 znaków)" autocomplete="new-password" style="margin-bottom:10px">
-      <input class="form-input" id="reset-pass2" type="password" placeholder="Powtórz nowe hasło" autocomplete="new-password" style="margin-bottom:14px">
-      <div id="reset-err" style="color:var(--red);font-size:12px;margin-bottom:10px;display:none"></div>
-      <button class="btn-primary" onclick="submitPasswordReset()">✓ Ustaw nowe hasło</button>
-    </div>`;
-  document.body.appendChild(overlay);
-}
-
-async function submitPasswordReset() {
-  const p1 = document.getElementById('reset-pass1')?.value || '';
-  const p2 = document.getElementById('reset-pass2')?.value || '';
-  const errEl = document.getElementById('reset-err');
-  if (p1.length < 6) { if (errEl) { errEl.textContent = 'Hasło min. 6 znaków'; errEl.style.display='block'; } return; }
-  if (p1 !== p2) { if (errEl) { errEl.textContent = 'Hasła nie są zgodne'; errEl.style.display='block'; } return; }
-  if (!_sb) return;
-  const { error } = await _sb.auth.updateUser({ password: p1 });
-  if (error) {
-    if (errEl) { errEl.textContent = error.message; errEl.style.display='block'; }
-  } else {
-    document.querySelector('[style*="position:fixed"]')?.remove();
-    toast('✓ Hasło zmienione! Zaloguj się.', 'success');
-    // Clear hash
-    window.history.replaceState({}, '', window.location.pathname);
-  }
-}
-
-
-
-// ── Google Login ──────────────────────────────────────────────────────────────
-async function loginWithGoogle() {
-  if (!_sb) { toast('Odśwież stronę i spróbuj ponownie', 'error'); return; }
-  var res = await _sb.auth.signInWithOAuth({
-    provider: 'google',
-    options: { redirectTo: 'https://traderlogjournal.com/' }
-  });
-  if (res.error) toast('Błąd Google: ' + res.error.message, 'error');
-}
-
-// ── Wypłaty i bilansowanie ────────────────────────────────────────────────────
 function openWithdrawalModal() {
   if (!state.currentAccountId) return toast('Wybierz konto', 'error');
   const accounts = getAccounts();
@@ -8233,6 +7847,56 @@ function openWithdrawalModal() {
   document.getElementById('withdrawal-calc').style.display = 'none';
   openModal('withdrawal-modal');
 }
+
+
+function saveWithdrawal() {
+  const type    = document.getElementById('withdrawal-type')?.value;
+  const note    = document.getElementById('withdrawal-note')?.value || '';
+  const date    = document.getElementById('withdrawal-date')?.value || nowDatetime();
+  const accounts = getAccounts();
+  const acc = accounts.find(a => a.id === state.currentAccountId);
+  if (!acc) return;
+
+  let amount = 0;
+  if (type === 'balance') {
+    const actual = parseFloat(document.getElementById('balance-actual')?.value) || 0;
+    if (!actual) return toast('Wpisz stan konta u brokera', 'error');
+    const trades = getTrades(state.currentAccountId);
+    const closedPnl = trades.filter(t => t.status === 'closed').reduce((s, t) => s + (t.pnl || 0), 0);
+    const equity = (acc.capital || 0) + closedPnl;
+    amount = actual - equity;
+    // Adjust capital
+    const db = getDB();
+    if (!db.accounts) db.accounts = {};
+    if (db.accounts[acc.id]) db.accounts[acc.id].capital = actual - closedPnl;
+    saveDB(db);
+  } else {
+    amount = parseFloat(document.getElementById('withdrawal-amount')?.value) || 0;
+    if (!amount) return toast('Wpisz kwotę', 'error');
+    if (type === 'withdrawal') amount = -amount; // ujemna
+    // Update capital
+    const db = getDB();
+    if (!db.accounts) db.accounts = {};
+    if (db.accounts[acc.id]) db.accounts[acc.id].capital = (db.accounts[acc.id].capital || 0) + amount;
+    saveDB(db);
+  }
+
+  // Save withdrawal record
+  const db = getDB();
+  const key = 'withdrawals_' + state.currentAccountId;
+  if (!db[key]) db[key] = [];
+  db[key].push({
+    id: genId(), type, amount: Math.abs(amount),
+    note, date, createdAt: Date.now()
+  });
+  saveDB(db);
+
+  closeModal('withdrawal-modal');
+  renderAccounts();
+  renderDashboard();
+  toast(`✓ Operacja zapisana: ${type === 'withdrawal' ? 'Wypłata' : type === 'deposit' ? 'Wpłata' : 'Bilansowanie'} ${fmt(Math.abs(amount))} USD`, 'success');
+}
+
 
 function updateWithdrawalCalc() {
   const type = document.getElementById('withdrawal-type')?.value;
@@ -8289,189 +7953,13 @@ function updateWithdrawalCalc() {
   else calcEl.style.display = 'none';
 }
 
+
 function getWithdrawals(accountId) {
   const db = getDB();
   return db['withdrawals_' + accountId] || [];
 }
 
-function saveWithdrawal() {
-  const type    = document.getElementById('withdrawal-type')?.value;
-  const note    = document.getElementById('withdrawal-note')?.value || '';
-  const date    = document.getElementById('withdrawal-date')?.value || nowDatetime();
-  const accounts = getAccounts();
-  const acc = accounts.find(a => a.id === state.currentAccountId);
-  if (!acc) return;
 
-  let amount = 0;
-  if (type === 'balance') {
-    const actual = parseFloat(document.getElementById('balance-actual')?.value) || 0;
-    if (!actual) return toast('Wpisz stan konta u brokera', 'error');
-    const trades = getTrades(state.currentAccountId);
-    const closedPnl = trades.filter(t => t.status === 'closed').reduce((s, t) => s + (t.pnl || 0), 0);
-    const equity = (acc.capital || 0) + closedPnl;
-    amount = actual - equity;
-    // Adjust capital
-    const db = getDB();
-    if (!db.accounts) db.accounts = {};
-    if (db.accounts[acc.id]) db.accounts[acc.id].capital = actual - closedPnl;
-    saveDB(db);
-  } else {
-    amount = parseFloat(document.getElementById('withdrawal-amount')?.value) || 0;
-    if (!amount) return toast('Wpisz kwotę', 'error');
-    if (type === 'withdrawal') amount = -amount; // ujemna
-    // Update capital
-    const db = getDB();
-    if (!db.accounts) db.accounts = {};
-    if (db.accounts[acc.id]) db.accounts[acc.id].capital = (db.accounts[acc.id].capital || 0) + amount;
-    saveDB(db);
-  }
-
-  // Save withdrawal record
-  const db = getDB();
-  const key = 'withdrawals_' + state.currentAccountId;
-  if (!db[key]) db[key] = [];
-  db[key].push({
-    id: genId(), type, amount: Math.abs(amount),
-    note, date, createdAt: Date.now()
-  });
-  saveDB(db);
-
-  closeModal('withdrawal-modal');
-  renderAccounts();
-  renderDashboard();
-  toast(`✓ Operacja zapisana: ${type === 'withdrawal' ? 'Wypłata' : type === 'deposit' ? 'Wpłata' : 'Bilansowanie'} ${fmt(Math.abs(amount))} USD`, 'success');
-}
-
-
-
-
-
-
-// ── Lokalne zaproszenia ───────────────────────────────────────────────────────
-async function adminGenerateInviteLocal() {
-  const code = Array.from({length:12}, () =>
-    'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'[Math.floor(Math.random()*36)]
-  ).join('').replace(/(.{4})(.{4})(.{4})/, '$1-$2-$3');
-
-  const expiresAt = new Date(Date.now() + 7*24*60*60*1000).toISOString();
-
-  // Zapisz w Supabase przez fetch (działa nawet gdy _sb jest null)
-  try {
-    const res = await fetch('https://ygrkcynyduuflzvbkkvo.supabase.co/rest/v1/invitations', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': 'sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK',
-        'Authorization': 'Bearer sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK',
-        'Prefer': 'return=minimal'
-      },
-      body: JSON.stringify({ code, expires_at: expiresAt })
-    });
-    if (!res.ok) {
-      const err = await res.text();
-      console.warn('Invite save error:', err);
-      toast('Błąd zapisu kodu: ' + res.status, 'error');
-      return;
-    }
-    console.log('Kod zapisany w Supabase:', code);
-  } catch(e) {
-    console.warn('Invite fetch error:', e.message);
-    toast('Błąd połączenia z serwerem', 'error');
-    return;
-  }
-
-  // Skopiuj do schowka
-  navigator.clipboard?.writeText(code).catch(()=>{});
-  toast('Kod zaproszenia: ' + code + ' (skopiowany!)', 'success');
-  renderInviteCodes();
-}
-
-async function renderInviteCodes() {
-  const el = document.getElementById('invite-codes-list');
-  if (!el) return;
-  el.innerHTML = '<div style="color:var(--text3);font-size:11px">⏳ Ładowanie...</div>';
-
-  let invitations = [];
-
-  // Pobierz z Supabase
-  if (_sb) {
-    try {
-      const { data } = await _sb.from('invitations')
-        .select('*').order('created_at', {ascending: false}).limit(10);
-      if (data) invitations = data.map(i => ({
-        code: i.code,
-        usedBy: i.used_by,
-        expiresAt: new Date(i.expires_at).getTime(),
-        createdAt: new Date(i.created_at).getTime()
-      }));
-    } catch(e) {}
-  }
-
-  // Fallback lokalnie
-  if (!invitations.length) {
-    const db = getDB();
-    invitations = (db.invitations || []).slice(-5).reverse();
-  }
-
-  if (!invitations.length) {
-    el.innerHTML = '<div style="color:var(--text3);font-size:11px">Brak wygenerowanych kodów</div>';
-    return;
-  }
-
-  el.innerHTML = invitations.slice(0,8).map(inv => {
-    const expired = Date.now() > inv.expiresAt;
-    const status = inv.usedBy ? '✓ Użyty' : expired ? '⏰ Wygasł' : '⏳ Aktywny';
-    const color = inv.usedBy ? 'var(--green)' : expired ? 'var(--red)' : 'var(--amber)';
-    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border)">
-      <span style="font-family:var(--font-mono);font-weight:700;font-size:12px;letter-spacing:1px;cursor:pointer"
-        onclick="navigator.clipboard?.writeText('${inv.code}');toast('Skopiowano: ${inv.code}','success')"
-        title="Kliknij aby skopiować">${inv.code}</span>
-      <span style="font-size:10px;color:${color}">${status}</span>
-    </div>`;
-  }).join('');
-}
-
-
-// ── Admin: aktywacja użytkownika ─────────────────────────────────────────────
-async function adminActivateUser(userId) {
-  try {
-    const res = await fetch('https://ygrkcynyduuflzvbkkvo.supabase.co/rest/v1/profiles?id=eq.' + userId, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': 'sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK',
-        'Authorization': 'Bearer sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK'
-      },
-      body: JSON.stringify({ active: true })
-    });
-    if (res.ok) {
-      toast('✓ Użytkownik aktywowany', 'success');
-      renderAdmin();
-    } else {
-      toast('Błąd aktywacji', 'error');
-    }
-  } catch(e) { toast('Błąd: ' + e.message, 'error'); }
-}
-
-async function adminDeleteUser(userId, login) {
-  if (!confirm('Usunąć użytkownika ' + login + '? Tej operacji nie można cofnąć.')) return;
-  try {
-    await fetch('https://ygrkcynyduuflzvbkkvo.supabase.co/rest/v1/profiles?id=eq.' + userId, {
-      method: 'DELETE',
-      headers: {
-        'apikey': 'sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK',
-        'Authorization': 'Bearer sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK'
-      }
-    });
-    toast('Użytkownik usunięty', 'success');
-    renderAdmin();
-  } catch(e) { toast('Błąd: ' + e.message, 'error'); }
-}
-
-
-// ===== KALKULATOR KOSZTÓW AXI =====
-
-// Prowizje brokerów (round trip gdzie dotyczy)
 const BROKER_COMMISSIONS = {
   // AXI
   'axi_standard': { name: 'Axi Standard', type: 'spread',     commission: 0,    spreadPips: 1.2,  currency: 'USD', unit: 'lot' },
@@ -8517,14 +8005,7 @@ const BROKER_COMMISSIONS = {
   'tradestation': { name: 'TradeStation',     type: 'commission', commission: 5.0, spreadPips: 0.0, currency: 'USD', unit: 'lot' },
 };
 
-// Stara zmienna dla kompatybilności
-const AXI_COMMISSIONS = {
-  'standard': BROKER_COMMISSIONS['axi_standard'],
-  'pro':      BROKER_COMMISSIONS['axi_pro'],
-  'elite':    BROKER_COMMISSIONS['axi_elite'],
-};
 
-// Wartość pipsa dla popularnych instrumentów (per 1 lot, w USD)
 const PIP_VALUES = {
   'EURUSD': 10, 'GBPUSD': 10, 'AUDUSD': 10, 'NZDUSD': 10,
   'USDCAD': 7.7, 'USDCHF': 11.2, 'USDJPY': 9.1,
@@ -8532,6 +8013,7 @@ const PIP_VALUES = {
   'XAGUSD': 50, 'US30': 1, 'US500': 10, 'NAS100': 1,
   'BTCUSD': 1, 'ETHUSD': 1,
 };
+
 
 function calcBrokerCost(symbol, size, pnl, brokerKey, orderType) {
   if (!brokerKey) brokerKey = 'axi_standard';
@@ -8564,11 +8046,12 @@ function calcBrokerCost(symbol, size, pnl, brokerKey, orderType) {
   return cost > 0 ? cost : null;
 }
 
-// Alias dla kompatybilności wstecznej
+
 function calcAxiCost(symbol, size, accountType) {
   const keyMap = { 'standard': 'axi_standard', 'pro': 'axi_pro', 'elite': 'axi_elite' };
   return calcBrokerCost(symbol, size, 0, keyMap[accountType] || 'axi_standard', 'taker');
 }
+
 
 function detectBrokerKey(brokerName) {
   if (!brokerName) return null;
@@ -8609,6 +8092,7 @@ function detectBrokerKey(brokerName) {
   return null;
 }
 
+
 function updateCommissionDisplay() {
   const symbol = (document.getElementById('t-symbol')?.value||'').trim().toUpperCase();
   const size   = parseFloat(document.getElementById('t-size')?.value) || 0;
@@ -8643,10 +8127,6 @@ function updateCommissionDisplay() {
 }
 
 
-// ===== SWAPY WEEKENDOWE =====
-// Potrójny swap naliczany w środę dla pozycji trzymanych przez weekend
-// Stawki dzienne są przybliżone - różnią się w zależności od instrumentu i kierunku
-
 const SWAP_INFO = {
   // Forex - swap dzienny przybliżony (w pipsach per lot)
   'EURUSD': { long: -0.52, short: 0.14, tripleDay: 'Środa' },
@@ -8670,7 +8150,7 @@ const SWAP_INFO = {
   'GER40':  { long: -1.50, short: 0.40,  tripleDay: 'Piątek' },
 };
 
-// Oblicz koszt swapu za trzymanie pozycji
+
 function calcSwapCost(symbol, dir, lots, days) {
   if (!symbol || !lots || !days) return null;
   const sym = symbol.toUpperCase();
@@ -8704,6 +8184,7 @@ function calcSwapCost(symbol, dir, lots, days) {
     hasTriple: totalCost !== dailyCost * days
   };
 }
+
 
 function updateSwapDisplay() {
   const symbol = (document.getElementById('t-symbol')?.value||'').trim().toUpperCase();
@@ -8744,66 +8225,11 @@ function updateSwapDisplay() {
 }
 
 
-// ===== DAILY ROUTINE =====
-
-function showRoutineModal() {
-  const today = new Date().toDateString();
-  // Sprawdź czy już pokazano dziś
-  const lastShown = localStorage.getItem('_routine_shown_' + (state.currentUser||''));
-  const noShowToday = localStorage.getItem('_routine_no_show_' + (state.currentUser||''));
-  
-  if (noShowToday === today) return; // Użytkownik zaznaczył "nie pokazuj dziś"
-  if (lastShown === today) return;  // Już pokazano dziś
-  
-  // Ustaw datę
-  const dateEl = document.getElementById('routine-date');
-  if (dateEl) dateEl.textContent = new Date().toLocaleDateString('pl-PL', {weekday:'long', day:'numeric', month:'long'});
-  
-  // Wyczyść checkboxy
-  document.querySelectorAll('.routine-item').forEach(el => el.classList.remove('done'));
-  updateRoutineProgress();
-  
-  // Pokaż modal
-  const modal = document.getElementById('routine-modal');
-  if (modal) modal.classList.add('open');
-  
-  // Zapisz że pokazano
-  localStorage.setItem('_routine_shown_' + (state.currentUser||''), today);
-}
-
-function closeRoutineModal() {
-  const modal = document.getElementById('routine-modal');
-  if (modal) modal.classList.remove('open');
-  
-  // Zapisz "nie pokazuj dziś" jeśli zaznaczono
-  const noShow = document.getElementById('routine-no-show-today');
-  if (noShow?.checked) {
-    localStorage.setItem('_routine_no_show_' + (state.currentUser||''), new Date().toDateString());
-  }
-}
-
-function toggleRoutine(el) {
-  el.classList.toggle('done');
-  updateRoutineProgress();
-}
-
-function updateRoutineProgress() {
-  const total = document.querySelectorAll('.routine-item').length;
-  const done  = document.querySelectorAll('.routine-item.done').length;
-  const el = document.getElementById('routine-progress');
-  if (el) {
-    el.textContent = done + '/' + total + ' ukończonych';
-    el.style.color = done === total ? 'var(--accent)' : 'var(--text3)';
-  }
-}
-
-
-// ===== MENEDŻER STRATEGII =====
-
 function getStrategies() {
   const db = getDB();
   return db['strategies_' + (state.currentUser||'')] || [];
 }
+
 
 function saveStrategies(strategies) {
   const db = getDB();
@@ -8811,10 +8237,12 @@ function saveStrategies(strategies) {
   saveDB(db);
 }
 
+
 function openStrategyManager() {
   renderStrategyList();
   openModal('strategy-modal');
 }
+
 
 function renderStrategyList() {
   const el = document.getElementById('strategy-list-container');
@@ -8848,6 +8276,7 @@ function renderStrategyList() {
   `).join('');
 }
 
+
 function openNewStrategy() {
   document.getElementById('str-id').value = '';
   document.getElementById('str-name').value = '';
@@ -8862,6 +8291,7 @@ function openNewStrategy() {
   setTimeout(() => document.getElementById('str-name')?.focus(), 100);
 }
 
+
 function openEditStrategy(id) {
   const strategies = getStrategies();
   const s = strategies.find(x => x.id === id);
@@ -8875,6 +8305,7 @@ function openEditStrategy(id) {
   (s.points||[]).forEach(p => addStrategyPoint(p));
   openModal('strategy-editor-modal');
 }
+
 
 function addStrategyPoint(text) {
   const list = document.getElementById('strategy-points-list');
@@ -8891,14 +8322,6 @@ function addStrategyPoint(text) {
   if (!text) setTimeout(() => div.querySelector('input')?.focus(), 50);
 }
 
-function renumberPoints() {
-  const list = document.getElementById('strategy-points-list');
-  if (!list) return;
-  Array.from(list.children).forEach((div, i) => {
-    const num = div.querySelector('span');
-    if (num) num.textContent = (i+1) + '.';
-  });
-}
 
 function saveStrategy() {
   const name = document.getElementById('str-name')?.value?.trim();
@@ -8920,6 +8343,7 @@ function saveStrategy() {
   toast('Strategia zapisana ✓', 'success');
 }
 
+
 function deleteStrategy(id) {
   if (!confirm('Usunąć strategię?')) return;
   const strategies = getStrategies().filter(s => s.id !== id);
@@ -8928,8 +8352,6 @@ function deleteStrategy(id) {
   toast('Strategia usunięta', 'success');
 }
 
-// ── Checklist przy analizie / transakcji ─────────────────────────────────────
-let _checklistCallback = null;
 
 function openStrategyChecklist(strategyId, callback) {
   const strategies = getStrategies();
@@ -8956,6 +8378,7 @@ function openStrategyChecklist(strategyId, callback) {
   document.getElementById('strategy-checklist-modal').classList.add('open');
 }
 
+
 function toggleChecklistPoint(el) {
   const circle = el.querySelector('.check-circle');
   const tick   = el.querySelector('.check-circle span');
@@ -8975,6 +8398,7 @@ function toggleChecklistPoint(el) {
   updateChecklistProgress();
 }
 
+
 function updateChecklistProgress() {
   const total   = document.querySelectorAll('#checklist-points > div').length;
   const checked = document.querySelectorAll('#checklist-points > div.checked').length;
@@ -8986,6 +8410,7 @@ function updateChecklistProgress() {
   if (warning) warning.style.display = (total > 0 && checked < total) ? 'block' : 'none';
 }
 
+
 function applyChecklist() {
   const total   = document.querySelectorAll('#checklist-points > div').length;
   const checked = document.querySelectorAll('#checklist-points > div.checked').length;
@@ -8994,6 +8419,7 @@ function applyChecklist() {
   if (_checklistCallback) _checklistCallback(score, checked === total);
   _checklistCallback = null;
 }
+
 
 function openChecklistForAnalysis() {
   const strategies = getStrategies();
@@ -9024,93 +8450,24 @@ function openChecklistForAnalysis() {
 }
 
 
-// ── Pasek strategii w modalach ────────────────────────────────────────────────
-function populateStrategySelects() {
-  const strategies = getStrategies();
-  ['an-strategy-select', 'trade-strategy-select'].forEach(id => {
-    const sel = document.getElementById(id);
-    if (!sel) return;
-    const current = sel.value;
-    sel.innerHTML = '<option value="">— Wybierz strategię —</option>' +
-      strategies.map(s => `<option value="${s.id}">${s.name}${s.points?.length?' ('+s.points.length+' pkt checklist)':''}</option>`).join('');
-    if (current) { sel.value = current; }
-    const prefix = id.includes('an-') ? 'an' : 'trade';
-    updateChecklistBtn(prefix);
-    if (current) {
-      const setupRow = document.getElementById(prefix + '-setup-row');
-      if (setupRow) { setupRow.style.display = 'flex'; populateSetupSelect(prefix, current); }
-    }
-  });
-  // Reset session screenshots
-  _setupSessionScreenshots = { an: [], trade: [] };
-}
-
-function updateChecklistBtn(prefix) {
-  const sel   = document.getElementById(prefix + '-strategy-select');
-  const btn   = document.getElementById(prefix + '-checklist-btn');
-  const score = document.getElementById(prefix + '-checklist-score');
-  if (!sel || !btn) return;
-  const hasStrategy = sel.value !== '';
-  btn.style.display = hasStrategy ? 'block' : 'none';
-  if (!hasStrategy && score) score.textContent = '';
-}
-
-function openChecklistFromForm(prefix) {
-  const sel = document.getElementById(prefix + '-strategy-select');
-  if (!sel?.value) return;
-  const strategies = getStrategies();
-  const s = strategies.find(x => x.id === sel.value);
-  if (!s) return;
-
-  // Reset checklisty
-  const scoreEl = document.getElementById(prefix + '-checklist-score');
-
-  openStrategyChecklist(s.id, (score, allDone) => {
-    if (scoreEl) {
-      scoreEl.textContent = allDone ? '✓ ' + score : '⚠ ' + score;
-      scoreEl.style.color = allDone ? 'var(--accent)' : 'var(--amber)';
-    }
-    // Zapisz wynik do pola notatek
-    const noteEl = document.getElementById(prefix === 'an' ? 'an-pre' : 't-pre');
-    if (noteEl) {
-      const tag = '[Checklist ' + s.name + ': ' + score + (allDone ? ' ✓' : ' ⚠') + ']';
-      if (!noteEl.value.includes('[Checklist')) {
-        noteEl.value = noteEl.value ? noteEl.value + '\n' + tag : tag;
-      } else {
-        noteEl.value = noteEl.value.replace(/\[Checklist[^\]]+\]/, tag);
-      }
-    }
-    if (!allDone) toast('⚠ Nie wszystkie warunki zaznaczone!', 'error');
-    else toast('✓ Wszystkie warunki strategii spełnione!', 'success');
-  });
-}
-
-// Nadpisz openNewAnalysis żeby wypełniało select
-// Strategy populate called from openNewAnalysis hook
-
-// Nadpisz openTradeModal żeby wypełniało select
-// Strategy populate called from openTradeModal hook
-
-
-// ===== MENEDŻER SETUPÓW =====
-
-let _currentSetupScreenshots = []; // {id, dataUrl} - screeny wzorcowe edytowanego setupu
-
 function getSetups(strategyId) {
   const db = getDB();
   return (db['setups_' + (state.currentUser||'')] || []).filter(s => s.strategyId === strategyId);
 }
+
 
 function getAllSetups() {
   const db = getDB();
   return db['setups_' + (state.currentUser||'')] || [];
 }
 
+
 function saveAllSetups(setups) {
   const db = getDB();
   db['setups_' + (state.currentUser||'')] = setups;
   saveDB(db);
 }
+
 
 function openSetupManager(strategyId) {
   if (!strategyId) return toast('Najpierw wybierz strategię', 'error');
@@ -9123,6 +8480,7 @@ function openSetupManager(strategyId) {
   renderSetupList(strategyId);
   openModal('setup-manager-modal');
 }
+
 
 function renderSetupList(strategyId) {
   const el = document.getElementById('setup-list-container');
@@ -9162,6 +8520,7 @@ function renderSetupList(strategyId) {
   `).join('');
 }
 
+
 function openNewSetup() {
   const strategyId = document.getElementById('setup-manager-modal')?.dataset.strategyId;
   if (!strategyId) return;
@@ -9181,6 +8540,7 @@ function openNewSetup() {
   setTimeout(() => document.getElementById('setup-name')?.focus(), 100);
 }
 
+
 function openEditSetup(id) {
   const setups = getAllSetups();
   const s = setups.find(x => x.id === id);
@@ -9198,6 +8558,7 @@ function openEditSetup(id) {
   openModal('setup-editor-modal');
 }
 
+
 function addSetupPoint(text) {
   const list = document.getElementById('setup-points-list');
   if (!list) return;
@@ -9213,6 +8574,7 @@ function addSetupPoint(text) {
   if (!text) setTimeout(() => div.querySelector('input')?.focus(), 50);
 }
 
+
 function addSetupRefScreenshots(input) {
   const files = Array.from(input.files);
   files.forEach(file => {
@@ -9225,6 +8587,7 @@ function addSetupRefScreenshots(input) {
   });
   input.value = '';
 }
+
 
 function renderSetupRefScreenshots() {
   const el = document.getElementById('setup-ref-screenshots');
@@ -9239,10 +8602,12 @@ function renderSetupRefScreenshots() {
   `).join('');
 }
 
+
 function removeSetupScreenshot(id) {
   _currentSetupScreenshots = _currentSetupScreenshots.filter(s => s.id !== id);
   renderSetupRefScreenshots();
 }
+
 
 function saveSetup() {
   const name = document.getElementById('setup-name')?.value?.trim();
@@ -9273,6 +8638,7 @@ function saveSetup() {
   });
 }
 
+
 function deleteSetup(id) {
   if (!confirm('Usunąć setup?')) return;
   const strategyId = getAllSetups().find(s => s.id === id)?.strategyId;
@@ -9281,7 +8647,7 @@ function deleteSetup(id) {
   toast('Setup usunięty', 'success');
 }
 
-// ── Wybór setupu w formularzu ─────────────────────────────────────────────────
+
 function onStrategyChange(prefix) {
   const sel = document.getElementById(prefix + '-strategy-select');
   const strategyId = sel?.value;
@@ -9301,6 +8667,7 @@ function onStrategyChange(prefix) {
   }
 }
 
+
 function populateSetupSelect(prefix, strategyId) {
   const sel = document.getElementById(prefix + '-setup-select');
   if (!sel) return;
@@ -9308,6 +8675,7 @@ function populateSetupSelect(prefix, strategyId) {
   sel.innerHTML = '<option value="">— Wybierz setup —</option>' +
     setups.map(s => `<option value="${s.id}">${s.name}${s.points?.length ? ' ('+s.points.length+' pkt)' : ''}</option>`).join('');
 }
+
 
 function onSetupChange(prefix) {
   const setupSel   = document.getElementById(prefix + '-setup-select');
@@ -9352,6 +8720,7 @@ function onSetupChange(prefix) {
   }
 }
 
+
 function openSetupChecklist(prefix, setup) {
   // Użyj ogólnego checklistModal ale z punktami setupu
   const strategies = getStrategies();
@@ -9385,8 +8754,6 @@ function openSetupChecklist(prefix, setup) {
   });
 }
 
-// Screenshoty dodawane podczas analizy/transakcji (nie wzorcowe)
-let _setupSessionScreenshots = { an: [], trade: [] };
 
 function addSetupScreenshots(prefix, input) {
   const files = Array.from(input.files);
@@ -9400,6 +8767,7 @@ function addSetupScreenshots(prefix, input) {
   });
   input.value = '';
 }
+
 
 function renderSessionScreenshots(prefix) {
   const el = document.getElementById(prefix + '-setup-screenshots-list');
@@ -9420,13 +8788,75 @@ function renderSessionScreenshots(prefix) {
   });
 }
 
+
 function removeSessionScreenshot(prefix, id) {
   _setupSessionScreenshots[prefix] = _setupSessionScreenshots[prefix].filter(s => s.id !== id);
   renderSessionScreenshots(prefix);
 }
 
 
-// ===== ZAKŁADKA NARZĘDZIA =====
+function populateStrategySelects() {
+  const strategies = getStrategies();
+  ['an-strategy-select', 'trade-strategy-select'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const current = sel.value;
+    sel.innerHTML = '<option value="">— Wybierz strategię —</option>' +
+      strategies.map(s => `<option value="${s.id}">${s.name}${s.points?.length?' ('+s.points.length+' pkt checklist)':''}</option>`).join('');
+    if (current) { sel.value = current; }
+    const prefix = id.includes('an-') ? 'an' : 'trade';
+    updateChecklistBtn(prefix);
+    if (current) {
+      const setupRow = document.getElementById(prefix + '-setup-row');
+      if (setupRow) { setupRow.style.display = 'flex'; populateSetupSelect(prefix, current); }
+    }
+  });
+  // Reset session screenshots
+  _setupSessionScreenshots = { an: [], trade: [] };
+}
+
+
+function updateChecklistBtn(prefix) {
+  const sel   = document.getElementById(prefix + '-strategy-select');
+  const btn   = document.getElementById(prefix + '-checklist-btn');
+  const score = document.getElementById(prefix + '-checklist-score');
+  if (!sel || !btn) return;
+  const hasStrategy = sel.value !== '';
+  btn.style.display = hasStrategy ? 'block' : 'none';
+  if (!hasStrategy && score) score.textContent = '';
+}
+
+
+function openChecklistFromForm(prefix) {
+  const sel = document.getElementById(prefix + '-strategy-select');
+  if (!sel?.value) return;
+  const strategies = getStrategies();
+  const s = strategies.find(x => x.id === sel.value);
+  if (!s) return;
+
+  // Reset checklisty
+  const scoreEl = document.getElementById(prefix + '-checklist-score');
+
+  openStrategyChecklist(s.id, (score, allDone) => {
+    if (scoreEl) {
+      scoreEl.textContent = allDone ? '✓ ' + score : '⚠ ' + score;
+      scoreEl.style.color = allDone ? 'var(--accent)' : 'var(--amber)';
+    }
+    // Zapisz wynik do pola notatek
+    const noteEl = document.getElementById(prefix === 'an' ? 'an-pre' : 't-pre');
+    if (noteEl) {
+      const tag = '[Checklist ' + s.name + ': ' + score + (allDone ? ' ✓' : ' ⚠') + ']';
+      if (!noteEl.value.includes('[Checklist')) {
+        noteEl.value = noteEl.value ? noteEl.value + '\n' + tag : tag;
+      } else {
+        noteEl.value = noteEl.value.replace(/\[Checklist[^\]]+\]/, tag);
+      }
+    }
+    if (!allDone) toast('⚠ Nie wszystkie warunki zaznaczone!', 'error');
+    else toast('✓ Wszystkie warunki strategii spełnione!', 'success');
+  });
+}
+
 
 function switchToolsTab(tab) {
   ['calculator','strategies','brokers'].forEach(t => {
@@ -9442,7 +8872,7 @@ function switchToolsTab(tab) {
   if (tab === 'brokers') initBrokerCalc();
 }
 
-// Renderuj strategie i setupy w zakładce Narzędzia
+
 function renderToolsStrategies() {
   const el = document.getElementById('tools-strategies-container');
   if (!el) return;
@@ -9525,13 +8955,14 @@ function renderToolsStrategies() {
   }).join('');
 }
 
+
 function openNewStrategyInline() {
   openNewStrategy();
   // Po zapisaniu odśwież widok
   const origSave = window._origSaveStrategy || saveStrategy;
 }
 
-// Kalkulator prowizji w zakładce Narzędzia
+
 function initBrokerCalc() {
   const sel = document.getElementById('bc-broker');
   if (!sel || sel.options.length > 1) return;
@@ -9542,6 +8973,7 @@ function initBrokerCalc() {
     sel.appendChild(opt);
   });
 }
+
 
 function calcBrokerPreview() {
   const brokerKey = document.getElementById('bc-broker')?.value;
@@ -9599,11 +9031,7 @@ function calcBrokerPreview() {
   el.innerHTML = html;
 }
 
-// Patch showPage żeby obsługiwał 'tools'
 
-
-
-// ── Formularz konta — wybór brokera ──────────────────────────────────────────
 function initAccountBrokerSelect() {
   const sel = document.getElementById('acc-broker-key');
   if (!sel) return;
@@ -9629,6 +9057,7 @@ function initAccountBrokerSelect() {
     sel.appendChild(og);
   });
 }
+
 
 function onAccBrokerChange() {
   const sel    = document.getElementById('acc-broker-key');
@@ -9669,6 +9098,7 @@ function onAccBrokerChange() {
   }
 }
 
+
 function updatePropSplitPreview() {
   const pct = parseFloat(document.getElementById('acc-trader-pct')?.value) || 80;
   const el  = document.getElementById('prop-split-preview');
@@ -9682,11 +9112,7 @@ function updatePropSplitPreview() {
   }
 }
 
-// Zapisz brokerKey do konta
-const _origSaveAccount = typeof saveAccountUI === 'function' ? null : null;
 
-
-// ── Kalendarz w Podsumowaniu ──────────────────────────────────────────────────
 function renderCalendarSummary() {
   const mode = document.getElementById('s-cal-view-mode')?.value || 'month';
   const map  = buildTradeMap();
@@ -9696,6 +9122,7 @@ function renderCalendarSummary() {
   if (mode === 'year') renderCalendarYearSummary(map);
   else renderCalendarMonthSummary(map);
 }
+
 
 function renderCalendarMonthSummary(map) {
   // Użyj oryginalnej logiki ale z prefix s-
@@ -9729,16 +9156,30 @@ function renderCalendarMonthSummary(map) {
     <span style="color:${pnl>=0?'var(--accent)':'var(--red)'}">P&L: <b>${pnl>=0?'+':''}${fmt(pnl)}</b></span>`;
 
   // Grid
-  const startDow = (firstDay.getDay() + 6) % 7;
-  let html = CAL_DAYS_PL.map(d => `<div class="cal-day-header">${d}</div>`).join('');
-  for (let i = 0; i < startDow; i++) html += '<div class="cal-day cal-empty"></div>';
+  let startDow = (firstDay.getDay() + 6) % 7;
+  let html = '<div class="cal-grid-month">';
+  html += CAL_DAYS_PL.map(d => `<div class="cal-day-header">${d}</div>`).join('');
+  for (let i = 0; i < startDow; i++) {
+    const prev = new Date(calYear, calMonth, -startDow + i + 1);
+    const prevKey = localDateStr(prev);
+    html += calCellHTML(prev.getDate(), prevKey, map[prevKey], todayStr, true);
+  }
   for (let day = 1; day <= lastDay.getDate(); day++) {
     const dateStr = calYear + '-' + String(calMonth+1).padStart(2,'0') + '-' + String(day).padStart(2,'0');
-    const trades  = map[dateStr] || [];
-    html += calCellHTML(dateStr, trades, todayStr, true);
+    html += calCellHTML(day, dateStr, map[dateStr], todayStr, false);
   }
+  const totalCells = startDow + lastDay.getDate();
+  const trailing = (7 - totalCells % 7) % 7;
+  for (let i = 1; i <= trailing; i++) {
+    const next = new Date(calYear, calMonth + 1, i);
+    const nextKey = localDateStr(next);
+    html += calCellHTML(i, nextKey, map[nextKey], todayStr, true);
+  }
+  html += '</div>';
   gridEl.innerHTML = html;
+  if (calSelectedDate && map[calSelectedDate]) openCalDay(calSelectedDate, map[calSelectedDate]);
 }
+
 
 function renderCalendarYearSummary(map) {
   const gridEl = document.getElementById('s-cal-year-grid');
@@ -9750,9 +9191,155 @@ function renderCalendarYearSummary(map) {
   if (origGrid) gridEl.innerHTML = origGrid.innerHTML;
 }
 
+
+function checkLoginRateLimit(identifier) {
+  const now = Date.now();
+  const key = 'login_' + identifier;
+  if (!_loginAttempts[key]) _loginAttempts[key] = { count: 0, firstAt: now };
+  const data = _loginAttempts[key];
+  // Reset po 15 minutach
+  if (now - data.firstAt > 15 * 60 * 1000) {
+    _loginAttempts[key] = { count: 0, firstAt: now };
+    return true;
+  }
+  if (data.count >= 5) {
+    const wait = Math.ceil((15 * 60 * 1000 - (now - data.firstAt)) / 60000);
+    showAuthError(`Zbyt wiele prób logowania. Poczekaj ${wait} minut.`);
+    return false;
+  }
+  data.count++;
+  return true;
+}
+
+
+function sanitize(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
+    .replace(/\//g, '&#x2F;');
+}
+
+
+function validateLogin(login) {
+  return /^[a-zA-Z0-9_.-]{3,30}$/.test(login);
+}
+
+
+function validateEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+
+function validatePassword(pass) {
+  return pass && pass.length >= 6 && pass.length <= 128;
+}
+
+
+async function adminGenerateInviteLocal() {
+  const code = Array.from({length:12}, () =>
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'[Math.floor(Math.random()*36)]
+  ).join('').replace(/(.{4})(.{4})(.{4})/, '$1-$2-$3');
+
+  const expiresAt = new Date(Date.now() + 7*24*60*60*1000).toISOString();
+
+  // Zapisz w Supabase przez fetch (działa nawet gdy _sb jest null)
+  try {
+    const res = await fetch('https://ygrkcynyduuflzvbkkvo.supabase.co/rest/v1/invitations', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': 'sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK',
+        'Authorization': 'Bearer sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({ code, expires_at: expiresAt })
+    });
+    if (!res.ok) {
+      const err = await res.text();
+      console.warn('Invite save error:', err);
+      toast('Błąd zapisu kodu: ' + res.status, 'error');
+      return;
+    }
+    console.log('Kod zapisany w Supabase:', code);
+  } catch(e) {
+    console.warn('Invite fetch error:', e.message);
+    toast('Błąd połączenia z serwerem', 'error');
+    return;
+  }
+
+  // Skopiuj do schowka
+  navigator.clipboard?.writeText(code).catch(()=>{});
+  toast('Kod zaproszenia: ' + code + ' (skopiowany!)', 'success');
+  renderInviteCodes();
+}
+
+
+async function renderInviteCodes() {
+  const el = document.getElementById('invite-codes-list');
+  if (!el) return;
+  el.innerHTML = '<div style="color:var(--text3);font-size:11px">⏳ Ładowanie...</div>';
+
+  let invitations = [];
+
+  // Pobierz z Supabase
+  if (_sb) {
+    try {
+      const { data } = await _sb.from('invitations')
+        .select('*').order('created_at', {ascending: false}).limit(10);
+      if (data) invitations = data.map(i => ({
+        code: i.code,
+        usedBy: i.used_by,
+        expiresAt: new Date(i.expires_at).getTime(),
+        createdAt: new Date(i.created_at).getTime()
+      }));
+    } catch(e) {}
+  }
+
+  // Fallback lokalnie
+  if (!invitations.length) {
+    const db = getDB();
+    invitations = (db.invitations || []).slice(-5).reverse();
+  }
+
+  if (!invitations.length) {
+    el.innerHTML = '<div style="color:var(--text3);font-size:11px">Brak wygenerowanych kodów</div>';
+    return;
+  }
+
+  el.innerHTML = invitations.slice(0,8).map(inv => {
+    const expired = Date.now() > inv.expiresAt;
+    const status = inv.usedBy ? '✓ Użyty' : expired ? '⏰ Wygasł' : '⏳ Aktywny';
+    const color = inv.usedBy ? 'var(--green)' : expired ? 'var(--red)' : 'var(--amber)';
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border)">
+      <span style="font-family:var(--font-mono);font-weight:700;font-size:12px;letter-spacing:1px;cursor:pointer"
+        onclick="navigator.clipboard?.writeText('${inv.code}');toast('Skopiowano: ${inv.code}','success')"
+        title="Kliknij aby skopiować">${inv.code}</span>
+      <span style="font-size:10px;color:${color}">${status}</span>
+    </div>`;
+  }).join('');
+}
+
+
+
+function calNavSummary(dir) {
+  const mode = document.getElementById('s-cal-view-mode')?.value || 'month';
+  if (mode === 'year') { calYear += dir; }
+  else {
+    calMonth += dir;
+    if (calMonth > 11) { calMonth = 0; calYear++; }
+    if (calMonth < 0)  { calMonth = 11; calYear--; }
+  }
+  renderCalendarSummary();
+}
+
 // ===== INIT =====
 async function appInit() {
   initLang();
+  initSupabase();
   await initDB();
   const _users = getUsers();
 
@@ -9793,101 +9380,10 @@ async function appInit() {
   });
   if (_chg) saveUsers(_users);
 
-  // Sprawdź sesję Supabase (Google OAuth / email login)
-  if (_sb) {
-    try {
-      const sessRes = await _sb.auth.getSession();
-      const session = sessRes.data?.session;
-      console.log('Session check:', session ? 'found user: ' + session.user?.email : 'no session');
-      if (session && session.user) {
-        const userId = session.user.id;
-        const userEmail = session.user.email;
-        const isGoogle = session.user.app_metadata?.provider === 'google';
-
-        // Pobierz profil przez REST API (działa zawsze)
-        const profRes = await fetch('https://ygrkcynyduuflzvbkkvo.supabase.co/rest/v1/profiles?id=eq.' + userId + '&select=*', {
-          headers: { 'apikey': 'sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK', 'Authorization': 'Bearer sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK' }
-        });
-        let profiles = await profRes.json();
-        let profile = profiles?.[0];
-
-        if (!profile) {
-          // Nowy użytkownik przez Google - utwórz profil i od razu aktywuj
-          var login = (userEmail||'').split('@')[0].replace(/[^a-z0-9_.-]/gi,'_').slice(0,30);
-          var name = session.user.user_metadata?.full_name || login;
-          await fetch('https://ygrkcynyduuflzvbkkvo.supabase.co/rest/v1/profiles', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'apikey': 'sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK',
-              'Authorization': 'Bearer sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK',
-              'Prefer': 'return=representation'
-            },
-            body: JSON.stringify({
-              id: userId, login, name, email: userEmail,
-              role: 'user', active: true
-            })
-          });
-          profile = { id: userId, login, name, email: userEmail, role: 'user', active: true };
-        }
-
-        // Sprawdź czy konto aktywne (admini zawsze mają dostęp)
-        if (profile.role !== 'admin' && profile.active === false) {
-          await _sb.auth.signOut();
-          showAuthScreen();
-          showAuthError('Konto oczekuje na aktywację przez administratora.');
-          return;
-        }
-
-        // Zaloguj
-        const users = getUsers();
-        users[profile.login] = {
-          pass: '__supabase__',
-          name: profile.name || profile.login,
-          email: profile.email || userEmail,
-          role: profile.role || 'user',
-          subscription: profile.role === 'admin' ? 'admin' : 'active',
-          supabaseId: userId,
-          createdAt: Date.now(),
-        };
-        saveUsers(users);
-        await sbSyncDown(userId);
-        loginAs(profile.login, users[profile.login]);
-
-        // Nasłuchuj wylogowania
-        _sb.auth.onAuthStateChange((event) => {
-          if (event === 'SIGNED_OUT') doLogout();
-        });
-        return;
-      }
-    } catch(e) { console.warn('Session check error:', e.message); }
-  }
-
   // Zawsze pokazuj ekran logowania
   document.getElementById('auth-screen').style.display = 'flex';
 }
-// Poczekaj na załadowanie Supabase przed inicjalizacją
-(function() {
-  function waitForSupabase(attempts) {
-    const sb_lib = window.supabase || window.Supabase || window.supabaseJs;
-    if (sb_lib && sb_lib.createClient) {
-      appInit();
-      return;
-    }
-    if (attempts > 0) {
-      setTimeout(() => waitForSupabase(attempts - 1), 300);
-      return;
-    }
-    // Ostatnia próba - załaduj przez inny CDN
-    console.warn('Trying fallback CDN...');
-    const s = document.createElement('script');
-    s.src = 'https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js';
-    s.onload = () => appInit();
-    s.onerror = () => { console.error('All CDNs failed'); appInit(); };
-    document.head.appendChild(s);
-  }
-  waitForSupabase(25); // czekaj max 7.5 sekundy
-})();
+appInit();
 
 function showNoUsersHint() {
   // Nowy użytkownik na tej przeglądarce - pokaż rejestrację
@@ -9899,271 +9395,5 @@ function showNoUsersHint() {
   // Nowi użytkownicy dostają rolę 'user', nie admin
 }
 </script>
-
-    <!-- DAILY ROUTINE MODAL -->
-    <div class="modal-overlay" id="routine-modal" style="z-index:10000">
-      <div class="modal" style="max-width:720px;padding:0;overflow:hidden">
-        <div style="background:linear-gradient(135deg,#0a0a1a 0%,#1a1a2e 100%);padding:24px 28px 20px">
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <div>
-              <div style="font-family:var(--font-head);font-size:22px;font-weight:800;color:white">
-                Trader <span style="color:var(--accent)">Routine</span>
-              </div>
-              <div style="font-size:12px;color:var(--text3);margin-top:2px">Dzisiejsza rutyna tradera · <span id="routine-date"></span></div>
-            </div>
-            <button onclick="closeRoutineModal()" style="background:rgba(255,255,255,.1);border:none;color:white;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px">✕</button>
-          </div>
-        </div>
-
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0">
-          <!-- BEFORE SESSION -->
-          <div style="padding:20px 24px;border-right:1px solid var(--border)">
-            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:14px">⬛ Before Session</div>
-
-            <div class="routine-item" onclick="toggleRoutine(this)">
-              <div class="routine-icon">📖</div>
-              <div>
-                <div class="routine-title">Read your journal</div>
-                <div class="routine-sub">Set goal for the day</div>
-              </div>
-            </div>
-
-            <div class="routine-item" onclick="toggleRoutine(this)">
-              <div class="routine-icon">📰</div>
-              <div>
-                <div class="routine-title">Check economic events</div>
-                <div class="routine-sub">Schedule time for Session</div>
-              </div>
-            </div>
-
-            <div class="routine-item" onclick="toggleRoutine(this)">
-              <div class="routine-icon">🎯</div>
-              <div>
-                <div class="routine-title">Choose strategy to trade</div>
-                <div class="routine-sub">When / Why / How to use it?</div>
-              </div>
-            </div>
-
-            <div class="routine-item" onclick="toggleRoutine(this)">
-              <div class="routine-icon">🧠</div>
-              <div>
-                <div class="routine-title">Build intuition — Trader's Mindset</div>
-                <div class="routine-sub">Visualize best & worst setups</div>
-              </div>
-            </div>
-
-            <div class="routine-item" onclick="toggleRoutine(this)">
-              <div class="routine-icon">📊</div>
-              <div>
-                <div class="routine-title">Time for Charts</div>
-                <div class="routine-sub">Prepare charts · Turn off your phone</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- AFTER SESSION -->
-          <div style="padding:20px 24px">
-            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--amber);margin-bottom:14px">⬛ After Session</div>
-
-            <div class="routine-item" onclick="toggleRoutine(this)">
-              <div class="routine-icon">📸</div>
-              <div>
-                <div class="routine-title">Save screenshots of charts</div>
-                <div class="routine-sub">Add to journal · Summarize · Conclude</div>
-              </div>
-            </div>
-
-            <div class="routine-item" onclick="toggleRoutine(this)">
-              <div class="routine-icon">🖥️</div>
-              <div>
-                <div class="routine-title">Set-ups · Scenarios · Opportunities</div>
-                <div class="routine-sub">Good set-ups? Which ones? Describe!</div>
-              </div>
-            </div>
-
-            <div class="routine-item" onclick="toggleRoutine(this)">
-              <div class="routine-icon">✅</div>
-              <div>
-                <div class="routine-title">Sum up goals for the day</div>
-                <div class="routine-sub">What works? What lacks? What to improve?</div>
-              </div>
-            </div>
-
-            <div class="routine-item" onclick="toggleRoutine(this)">
-              <div class="routine-icon">☕</div>
-              <div>
-                <div class="routine-title">Break & Relax</div>
-                <div class="routine-sub">Healthy food · 30 min break · Walk · Nap</div>
-              </div>
-            </div>
-
-            <div class="routine-item" onclick="toggleRoutine(this)">
-              <div class="routine-icon">📈</div>
-              <div>
-                <div class="routine-title">Learn & Grow as a Trader</div>
-                <div class="routine-sub">Market Replay · Fast habit building</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Footer -->
-        <div style="padding:14px 24px;background:var(--bg);border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
-          <div id="routine-progress" style="font-size:12px;color:var(--text3)">0/10 ukończonych</div>
-          <div style="display:flex;gap:8px;align-items:center">
-            <label style="font-size:12px;color:var(--text3);display:flex;align-items:center;gap:6px;cursor:pointer">
-              <input type="checkbox" id="routine-no-show-today" style="cursor:pointer">
-              Nie pokazuj dziś
-            </label>
-            <button onclick="closeRoutineModal()" class="btn-sm btn-accent">Zaczynam! 🚀</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-
-    <!-- STRATEGY MANAGER MODAL -->
-    <div class="modal-overlay" id="strategy-modal">
-      <div class="modal" style="max-width:600px">
-        <div class="modal-header">
-          <div class="modal-title">🎯 Moje strategie</div>
-          <button class="modal-close" onclick="closeModal('strategy-modal')">✕</button>
-        </div>
-        <div class="modal-body">
-          <div style="margin-bottom:16px">
-            <button class="btn-sm btn-accent" onclick="openNewStrategy()">+ Dodaj strategię</button>
-          </div>
-          <div id="strategy-list-container">
-            <div style="color:var(--text3);font-size:13px">Ładowanie...</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- STRATEGY EDITOR MODAL -->
-    <div class="modal-overlay" id="strategy-editor-modal">
-      <div class="modal" style="max-width:620px">
-        <div class="modal-header">
-          <div class="modal-title" id="strategy-editor-title">Nowa strategia</div>
-          <button class="modal-close" onclick="closeModal('strategy-editor-modal')">✕</button>
-        </div>
-        <div class="modal-body">
-          <div class="form-group-modal">
-            <label class="form-label-modal">Nazwa strategii *</label>
-            <input class="form-input-modal" id="str-name" placeholder="np. Price Action Breakout, London Kill Zone...">
-          </div>
-          <div class="form-group-modal">
-            <label class="form-label-modal">Opis / cel strategii</label>
-            <textarea class="form-input-modal" id="str-desc" rows="2" placeholder="Krótki opis strategii..."></textarea>
-          </div>
-          <div class="form-group-modal">
-            <label class="form-label-modal" style="display:flex;justify-content:space-between">
-              <span>Checklist — założenia strategii</span>
-              <button onclick="addStrategyPoint()" class="btn-sm" style="font-size:11px;padding:2px 8px">+ Dodaj punkt</button>
-            </label>
-            <div id="strategy-points-list" style="display:flex;flex-direction:column;gap:6px;margin-top:6px"></div>
-            <div style="font-size:11px;color:var(--text3);margin-top:8px">
-              💡 Przykłady: "Trend wyższy TF", "Struktura rynku potwierdziona", "RR minimum 1:2", "Sesja londyńska/NY"
-            </div>
-          </div>
-          <input type="hidden" id="str-id">
-        </div>
-        <div class="modal-footer">
-          <button class="btn-sm" onclick="closeModal('strategy-editor-modal')">Anuluj</button>
-          <button class="btn-sm btn-accent" onclick="saveStrategy()">✓ Zapisz strategię</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- STRATEGY CHECKLIST MODAL (przy analizie/transakcji) -->
-    <div class="modal-overlay" id="strategy-checklist-modal">
-      <div class="modal" style="max-width:500px">
-        <div class="modal-header">
-          <div class="modal-title">✅ Checklist strategii</div>
-          <button class="modal-close" onclick="closeModal('strategy-checklist-modal')">✕</button>
-        </div>
-        <div class="modal-body">
-          <div id="checklist-strategy-name" style="font-size:13px;color:var(--accent);font-weight:700;margin-bottom:14px"></div>
-          <div id="checklist-points" style="display:flex;flex-direction:column;gap:8px"></div>
-          <div id="checklist-progress-bar" style="margin-top:16px">
-            <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text3);margin-bottom:6px">
-              <span>Postęp</span>
-              <span id="checklist-score">0/0</span>
-            </div>
-            <div style="background:var(--bg3);border-radius:4px;height:6px">
-              <div id="checklist-bar" style="background:var(--accent);height:6px;border-radius:4px;transition:width .3s;width:0%"></div>
-            </div>
-          </div>
-          <div id="checklist-warning" style="display:none;background:rgba(255,100,0,.1);border:1px solid var(--amber);border-radius:8px;padding:10px;margin-top:12px;font-size:12px;color:var(--amber)">
-            ⚠️ Nie wszystkie warunki są spełnione. Czy na pewno chcesz kontynuować?
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn-sm" onclick="closeModal('strategy-checklist-modal')">Zamknij</button>
-          <button class="btn-sm btn-accent" onclick="applyChecklist()">✓ Potwierdź i kontynuuj</button>
-        </div>
-      </div>
-    </div>
-
-
-    <!-- SETUP MANAGER MODAL -->
-    <div class="modal-overlay" id="setup-manager-modal">
-      <div class="modal" style="max-width:620px">
-        <div class="modal-header">
-          <div class="modal-title">📐 Setupy strategii: <span id="setup-manager-strategy-name" style="color:var(--accent)"></span></div>
-          <button class="modal-close" onclick="closeModal('setup-manager-modal')">✕</button>
-        </div>
-        <div class="modal-body">
-          <div style="margin-bottom:14px">
-            <button class="btn-sm btn-accent" onclick="openNewSetup()">+ Dodaj setup</button>
-            <span style="font-size:12px;color:var(--text3);margin-left:10px">Każdy setup może mieć własny checklist i screenshoty wzorcowe</span>
-          </div>
-          <div id="setup-list-container"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- SETUP EDITOR MODAL -->
-    <div class="modal-overlay" id="setup-editor-modal">
-      <div class="modal" style="max-width:640px">
-        <div class="modal-header">
-          <div class="modal-title" id="setup-editor-title">Nowy setup</div>
-          <button class="modal-close" onclick="closeModal('setup-editor-modal')">✕</button>
-        </div>
-        <div class="modal-body">
-          <div class="form-group-modal">
-            <label class="form-label-modal">Nazwa setupu *</label>
-            <input class="form-input-modal" id="setup-name" placeholder="np. BOS + FVG retest, London Killzone Sweep...">
-          </div>
-          <div class="form-group-modal">
-            <label class="form-label-modal">Opis setupu</label>
-            <textarea class="form-input-modal" id="setup-desc" rows="2" placeholder="Kiedy wchodzisz? Co widzisz na wykresie?"></textarea>
-          </div>
-          <div class="form-group-modal">
-            <label class="form-label-modal" style="display:flex;justify-content:space-between">
-              <span>Checklist setupu</span>
-              <button onclick="addSetupPoint()" class="btn-sm" style="font-size:11px;padding:2px 8px">+ Dodaj punkt</button>
-            </label>
-            <div id="setup-points-list" style="display:flex;flex-direction:column;gap:6px;margin-top:6px"></div>
-          </div>
-          <div class="form-group-modal">
-            <label class="form-label-modal">📸 Screenshoty wzorcowe (przykłady setupu)</label>
-            <div id="setup-ref-screenshots" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px"></div>
-            <label style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--accent);padding:6px 12px;border:1px dashed var(--accent);border-radius:8px">
-              📸 Dodaj screenshot wzorcowy
-              <input type="file" accept="image/*" multiple style="display:none" onchange="addSetupRefScreenshots(this)">
-            </label>
-            <div style="font-size:11px;color:var(--text3);margin-top:6px">Wklej screeny idealnych przykładów tego setupu — będą widoczne przy analizie jako wzorzec</div>
-          </div>
-          <input type="hidden" id="setup-id">
-          <input type="hidden" id="setup-strategy-id">
-        </div>
-        <div class="modal-footer">
-          <button class="btn-sm" onclick="closeModal('setup-editor-modal')">Anuluj</button>
-          <button class="btn-sm btn-accent" onclick="saveSetup()">✓ Zapisz setup</button>
-        </div>
-      </div>
-    </div>
-
 </body>
 </html>
