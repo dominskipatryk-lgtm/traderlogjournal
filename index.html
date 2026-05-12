@@ -7663,61 +7663,48 @@ function saveAnalysisAsTrade() {
   // Zapisz analizę jeśli ma tytuł
   if (title) saveAnalysis(); else closeModal('analysis-modal');
 
-  // Jeśli powiązana transakcja istnieje — edytuj ją zamiast tworzyć nową
+  // Zapisz transakcję od razu — nie otwieraj tylko formularza
   if (linkedTrade) {
-    state.editTradeId = linkedTrade.id;
-    state.tempScreenshots = [
-      ...(linkedTrade.screenshots||[]).map(s=>({id:genId(),dataUrl:s})),
-      ...screens.map(s=>({id:genId(),dataUrl:s}))
-    ];
-    document.getElementById('trade-id').value = linkedTrade.id;
+    // Aktualizuj istniejącą transakcję
+    const trades = getTrades(state.currentAccountId);
+    const idx = trades.findIndex(t => t.id === linkedTrade.id);
+    if (idx >= 0) {
+      if (pre) trades[idx].pre = pre;
+      if (post) trades[idx].post = post;
+      if (setup) trades[idx].setup = setup;
+      trades[idx].linkedAnalysisId = analysisId;
+      if (screens.length) trades[idx].screenshots = [...(linkedTrade.screenshots||[]), ...screens];
+      saveTrades(state.currentAccountId, trades);
+    }
+    renderTrades(); renderDashboard();
+    toast('Analiza powiązana z transakcją ✓', 'success');
+    // Otwórz edycję transakcji
+    openEditModal(linkedTrade.id);
   } else {
-    state.editTradeId = null;
-    state.tempScreenshots = screens.map(s=>({id:genId(),dataUrl:s}));
-    document.getElementById('trade-id').value = '';
+    // Utwórz nową transakcję i zapisz od razu
+    const newId = genId();
+    const newTrade = {
+      id: newId, symbol: tradeSymbol,
+      date: tradeDate.slice(0,16), dir: tradeDir,
+      status: 'open',
+      entry: parseFloat(entry)||null, sl: parseFloat(sl)||null,
+      tp: parseFloat(tp)||null, tps: [],
+      exit: null, pnl: null,
+      tf: tradeTf||'H1', setup: setup||'',
+      pre: pre||'', post: post||'',
+      screenshots: screens,
+      linkedAnalysisId: analysisId,
+      size: parseFloat(size)||null,
+      mt4Ticket: null,
+    };
+    const allTrades = getTrades(state.currentAccountId);
+    allTrades.push(newTrade);
+    saveTrades(state.currentAccountId, allTrades);
+    renderTrades(); renderDashboard();
+    toast('Transakcja zapisana z analizy ✓', 'success');
+    // Otwórz edycję nowej transakcji
+    openEditModal(newId);
   }
-
-  _pnlManual = false; _draftKey = null;
-  ['t-exit','t-pnl'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-
-  document.getElementById('t-symbol').value  = tradeSymbol;
-  document.getElementById('t-date').value    = tradeDate.slice(0,16);
-  document.getElementById('t-dir').value     = tradeDir;
-  document.getElementById('t-status').value  = linkedTrade?.status || 'open';
-  document.getElementById('t-entry').value   = entry;
-  document.getElementById('t-sl').value      = sl;
-  document.getElementById('t-tp').value      = tp;
-  document.getElementById('t-size').value    = size;
-  document.getElementById('t-setup').value   = setup || linkedTrade?.setup || '';
-
-  // Treść analizy jako pre-trade, poprzednia treść transakcji jako post jeśli istnieje
-  const existingPre = linkedTrade?.pre || '';
-  document.getElementById('t-pre').value  = pre || existingPre;
-  document.getElementById('t-post').value = post || linkedTrade?.post || '';
-
-  // Ustaw powiązanie z analizą
-  const linkedIdField = document.getElementById('t-linked-analysis-id');
-  if (linkedIdField && analysisId) linkedIdField.value = analysisId;
-
-  document.getElementById('modal-title').textContent = linkedTrade
-    ? '📈 Uzupełnij transakcję z analizy: ' + (tradeSymbol||title)
-    : '📈 Nowa transakcja z analizy: ' + (tradeSymbol||title);
-
-  setTfFromValue(tradeTf||'H1');
-  toggleCloseFields();
-  renderScreenshotPreviews();
-  const _pp=document.getElementById('pnl-preview'); if(_pp)_pp.textContent='';
-  const _pf=document.getElementById('t-pnl'); if(_pf)_pf.style.borderColor='';
-  setAutosaveDot('idle');
-
-  // Wypełnij dropdown analizy
-  setTimeout(() => {
-    populateStrategySelects();
-    document.getElementById('trade-checklist-score').textContent='';
-    if (analysisId) populateLinkedAnalysisSelect(tradeSymbol, analysisId);
-  }, 50);
-
-  openModal('trade-modal'); applyTfModeUI(); hookFormAutoSave();
   if(entry&&sl) autoPnl();
   toast(linkedTrade ? 'Transakcja uzupełniona danymi z analizy ✓' : 'Dane z analizy przeniesione ✓','success');
 }
