@@ -627,6 +627,15 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 .color-swatch { width: 24px; height: 24px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: all .15s; }
 .color-swatch.selected { border-color: #fff; transform: scale(1.1); }
 .color-row { display: flex; gap: 8px; flex-wrap: wrap; }
+/* ── Routine Modal ── */
+.routine-item { display:flex; align-items:flex-start; gap:12px; padding:10px 12px; border-radius:8px; cursor:pointer; margin-bottom:6px; border:1px solid transparent; transition:all .15s; }
+.routine-item:hover { background:var(--bg3); border-color:var(--border); }
+.routine-item.done { background:rgba(0,212,161,.08); border-color:rgba(0,212,161,.2); }
+.routine-item.done .routine-title { text-decoration:line-through; color:var(--text3); }
+.routine-icon { font-size:20px; min-width:28px; text-align:center; margin-top:1px; }
+.routine-title { font-size:13px; font-weight:600; color:var(--text); line-height:1.3; }
+.routine-sub { font-size:11px; color:var(--text3); margin-top:2px; line-height:1.4; }
+.routine-item.done .routine-icon::after { content:" ✓"; font-size:12px; color:var(--accent); }
 </style>
 </head>
 <body>
@@ -1091,21 +1100,6 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
           <button class="btn-sm btn-accent" onclick="savePasswordSettings()">🔑 Zmień hasło</button>
         </div>
 
-        <!-- Recovery code -->
-        <div class="settings-section">
-          <div class="settings-section-title" data-i18n="sett_recovery">🆘 Kod odzyskiwania hasła</div>
-          <p style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.6">
-            Wygeneruj jednorazowy kod — zapisz go w bezpiecznym miejscu.
-            Możesz go użyć na ekranie logowania jeśli zapomnisz hasła.
-          </p>
-          <div class="recovery-code-box" id="recovery-code-display" style="display:none" title="Kliknij aby skopiować" onclick="copyRecoveryCode()"></div>
-          <div style="display:flex;gap:10px;margin-top:14px">
-            <button class="btn-sm btn-accent" onclick="generateRecoveryCode()">⚡ Generuj nowy kod</button>
-            <div id="recovery-copy-hint" style="font-size:12px;color:var(--accent);align-self:center;display:none">✓ Skopiowano!</div>
-          </div>
-          <div style="font-size:11px;color:var(--text3);margin-top:10px">Poprzedni kod traci ważność po wygenerowaniu nowego.</div>
-        </div>
-
         <!-- BACKUP SECTION -->
         <div class="settings-section">
           <div class="settings-section-title">🤖 Analiza AI — klucz API</div>
@@ -1129,17 +1123,6 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
           <div style="font-size:11px;color:var(--text3);line-height:1.7">
             Klucz API: <a href="https://console.anthropic.com" target="_blank" style="color:var(--accent)">console.anthropic.com</a>
             → API Keys → Create Key · Koszt: ~$0.001 / screenshot
-          </div>
-        </div>
-
-        <div class="settings-section">
-          <div class="settings-section-title">🗓 Trader Routine</div>
-          <p style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.6">
-            Trader Routine pojawia się automatycznie raz dziennie po zalogowaniu.
-          </p>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button class="btn-sm btn-accent" onclick="forceShowRoutine()" style="font-size:12px">▶ Pokaż Routine teraz</button>
-            <button class="btn-sm" onclick="resetRoutineToday()" style="font-size:12px">🔄 Resetuj blokadę na dziś</button>
           </div>
         </div>
 
@@ -2042,7 +2025,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
           <div style="display:flex;justify-content:space-between;align-items:center">
             <div>
               <div style="font-family:var(--font-head);font-size:22px;font-weight:800;color:white">
-                Trader <span style="color:var(--accent)">Routine</span>
+                TraderLog<span style="color:var(--accent)">Journal</span> <span style="color:var(--accent)">Routine</span>
               </div>
               <div style="font-size:12px;color:var(--text3);margin-top:2px">Dzisiejsza rutyna tradera · <span id="routine-date"></span></div>
             </div>
@@ -6002,7 +5985,6 @@ function renderBackupOptions() {
             <path d="M17.72 17.59l4.28-7.18-2.14-3.7-4.14 7.18z" fill="#EA4335"/>
           </svg>
           Opcja B — Sync z Google Drive
-          <span class="badge" style="background:var(--blue-dim);color:var(--blue);font-size:10px">Beta</span>
         </div>
         <label class="toggle-switch">
           <input type="checkbox" id="bk-gdrive-toggle" ${s.googleDrive?'checked':''} onchange="toggleBackupOption('gdrive',this.checked)">
@@ -6010,16 +5992,31 @@ function renderBackupOptions() {
         </label>
       </div>
       <div class="backup-option-desc">
-        Automatycznie zapisuje kopię danych na Twoim Google Drive po każdym logowaniu.
-        Wymagane zalogowanie kontem Google.
+        Automatycznie zapisuje kopię Twoich danych na <strong>Twoim</strong> Google Drive.
+        Dane należą do Ciebie — nikt inny nie ma do nich dostępu.
       </div>
       ${s.googleDrive ? `
         <div id="gdrive-status" style="margin-top:8px"></div>
-        <div style="display:flex;gap:8px;margin-top:8px">
-          <button class="btn-sm btn-accent" onclick="backupToGoogleDrive()" style="font-size:12px">📤 Zapisz teraz na Drive</button>
-          <button class="btn-sm" onclick="restoreFromGoogleDrive()" style="font-size:12px">📥 Przywróć z Drive</button>
+        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+          <button class="btn-sm btn-accent" onclick="connectGoogleDrive()" style="font-size:12px;display:flex;align-items:center;gap:6px">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M6.28 3h11.44l4.28 7.41-2.14 3.7L12 3.88 4.14 14.11 2 10.41z" fill="#4285F4"/><path d="M2 10.41l4.14 7.18h11.44l-2.14-3.7H6.28z" fill="#34A853"/><path d="M6.28 17.59L2 10.41l2.14-3.7 4.14 7.18z" fill="#FBBC05"/><path d="M17.72 17.59l4.28-7.18-2.14-3.7-4.14 7.18z" fill="#EA4335"/></svg>
+            Połącz z Google
+          </button>
+          <button class="btn-sm" onclick="backupToGoogleDrive()" style="font-size:12px">📤 Zapisz teraz</button>
+          <button class="btn-sm" onclick="restoreFromGoogleDrive()" style="font-size:12px">📥 Przywróć</button>
         </div>
-      ` : '<div style="font-size:11px;color:var(--text3);margin-top:6px">Włącz przełącznik aby skonfigurować połączenie z Google Drive</div>'}
+        <div style="font-size:11px;color:var(--text3);margin-top:8px">
+          Dane zapisywane jako: <code style="background:var(--bg3);padding:1px 5px;border-radius:3px">traderlogjournal-${state.currentUser}-backup.json</code> na Twoim Drive
+        </div>
+      ` : `
+        <div style="margin-top:10px">
+          <button class="btn-sm btn-accent" onclick="document.getElementById('bk-gdrive-toggle').click()" style="font-size:12px;display:flex;align-items:center;gap:6px">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M6.28 3h11.44l4.28 7.41-2.14 3.7L12 3.88 4.14 14.11 2 10.41z" fill="#4285F4"/><path d="M2 10.41l4.14 7.18h11.44l-2.14-3.7H6.28z" fill="#34A853"/><path d="M6.28 17.59L2 10.41l2.14-3.7 4.14 7.18z" fill="#FBBC05"/><path d="M17.72 17.59l4.28-7.18-2.14-3.7-4.14 7.18z" fill="#EA4335"/></svg>
+            Włącz i połącz z Google Drive
+          </button>
+          <div style="font-size:11px;color:var(--text3);margin-top:6px">Kliknij aby zalogować się kontem Google — dane trafią na Twój Drive</div>
+        </div>
+      `}
     </div>
 
     <!-- OPCJA C: Własna baza danych -->
@@ -6184,6 +6181,8 @@ function checkAutoDownload() {
 // ── Reminder check on login ───────────────────────────────────────────────────
 function checkBackupReminder() {
   const s = getBackupSettings();
+  // [v1.6] Pokaż prompt Google Drive przy pierwszym logowaniu
+  checkGDrivePrompt();
   if (!s.autoExport) return;
   const days = s.reminderDays || 7;
   const lastBackup = s.lastBackup;
@@ -6195,6 +6194,49 @@ function checkBackupReminder() {
   if (daysSince >= days) {
     showBackupReminder(`Ostatnia kopia zapasowa: ${daysSince} dni temu`, false);
   }
+}
+
+function checkGDrivePrompt() {
+  // Pokaż raz — tylko jeśli użytkownik nie skonfigurował jeszcze backupu
+  const s = getBackupSettings();
+  if (s.googleDrive || s.gdriveDismissed) return;
+  const key = '_gdrive_prompt_' + (state.currentUser||'');
+  if (localStorage.getItem(key)) return;
+  localStorage.setItem(key, '1');
+
+  const div = document.createElement('div');
+  div.id = 'gdrive-prompt-toast';
+  div.style.cssText = 'position:fixed;bottom:80px;right:24px;background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:20px 24px;z-index:4000;max-width:340px;box-shadow:0 8px 32px rgba(0,0,0,.5)';
+  div.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path d="M6.28 3h11.44l4.28 7.41-2.14 3.7L12 3.88 4.14 14.11 2 10.41z" fill="#4285F4"/>
+        <path d="M2 10.41l4.14 7.18h11.44l-2.14-3.7H6.28z" fill="#34A853"/>
+        <path d="M6.28 17.59L2 10.41l2.14-3.7 4.14 7.18z" fill="#FBBC05"/>
+        <path d="M17.72 17.59l4.28-7.18-2.14-3.7-4.14 7.18z" fill="#EA4335"/>
+      </svg>
+      <div style="font-family:var(--font-head);font-size:14px;font-weight:700">Kopia na Google Drive</div>
+    </div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.6">
+      Chcesz automatycznie zapisywać kopie zapasowe na swoim Google Drive?<br>
+      <span style="color:var(--text3)">Dane trafią tylko na Twoje konto — jeden klik.</span>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn-sm btn-accent" onclick="
+        document.getElementById('gdrive-prompt-toast').remove();
+        const s=getBackupSettings();s.googleDrive=true;saveBackupSettings(s);
+        connectGoogleDrive();
+      " style="font-size:12px;display:flex;align-items:center;gap:5px">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M6.28 3h11.44l4.28 7.41-2.14 3.7L12 3.88 4.14 14.11 2 10.41z" fill="#4285F4"/><path d="M2 10.41l4.14 7.18h11.44l-2.14-3.7H6.28z" fill="#34A853"/><path d="M6.28 17.59L2 10.41l2.14-3.7 4.14 7.18z" fill="#FBBC05"/><path d="M17.72 17.59l4.28-7.18-2.14-3.7-4.14 7.18z" fill="#EA4335"/></svg>
+        Tak, połącz z Google
+      </button>
+      <button class="btn-sm" onclick="
+        const s=getBackupSettings();s.gdriveDismissed=true;saveBackupSettings(s);
+        document.getElementById('gdrive-prompt-toast').remove();
+      " style="font-size:12px">Nie teraz</button>
+    </div>
+  `;
+  document.body.appendChild(div);
 }
 
 function showBackupReminder(msg, urgent) {
@@ -6218,44 +6260,18 @@ function showBackupReminder(msg, urgent) {
 }
 
 // ── Google Drive (GAPI) ───────────────────────────────────────────────────────
-const GDRIVE_CLIENT_ID = ''; // użytkownik musi wpisać własne Client ID
+const GDRIVE_CLIENT_ID = '917283832876-tfkevp9mol5k7uqjo8de7mp7ej5dfoap.apps.googleusercontent.com';
 const GDRIVE_SCOPES = 'https://www.googleapis.com/auth/drive.file';
 let _gapiLoaded = false;
 let _gapiTokenClient = null;
 
 function initGoogleDrive() {
-  if (!GDRIVE_CLIENT_ID) {
-    showGDriveSetup();
-    return;
-  }
   loadGAPI();
 }
 
 function showGDriveSetup() {
-  const modal = document.createElement('div');
-  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px';
-  modal.innerHTML = `
-    <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:32px;max-width:500px;width:100%">
-      <div style="font-family:var(--font-head);font-size:18px;font-weight:700;margin-bottom:16px">Konfiguracja Google Drive</div>
-      <p style="font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:16px">
-        Aby korzystać z Google Drive, potrzebujesz własnego <strong>Google API Client ID</strong>.<br>
-        Jest to bezpłatne — wymagane konto Google Cloud.
-      </p>
-      <div style="background:var(--bg3);border-radius:8px;padding:14px;font-size:12px;color:var(--text2);margin-bottom:16px;line-height:1.8">
-        <strong>Kroki:</strong><br>
-        1. Wejdź na <a href="https://console.cloud.google.com" target="_blank" style="color:var(--accent)">console.cloud.google.com</a><br>
-        2. Utwórz projekt → API &amp; Services → Credentials<br>
-        3. Create Credentials → OAuth Client ID → Web Application<br>
-        4. Authorized origins: <code style="background:var(--bg4);padding:1px 5px;border-radius:3px">https://dominskipatryk-lgtm.github.io</code><br>
-        5. Skopiuj Client ID i wklej poniżej
-      </div>
-      <input class="form-input-modal" id="gdrive-client-id-input" placeholder="XXXXX.apps.googleusercontent.com" style="margin-bottom:12px">
-      <div style="display:flex;gap:8px">
-        <button class="btn-sm btn-accent" onclick="saveGDriveClientId()" style="font-size:13px">Zapisz i połącz</button>
-        <button class="btn-sm" onclick="this.closest('div[style*=fixed]').remove();toggleBackupOption('gdrive',false)" style="font-size:13px">Anuluj</button>
-      </div>
-    </div>`;
-  document.body.appendChild(modal);
+  // [v1.6] Nie potrzeba już ręcznego Client ID — wbudowany w kod
+  connectGoogleDrive();
 }
 
 function saveGDriveClientId() {
@@ -6270,9 +6286,8 @@ function saveGDriveClientId() {
 }
 
 function loadGAPI(clientId) {
-  const s = getBackupSettings();
-  const cid = clientId || s.gdriveClientId;
-  if (!cid) { showGDriveSetup(); return; }
+  // [v1.6] Client ID wbudowany — ignoruj parametr
+  const cid = GDRIVE_CLIENT_ID;
   const script = document.createElement('script');
   script.src = 'https://accounts.google.com/gsi/client';
   script.onload = () => {
@@ -6284,16 +6299,23 @@ function loadGAPI(clientId) {
           _gapiLoaded = true;
           updateGDriveStatus('✓ Połączono z Google Drive', 'ok');
           toast('Połączono z Google Drive ✓', 'success');
+          renderBackupOptions();
         }
       }
     });
+    // Od razu poproś o token
+    _gapiTokenClient.requestAccessToken();
   };
+  script.onerror = () => toast('Błąd ładowania Google API', 'error');
   document.head.appendChild(script);
 }
 
 function connectGoogleDrive() {
-  if (_gapiTokenClient) _gapiTokenClient.requestAccessToken();
-  else { const s = getBackupSettings(); loadGAPI(s.gdriveClientId); }
+  if (_gapiTokenClient) {
+    _gapiTokenClient.requestAccessToken();
+  } else {
+    loadGAPI();
+  }
 }
 
 async function backupToGoogleDrive() {
@@ -7835,26 +7857,29 @@ async function submitPasswordReset() {
 function showRoutineModal() {
   const now = new Date();
   const today = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
-  // Sprawdź czy już pokazano dziś
-  const lastShown = localStorage.getItem('_routine_shown_' + (state.currentUser||''));
+  const lastShown   = localStorage.getItem('_routine_shown_'   + (state.currentUser||''));
   const noShowToday = localStorage.getItem('_routine_no_show_' + (state.currentUser||''));
-  
-  if (noShowToday === today) return; // Użytkownik zaznaczył "nie pokazuj dziś"
-  if (lastShown === today) return;  // Już pokazano dziś
-  
-  // Ustaw datę
+
+  // [v1.6] FIX: oba klucze używają tego samego formatu daty YYYY-MM-DD
+  if (noShowToday === today) return;
+  if (lastShown   === today) return;
+
+  // Ustaw datę w nagłówku
   const dateEl = document.getElementById('routine-date');
   if (dateEl) dateEl.textContent = new Date().toLocaleDateString('pl-PL', {weekday:'long', day:'numeric', month:'long'});
-  
-  // Wyczyść checkboxy
+
+  // Wyczyść checkboxy i odznacz "nie pokazuj dziś"
   document.querySelectorAll('.routine-item').forEach(el => el.classList.remove('done'));
+  const noShowCb = document.getElementById('routine-no-show-today');
+  if (noShowCb) noShowCb.checked = false;
   updateRoutineProgress();
-  
+
   // Pokaż modal
   const modal = document.getElementById('routine-modal');
-  if (modal) modal.classList.add('open');
-  
-  // Zapisz że pokazano
+  if (!modal) { console.warn('routine-modal nie znaleziony w DOM'); return; }
+  modal.classList.add('open');
+
+  // Zapisz że pokazano dziś
   localStorage.setItem('_routine_shown_' + (state.currentUser||''), today);
 }
 
@@ -7862,11 +7887,13 @@ function showRoutineModal() {
 function closeRoutineModal() {
   const modal = document.getElementById('routine-modal');
   if (modal) modal.classList.remove('open');
-  
-  // Zapisz "nie pokazuj dziś" jeśli zaznaczono
+
+  // [v1.6] FIX: zapisuj w tym samym formacie YYYY-MM-DD co sprawdzamy
   const noShow = document.getElementById('routine-no-show-today');
   if (noShow?.checked) {
-    localStorage.setItem('_routine_no_show_' + (state.currentUser||''), new Date().toDateString());
+    const now = new Date();
+    const today = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
+    localStorage.setItem('_routine_no_show_' + (state.currentUser||''), today);
   }
 }
 
