@@ -8282,12 +8282,45 @@ async function closeMT4Trade(signal) {
 }
 
 function openTradeFromMT4(signal) {
-  state.editTradeId = null;
+  // [v1.7] Automatycznie zapisz transakcję do dziennika
+  // Panel otwiera się tylko do dodania screenshota i opisu
+  const id = genId();
+  const trade = {
+    id,
+    symbol:    signal.symbol || '',
+    date:      new Date().toISOString().slice(0, 16),
+    dir:       signal.direction === 'BUY' ? 'LONG' : 'SHORT',
+    status:    'open',
+    entry:     signal.entry || null,
+    size:      signal.size  || null,
+    sl:        signal.sl    || null,
+    tp:        signal.tp    || null,
+    tps:       [],
+    exit:      null,
+    pnl:       null,
+    tf:        'H1',
+    setup:     '',
+    pre:       '[MT4 #' + signal.ticket + '] ' + signal.symbol + ' ' + signal.direction + ' @ ' + signal.entry,
+    post:      '',
+    screenshots: [],
+    mt4Ticket: signal.ticket || null,
+  };
+
+  // Zapisz do dziennika
+  const trades = getTrades(state.currentAccountId);
+  trades.push(trade);
+  saveTrades(state.currentAccountId, trades);
+  renderTrades();
+  renderDashboard();
+  toast('MT4: Zapisano ' + signal.symbol + ' ' + trade.dir + ' ✓', 'success');
+
+  // Otwórz panel do edycji (screenshot + opis)
+  state.editTradeId = id;
   state.tempScreenshots = [];
-  document.getElementById('trade-id').value   = '';
+  document.getElementById('trade-id').value   = id;
   document.getElementById('t-symbol').value   = signal.symbol || '';
-  document.getElementById('t-date').value     = nowDatetime();
-  document.getElementById('t-dir').value      = signal.direction === 'BUY' ? 'LONG' : 'SHORT';
+  document.getElementById('t-date').value     = trade.date;
+  document.getElementById('t-dir').value      = trade.dir;
   document.getElementById('t-status').value   = 'open';
   document.getElementById('t-entry').value    = signal.entry || '';
   document.getElementById('t-size').value     = signal.size  || '';
@@ -8295,9 +8328,10 @@ function openTradeFromMT4(signal) {
   document.getElementById('t-tp').value       = signal.tp    || '';
   document.getElementById('t-exit').value     = '';
   document.getElementById('t-pnl').value      = '';
-  document.getElementById('t-pre').value      = '[MT4 #' + signal.ticket + '] ' + signal.symbol + ' ' + signal.direction + ' @ ' + signal.entry;
-  document.getElementById('modal-title').textContent = 'MT4: ' + signal.symbol + ' ' + (signal.direction === 'BUY' ? '📈' : '📉');
-  // Zapisz ticket jako hidden field żeby móc dopasować przy zamknięciu
+  document.getElementById('t-pre').value      = trade.pre;
+  document.getElementById('modal-title').textContent = 'MT4: ' + signal.symbol + ' ' + (signal.direction === 'BUY' ? '📈' : '📉') + ' — dodaj opis i screen';
+
+  // Zapisz ticket
   let ticketField = document.getElementById('t-mt4-ticket');
   if (!ticketField) {
     ticketField = document.createElement('input');
@@ -8306,6 +8340,7 @@ function openTradeFromMT4(signal) {
     document.getElementById('trade-modal').appendChild(ticketField);
   }
   ticketField.value = signal.ticket || '';
+
   setTfFromValue('H1');
   _pnlManual = false;
   renderScreenshotPreviews();
@@ -8315,7 +8350,6 @@ function openTradeFromMT4(signal) {
   openModal('trade-modal');
   applyTfModeUI();
   hookFormAutoSave();
-  setTimeout(() => performDraftSave(), 1000);
 }
 
 function showMT4Notification(signal) {
