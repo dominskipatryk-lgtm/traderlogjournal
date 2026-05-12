@@ -2035,6 +2035,128 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 </div>
 
 
+<!-- DAILY ROUTINE MODAL -->
+    <div class="modal-overlay" id="routine-modal" style="z-index:10000">
+      <div class="modal" style="max-width:720px;padding:0;overflow:hidden">
+        <div style="background:linear-gradient(135deg,#0a0a1a 0%,#1a1a2e 100%);padding:24px 28px 20px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div style="font-family:var(--font-head);font-size:22px;font-weight:800;color:white">
+                Trader <span style="color:var(--accent)">Routine</span>
+              </div>
+              <div style="font-size:12px;color:var(--text3);margin-top:2px">Dzisiejsza rutyna tradera · <span id="routine-date"></span></div>
+            </div>
+            <button onclick="closeRoutineModal()" style="background:rgba(255,255,255,.1);border:none;color:white;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px">✕</button>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0">
+          <!-- BEFORE SESSION -->
+          <div style="padding:20px 24px;border-right:1px solid var(--border)">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:14px">⬛ Before Session</div>
+
+            <div class="routine-item" onclick="toggleRoutine(this)">
+              <div class="routine-icon">📖</div>
+              <div>
+                <div class="routine-title">Read your journal</div>
+                <div class="routine-sub">Set goal for the day</div>
+              </div>
+            </div>
+
+            <div class="routine-item" onclick="toggleRoutine(this)">
+              <div class="routine-icon">📰</div>
+              <div>
+                <div class="routine-title">Check economic events</div>
+                <div class="routine-sub">Schedule time for Session</div>
+              </div>
+            </div>
+
+            <div class="routine-item" onclick="toggleRoutine(this)">
+              <div class="routine-icon">🎯</div>
+              <div>
+                <div class="routine-title">Choose strategy to trade</div>
+                <div class="routine-sub">When / Why / How to use it?</div>
+              </div>
+            </div>
+
+            <div class="routine-item" onclick="toggleRoutine(this)">
+              <div class="routine-icon">🧠</div>
+              <div>
+                <div class="routine-title">Build intuition — Trader's Mindset</div>
+                <div class="routine-sub">Visualize best & worst setups</div>
+              </div>
+            </div>
+
+            <div class="routine-item" onclick="toggleRoutine(this)">
+              <div class="routine-icon">📊</div>
+              <div>
+                <div class="routine-title">Time for Charts</div>
+                <div class="routine-sub">Prepare charts · Turn off your phone</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- AFTER SESSION -->
+          <div style="padding:20px 24px">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--amber);margin-bottom:14px">⬛ After Session</div>
+
+            <div class="routine-item" onclick="toggleRoutine(this)">
+              <div class="routine-icon">📸</div>
+              <div>
+                <div class="routine-title">Save screenshots of charts</div>
+                <div class="routine-sub">Add to journal · Summarize · Conclude</div>
+              </div>
+            </div>
+
+            <div class="routine-item" onclick="toggleRoutine(this)">
+              <div class="routine-icon">🖥️</div>
+              <div>
+                <div class="routine-title">Set-ups · Scenarios · Opportunities</div>
+                <div class="routine-sub">Good set-ups? Which ones? Describe!</div>
+              </div>
+            </div>
+
+            <div class="routine-item" onclick="toggleRoutine(this)">
+              <div class="routine-icon">✅</div>
+              <div>
+                <div class="routine-title">Sum up goals for the day</div>
+                <div class="routine-sub">What works? What lacks? What to improve?</div>
+              </div>
+            </div>
+
+            <div class="routine-item" onclick="toggleRoutine(this)">
+              <div class="routine-icon">☕</div>
+              <div>
+                <div class="routine-title">Break & Relax</div>
+                <div class="routine-sub">Healthy food · 30 min break · Walk · Nap</div>
+              </div>
+            </div>
+
+            <div class="routine-item" onclick="toggleRoutine(this)">
+              <div class="routine-icon">📈</div>
+              <div>
+                <div class="routine-title">Learn & Grow as a Trader</div>
+                <div class="routine-sub">Market Replay · Fast habit building</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div style="padding:14px 24px;background:var(--bg);border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+          <div id="routine-progress" style="font-size:12px;color:var(--text3)">0/10 ukończonych</div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <label style="font-size:12px;color:var(--text3);display:flex;align-items:center;gap:6px;cursor:pointer">
+              <input type="checkbox" id="routine-no-show-today" style="cursor:pointer">
+              Nie pokazuj dziś
+            </label>
+            <button onclick="closeRoutineModal()" class="btn-sm btn-accent">Zaczynam! 🚀</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
 <script>
 // ═══ SUPABASE CONFIG — musi być na górze, przed wszystkimi funkcjami ═══
 // [v1.1] SECURITY FIX: Przeniesiono na górę — był używany przed definicją (ReferenceError)
@@ -8026,133 +8148,9 @@ function buildReportHTML(d) {
 <div class="footer">
   TraderLogJournal · traderlogjournal.com · Raport wygenerowany automatycznie · ${new Date().toLocaleString('pl-PL')}
 </div>
-
-    <!-- DAILY ROUTINE MODAL -->
-    <div class="modal-overlay" id="routine-modal" style="z-index:10000">
-      <div class="modal" style="max-width:720px;padding:0;overflow:hidden">
-        <div style="background:linear-gradient(135deg,#0a0a1a 0%,#1a1a2e 100%);padding:24px 28px 20px">
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <div>
-              <div style="font-family:var(--font-head);font-size:22px;font-weight:800;color:white">
-                Trader <span style="color:var(--accent)">Routine</span>
-              </div>
-              <div style="font-size:12px;color:var(--text3);margin-top:2px">Dzisiejsza rutyna tradera · <span id="routine-date"></span></div>
-            </div>
-            <button onclick="closeRoutineModal()" style="background:rgba(255,255,255,.1);border:none;color:white;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px">✕</button>
-          </div>
-        </div>
-
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0">
-          <!-- BEFORE SESSION -->
-          <div style="padding:20px 24px;border-right:1px solid var(--border)">
-            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:14px">⬛ Before Session</div>
-
-            <div class="routine-item" onclick="toggleRoutine(this)">
-              <div class="routine-icon">📖</div>
-              <div>
-                <div class="routine-title">Read your journal</div>
-                <div class="routine-sub">Set goal for the day</div>
-              </div>
-            </div>
-
-            <div class="routine-item" onclick="toggleRoutine(this)">
-              <div class="routine-icon">📰</div>
-              <div>
-                <div class="routine-title">Check economic events</div>
-                <div class="routine-sub">Schedule time for Session</div>
-              </div>
-            </div>
-
-            <div class="routine-item" onclick="toggleRoutine(this)">
-              <div class="routine-icon">🎯</div>
-              <div>
-                <div class="routine-title">Choose strategy to trade</div>
-                <div class="routine-sub">When / Why / How to use it?</div>
-              </div>
-            </div>
-
-            <div class="routine-item" onclick="toggleRoutine(this)">
-              <div class="routine-icon">🧠</div>
-              <div>
-                <div class="routine-title">Build intuition — Trader's Mindset</div>
-                <div class="routine-sub">Visualize best & worst setups</div>
-              </div>
-            </div>
-
-            <div class="routine-item" onclick="toggleRoutine(this)">
-              <div class="routine-icon">📊</div>
-              <div>
-                <div class="routine-title">Time for Charts</div>
-                <div class="routine-sub">Prepare charts · Turn off your phone</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- AFTER SESSION -->
-          <div style="padding:20px 24px">
-            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--amber);margin-bottom:14px">⬛ After Session</div>
-
-            <div class="routine-item" onclick="toggleRoutine(this)">
-              <div class="routine-icon">📸</div>
-              <div>
-                <div class="routine-title">Save screenshots of charts</div>
-                <div class="routine-sub">Add to journal · Summarize · Conclude</div>
-              </div>
-            </div>
-
-            <div class="routine-item" onclick="toggleRoutine(this)">
-              <div class="routine-icon">🖥️</div>
-              <div>
-                <div class="routine-title">Set-ups · Scenarios · Opportunities</div>
-                <div class="routine-sub">Good set-ups? Which ones? Describe!</div>
-              </div>
-            </div>
-
-            <div class="routine-item" onclick="toggleRoutine(this)">
-              <div class="routine-icon">✅</div>
-              <div>
-                <div class="routine-title">Sum up goals for the day</div>
-                <div class="routine-sub">What works? What lacks? What to improve?</div>
-              </div>
-            </div>
-
-            <div class="routine-item" onclick="toggleRoutine(this)">
-              <div class="routine-icon">☕</div>
-              <div>
-                <div class="routine-title">Break & Relax</div>
-                <div class="routine-sub">Healthy food · 30 min break · Walk · Nap</div>
-              </div>
-            </div>
-
-            <div class="routine-item" onclick="toggleRoutine(this)">
-              <div class="routine-icon">📈</div>
-              <div>
-                <div class="routine-title">Learn & Grow as a Trader</div>
-                <div class="routine-sub">Market Replay · Fast habit building</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Footer -->
-        <div style="padding:14px 24px;background:var(--bg);border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
-          <div id="routine-progress" style="font-size:12px;color:var(--text3)">0/10 ukończonych</div>
-          <div style="display:flex;gap:8px;align-items:center">
-            <label style="font-size:12px;color:var(--text3);display:flex;align-items:center;gap:6px;cursor:pointer">
-              <input type="checkbox" id="routine-no-show-today" style="cursor:pointer">
-              Nie pokazuj dziś
-            </label>
-            <button onclick="closeRoutineModal()" class="btn-sm btn-accent">Zaczynam! 🚀</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-
 </body>
 </html>`;
 }
-
 function quickReport(type) {
   const now = new Date();
   // Temporarily set report selectors
