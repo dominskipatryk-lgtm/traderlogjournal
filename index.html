@@ -7187,7 +7187,9 @@ function populateLinkedTradeSelect(symbol, currentLinkedId) {
     matching.forEach(t => {
       const opt = document.createElement('option');
       opt.value = t.id;
-      opt.textContent = t.symbol + ' ' + (t.dir||'') + ' · ' + (t.date||'').slice(0,10) + (t.status==='closed'?' ✓':'');
+      const pnl = t.pnl != null ? (t.pnl >= 0 ? ' +$' + t.pnl.toFixed(2) : ' -$' + Math.abs(t.pnl).toFixed(2)) : '';
+      const entry = t.entry ? ' @ ' + t.entry : '';
+      opt.textContent = t.symbol + ' ' + (t.dir||'') + entry + ' · ' + (t.date||'').slice(0,10) + pnl + (t.status==='closed'?' ✓':'');
       if (t.id === currentLinkedId) opt.selected = true;
       grp.appendChild(opt);
     });
@@ -7199,7 +7201,9 @@ function populateLinkedTradeSelect(symbol, currentLinkedId) {
     others.forEach(t => {
       const opt = document.createElement('option');
       opt.value = t.id;
-      opt.textContent = t.symbol + ' ' + (t.dir||'') + ' · ' + (t.date||'').slice(0,10) + (t.status==='closed'?' ✓':'');
+      const pnl = t.pnl != null ? (t.pnl >= 0 ? ' +$' + t.pnl.toFixed(2) : ' -$' + Math.abs(t.pnl).toFixed(2)) : '';
+      const entry = t.entry ? ' @ ' + t.entry : '';
+      opt.textContent = t.symbol + ' ' + (t.dir||'') + entry + ' · ' + (t.date||'').slice(0,10) + pnl + (t.status==='closed'?' ✓':'');
       if (t.id === currentLinkedId) opt.selected = true;
       grp2.appendChild(opt);
     });
