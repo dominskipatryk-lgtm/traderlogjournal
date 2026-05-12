@@ -1891,6 +1891,151 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 <!-- TOAST -->
 <div id="toast"><div class="toast-dot green" id="toast-dot"></div><span id="toast-msg"></span></div>
 
+<!-- STRATEGY MODALS — wstawione po buildReportHTML -->
+    <!-- STRATEGY MANAGER MODAL -->
+<div class="modal-overlay" id="strategy-modal">
+      <div class="modal" style="max-width:600px">
+        <div class="modal-header">
+          <div class="modal-title">🎯 Moje strategie</div>
+          <button class="modal-close" onclick="closeModal('strategy-modal')">✕</button>
+        </div>
+        <div class="modal-body">
+          <div style="margin-bottom:16px">
+            <button class="btn-sm btn-accent" onclick="openNewStrategy()">+ Dodaj strategię</button>
+          </div>
+          <div id="strategy-list-container">
+            <div style="color:var(--text3);font-size:13px">Ładowanie...</div>
+          </div>
+        </div>
+      </div>
+</div>
+
+    <!-- STRATEGY EDITOR MODAL -->
+<div class="modal-overlay" id="strategy-editor-modal">
+      <div class="modal" style="max-width:620px">
+        <div class="modal-header">
+          <div class="modal-title" id="strategy-editor-title">Nowa strategia</div>
+          <button class="modal-close" onclick="closeModal('strategy-editor-modal')">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group-modal">
+            <label class="form-label-modal">Nazwa strategii *</label>
+            <input class="form-input-modal" id="str-name" placeholder="np. Price Action Breakout, London Kill Zone...">
+          </div>
+          <div class="form-group-modal">
+            <label class="form-label-modal">Opis / cel strategii</label>
+            <textarea class="form-input-modal" id="str-desc" rows="2" placeholder="Krótki opis strategii..."></textarea>
+          </div>
+          <div class="form-group-modal">
+            <label class="form-label-modal" style="display:flex;justify-content:space-between">
+              <span>Checklist — założenia strategii</span>
+              <button onclick="addStrategyPoint()" class="btn-sm" style="font-size:11px;padding:2px 8px">+ Dodaj punkt</button>
+            </label>
+            <div id="strategy-points-list" style="display:flex;flex-direction:column;gap:6px;margin-top:6px"></div>
+            <div style="font-size:11px;color:var(--text3);margin-top:8px">
+              💡 Przykłady: "Trend wyższy TF", "Struktura rynku potwierdziona", "RR minimum 1:2", "Sesja londyńska/NY"
+            </div>
+          </div>
+          <input type="hidden" id="str-id">
+        </div>
+        <div class="modal-footer">
+          <button class="btn-sm" onclick="closeModal('strategy-editor-modal')">Anuluj</button>
+          <button class="btn-sm btn-accent" onclick="saveStrategy()">✓ Zapisz strategię</button>
+        </div>
+      </div>
+</div>
+
+    <!-- STRATEGY CHECKLIST MODAL (przy analizie/transakcji) -->
+<div class="modal-overlay" id="strategy-checklist-modal">
+      <div class="modal" style="max-width:500px">
+        <div class="modal-header">
+          <div class="modal-title">✅ Checklist strategii</div>
+          <button class="modal-close" onclick="closeModal('strategy-checklist-modal')">✕</button>
+        </div>
+        <div class="modal-body">
+          <div id="checklist-strategy-name" style="font-size:13px;color:var(--accent);font-weight:700;margin-bottom:14px"></div>
+          <div id="checklist-points" style="display:flex;flex-direction:column;gap:8px"></div>
+          <div id="checklist-progress-bar" style="margin-top:16px">
+            <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text3);margin-bottom:6px">
+              <span>Postęp</span>
+              <span id="checklist-score">0/0</span>
+            </div>
+            <div style="background:var(--bg3);border-radius:4px;height:6px">
+              <div id="checklist-bar" style="background:var(--accent);height:6px;border-radius:4px;transition:width .3s;width:0%"></div>
+            </div>
+          </div>
+          <div id="checklist-warning" style="display:none;background:rgba(255,100,0,.1);border:1px solid var(--amber);border-radius:8px;padding:10px;margin-top:12px;font-size:12px;color:var(--amber)">
+            ⚠️ Nie wszystkie warunki są spełnione. Czy na pewno chcesz kontynuować?
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-sm" onclick="closeModal('strategy-checklist-modal')">Zamknij</button>
+          <button class="btn-sm btn-accent" onclick="applyChecklist()">✓ Potwierdź i kontynuuj</button>
+        </div>
+      </div>
+</div>
+
+
+    <!-- SETUP MANAGER MODAL -->
+<div class="modal-overlay" id="setup-manager-modal">
+      <div class="modal" style="max-width:620px">
+        <div class="modal-header">
+          <div class="modal-title">📐 Setupy strategii: <span id="setup-manager-strategy-name" style="color:var(--accent)"></span></div>
+          <button class="modal-close" onclick="closeModal('setup-manager-modal')">✕</button>
+        </div>
+        <div class="modal-body">
+          <div style="margin-bottom:14px">
+            <button class="btn-sm btn-accent" onclick="openNewSetup()">+ Dodaj setup</button>
+            <span style="font-size:12px;color:var(--text3);margin-left:10px">Każdy setup może mieć własny checklist i screenshoty wzorcowe</span>
+          </div>
+          <div id="setup-list-container"></div>
+        </div>
+      </div>
+</div>
+
+    <!-- SETUP EDITOR MODAL -->
+<div class="modal-overlay" id="setup-editor-modal">
+      <div class="modal" style="max-width:640px">
+        <div class="modal-header">
+          <div class="modal-title" id="setup-editor-title">Nowy setup</div>
+          <button class="modal-close" onclick="closeModal('setup-editor-modal')">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group-modal">
+            <label class="form-label-modal">Nazwa setupu *</label>
+            <input class="form-input-modal" id="setup-name" placeholder="np. BOS + FVG retest, London Killzone Sweep...">
+          </div>
+          <div class="form-group-modal">
+            <label class="form-label-modal">Opis setupu</label>
+            <textarea class="form-input-modal" id="setup-desc" rows="2" placeholder="Kiedy wchodzisz? Co widzisz na wykresie?"></textarea>
+          </div>
+          <div class="form-group-modal">
+            <label class="form-label-modal" style="display:flex;justify-content:space-between">
+              <span>Checklist setupu</span>
+              <button onclick="addSetupPoint()" class="btn-sm" style="font-size:11px;padding:2px 8px">+ Dodaj punkt</button>
+            </label>
+            <div id="setup-points-list" style="display:flex;flex-direction:column;gap:6px;margin-top:6px"></div>
+          </div>
+          <div class="form-group-modal">
+            <label class="form-label-modal">📸 Screenshoty wzorcowe (przykłady setupu)</label>
+            <div id="setup-ref-screenshots" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px"></div>
+            <label style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--accent);padding:6px 12px;border:1px dashed var(--accent);border-radius:8px">
+              📸 Dodaj screenshot wzorcowy
+              <input type="file" accept="image/*" multiple style="display:none" onchange="addSetupRefScreenshots(this)">
+            </label>
+            <div style="font-size:11px;color:var(--text3);margin-top:6px">Wklej screeny idealnych przykładów tego setupu — będą widoczne przy analizie jako wzorzec</div>
+          </div>
+          <input type="hidden" id="setup-id">
+          <input type="hidden" id="setup-strategy-id">
+        </div>
+        <div class="modal-footer">
+          <button class="btn-sm" onclick="closeModal('setup-editor-modal')">Anuluj</button>
+          <button class="btn-sm btn-accent" onclick="saveSetup()">✓ Zapisz setup</button>
+        </div>
+      </div>
+</div>
+
+
 <script>
 // ═══ SUPABASE CONFIG — musi być na górze, przed wszystkimi funkcjami ═══
 // [v1.1] SECURITY FIX: Przeniesiono na górę — był używany przed definicją (ReferenceError)
@@ -8008,154 +8153,6 @@ function buildReportHTML(d) {
 </body>
 </html>`;
 }
-
-
-<!-- STRATEGY MODALS — wstawione po buildReportHTML -->
-    <!-- STRATEGY MANAGER MODAL -->
-<div class="modal-overlay" id="strategy-modal">
-      <div class="modal" style="max-width:600px">
-        <div class="modal-header">
-          <div class="modal-title">🎯 Moje strategie</div>
-          <button class="modal-close" onclick="closeModal('strategy-modal')">✕</button>
-        </div>
-        <div class="modal-body">
-          <div style="margin-bottom:16px">
-            <button class="btn-sm btn-accent" onclick="openNewStrategy()">+ Dodaj strategię</button>
-          </div>
-          <div id="strategy-list-container">
-            <div style="color:var(--text3);font-size:13px">Ładowanie...</div>
-          </div>
-        </div>
-      </div>
-</div>
-
-    <!-- STRATEGY EDITOR MODAL -->
-<div class="modal-overlay" id="strategy-editor-modal">
-      <div class="modal" style="max-width:620px">
-        <div class="modal-header">
-          <div class="modal-title" id="strategy-editor-title">Nowa strategia</div>
-          <button class="modal-close" onclick="closeModal('strategy-editor-modal')">✕</button>
-        </div>
-        <div class="modal-body">
-          <div class="form-group-modal">
-            <label class="form-label-modal">Nazwa strategii *</label>
-            <input class="form-input-modal" id="str-name" placeholder="np. Price Action Breakout, London Kill Zone...">
-          </div>
-          <div class="form-group-modal">
-            <label class="form-label-modal">Opis / cel strategii</label>
-            <textarea class="form-input-modal" id="str-desc" rows="2" placeholder="Krótki opis strategii..."></textarea>
-          </div>
-          <div class="form-group-modal">
-            <label class="form-label-modal" style="display:flex;justify-content:space-between">
-              <span>Checklist — założenia strategii</span>
-              <button onclick="addStrategyPoint()" class="btn-sm" style="font-size:11px;padding:2px 8px">+ Dodaj punkt</button>
-            </label>
-            <div id="strategy-points-list" style="display:flex;flex-direction:column;gap:6px;margin-top:6px"></div>
-            <div style="font-size:11px;color:var(--text3);margin-top:8px">
-              💡 Przykłady: "Trend wyższy TF", "Struktura rynku potwierdziona", "RR minimum 1:2", "Sesja londyńska/NY"
-            </div>
-          </div>
-          <input type="hidden" id="str-id">
-        </div>
-        <div class="modal-footer">
-          <button class="btn-sm" onclick="closeModal('strategy-editor-modal')">Anuluj</button>
-          <button class="btn-sm btn-accent" onclick="saveStrategy()">✓ Zapisz strategię</button>
-        </div>
-      </div>
-</div>
-
-    <!-- STRATEGY CHECKLIST MODAL (przy analizie/transakcji) -->
-<div class="modal-overlay" id="strategy-checklist-modal">
-      <div class="modal" style="max-width:500px">
-        <div class="modal-header">
-          <div class="modal-title">✅ Checklist strategii</div>
-          <button class="modal-close" onclick="closeModal('strategy-checklist-modal')">✕</button>
-        </div>
-        <div class="modal-body">
-          <div id="checklist-strategy-name" style="font-size:13px;color:var(--accent);font-weight:700;margin-bottom:14px"></div>
-          <div id="checklist-points" style="display:flex;flex-direction:column;gap:8px"></div>
-          <div id="checklist-progress-bar" style="margin-top:16px">
-            <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text3);margin-bottom:6px">
-              <span>Postęp</span>
-              <span id="checklist-score">0/0</span>
-            </div>
-            <div style="background:var(--bg3);border-radius:4px;height:6px">
-              <div id="checklist-bar" style="background:var(--accent);height:6px;border-radius:4px;transition:width .3s;width:0%"></div>
-            </div>
-          </div>
-          <div id="checklist-warning" style="display:none;background:rgba(255,100,0,.1);border:1px solid var(--amber);border-radius:8px;padding:10px;margin-top:12px;font-size:12px;color:var(--amber)">
-            ⚠️ Nie wszystkie warunki są spełnione. Czy na pewno chcesz kontynuować?
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn-sm" onclick="closeModal('strategy-checklist-modal')">Zamknij</button>
-          <button class="btn-sm btn-accent" onclick="applyChecklist()">✓ Potwierdź i kontynuuj</button>
-        </div>
-      </div>
-</div>
-
-
-    <!-- SETUP MANAGER MODAL -->
-<div class="modal-overlay" id="setup-manager-modal">
-      <div class="modal" style="max-width:620px">
-        <div class="modal-header">
-          <div class="modal-title">📐 Setupy strategii: <span id="setup-manager-strategy-name" style="color:var(--accent)"></span></div>
-          <button class="modal-close" onclick="closeModal('setup-manager-modal')">✕</button>
-        </div>
-        <div class="modal-body">
-          <div style="margin-bottom:14px">
-            <button class="btn-sm btn-accent" onclick="openNewSetup()">+ Dodaj setup</button>
-            <span style="font-size:12px;color:var(--text3);margin-left:10px">Każdy setup może mieć własny checklist i screenshoty wzorcowe</span>
-          </div>
-          <div id="setup-list-container"></div>
-        </div>
-      </div>
-</div>
-
-    <!-- SETUP EDITOR MODAL -->
-<div class="modal-overlay" id="setup-editor-modal">
-      <div class="modal" style="max-width:640px">
-        <div class="modal-header">
-          <div class="modal-title" id="setup-editor-title">Nowy setup</div>
-          <button class="modal-close" onclick="closeModal('setup-editor-modal')">✕</button>
-        </div>
-        <div class="modal-body">
-          <div class="form-group-modal">
-            <label class="form-label-modal">Nazwa setupu *</label>
-            <input class="form-input-modal" id="setup-name" placeholder="np. BOS + FVG retest, London Killzone Sweep...">
-          </div>
-          <div class="form-group-modal">
-            <label class="form-label-modal">Opis setupu</label>
-            <textarea class="form-input-modal" id="setup-desc" rows="2" placeholder="Kiedy wchodzisz? Co widzisz na wykresie?"></textarea>
-          </div>
-          <div class="form-group-modal">
-            <label class="form-label-modal" style="display:flex;justify-content:space-between">
-              <span>Checklist setupu</span>
-              <button onclick="addSetupPoint()" class="btn-sm" style="font-size:11px;padding:2px 8px">+ Dodaj punkt</button>
-            </label>
-            <div id="setup-points-list" style="display:flex;flex-direction:column;gap:6px;margin-top:6px"></div>
-          </div>
-          <div class="form-group-modal">
-            <label class="form-label-modal">📸 Screenshoty wzorcowe (przykłady setupu)</label>
-            <div id="setup-ref-screenshots" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px"></div>
-            <label style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--accent);padding:6px 12px;border:1px dashed var(--accent);border-radius:8px">
-              📸 Dodaj screenshot wzorcowy
-              <input type="file" accept="image/*" multiple style="display:none" onchange="addSetupRefScreenshots(this)">
-            </label>
-            <div style="font-size:11px;color:var(--text3);margin-top:6px">Wklej screeny idealnych przykładów tego setupu — będą widoczne przy analizie jako wzorzec</div>
-          </div>
-          <input type="hidden" id="setup-id">
-          <input type="hidden" id="setup-strategy-id">
-        </div>
-        <div class="modal-footer">
-          <button class="btn-sm" onclick="closeModal('setup-editor-modal')">Anuluj</button>
-          <button class="btn-sm btn-accent" onclick="saveSetup()">✓ Zapisz setup</button>
-        </div>
-      </div>
-</div>
-
-
-
 
 function quickReport(type) {
   const now = new Date();
