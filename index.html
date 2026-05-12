@@ -8005,8 +8005,14 @@ function buildReportHTML(d) {
     </div>
 
 
+</body>
+</html>`;
+}
+
+
+<!-- STRATEGY MODALS — wstawione po buildReportHTML -->
     <!-- STRATEGY MANAGER MODAL -->
-    <div class="modal-overlay" id="strategy-modal">
+<div class="modal-overlay" id="strategy-modal">
       <div class="modal" style="max-width:600px">
         <div class="modal-header">
           <div class="modal-title">🎯 Moje strategie</div>
@@ -8021,10 +8027,10 @@ function buildReportHTML(d) {
           </div>
         </div>
       </div>
-    </div>
+</div>
 
     <!-- STRATEGY EDITOR MODAL -->
-    <div class="modal-overlay" id="strategy-editor-modal">
+<div class="modal-overlay" id="strategy-editor-modal">
       <div class="modal" style="max-width:620px">
         <div class="modal-header">
           <div class="modal-title" id="strategy-editor-title">Nowa strategia</div>
@@ -8056,10 +8062,10 @@ function buildReportHTML(d) {
           <button class="btn-sm btn-accent" onclick="saveStrategy()">✓ Zapisz strategię</button>
         </div>
       </div>
-    </div>
+</div>
 
     <!-- STRATEGY CHECKLIST MODAL (przy analizie/transakcji) -->
-    <div class="modal-overlay" id="strategy-checklist-modal">
+<div class="modal-overlay" id="strategy-checklist-modal">
       <div class="modal" style="max-width:500px">
         <div class="modal-header">
           <div class="modal-title">✅ Checklist strategii</div>
@@ -8086,11 +8092,11 @@ function buildReportHTML(d) {
           <button class="btn-sm btn-accent" onclick="applyChecklist()">✓ Potwierdź i kontynuuj</button>
         </div>
       </div>
-    </div>
+</div>
 
 
     <!-- SETUP MANAGER MODAL -->
-    <div class="modal-overlay" id="setup-manager-modal">
+<div class="modal-overlay" id="setup-manager-modal">
       <div class="modal" style="max-width:620px">
         <div class="modal-header">
           <div class="modal-title">📐 Setupy strategii: <span id="setup-manager-strategy-name" style="color:var(--accent)"></span></div>
@@ -8104,10 +8110,10 @@ function buildReportHTML(d) {
           <div id="setup-list-container"></div>
         </div>
       </div>
-    </div>
+</div>
 
     <!-- SETUP EDITOR MODAL -->
-    <div class="modal-overlay" id="setup-editor-modal">
+<div class="modal-overlay" id="setup-editor-modal">
       <div class="modal" style="max-width:640px">
         <div class="modal-header">
           <div class="modal-title" id="setup-editor-title">Nowy setup</div>
@@ -8146,11 +8152,9 @@ function buildReportHTML(d) {
           <button class="btn-sm btn-accent" onclick="saveSetup()">✓ Zapisz setup</button>
         </div>
       </div>
-    </div>
+</div>
 
-</body>
-</html>`;
-}
+
 
 
 function quickReport(type) {
