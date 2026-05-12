@@ -8627,12 +8627,19 @@ function renderStrategyList() {
 
 
 function openNewStrategy() {
-  // [v1.5] FIX: dodano opcjonalne chainowanie — błąd gdy modal nie jest w DOM
   const strId   = document.getElementById('str-id');
   const strName = document.getElementById('str-name');
   const strDesc = document.getElementById('str-desc');
   const strList = document.getElementById('strategy-points-list');
   const strTitle = document.getElementById('strategy-editor-title');
+  // [v1.5] DEBUG: pokaż który element jest null
+  console.log('openNewStrategy debug:', {
+    'str-id': !!strId,
+    'str-name': !!strName,
+    'str-desc': !!strDesc,
+    'strategy-points-list': !!strList,
+    'strategy-editor-title': !!strTitle
+  });
   if (!strId || !strName || !strDesc || !strList || !strTitle) {
     toast('Błąd: nie można otworzyć edytora strategii', 'error');
     return;
