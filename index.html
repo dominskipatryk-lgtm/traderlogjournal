@@ -4453,7 +4453,29 @@ async function doLogin() {
     const profile = profiles?.[0];
 
     if (!profile) {
+      // Auto-napraw profil admina
+      if (email === 'dominskipatryk@gmail.com' || data.user.email === 'dominskipatryk@gmail.com') {
+        await fetch(_SB_URL + '/rest/v1/profiles', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'apikey': _SB_ANON, 'Authorization': 'Bearer ' + _SB_ANON, 'Prefer': 'return=minimal' },
+          body: JSON.stringify({ id: data.user.id, login: 'patryk', name: 'Patryk', email: 'dominskipatryk@gmail.com', role: 'admin', active: true })
+        });
+        const r2 = await fetch(_SB_URL + '/rest/v1/profiles?id=eq.' + data.user.id + '&select=*', {
+          headers: { 'apikey': _SB_ANON, 'Authorization': 'Bearer ' + _SB_ANON }
+        });
+        const profiles2 = await r2.json();
+        if (profiles2?.[0]) {
+          const users = getUsers();
+          users['patryk'] = { pass: '__supabase__', name: 'Patryk', email: 'dominskipatryk@gmail.com', role: 'admin', subscription: 'admin', supabaseId: data.user.id, createdAt: Date.now() };
+          saveUsers(users);
+          await sbSyncDown(data.user.id, 'patryk');
+          if (btn) { btn.textContent = 'Zaloguj się'; btn.disabled = false; }
+          loginAs('patryk', users['patryk']);
+          return;
+        }
+      }
       await _sb.auth.signOut();
+      if (btn) { btn.textContent = 'Zaloguj się'; btn.disabled = false; }
       return showAuthError('Profil nie istnieje. Skontaktuj się z administratorem.');
     }
 
