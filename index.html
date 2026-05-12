@@ -9192,6 +9192,7 @@ function renderCalendarYearSummary(map) {
 }
 
 
+const _loginAttempts = {};
 function checkLoginRateLimit(identifier) {
   const now = Date.now();
   const key = 'login_' + identifier;
