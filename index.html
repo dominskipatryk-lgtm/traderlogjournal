@@ -1095,6 +1095,46 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
           <button class="btn-sm btn-accent" onclick="saveProfileSettings()">💾 Zapisz profil</button>
         </div>
 
+        <!-- MT4 Integration -->
+        <div class="settings-section">
+          <div class="settings-section-title">🔌 Integracja z MT4</div>
+          <p style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.6">
+            Skopiuj swój <strong>User ID</strong> i wklej go w ustawieniach EA w MetaTrader 4.
+            EA automatycznie otworzy panel transakcji przy każdej pozycji.
+          </p>
+          <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:12px">
+            <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Twój User ID</div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <input class="form-input-modal" id="sett-user-id" readonly
+                style="font-family:var(--font-mono);font-size:12px;background:var(--bg4);color:var(--accent);letter-spacing:.5px;flex:1">
+              <button class="btn-sm btn-accent" onclick="copyUserId()" style="white-space:nowrap;font-size:12px">
+                📋 Kopiuj
+              </button>
+            </div>
+          </div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.8;background:var(--bg3);border-radius:8px;padding:12px 14px">
+            <strong>Jak skonfigurować EA:</strong><br>
+            1. Pobierz plik <code style="background:var(--bg4);padding:1px 5px;border-radius:3px">TraderLogJournal_EA.mq4</code><br>
+            2. W MT4: <code style="background:var(--bg4);padding:1px 5px;border-radius:3px">File → Open Data Folder → MQL4 → Experts</code><br>
+            3. Wklej plik i naciśnij <code style="background:var(--bg4);padding:1px 5px;border-radius:3px">F7</code> aby skompilować<br>
+            4. W MT4: <code style="background:var(--bg4);padding:1px 5px;border-radius:3px">Tools → Options → Expert Advisors → Allow WebRequests</code><br>
+            5. Dodaj ten URL do listy dozwolonych:
+            <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
+              <code id="mt4-weburl" style="background:var(--bg4);padding:4px 8px;border-radius:4px;color:var(--accent);font-size:12px;flex:1;word-break:break-all">https://ygrkcynyduuflzvbkkvo.supabase.co</code>
+              <button class="btn-sm" onclick="
+                navigator.clipboard?.writeText('https://ygrkcynyduuflzvbkkvo.supabase.co');
+                this.textContent='✓';
+                setTimeout(()=>this.textContent='📋',2000);
+              " style="font-size:11px;padding:4px 8px;flex-shrink:0">📋</button>
+            </div>
+            6. Przeciągnij EA na wykres → wklej User ID → wklej numer konta MT4<br>
+            7. Włącz AutoTrading w MT4
+          </div>
+          <div style="margin-top:10px;font-size:11px;color:var(--text3)">
+            ⚙️ Numer konta MT4 ustawiasz osobno dla każdego konta w <strong>Moje konta → Edytuj konto</strong>
+          </div>
+        </div>
+
         <!-- Change password -->
         <div class="settings-section">
           <div class="settings-section-title" data-i18n="sett_pass">🔑 Zmiana hasła</div>
@@ -1836,6 +1876,18 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
         <label class="form-label-modal">Strategia</label>
         <input class="form-input-modal" id="acc-strategy" placeholder="np. Smart Money Concepts, ICT">
       </div>
+      <div class="form-group-modal" style="margin-bottom:16px">
+        <label class="form-label-modal" style="display:flex;align-items:center;gap:6px">
+          🔌 Numer konta MT4
+          <span style="font-size:10px;color:var(--text3);font-weight:400">(opcjonalne — do integracji z EA)</span>
+        </label>
+        <input class="form-input-modal" id="acc-mt4-login" type="number"
+          placeholder="np. 12345678"
+          style="font-family:var(--font-mono)">
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">
+          Znajdziesz go w MT4: prawy górny róg → numer pod nazwą konta
+        </div>
+      </div>
       <div class="form-group-modal">
         <label class="form-label-modal">Kolor konta</label>
         <div class="color-row" id="color-row">
@@ -2278,6 +2330,8 @@ function loginAs(username, userData) {
   setTimeout(checkBackupReminder, 3000);
   setTimeout(checkAutoDownload, 4000);
   setTimeout(checkRecoveryCodeReminder, 2000);
+  // [v1.7] Uruchom nasłuchiwanie sygnałów z MT4
+  setTimeout(initMT4Listener, 2000);
   } catch(e) {
     console.error('loginAs error:', e);
     showAuthError('Błąd logowania: ' + e.message);
@@ -2724,6 +2778,7 @@ function openAccountModal() {
   document.getElementById('acc-broker').value = '';
   document.getElementById('acc-capital').value = '';
   document.getElementById('acc-strategy').value = '';
+  document.getElementById('acc-mt4-login').value = '';
   document.getElementById('acc-modal-title').textContent = 'Nowe konto';
   document.querySelectorAll('.color-swatch').forEach((s,i) => s.classList.toggle('selected', i===0));
   openModal('account-modal');
@@ -2738,6 +2793,7 @@ function openEditAccount(id) {
   document.getElementById('acc-capital').value = acc.capital || '';
   document.getElementById('acc-strategy').value = acc.strategy || '';
   document.getElementById('acc-type').value = acc.type || 'Forex';
+  document.getElementById('acc-mt4-login').value = acc.mt4Login || '';
   document.getElementById('acc-modal-title').textContent = 'Edytuj konto';
   document.querySelectorAll('.color-swatch').forEach(s => s.classList.toggle('selected', s.dataset.color === acc.color));
   openModal('account-modal');
@@ -2754,6 +2810,7 @@ function saveAccount() {
     broker: document.getElementById('acc-broker').value,
     capital: parseFloat(document.getElementById('acc-capital').value) || 0,
     strategy: document.getElementById('acc-strategy').value,
+    mt4Login: document.getElementById('acc-mt4-login').value || '',
   };
   const accounts = getAccounts();
   const idx = accounts.findIndex(a => a.id === id);
@@ -2886,6 +2943,7 @@ function saveTrade() {
     pre: document.getElementById('t-pre').value,
     post: document.getElementById('t-post').value,
     screenshots: state.tempScreenshots.map(s => s.dataUrl),
+    mt4Ticket: parseInt(document.getElementById('t-mt4-ticket')?.value) || null,
   };
   const trades = getTrades(state.currentAccountId);
   const idx = trades.findIndex(t => t.id === id);
@@ -5162,6 +5220,9 @@ function renderSettings() {
   document.getElementById('sett-login').value = state.currentUser;
   document.getElementById('sett-name').value  = u.name  || '';
   document.getElementById('sett-email').value = u.email || '';
+  // [v1.7] Wyświetl User ID do kopiowania dla EA
+  const userIdEl = document.getElementById('sett-user-id');
+  if (userIdEl) userIdEl.value = u.supabaseId || '(zaloguj się przez Supabase aby uzyskać ID)';
   // Show existing recovery code if any
   if (u.recoveryCode) {
     document.getElementById('recovery-code-display').style.display = 'block';
@@ -5177,6 +5238,32 @@ function renderSettings() {
   setTimeout(updateApiKeyStatus, 50);
   if (bar)  { bar.style.width='0'; bar.style.background=''; }
   if (hint) hint.textContent = '';
+}
+
+// [v1.7] Kopiuj User ID do schowka — dla konfiguracji EA w MT4
+function copyUserId() {
+  const users = getUsers();
+  const u = users[state.currentUser] || {};
+  const uid = u.supabaseId;
+  if (!uid) {
+    toast('Brak User ID — zaloguj się przez Supabase', 'error');
+    return;
+  }
+  navigator.clipboard?.writeText(uid).then(() => {
+    toast('User ID skopiowany ✓', 'success');
+    const btn = document.querySelector('#sett-user-id + button') ||
+                document.querySelector('button[onclick="copyUserId()"]');
+    if (btn) {
+      const orig = btn.textContent;
+      btn.textContent = '✓ Skopiowano!';
+      setTimeout(() => btn.textContent = orig, 2000);
+    }
+  }).catch(() => {
+    // Fallback — zaznacz tekst
+    const el = document.getElementById('sett-user-id');
+    if (el) { el.select(); document.execCommand('copy'); }
+    toast('User ID skopiowany ✓', 'success');
+  });
 }
 
 function saveProfileSettings() {
@@ -7943,7 +8030,6 @@ let _appInitRunning = false;
 
 
 function initSupabase() {
-  // Jeśli _sb już istnieje (z tryInitNow) - tylko dodaj listenery
   if (!_sb) {
     const sb_lib = window.supabase || window.Supabase || window.supabaseJs;
     if (!sb_lib || !sb_lib.createClient) {
@@ -7952,11 +8038,7 @@ function initSupabase() {
     }
     _sb = sb_lib.createClient(_SB_URL, _SB_ANON);
   }
-  // Supabase connected
-  // Nasłuchuj zmiany auth - obsłuż Google OAuth callback
   _sb.auth.onAuthStateChange(async (event, session) => {
-    // [v1.3] FIX: dodano PASSWORD_RECOVERY — bez tego link z maila
-    // trafiał na ekran logowania zamiast formularz zmiany hasła
     if (event === 'PASSWORD_RECOVERY' && session) {
       document.getElementById('auth-screen').style.display = 'none';
       showPasswordResetForm();
@@ -7967,9 +8049,194 @@ function initSupabase() {
         if (!state.currentUser && !_appInitRunning) await appInit();
       }, 800);
     }
-    // NIE wylogowuj automatycznie przy SIGNED_OUT - tylko gdy user sam kliknie
   });
   return true;
+}
+
+// ═══ MT4 REALTIME INTEGRATION ═══
+let _mt4Channel = null;
+
+function initMT4Listener() {
+  if (!_sb || _mt4Channel) return;
+  const users = getUsers();
+  const u = users[state.currentUser];
+  if (!u?.supabaseId) return;
+
+  _mt4Channel = _sb
+    .channel('mt4_signals_' + state.currentUser)
+    .on('postgres_changes', {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'mt4_signals',
+      filter: 'user_id=eq.' + u.supabaseId
+    }, payload => {
+      handleMT4Signal(payload.new);
+    })
+    .subscribe();
+
+  console.log('✓ MT4 listener aktywny');
+}
+
+function stopMT4Listener() {
+  if (_mt4Channel) {
+    _sb.removeChannel(_mt4Channel);
+    _mt4Channel = null;
+  }
+}
+
+async function handleMT4Signal(signal) {
+  if (!signal || signal.processed) return;
+
+  // Oznacz jako przetworzone
+  try {
+    await _sb.from('mt4_signals').update({ processed: true }).eq('id', signal.id);
+  } catch(e) {}
+
+  // [v1.7] Znajdź konto w dzienniku po numerze MT4
+  const accounts = getAccounts();
+  const matchedAccount = accounts.find(a => 
+    a.mt4Login && String(a.mt4Login) === String(signal.mt4_account)
+  );
+
+  if (matchedAccount && matchedAccount.id !== state.currentAccountId) {
+    // Przełącz na właściwe konto
+    state.currentAccountId = matchedAccount.id;
+    refreshTopbarAccount();
+    toast('MT4: Przełączono na konto ' + matchedAccount.name, 'success');
+  }
+
+  if (signal.event === 'OPEN') {
+    showMT4Notification(signal, matchedAccount);
+    openTradeFromMT4(signal);
+  } else if (signal.event === 'CLOSE') {
+    await closeMT4Trade(signal);
+    showMT4CloseNotification(signal);
+  } else if (signal.event === 'MODIFY') {
+    // [v1.7] Zaktualizuj SL/TP w zapisanej transakcji
+    await modifyMT4Trade(signal);
+  }
+}
+
+async function modifyMT4Trade(signal) {
+  const db = getDB();
+  const accounts = getAccounts();
+
+  for (const acc of accounts) {
+    const key = (state.currentUser || '') + '_' + acc.id;
+    const trades = (db.trades || {})[key] || [];
+    const tradeIdx = trades.findIndex(t => String(t.mt4Ticket) === String(signal.ticket));
+
+    if (tradeIdx >= 0) {
+      if (signal.sl) trades[tradeIdx].sl = signal.sl;
+      if (signal.tp) trades[tradeIdx].tp = signal.tp;
+      if (!db.trades) db.trades = {};
+      db.trades[key] = trades;
+      saveDB(db);
+      renderTrades();
+      toast('MT4: Zaktualizowano SL/TP dla ' + signal.symbol + ' #' + signal.ticket, 'success');
+      return;
+    }
+  }
+  // Transakcja nie znaleziona — tylko powiadomienie
+  toast('MT4: Zmodyfikowano SL/TP dla ' + signal.symbol + ' #' + signal.ticket, 'success');
+}
+
+async function closeMT4Trade(signal) {
+  // Znajdź transakcję po numerze ticketu i uzupełnij dane zamknięcia
+  const db = getDB();
+  const accounts = getAccounts();
+
+  for (const acc of accounts) {
+    const key = (state.currentUser || '') + '_' + acc.id;
+    const trades = (db.trades || {})[key] || [];
+    const tradeIdx = trades.findIndex(t => String(t.mt4Ticket) === String(signal.ticket));
+
+    if (tradeIdx >= 0) {
+      trades[tradeIdx].exit   = signal.close_price;
+      trades[tradeIdx].pnl    = signal.profit;
+      trades[tradeIdx].status = 'closed';
+      if (!db.trades) db.trades = {};
+      db.trades[key] = trades;
+      saveDB(db);
+      renderTrades();
+      renderDashboard();
+      toast('MT4: Zamknięto ' + signal.symbol + ' P&L: ' + (signal.profit >= 0 ? '+' : '') + '$' + Math.abs(signal.profit).toFixed(2), 'success');
+      return;
+    }
+  }
+}
+
+function openTradeFromMT4(signal) {
+  state.editTradeId = null;
+  state.tempScreenshots = [];
+  document.getElementById('trade-id').value   = '';
+  document.getElementById('t-symbol').value   = signal.symbol || '';
+  document.getElementById('t-date').value     = nowDatetime();
+  document.getElementById('t-dir').value      = signal.direction === 'BUY' ? 'LONG' : 'SHORT';
+  document.getElementById('t-status').value   = 'open';
+  document.getElementById('t-entry').value    = signal.entry || '';
+  document.getElementById('t-size').value     = signal.size  || '';
+  document.getElementById('t-sl').value       = signal.sl    || '';
+  document.getElementById('t-tp').value       = signal.tp    || '';
+  document.getElementById('t-exit').value     = '';
+  document.getElementById('t-pnl').value      = '';
+  document.getElementById('t-pre').value      = '[MT4 #' + signal.ticket + '] ' + signal.symbol + ' ' + signal.direction + ' @ ' + signal.entry;
+  document.getElementById('modal-title').textContent = 'MT4: ' + signal.symbol + ' ' + (signal.direction === 'BUY' ? '📈' : '📉');
+  // Zapisz ticket jako hidden field żeby móc dopasować przy zamknięciu
+  let ticketField = document.getElementById('t-mt4-ticket');
+  if (!ticketField) {
+    ticketField = document.createElement('input');
+    ticketField.type = 'hidden';
+    ticketField.id = 't-mt4-ticket';
+    document.getElementById('trade-modal').appendChild(ticketField);
+  }
+  ticketField.value = signal.ticket || '';
+  setTfFromValue('H1');
+  _pnlManual = false;
+  renderScreenshotPreviews();
+  toggleCloseFields();
+  setAutosaveDot('idle');
+  setTimeout(() => { populateStrategySelects(); document.getElementById('trade-checklist-score').textContent = ''; }, 50);
+  openModal('trade-modal');
+  applyTfModeUI();
+  hookFormAutoSave();
+  setTimeout(() => performDraftSave(), 1000);
+}
+
+function showMT4Notification(signal) {
+  const dir   = signal.direction === 'BUY' ? '📈 LONG' : '📉 SHORT';
+  const color = signal.direction === 'BUY' ? 'var(--accent)' : 'var(--red)';
+  const div   = document.createElement('div');
+  div.style.cssText = 'position:fixed;top:70px;right:24px;background:var(--bg2);border:1px solid ' + color + ';border-radius:12px;padding:16px 20px;z-index:9999;max-width:320px;box-shadow:0 8px 32px rgba(0,0,0,.5)';
+  div.innerHTML = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">' +
+    '<div style="width:8px;height:8px;border-radius:50%;background:' + color + '"></div>' +
+    '<div style="font-family:var(--font-head);font-size:13px;font-weight:700;color:' + color + '">MT4 — Nowa transakcja</div></div>' +
+    '<div style="font-size:14px;font-weight:700;margin-bottom:4px">' + signal.symbol + ' ' + dir + '</div>' +
+    '<div style="font-size:12px;color:var(--text2);line-height:1.8">' +
+    'Entry: <strong>' + signal.entry + '</strong><br>' +
+    'SL: <strong style="color:var(--red)">' + (signal.sl || '—') + '</strong> &nbsp; ' +
+    'TP: <strong style="color:var(--accent)">' + (signal.tp || '—') + '</strong><br>' +
+    'Lot: <strong>' + signal.size + '</strong> · Ticket: #' + signal.ticket + '</div>' +
+    '<div style="font-size:11px;color:var(--text3);margin-top:8px">Panel transakcji otwarty automatycznie ↗</div>';
+  document.body.appendChild(div);
+  setTimeout(() => div.remove(), 8000);
+}
+
+function showMT4CloseNotification(signal) {
+  const pnl   = signal.profit || 0;
+  const color = pnl >= 0 ? 'var(--accent)' : 'var(--red)';
+  const sign  = pnl >= 0 ? '+' : '';
+  const div   = document.createElement('div');
+  div.style.cssText = 'position:fixed;top:70px;right:24px;background:var(--bg2);border:1px solid ' + color + ';border-radius:12px;padding:16px 20px;z-index:9999;max-width:320px;box-shadow:0 8px 32px rgba(0,0,0,.5)';
+  div.innerHTML = '<div style="font-family:var(--font-head);font-size:13px;font-weight:700;color:' + color + ';margin-bottom:8px">MT4 — Zamknięta pozycja</div>' +
+    '<div style="font-size:14px;font-weight:700;margin-bottom:4px">' + signal.symbol + ' #' + signal.ticket + '</div>' +
+    '<div style="font-size:12px;color:var(--text2);line-height:1.8">' +
+    'Close: <strong>' + signal.close_price + '</strong><br>' +
+    'P&L: <strong style="color:' + color + '">' + sign + '$' + Math.abs(pnl).toFixed(2) + '</strong></div>' +
+    '<div style="display:flex;gap:8px;margin-top:10px">' +
+    '<button class="btn-sm btn-accent" onclick="this.parentElement.parentElement.remove()" style="font-size:11px">OK</button></div>';
+  document.body.appendChild(div);
+  setTimeout(() => div.remove(), 10000);
 }
 
 
