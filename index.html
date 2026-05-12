@@ -1780,7 +1780,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
               <span id="pnl-preview" style="font-family:var(--font-mono);font-size:11px;font-weight:600;letter-spacing:0;text-transform:none"></span>
             </label>
             <input class="form-input-modal" id="t-exit" type="number" step="any" placeholder="0.00"
-              style="border-color:rgba(245,166,35,.4)" oninput="autoPnl()">
+              style="border-color:rgba(245,166,35,.4)" oninput="autoPnl();autoStatusOnExit()">
           </div>
           <div class="form-group-modal">
             <label class="form-label-modal" style="display:flex;justify-content:space-between;align-items:center">
@@ -2921,16 +2921,27 @@ function openEditModal(id) {
 }
 
 function toggleCloseFields() {
-  // Exit and PnL always visible — just dim labels when trade is open
   const isClosed = document.getElementById('t-status').value === 'closed';
   const cf = document.getElementById('close-fields');
   if (cf) cf.style.display = 'contents';
-  // Dim exit/pnl fields when trade is open
   const exitInput = document.getElementById('t-exit');
   const pnlInput  = document.getElementById('t-pnl');
-  const exitLabel = exitInput?.closest('.form-group-modal')?.querySelector('label');
   if (exitInput) exitInput.style.opacity = isClosed ? '1' : '0.45';
   if (pnlInput)  pnlInput.style.opacity  = isClosed ? '1' : '0.45';
+}
+
+// [v1.7] Auto-zmiana statusu na Zamknięta gdy wpisano cenę wyjścia
+function autoStatusOnExit() {
+  const exit   = document.getElementById('t-exit')?.value;
+  const status = document.getElementById('t-status');
+  if (!status) return;
+  if (exit && parseFloat(exit) > 0 && status.value === 'open') {
+    status.value = 'closed';
+    toggleCloseFields();
+  } else if (!exit && status.value === 'closed') {
+    status.value = 'open';
+    toggleCloseFields();
+  }
 }
 
 function saveTrade() {
@@ -8283,7 +8294,6 @@ async function closeMT4Trade(signal) {
 
 function openTradeFromMT4(signal) {
   // [v1.7] Automatycznie zapisz transakcję do dziennika
-  // Panel otwiera się tylko do dodania screenshota i opisu
   const id = genId();
   const trade = {
     id,
@@ -8312,63 +8322,56 @@ function openTradeFromMT4(signal) {
   saveTrades(state.currentAccountId, trades);
   renderTrades();
   renderDashboard();
-  toast('MT4: Zapisano ' + signal.symbol + ' ' + trade.dir + ' ✓', 'success');
 
-  // Otwórz panel do edycji (screenshot + opis)
-  state.editTradeId = id;
-  state.tempScreenshots = [];
-  document.getElementById('trade-id').value   = id;
-  document.getElementById('t-symbol').value   = signal.symbol || '';
-  document.getElementById('t-date').value     = trade.date;
-  document.getElementById('t-dir').value      = trade.dir;
-  document.getElementById('t-status').value   = 'open';
-  document.getElementById('t-entry').value    = signal.entry || '';
-  document.getElementById('t-size').value     = signal.size  || '';
-  document.getElementById('t-sl').value       = signal.sl    || '';
-  document.getElementById('t-tp').value       = signal.tp    || '';
-  document.getElementById('t-exit').value     = '';
-  document.getElementById('t-pnl').value      = '';
-  document.getElementById('t-pre').value      = trade.pre;
-  document.getElementById('modal-title').textContent = 'MT4: ' + signal.symbol + ' ' + (signal.direction === 'BUY' ? '📈' : '📉') + ' — dodaj opis i screen';
+  // Sygnał dźwiękowy
+  playMT4Sound(signal.direction === 'BUY');
 
-  // Zapisz ticket
-  let ticketField = document.getElementById('t-mt4-ticket');
-  if (!ticketField) {
-    ticketField = document.createElement('input');
-    ticketField.type = 'hidden';
-    ticketField.id = 't-mt4-ticket';
-    document.getElementById('trade-modal').appendChild(ticketField);
-  }
-  ticketField.value = signal.ticket || '';
-
-  setTfFromValue('H1');
-  _pnlManual = false;
-  renderScreenshotPreviews();
-  toggleCloseFields();
-  setAutosaveDot('idle');
-  setTimeout(() => { populateStrategySelects(); document.getElementById('trade-checklist-score').textContent = ''; }, 50);
-  openModal('trade-modal');
-  applyTfModeUI();
-  hookFormAutoSave();
+  // Powiadomienie z przyciskiem "Otwórz panel"
+  showMT4Notification(signal, id);
 }
 
-function showMT4Notification(signal) {
+function playMT4Sound(isLong) {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    // Long — dwa tony w górę, Short — dwa tony w dół
+    const freqs = isLong ? [440, 660] : [660, 440];
+    osc.frequency.setValueAtTime(freqs[0], ctx.currentTime);
+    osc.frequency.setValueAtTime(freqs[1], ctx.currentTime + 0.15);
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.4);
+  } catch(e) {}
+}
+
+function showMT4Notification(signal, tradeId) {
   const dir   = signal.direction === 'BUY' ? '📈 LONG' : '📉 SHORT';
   const color = signal.direction === 'BUY' ? 'var(--accent)' : 'var(--red)';
   const div   = document.createElement('div');
   div.style.cssText = 'position:fixed;top:70px;right:24px;background:var(--bg2);border:1px solid ' + color + ';border-radius:12px;padding:16px 20px;z-index:9999;max-width:320px;box-shadow:0 8px 32px rgba(0,0,0,.5)';
-  div.innerHTML = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">' +
-    '<div style="width:8px;height:8px;border-radius:50%;background:' + color + '"></div>' +
-    '<div style="font-family:var(--font-head);font-size:13px;font-weight:700;color:' + color + '">MT4 — Nowa transakcja</div></div>' +
+  div.innerHTML =
+    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">' +
+      '<div style="width:8px;height:8px;border-radius:50%;background:' + color + '"></div>' +
+      '<div style="font-family:var(--font-head);font-size:13px;font-weight:700;color:' + color + '">MT4 — Zapisano transakcję</div>' +
+      '<button onclick="this.parentElement.parentElement.remove()" style="margin-left:auto;background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px">✕</button>' +
+    '</div>' +
     '<div style="font-size:14px;font-weight:700;margin-bottom:4px">' + signal.symbol + ' ' + dir + '</div>' +
-    '<div style="font-size:12px;color:var(--text2);line-height:1.8">' +
-    'Entry: <strong>' + signal.entry + '</strong><br>' +
-    'SL: <strong style="color:var(--red)">' + (signal.sl || '—') + '</strong> &nbsp; ' +
-    'TP: <strong style="color:var(--accent)">' + (signal.tp || '—') + '</strong><br>' +
-    'Lot: <strong>' + signal.size + '</strong> · Ticket: #' + signal.ticket + '</div>' +
-    '<div style="font-size:11px;color:var(--text3);margin-top:8px">Panel transakcji otwarty automatycznie ↗</div>';
+    '<div style="font-size:12px;color:var(--text2);line-height:1.8;margin-bottom:10px">' +
+      'Entry: <strong>' + signal.entry + '</strong><br>' +
+      'SL: <strong style="color:var(--red)">' + (signal.sl || '—') + '</strong> &nbsp; ' +
+      'TP: <strong style="color:var(--accent)">' + (signal.tp || '—') + '</strong><br>' +
+      'Lot: <strong>' + signal.size + '</strong> · #' + signal.ticket +
+    '</div>' +
+    '<div style="display:flex;gap:8px">' +
+      '<button class="btn-sm btn-accent" onclick="openEditModal(\'' + tradeId + '\');this.parentElement.parentElement.remove()" style="font-size:11px;flex:1">✏️ Dodaj opis / screen</button>' +
+      '<button class="btn-sm" onclick="this.closest(\'div\').parentElement.remove()" style="font-size:11px">OK</button>' +
+    '</div>';
   document.body.appendChild(div);
-  setTimeout(() => div.remove(), 8000);
+  setTimeout(() => { if (div.parentElement) div.remove(); }, 15000);
 }
 
 function showMT4CloseNotification(signal) {
