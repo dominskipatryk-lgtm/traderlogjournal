@@ -959,28 +959,52 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
         <div class="summary-card">
           <div class="summary-card-title" style="color:var(--amber)">📊 Kalkulator Ryzyka</div>
           <div style="display:grid;gap:12px">
-            <div><label class="form-label-modal" style="font-size:10px">Kapitał konta (USD)</label>
-              <input class="form-input-modal" id="r-capital" type="number" placeholder="10000" style="font-size:13px" oninput="calcRisk()"></div>
-            <div><label class="form-label-modal" style="font-size:10px">Ryzyko na trade (%)</label>
-              <input class="form-input-modal" id="r-pct" type="number" value="1" step="0.1" style="font-size:13px" oninput="calcRisk()"></div>
-            <div><label class="form-label-modal" style="font-size:10px">Stop Loss (punkty)</label>
-              <input class="form-input-modal" id="r-sl" type="number" step="any" placeholder="np. 41.81" style="font-size:13px" oninput="calcRisk()"></div>
-            <div><label class="form-label-modal" style="font-size:10px">Wartość ticka / pipsa (USD per lot)</label>
-              <input class="form-input-modal" id="r-pipval" type="number" step="any" placeholder="np. 10" style="font-size:13px" oninput="calcRisk()"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              <div><label class="form-label-modal" style="font-size:10px">Kapitał konta (USD)</label>
+                <input class="form-input-modal" id="r-capital" type="number" placeholder="10000" style="font-size:13px" oninput="calcRisk()"></div>
+              <div><label class="form-label-modal" style="font-size:10px">Ryzyko na trade (%)</label>
+                <input class="form-input-modal" id="r-pct" type="number" value="1" step="0.1" style="font-size:13px" oninput="calcRisk()"></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              <div><label class="form-label-modal" style="font-size:10px">Cena wejścia</label>
+                <input class="form-input-modal" id="r-entry" type="number" step="any" placeholder="np. 4545.43" style="font-size:13px" oninput="calcRisk()"></div>
+              <div><label class="form-label-modal" style="font-size:10px">Stop Loss (cena)</label>
+                <input class="form-input-modal" id="r-sl-price" type="number" step="any" placeholder="np. 4503.62" style="font-size:13px" oninput="calcRisk()"></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              <div><label class="form-label-modal" style="font-size:10px">Stop Loss (punkty)</label>
+                <input class="form-input-modal" id="r-sl" type="number" step="any" placeholder="np. 41.81" style="font-size:13px" oninput="calcRisk()"></div>
+              <div><label class="form-label-modal" style="font-size:10px">Wartość ticka (USD/lot)</label>
+                <input class="form-input-modal" id="r-pipval" type="number" step="any" placeholder="np. 10" style="font-size:13px" oninput="calcRisk()"></div>
+            </div>
+            <button class="btn-sm" onclick="riskFillFromAccount()" style="font-size:11px;width:100%">⬇ Uzupełnij kapitał z aktywnego konta</button>
           </div>
           <div id="r-result" style="display:none;margin-top:14px;background:var(--bg);border:1px solid var(--border2);border-radius:10px;padding:14px;font-size:13px"></div>
         </div>
         <div class="summary-card">
-          <div class="summary-card-title" style="color:var(--blue)">⚖️ Kalkulator R:R</div>
+          <div class="summary-card-title" style="color:var(--blue)">⚖️ Kalkulator R:R i % konta</div>
           <div style="display:grid;gap:12px">
-            <div><label class="form-label-modal" style="font-size:10px">Cena wejścia</label>
-              <input class="form-input-modal" id="rr-entry" type="number" step="any" placeholder="4545.43" style="font-size:13px" oninput="calcRR()"></div>
-            <div><label class="form-label-modal" style="font-size:10px">Stop Loss</label>
-              <input class="form-input-modal" id="rr-sl" type="number" step="any" placeholder="4503.62" style="font-size:13px" oninput="calcRR()"></div>
-            <div><label class="form-label-modal" style="font-size:10px">Take Profit</label>
-              <input class="form-input-modal" id="rr-tp" type="number" step="any" placeholder="4604.60" style="font-size:13px" oninput="calcRR()"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              <div><label class="form-label-modal" style="font-size:10px">Kapitał konta (USD)</label>
+                <input class="form-input-modal" id="rr-capital" type="number" placeholder="10000" style="font-size:13px" oninput="calcRR()"></div>
+              <div><label class="form-label-modal" style="font-size:10px">Wolumen (loty)</label>
+                <input class="form-input-modal" id="rr-size" type="number" step="any" placeholder="0.1" style="font-size:13px" oninput="calcRR()"></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              <div><label class="form-label-modal" style="font-size:10px">Cena wejścia</label>
+                <input class="form-input-modal" id="rr-entry" type="number" step="any" placeholder="4545.43" style="font-size:13px" oninput="calcRR()"></div>
+              <div><label class="form-label-modal" style="font-size:10px">Stop Loss</label>
+                <input class="form-input-modal" id="rr-sl" type="number" step="any" placeholder="4503.62" style="font-size:13px" oninput="calcRR()"></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              <div><label class="form-label-modal" style="font-size:10px">Take Profit</label>
+                <input class="form-input-modal" id="rr-tp" type="number" step="any" placeholder="4604.60" style="font-size:13px" oninput="calcRR()"></div>
+              <div><label class="form-label-modal" style="font-size:10px">Wartość ticka (USD/lot)</label>
+                <input class="form-input-modal" id="rr-pipval" type="number" step="any" placeholder="np. 10" style="font-size:13px" oninput="calcRR()"></div>
+            </div>
             <div><label class="form-label-modal" style="font-size:10px">Twój Win Rate (%)</label>
               <input class="form-input-modal" id="rr-wr" type="number" value="50" style="font-size:13px" oninput="calcRR()"></div>
+            <button class="btn-sm" onclick="rrFillFromAccount()" style="font-size:11px;width:100%">⬇ Uzupełnij kapitał z aktywnego konta</button>
           </div>
           <div id="rr-result" style="display:none;margin-top:14px;background:var(--bg);border:1px solid var(--border2);border-radius:10px;padding:14px;font-size:13px"></div>
         </div>
@@ -3434,49 +3458,161 @@ function row(k,v) { return `<div style="color:var(--text2)">${k}</div><div>${v}<
 function fmtN(n) { return new Intl.NumberFormat('pl-PL',{minimumFractionDigits:2,maximumFractionDigits:2}).format(n); }
 
 // ===== RISK CALCULATOR =====
+function riskFillFromAccount() {
+  const acc = getAccounts().find(a => a.id === state.currentAccountId);
+  if (!acc) { toast('Wybierz konto tradingowe', 'error'); return; }
+  const trades = getTrades(state.currentAccountId);
+  const pnl = trades.filter(t=>t.status==='closed').reduce((s,t)=>s+(t.pnl||0),0);
+  const capital = (acc.capital||0) + pnl;
+  document.getElementById('r-capital').value = capital.toFixed(2);
+  document.getElementById('rr-capital').value = capital.toFixed(2);
+  calcRisk(); calcRR();
+  toast('Kapitał uzupełniony z konta: ' + acc.name, 'success');
+}
+
+function rrFillFromAccount() { riskFillFromAccount(); }
+
 function calcRisk() {
-  const cap = parseFloat(document.getElementById('r-capital')?.value);
-  const pct = parseFloat(document.getElementById('r-pct')?.value);
-  const sl = parseFloat(document.getElementById('r-sl')?.value);
-  const pv = parseFloat(document.getElementById('r-pipval')?.value);
-  const res = document.getElementById('r-result');
+  const cap    = parseFloat(document.getElementById('r-capital')?.value);
+  const pct    = parseFloat(document.getElementById('r-pct')?.value);
+  const entry  = parseFloat(document.getElementById('r-entry')?.value);
+  const slPrice= parseFloat(document.getElementById('r-sl-price')?.value);
+  let   sl     = parseFloat(document.getElementById('r-sl')?.value);
+  const pv     = parseFloat(document.getElementById('r-pipval')?.value);
+  const res    = document.getElementById('r-result');
   if (!res) return;
+
+  // Jeśli podano cenę wejścia i SL jako cena — oblicz punkty automatycznie
+  if (!isNaN(entry) && !isNaN(slPrice) && isNaN(sl)) {
+    sl = Math.abs(entry - slPrice);
+    const slEl = document.getElementById('r-sl');
+    if (slEl && !slEl.value) slEl.value = sl.toFixed(2);
+  }
+
   if (isNaN(cap) || isNaN(pct)) { res.style.display='none'; return; }
+
   const riskAmt = cap * pct / 100;
   res.style.display = 'block';
-  let html = `<div style="margin-bottom:8px">Kwota ryzyka: <strong style="color:var(--amber);font-family:var(--font-mono)">$${fmtN(riskAmt)}</strong> (${pct}% z $${fmtN(cap)})</div>`;
+
+  let html = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+      <div style="background:var(--amber-dim);border:1px solid var(--amber);border-radius:8px;padding:10px;text-align:center">
+        <div style="font-size:10px;color:var(--amber);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Kwota ryzyka</div>
+        <div style="font-family:var(--font-mono);font-size:18px;font-weight:700;color:var(--amber)">$${fmtN(riskAmt)}</div>
+        <div style="font-size:11px;color:var(--text3)">${pct}% z $${fmtN(cap)}</div>
+      </div>
+      <div style="background:var(--red-dim);border:1px solid var(--red);border-radius:8px;padding:10px;text-align:center">
+        <div style="font-size:10px;color:var(--red);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Ryzykujesz</div>
+        <div style="font-family:var(--font-mono);font-size:18px;font-weight:700;color:var(--red)">${pct}%</div>
+        <div style="font-size:11px;color:var(--text3)">kapitału konta</div>
+      </div>
+    </div>`;
+
   if (!isNaN(sl) && !isNaN(pv) && sl > 0 && pv > 0) {
     const lots = riskAmt / (sl * pv);
-    html += `<div>Maksymalny wolumen: <strong style="color:var(--accent);font-family:var(--font-mono)">${lots.toFixed(4)} lotów</strong> przy SL=${sl} pkt, pipVal=$${pv}/lot</div>`;
     const cs = parseFloat(document.getElementById('p-contract')?.value) || 100;
     const units = lots * cs;
-    html += `<div style="color:var(--text2);font-size:12px;margin-top:4px">≈ ${units.toFixed(2)} jednostek TV (kontrakt ${cs})</div>`;
+    const slUSD = sl * pv * lots;
+    const slPct = (slUSD / cap * 100).toFixed(2);
+
+    html += `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+      <div style="background:var(--accent-dim);border:1px solid var(--accent);border-radius:8px;padding:10px;text-align:center">
+        <div style="font-size:10px;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Maks. wolumen</div>
+        <div style="font-family:var(--font-mono);font-size:18px;font-weight:700;color:var(--accent)">${lots.toFixed(4)}</div>
+        <div style="font-size:11px;color:var(--text3)">lotów</div>
+      </div>
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center">
+        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Jednostki TV</div>
+        <div style="font-family:var(--font-mono);font-size:18px;font-weight:700">${units.toFixed(2)}</div>
+        <div style="font-size:11px;color:var(--text3)">kontrakt ${cs}</div>
+      </div>
+    </div>
+    <div style="font-size:12px;color:var(--text2);padding:8px 10px;background:var(--bg3);border-radius:6px">
+      SL ${sl.toFixed(2)} pkt × $${pv}/lot × ${lots.toFixed(4)} lot = 
+      <strong style="color:var(--red)">$${fmtN(slUSD)}</strong> = 
+      <strong style="color:var(--red)">${slPct}% konta</strong>
+    </div>`;
   }
+
   res.innerHTML = html;
 }
 
 // ===== RR CALCULATOR =====
 function calcRR() {
-  const entry = parseFloat(document.getElementById('rr-entry')?.value);
-  const sl = parseFloat(document.getElementById('rr-sl')?.value);
-  const tp = parseFloat(document.getElementById('rr-tp')?.value);
-  const wr = parseFloat(document.getElementById('rr-wr')?.value) / 100;
-  const res = document.getElementById('rr-result');
+  const entry  = parseFloat(document.getElementById('rr-entry')?.value);
+  const sl     = parseFloat(document.getElementById('rr-sl')?.value);
+  const tp     = parseFloat(document.getElementById('rr-tp')?.value);
+  const wr     = parseFloat(document.getElementById('rr-wr')?.value) / 100;
+  const cap    = parseFloat(document.getElementById('rr-capital')?.value);
+  const size   = parseFloat(document.getElementById('rr-size')?.value);
+  const pv     = parseFloat(document.getElementById('rr-pipval')?.value);
+  const res    = document.getElementById('rr-result');
   if (!res) return;
   if (isNaN(entry) || isNaN(sl)) { res.style.display='none'; return; }
-  const risk = Math.abs(entry - sl);
+
+  const risk   = Math.abs(entry - sl);
   const reward = tp ? Math.abs(tp - entry) : null;
-  const rr = reward ? (reward / risk).toFixed(2) : null;
-  const beWR = rr ? (1 / (1 + parseFloat(rr)) * 100).toFixed(1) : null;
+  const rr     = reward ? (reward / risk).toFixed(2) : null;
+  const beWR   = rr ? (1 / (1 + parseFloat(rr)) * 100).toFixed(1) : null;
   const expectancy = (reward && !isNaN(wr)) ? (wr * reward - (1-wr) * risk).toFixed(2) : null;
+
+  // Kwoty w USD jeśli podano wolumen i pip value
+  const hasUSD  = !isNaN(size) && !isNaN(pv);
+  const riskUSD = hasUSD ? size * pv * risk : null;
+  const rewUSD  = hasUSD && reward ? size * pv * reward : null;
+  const riskPct = (riskUSD && !isNaN(cap)) ? (riskUSD / cap * 100).toFixed(2) : null;
+  const rewPct  = (rewUSD && !isNaN(cap)) ? (rewUSD / cap * 100).toFixed(2) : null;
+
   res.style.display = 'block';
-  res.innerHTML = [
-    `<div>Ryzyko (SL): <strong style="color:var(--red);font-family:var(--font-mono)">${risk.toFixed(2)} pkt</strong></div>`,
-    reward ? `<div>Reward (TP): <strong style="color:var(--green);font-family:var(--font-mono)">${reward.toFixed(2)} pkt</strong></div>` : '',
-    rr ? `<div style="margin-top:8px">R:R = <strong style="color:var(--accent);font-family:var(--font-mono);font-size:18px">1 : ${rr}</strong></div>` : '',
-    beWR ? `<div>Break-even WR: <strong style="color:var(--amber);font-family:var(--font-mono)">${beWR}%</strong></div>` : '',
-    expectancy ? `<div>Oczekiwana wartość: <strong style="color:${parseFloat(expectancy)>=0?'var(--green)':'var(--red)'};font-family:var(--font-mono)">${parseFloat(expectancy)>=0?'+':''}${expectancy} pkt</strong> <span style="color:var(--text3);font-size:12px">przy WR=${(wr*100).toFixed(0)}%</span></div>` : '',
-  ].filter(Boolean).join('');
+
+  let html = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">`;
+
+  // Ryzyko SL
+  html += `<div style="background:var(--red-dim);border:1px solid var(--red);border-radius:8px;padding:10px;text-align:center">
+    <div style="font-size:10px;color:var(--red);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Ryzyko (SL)</div>
+    <div style="font-family:var(--font-mono);font-size:16px;font-weight:700;color:var(--red)">${risk.toFixed(2)} pkt</div>
+    ${riskUSD ? `<div style="font-size:12px;color:var(--red);font-family:var(--font-mono)">$${fmtN(riskUSD)}</div>` : ''}
+    ${riskPct ? `<div style="font-size:11px;color:var(--text3)">${riskPct}% konta</div>` : ''}
+  </div>`;
+
+  // Reward TP
+  if (reward) {
+    html += `<div style="background:var(--green-dim);border:1px solid var(--green);border-radius:8px;padding:10px;text-align:center">
+      <div style="font-size:10px;color:var(--green);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Zysk (TP)</div>
+      <div style="font-family:var(--font-mono);font-size:16px;font-weight:700;color:var(--green)">${reward.toFixed(2)} pkt</div>
+      ${rewUSD ? `<div style="font-size:12px;color:var(--green);font-family:var(--font-mono)">$${fmtN(rewUSD)}</div>` : ''}
+      ${rewPct ? `<div style="font-size:11px;color:var(--text3)">${rewPct}% konta</div>` : ''}
+    </div>`;
+  } else {
+    html += `<div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center">
+      <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Zysk (TP)</div>
+      <div style="font-size:12px;color:var(--text3);margin-top:8px">Brak TP</div>
+    </div>`;
+  }
+  html += `</div>`;
+
+  // R:R
+  if (rr) {
+    const rrColor = parseFloat(rr) >= 2 ? 'var(--accent)' : parseFloat(rr) >= 1 ? 'var(--amber)' : 'var(--red)';
+    html += `<div style="text-align:center;padding:12px;background:var(--bg3);border-radius:8px;margin-bottom:8px">
+      <div style="font-size:11px;color:var(--text3);margin-bottom:4px">Risk : Reward</div>
+      <div style="font-family:var(--font-head);font-size:28px;font-weight:800;color:${rrColor}">1 : ${rr}</div>
+      ${beWR ? `<div style="font-size:11px;color:var(--text3);margin-top:4px">Break-even win rate: <strong style="color:var(--amber)">${beWR}%</strong></div>` : ''}
+    </div>`;
+  }
+
+  // Oczekiwana wartość
+  if (expectancy) {
+    const expColor = parseFloat(expectancy) >= 0 ? 'var(--green)' : 'var(--red)';
+    html += `<div style="font-size:12px;color:var(--text2);padding:8px 10px;background:var(--bg3);border-radius:6px">
+      Oczekiwana wartość przy WR=${(wr*100).toFixed(0)}%: 
+      <strong style="color:${expColor};font-family:var(--font-mono)">${parseFloat(expectancy)>=0?'+':''}${expectancy} pkt</strong>
+      ${hasUSD ? `= <strong style="color:${expColor};font-family:var(--font-mono)">$${fmtN(size*pv*Math.abs(parseFloat(expectancy)))}</strong>` : ''}
+    </div>`;
+  }
+
+  res.innerHTML = html;
 }
 
 // update showPage to include calculator
@@ -6230,20 +6366,12 @@ function checkAutoDownload() {
       toast('Auto-backup pobrany przy logowaniu ✓', 'success');
     }, 2000);
   }
-  // [v1.6] Auto-backup na Google Drive przy każdym logowaniu (cicho w tle)
+  // [v1.7] Auto-backup na Google Drive przy każdym logowaniu
+  // Ładujemy skrypt GAPI w tle — token poprosimy dopiero gdy użytkownik kliknie
   if (s.googleDrive) {
-    setTimeout(async () => {
-      try {
-        if (!_gapiLoaded) {
-          // Spróbuj połączyć się ponownie
-          loadGAPI();
-          return;
-        }
-        await backupToGoogleDrive();
-      } catch(e) {
-        console.warn('Auto Google Drive backup error:', e.message);
-      }
-    }, 5000);
+    setTimeout(() => {
+      loadGAPI(); // tylko inicjalizacja, bez popup
+    }, 3000);
   }
 }
 
@@ -6355,35 +6483,56 @@ function saveGDriveClientId() {
 }
 
 function loadGAPI(clientId) {
-  // [v1.6] Client ID wbudowany — ignoruj parametr
+  // [v1.7] FIX: nie prosimy o token automatycznie — tylko inicjalizujemy klienta
+  // Token jest proszony dopiero gdy użytkownik kliknie przycisk (unika blokady popupów)
   const cid = GDRIVE_CLIENT_ID;
+  if (document.querySelector('script[src*="accounts.google.com/gsi"]')) {
+    // Skrypt już załadowany — tylko zainicjuj klienta
+    _initGapiTokenClient(cid);
+    return;
+  }
   const script = document.createElement('script');
   script.src = 'https://accounts.google.com/gsi/client';
-  script.onload = () => {
-    _gapiTokenClient = google.accounts.oauth2.initTokenClient({
-      client_id: cid,
-      scope: GDRIVE_SCOPES,
-      callback: (resp) => {
-        if (resp.access_token) {
-          _gapiLoaded = true;
-          updateGDriveStatus('✓ Połączono z Google Drive', 'ok');
-          toast('Połączono z Google Drive ✓', 'success');
-          renderBackupOptions();
-        }
-      }
-    });
-    // Od razu poproś o token
-    _gapiTokenClient.requestAccessToken();
-  };
+  script.onload = () => _initGapiTokenClient(cid);
   script.onerror = () => toast('Błąd ładowania Google API', 'error');
   document.head.appendChild(script);
 }
 
+function _initGapiTokenClient(cid) {
+  _gapiTokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: cid,
+    scope: GDRIVE_SCOPES,
+    callback: (resp) => {
+      if (resp.access_token) {
+        _gapiLoaded = true;
+        updateGDriveStatus('✓ Połączono z Google Drive', 'ok');
+        toast('Połączono z Google Drive ✓', 'success');
+        renderBackupOptions();
+      }
+    }
+  });
+}
+
 function connectGoogleDrive() {
   if (_gapiTokenClient) {
+    // Skrypt już załadowany — poproś o token (wywołane przez klik użytkownika)
     _gapiTokenClient.requestAccessToken();
   } else {
-    loadGAPI();
+    // Załaduj skrypt, a po załadowaniu od razu poproś o token
+    const cid = GDRIVE_CLIENT_ID;
+    if (document.querySelector('script[src*="accounts.google.com/gsi"]')) {
+      _initGapiTokenClient(cid);
+      setTimeout(() => _gapiTokenClient?.requestAccessToken(), 500);
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.onload = () => {
+      _initGapiTokenClient(cid);
+      setTimeout(() => _gapiTokenClient?.requestAccessToken(), 200);
+    };
+    script.onerror = () => toast('Błąd ładowania Google API', 'error');
+    document.head.appendChild(script);
   }
 }
 
