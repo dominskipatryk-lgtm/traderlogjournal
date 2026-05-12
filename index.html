@@ -3284,8 +3284,17 @@ function closeLightbox() { document.getElementById('lightbox').classList.remove(
 
 // ===== MODAL UTILS =====
 function openModal(id) { document.getElementById(id).classList.add('open'); }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-document.querySelectorAll('.modal-overlay').forEach(o => o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); }));
+let _discardingDraft = false;
+function closeModal(id) {
+  // [v1.7] Jeśli zamykamy modal transakcji — zapisz szkic automatycznie
+  // Wyjątek: gdy użytkownik celowo odrzuca szkic (_discardingDraft = true)
+  if (id === 'trade-modal' && !_discardingDraft && typeof formHasContent === 'function' && formHasContent()) {
+    performDraftSave();
+  }
+  _discardingDraft = false;
+  document.getElementById(id).classList.remove('open');
+}
+// [v1.7] Modale nie zamykają się po kliknięciu w tło — tylko przez ✕ lub zapis
 
 // ===== TOAST =====
 let toastTimer;
@@ -4729,6 +4738,7 @@ function discardDraftAndClose() {
   if (!formHasContent()) { closeModal('trade-modal'); return; }
   if (!confirm('Odrzucić wersję roboczą? Dane zostaną utracone.')) return;
   clearCurrentDraft();
+  _discardingDraft = true; // [v1.7] nie zapisuj szkicu przy zamknięciu
   closeModal('trade-modal');
   toast('Szkic odrzucony', 'success');
 }
