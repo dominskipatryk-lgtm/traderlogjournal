@@ -1133,6 +1133,37 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
           </p>
           <div id="backup-options-list"></div>
           <div id="backup-last-info" style="font-size:12px;color:var(--text3);margin-top:8px;padding:10px 14px;background:var(--bg3);border-radius:8px;display:none"></div>
+
+          <!-- [v1.7] Screenshoty na Google Drive -->
+          <div class="backup-option" style="margin-top:16px">
+            <div class="backup-option-header">
+              <div class="backup-option-title" style="display:flex;align-items:center;gap:8px">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <path d="M6.28 3h11.44l4.28 7.41-2.14 3.7L12 3.88 4.14 14.11 2 10.41z" fill="#4285F4"/>
+                  <path d="M2 10.41l4.14 7.18h11.44l-2.14-3.7H6.28z" fill="#34A853"/>
+                  <path d="M6.28 17.59L2 10.41l2.14-3.7 4.14 7.18z" fill="#FBBC05"/>
+                  <path d="M17.72 17.59l4.28-7.18-2.14-3.7-4.14 7.18z" fill="#EA4335"/>
+                </svg>
+                📸 Screenshoty na Google Drive
+              </div>
+            </div>
+            <div class="backup-option-desc">
+              Zapisuje screenshoty z transakcji na Twoim Google Drive (ukryty folder aplikacji).
+              Skompresowane do ~50KB — 1GB wystarczy na <strong>20 000+ screenshotów</strong>.
+              Uruchamiane ręcznie.
+            </div>
+            <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+              <button class="btn-sm btn-accent" onclick="backupScreenshotsToGoogleDrive()" style="font-size:12px">
+                📤 Zapisz screenshoty na Drive
+              </button>
+              <button class="btn-sm" onclick="restoreScreenshotsFromGoogleDrive()" style="font-size:12px">
+                📥 Przywróć screenshoty z Drive
+              </button>
+            </div>
+            <div style="font-size:11px;color:var(--text3);margin-top:8px">
+              Wymaga połączenia z Google Drive (Opcja B powyżej).
+            </div>
+          </div>
         </div>
 
       </div>
@@ -3163,11 +3194,34 @@ document.addEventListener('paste', e => {
 
 
 // ===== SCREENSHOTS =====
+
+// [v1.7] Kompresja obrazu przed zapisem — max 800px, JPG 70%
+function compressImage(dataUrl, maxWidth, quality) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let w = img.width, h = img.height;
+      if (w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth; }
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      resolve(canvas.toDataURL('image/jpeg', quality || 0.7));
+    };
+    img.src = dataUrl;
+  });
+}
+
 function handleFiles(files) {
   Array.from(files).forEach(f => {
     if (!f.type.startsWith('image/')) return;
     const reader = new FileReader();
-    reader.onload = e => { state.tempScreenshots.push({id: genId(), dataUrl: e.target.result}); renderScreenshotPreviews(); };
+    reader.onload = async e => {
+      // [v1.7] Kompresuj przed zapisem
+      const compressed = await compressImage(e.target.result, 800, 0.7);
+      state.tempScreenshots.push({id: genId(), dataUrl: compressed});
+      renderScreenshotPreviews();
+    };
     reader.readAsDataURL(f);
   });
 }
@@ -5992,8 +6046,8 @@ function renderBackupOptions() {
         </label>
       </div>
       <div class="backup-option-desc">
-        Automatycznie zapisuje kopię Twoich danych na <strong>Twoim</strong> Google Drive.
-        Dane należą do Ciebie — nikt inny nie ma do nich dostępu.
+        Automatycznie zapisuje kopię Twoich danych na <strong>Twoim</strong> Google Drive
+        przy każdym zalogowaniu. Dane należą do Ciebie — nikt inny nie ma do nich dostępu.
       </div>
       ${s.googleDrive ? `
         <div id="gdrive-status" style="margin-top:8px"></div>
@@ -6176,6 +6230,21 @@ function checkAutoDownload() {
       toast('Auto-backup pobrany przy logowaniu ✓', 'success');
     }, 2000);
   }
+  // [v1.6] Auto-backup na Google Drive przy każdym logowaniu (cicho w tle)
+  if (s.googleDrive) {
+    setTimeout(async () => {
+      try {
+        if (!_gapiLoaded) {
+          // Spróbuj połączyć się ponownie
+          loadGAPI();
+          return;
+        }
+        await backupToGoogleDrive();
+      } catch(e) {
+        console.warn('Auto Google Drive backup error:', e.message);
+      }
+    }, 5000);
+  }
 }
 
 // ── Reminder check on login ───────────────────────────────────────────────────
@@ -6261,7 +6330,7 @@ function showBackupReminder(msg, urgent) {
 
 // ── Google Drive (GAPI) ───────────────────────────────────────────────────────
 const GDRIVE_CLIENT_ID = '917283832876-tfkevp9mol5k7uqjo8de7mp7ej5dfoap.apps.googleusercontent.com';
-const GDRIVE_SCOPES = 'https://www.googleapis.com/auth/drive.file';
+const GDRIVE_SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.appdata';
 let _gapiLoaded = false;
 let _gapiTokenClient = null;
 
@@ -6372,6 +6441,180 @@ async function restoreFromGoogleDrive() {
 function updateGDriveStatus(msg, cls) {
   const el = document.getElementById('gdrive-status');
   if (el) { el.textContent = msg; el.className = 'backup-status ' + cls; }
+}
+
+// [v1.7] Backup screenshotów na Google Drive (appdata)
+async function backupScreenshotsToGoogleDrive() {
+  if (!_gapiLoaded || !_gapiTokenClient) {
+    toast('Najpierw połącz z Google Drive', 'error');
+    connectGoogleDrive();
+    return;
+  }
+  const token = gapi.client.getToken()?.access_token;
+  if (!token) { toast('Brak tokenu Google — zaloguj się ponownie', 'error'); return; }
+
+  toast('⏳ Zapisuję screenshoty na Drive...', 'success');
+  const db = getDB();
+  let saved = 0, skipped = 0;
+
+  try {
+    // Zbierz wszystkie screenshoty z transakcji
+    const allScreenshots = [];
+    Object.keys(db).forEach(key => {
+      if (!key.startsWith('trades_') && !Array.isArray(db[key])) return;
+      const trades = Array.isArray(db[key]) ? db[key] : [];
+      trades.forEach(trade => {
+        (trade.screenshots || []).forEach((dataUrl, idx) => {
+          if (dataUrl?.startsWith('data:image')) {
+            allScreenshots.push({ tradeId: trade.id, idx, dataUrl, key });
+          }
+        });
+      });
+    });
+
+    if (!allScreenshots.length) {
+      toast('Brak screenshotów do zapisania', 'success');
+      return;
+    }
+
+    // Sprawdź istniejący index
+    const indexName = `tlj-screenshots-index-${state.currentUser}.json`;
+    const indexSearch = await fetch(
+      `https://www.googleapis.com/drive/v3/files?q=name='${indexName}'&spaces=appDataFolder`,
+      { headers: { Authorization: 'Bearer ' + token } }
+    );
+    const indexData = await indexSearch.json();
+    const existingIndex = {};
+    if (indexData.files?.[0]?.id) {
+      const idxResp = await fetch(
+        `https://www.googleapis.com/drive/v3/files/${indexData.files[0].id}?alt=media`,
+        { headers: { Authorization: 'Bearer ' + token } }
+      );
+      const idxJson = await idxResp.json();
+      Object.assign(existingIndex, idxJson);
+    }
+
+    // Zapisz każdy screenshot który jeszcze nie jest na Drive
+    for (const s of allScreenshots) {
+      const fileKey = `${s.tradeId}_${s.idx}`;
+      if (existingIndex[fileKey]) { skipped++; continue; }
+
+      // Kompresuj
+      const compressed = await compressImage(s.dataUrl, 800, 0.7);
+      const base64 = compressed.split(',')[1];
+      const blob = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+
+      const meta = JSON.stringify({
+        name: `tlj-${s.tradeId}-${s.idx}.jpg`,
+        parents: ['appDataFolder']
+      });
+
+      const form = new FormData();
+      form.append('metadata', new Blob([meta], { type: 'application/json' }));
+      form.append('file', new Blob([blob], { type: 'image/jpeg' }));
+
+      const uploadResp = await fetch(
+        'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
+        { method: 'POST', headers: { Authorization: 'Bearer ' + token }, body: form }
+      );
+      const uploadData = await uploadResp.json();
+      if (uploadData.id) {
+        existingIndex[fileKey] = uploadData.id;
+        saved++;
+      }
+    }
+
+    // Zapisz zaktualizowany index
+    const indexBlob = JSON.stringify(existingIndex);
+    if (indexData.files?.[0]?.id) {
+      await fetch(
+        `https://www.googleapis.com/upload/drive/v3/files/${indexData.files[0].id}?uploadType=media`,
+        { method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token }, body: indexBlob }
+      );
+    } else {
+      const idxMeta = JSON.stringify({ name: indexName, parents: ['appDataFolder'] });
+      const idxForm = new FormData();
+      idxForm.append('metadata', new Blob([idxMeta], { type: 'application/json' }));
+      idxForm.append('file', new Blob([indexBlob], { type: 'application/json' }));
+      await fetch(
+        'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
+        { method: 'POST', headers: { Authorization: 'Bearer ' + token }, body: idxForm }
+      );
+    }
+
+    toast(`✓ Screenshoty zapisane: ${saved} nowych, ${skipped} już było na Drive`, 'success');
+  } catch(e) {
+    toast('Błąd backupu screenshotów: ' + e.message, 'error');
+    console.warn('Screenshot backup error:', e);
+  }
+}
+
+// [v1.7] Przywracanie screenshotów z Google Drive
+async function restoreScreenshotsFromGoogleDrive() {
+  if (!_gapiLoaded || !_gapiTokenClient) {
+    toast('Najpierw połącz z Google Drive', 'error');
+    connectGoogleDrive();
+    return;
+  }
+  const token = gapi.client.getToken()?.access_token;
+  if (!token) { toast('Brak tokenu Google', 'error'); return; }
+  if (!confirm('Przywrócić screenshoty z Google Drive? Uzupełni brakujące screenshoty w transakcjach.')) return;
+
+  toast('⏳ Przywracam screenshoty z Drive...', 'success');
+
+  try {
+    const indexName = `tlj-screenshots-index-${state.currentUser}.json`;
+    const indexSearch = await fetch(
+      `https://www.googleapis.com/drive/v3/files?q=name='${indexName}'&spaces=appDataFolder`,
+      { headers: { Authorization: 'Bearer ' + token } }
+    );
+    const indexData = await indexSearch.json();
+    if (!indexData.files?.[0]?.id) { toast('Brak backupu screenshotów na Drive', 'error'); return; }
+
+    const idxResp = await fetch(
+      `https://www.googleapis.com/drive/v3/files/${indexData.files[0].id}?alt=media`,
+      { headers: { Authorization: 'Bearer ' + token } }
+    );
+    const index = await idxResp.json();
+
+    const db = getDB();
+    let restored = 0;
+
+    for (const [fileKey, fileId] of Object.entries(index)) {
+      const [tradeId, idxStr] = fileKey.split('_');
+      const idx = parseInt(idxStr);
+
+      // Znajdź transakcję w db
+      for (const key of Object.keys(db)) {
+        if (!Array.isArray(db[key])) continue;
+        const tradeIdx = db[key].findIndex(t => t.id === tradeId);
+        if (tradeIdx < 0) continue;
+        const trade = db[key][tradeIdx];
+        if (!trade.screenshots) trade.screenshots = [];
+        if (trade.screenshots[idx]) continue; // już jest
+
+        // Pobierz obraz z Drive
+        const imgResp = await fetch(
+          `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
+          { headers: { Authorization: 'Bearer ' + token } }
+        );
+        const blob = await imgResp.blob();
+        const dataUrl = await new Promise(res => {
+          const r = new FileReader();
+          r.onload = e => res(e.target.result);
+          r.readAsDataURL(blob);
+        });
+        trade.screenshots[idx] = dataUrl;
+        restored++;
+      }
+    }
+
+    saveDB(db);
+    toast(`✓ Przywrócono ${restored} screenshotów z Drive`, 'success');
+  } catch(e) {
+    toast('Błąd przywracania screenshotów: ' + e.message, 'error');
+    console.warn('Screenshot restore error:', e);
+  }
 }
 
 // ── Server backup notify ──────────────────────────────────────────────────────
