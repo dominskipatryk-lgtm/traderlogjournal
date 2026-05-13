@@ -9888,6 +9888,7 @@ function saveStrategy() {
   saveStrategies(strategies);
   closeModal('strategy-editor-modal');
   renderStrategyList();
+  renderToolsStrategies();
   toast('Strategia zapisana ✓', 'success');
 }
 
@@ -9897,6 +9898,7 @@ function deleteStrategy(id) {
   const strategies = getStrategies().filter(s => s.id !== id);
   saveStrategies(strategies);
   renderStrategyList();
+  renderToolsStrategies();
   toast('Strategia usunięta', 'success');
 }
 
@@ -10312,11 +10314,6 @@ function openSetupChecklist(prefix, setup) {
       scoreEl.textContent = (allDone ? '✓ ' : '⚠ ') + score;
       scoreEl.style.color = allDone ? 'var(--accent)' : 'var(--amber)';
     }
-    const noteEl = document.getElementById(prefix === 'an' ? 'an-content' : 't-pre');
-    if (noteEl) {
-      const tag = '[Setup: ' + setup.name + ' ' + score + (allDone ? ' ✓' : ' ⚠') + ']';
-      noteEl.value = noteEl.value ? noteEl.value.replace(/\[Setup:[^\]]+\]/,'') + '\n' + tag : tag;
-    }
     if (!allDone) toast('⚠ Nie wszystkie warunki setupu zaznaczone!', 'error');
     else toast('✓ Setup potwierdzony!', 'success');
   });
@@ -10419,16 +10416,6 @@ function openChecklistFromForm(prefix) {
     if (scoreEl) {
       scoreEl.textContent = allDone ? '✓ ' + score : '⚠ ' + score;
       scoreEl.style.color = allDone ? 'var(--accent)' : 'var(--amber)';
-    }
-    // Zapisz wynik do właściwego pola
-    const noteEl = document.getElementById(prefix === 'an' ? 'an-content' : 't-pre');
-    if (noteEl) {
-      const tag = '[Checklist ' + s.name + ': ' + score + (allDone ? ' ✓' : ' ⚠') + ']';
-      if (!noteEl.value.includes('[Checklist')) {
-        noteEl.value = noteEl.value ? noteEl.value + '\n' + tag : tag;
-      } else {
-        noteEl.value = noteEl.value.replace(/\[Checklist[^\]]+\]/, tag);
-      }
     }
     if (!allDone) toast('⚠ Nie wszystkie warunki zaznaczone!', 'error');
     else toast('✓ Wszystkie warunki strategii spełnione!', 'success');
