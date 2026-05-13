@@ -1513,9 +1513,9 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
             <span id="an-autosave-label" style="font-size:11px;color:var(--text3)">auto-zapis</span>
           </div>
           <button class="btn-sm" onclick="discardAnalysis()">🗑 Odrzuć</button>
-          <button class="btn-sm" onclick="saveAnalysisAsTrade()" style="color:var(--amber);border-color:var(--amber)" title="Otwórz formularz transakcji z danymi z tej analizy">📈 Zapisz jako Transakcję</button>
+          <button class="btn-sm btn-accent" onclick="saveAnalysisAsTrade()" title="Zapisz transakcję z danymi z tej analizy">📈 Zapisz jako Transakcję</button>
           <button class="btn-sm" onclick="closeModal('analysis-modal')" data-i18n="close">Zamknij</button>
-          <button class="btn-sm btn-accent" onclick="saveAnalysis()">💾 Zapisz analizę</button>
+          <button class="btn-sm" onclick="saveAnalysis()" style="background:var(--blue,#4f9eff);border-color:var(--blue,#4f9eff);color:#fff">💾 Zapisz analizę</button>
         </div>
       </div>
     </div>
@@ -4659,6 +4659,7 @@ function openCalDay(key, data) {
 let _autosaveTimer = null;
 let _draftKey = null;      // current draft key being edited
 let _draftDirty = false;
+let _skipNextDraft = false; // [v1.7] blokuje szkic gdy transakcja pochodzi z analizy
 
 // Draft storage key per user+account
 function draftStorageKey(draftId) {
@@ -4743,6 +4744,7 @@ function draftAutoSave() {
 }
 
 function performDraftSave() {
+  if (_skipNextDraft) { _skipNextDraft = false; _draftDirty = false; return; }
   if (!formHasContent()) return;
   if (!_draftKey) _draftKey = 'draft_' + Date.now();
   const data = collectFormDraft();
@@ -7678,9 +7680,9 @@ function saveAnalysisAsTrade() {
     }
     renderTrades(); renderDashboard();
     toast('Analiza powiązana z transakcją ✓', 'success');
-    // Otwórz edycję transakcji
+    toast('Analiza powiązana z transakcją ✓', 'success');
+    _skipNextDraft = true;
     openEditModal(linkedTrade.id);
-  } else {
     // Utwórz nową transakcję i zapisz od razu
     const newId = genId();
     const newTrade = {
@@ -7701,13 +7703,13 @@ function saveAnalysisAsTrade() {
     allTrades.push(newTrade);
     saveTrades(state.currentAccountId, allTrades);
     renderTrades(); renderDashboard();
+    renderTrades(); renderDashboard();
     toast('Transakcja zapisana z analizy ✓', 'success');
-    // Otwórz edycję nowej transakcji
+    _skipNextDraft = true;
     openEditModal(newId);
   }
-  if(entry&&sl) autoPnl();
-  toast(linkedTrade ? 'Transakcja uzupełniona danymi z analizy ✓' : 'Dane z analizy przeniesione ✓','success');
 }
+
 
 function anAutosave() {
   anSetAutosaveDot('saving');
