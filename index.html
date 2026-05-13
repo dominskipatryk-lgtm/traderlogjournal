@@ -1329,9 +1329,9 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
               style="flex:1;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer">
               <option value="">— Wybierz setup —</option>
             </select>
-            <button onclick="openSetupManager(document.getElementById('an-strategy-select').value)"
-              style="background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;white-space:nowrap">
-              ⚙ Zarządzaj
+            <button onclick="openChecklistFromForm('an')" id="an-setup-checklist-btn"
+              style="background:var(--accent);color:#000;border:none;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;display:none">
+              ✅ Checklist
             </button>
           </div>
           <div id="an-setup-screenshots-bar" style="display:none;margin-top:8px">
@@ -10265,15 +10265,22 @@ function onSetupChange(prefix) {
   const setupSel   = document.getElementById(prefix + '-setup-select');
   const screenshotsBar = document.getElementById(prefix + '-setup-screenshots-bar');
   const screensList    = document.getElementById(prefix + '-setup-screenshots-list');
+  const setupChecklistBtn = document.getElementById(prefix + '-setup-checklist-btn');
   const setupId = setupSel?.value;
 
   if (!setupId) {
     if (screenshotsBar) screenshotsBar.style.display = 'none';
+    if (setupChecklistBtn) setupChecklistBtn.style.display = 'none';
     return;
   }
 
   const setup = getAllSetups().find(s => s.id === setupId);
   if (!setup) return;
+
+  // Pokaż przycisk Checklist przy setupie (jeśli setup ma punkty)
+  if (setupChecklistBtn) {
+    setupChecklistBtn.style.display = setup.points?.length > 0 ? 'block' : 'none';
+  }
 
   // Pokaż screenshoty wzorcowe setupu
   if (screenshotsBar) screenshotsBar.style.display = 'block';
@@ -10418,7 +10425,6 @@ function openChecklistFromForm(prefix) {
   const s = strategies.find(x => x.id === sel.value);
   if (!s) return;
 
-  // Reset checklisty
   const scoreEl = document.getElementById(prefix + '-checklist-score');
 
   openStrategyChecklist(s.id, (score, allDone) => {
@@ -10426,7 +10432,7 @@ function openChecklistFromForm(prefix) {
       scoreEl.textContent = allDone ? '✓ ' + score : '⚠ ' + score;
       scoreEl.style.color = allDone ? 'var(--accent)' : 'var(--amber)';
     }
-    // Zapisz wynik do pola notatek
+    // Zapisz wynik do właściwego pola
     const noteEl = document.getElementById(prefix === 'an' ? 'an-content' : 't-pre');
     if (noteEl) {
       const tag = '[Checklist ' + s.name + ': ' + score + (allDone ? ' ✓' : ' ⚠') + ']';
