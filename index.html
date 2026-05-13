@@ -7280,12 +7280,65 @@ function renderAnLinkedTrades(symbol) {
     el.innerHTML = '<span style="color:var(--text3)">Brak transakcji dla ' + symbol + '</span>';
     return;
   }
-  el.innerHTML = trades.slice(0,5).map(t => `
-    <span style="display:inline-flex;align-items:center;gap:5px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:3px 9px;font-size:11px;margin:2px;cursor:pointer" onclick="openDetailModal('${t.id}')">
+
+  // Pobierz aktualne ID analizy i przypisaną transakcję
+  const currentAnalysisId = document.getElementById('an-id')?.value || '';
+
+  el.innerHTML = trades.slice(0, 8).map(t => {
+    const isAssigned = t.linkedAnalysisId && t.linkedAnalysisId === currentAnalysisId;
+    const pnlStr = t.pnl != null ? (t.pnl > 0 ? '+' : '') + fmt(t.pnl) : '';
+    const pnlClass = t.pnl > 0 ? 'pnl-pos' : t.pnl < 0 ? 'pnl-neg' : '';
+    return `
+    <span style="display:inline-flex;align-items:center;gap:5px;background:${isAssigned?'var(--accent-dim)':'var(--bg3)'};border:1px solid ${isAssigned?'var(--accent)':'var(--border)'};border-radius:6px;padding:3px 9px;font-size:11px;margin:2px">
       <span class="badge badge-${t.dir.toLowerCase()}" style="font-size:9px;padding:1px 5px">${t.dir}</span>
-      <span class="mono">${formatDate(t.date).slice(0,10)}</span>
-      <span class="${t.pnl>0?'pnl-pos':t.pnl<0?'pnl-neg':''}">${t.pnl!=null?(t.pnl>0?'+':'')+fmt(t.pnl):''}</span>
-    </span>`).join('') + (trades.length>5?`<span style="font-size:11px;color:var(--text3)"> +${trades.length-5} więcej</span>`:'');
+      <span class="mono" style="cursor:pointer" onclick="openDetailModal('${t.id}')">${formatDate(t.date).slice(0,10)}</span>
+      ${pnlStr ? `<span class="${pnlClass}">${pnlStr}</span>` : ''}
+      <button onclick="assignTradeToAnalysis('${t.id}')" title="${isAssigned ? 'Przypisana — kliknij aby odpiąć' : 'Przypisz do tej analizy'}"
+        style="background:none;border:none;cursor:pointer;font-size:14px;padding:0;line-height:1;opacity:${isAssigned?'1':'0.4'};transition:opacity .15s"
+        onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='${isAssigned?'1':'0.4'}'">
+        ${isAssigned ? '✅' : '☑️'}
+      </button>
+    </span>`;
+  }).join('') + (trades.length > 8 ? `<span style="font-size:11px;color:var(--text3)"> +${trades.length - 8} więcej</span>` : '');
+}
+
+// [v1.7] Przypisz/odepnij transakcję od analizy jednym kliknięciem
+function assignTradeToAnalysis(tradeId) {
+  // Zapisz analizę jeśli ma tytuł
+  const title = (document.getElementById('an-title')?.value||'').trim();
+  if (!title) { toast('Najpierw podaj tytuł analizy', 'error'); return; }
+
+  // Zapisz analizę
+  saveAnalysis();
+
+  // Pobierz zapisane ID analizy
+  const analysisId = document.getElementById('an-id')?.value;
+  if (!analysisId) return;
+
+  const trades = getTrades(state.currentAccountId);
+  const idx = trades.findIndex(t => t.id === tradeId);
+  if (idx < 0) return;
+
+  const alreadyAssigned = trades[idx].linkedAnalysisId === analysisId;
+
+  if (alreadyAssigned) {
+    // Odepnij
+    trades[idx].linkedAnalysisId = null;
+    saveTrades(state.currentAccountId, trades);
+    toast('Transakcja odpięta od analizy', 'success');
+  } else {
+    // Przypisz
+    trades[idx].linkedAnalysisId = analysisId;
+    saveTrades(state.currentAccountId, trades);
+    toast('Transakcja przypisana do analizy ✓', 'success');
+  }
+
+  renderTrades();
+  renderDashboard();
+
+  // Odśwież pasek transakcji
+  const symbol = document.getElementById('an-symbol')?.value || '';
+  renderAnLinkedTrades(symbol);
 }
 
 // ── Symbol autocomplete (reuse existing symbols) ──────────────────────────────
@@ -10374,7 +10427,7 @@ function openChecklistFromForm(prefix) {
       scoreEl.style.color = allDone ? 'var(--accent)' : 'var(--amber)';
     }
     // Zapisz wynik do pola notatek
-    const noteEl = document.getElementById(prefix === 'an' ? 'an-pre' : 't-pre');
+    const noteEl = document.getElementById(prefix === 'an' ? 'an-content' : 't-pre');
     if (noteEl) {
       const tag = '[Checklist ' + s.name + ': ' + score + (allDone ? ' ✓' : ' ⚠') + ']';
       if (!noteEl.value.includes('[Checklist')) {
