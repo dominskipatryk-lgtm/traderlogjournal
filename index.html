@@ -2529,7 +2529,9 @@ function buildTradesTable(trades) {
     </tr></thead>
     <tbody>
     ${trades.map(t => {
-      const linkedAnalysis = t.linkedAnalysisId ? getAnalyses().find(a => a.id === t.linkedAnalysisId) : null;
+      const linkedAnalysis = (t.linkedAnalysisId && t.linkedAnalysisId.length > 5)
+        ? getAnalyses().find(a => a.id === t.linkedAnalysisId)
+        : null;
       return `<tr style="cursor:pointer" onclick="openDetailModal('${t.id}')">
       <td><strong class="mono">${t.symbol}</strong></td>
       <td><span class="badge badge-${t.dir.toLowerCase()}">${t.dir}</span></td>
@@ -2960,7 +2962,11 @@ function openEditModal(id) {
   setTimeout(() => {
     populateStrategySelects();
     document.getElementById('trade-checklist-score').textContent='';
+    // [v1.7] FIX: zawsze resetuj pole — jeśli brak powiązania wyczyść stare
     populateLinkedAnalysisSelect(t.symbol || '', t.linkedAnalysisId || '');
+    // Wyczyść hidden field jeśli brak powiązania
+    const lf = document.getElementById('t-linked-analysis-id');
+    if (lf) lf.value = t.linkedAnalysisId || '';
   }, 50);
   openModal('trade-modal');
   applyTfModeUI();
@@ -7679,10 +7685,10 @@ function saveAnalysisAsTrade() {
       saveTrades(state.currentAccountId, trades);
     }
     renderTrades(); renderDashboard();
+    // Zamknij modal analizy — nie otwieraj edycji (unika duplikatów)
+    closeModal('analysis-modal');
     toast('Analiza powiązana z transakcją ✓', 'success');
-    toast('Analiza powiązana z transakcją ✓', 'success');
-    _skipNextDraft = true;
-    openEditModal(linkedTrade.id);
+  } else {
     // Utwórz nową transakcję i zapisz od razu
     const newId = genId();
     const newTrade = {
@@ -7703,10 +7709,9 @@ function saveAnalysisAsTrade() {
     allTrades.push(newTrade);
     saveTrades(state.currentAccountId, allTrades);
     renderTrades(); renderDashboard();
-    renderTrades(); renderDashboard();
+    // Zamknij modal analizy — nie otwieraj edycji (unika duplikatów)
+    closeModal('analysis-modal');
     toast('Transakcja zapisana z analizy ✓', 'success');
-    _skipNextDraft = true;
-    openEditModal(newId);
   }
 }
 
