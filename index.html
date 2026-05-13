@@ -7668,89 +7668,50 @@ function discardAnalysis() {
 
 function saveAnalysisAsTrade() {
   const _g = id => { const el = document.getElementById(id); return el ? el.value : ''; };
-  const title  = _g('an-title')||'';
-  const symbol = (_g('an-symbol')||'').trim().toUpperCase();
-  const tf     = getAnTfValue()||'H1';
-  const bias   = _g('an-bias')||'';
-  const pre    = _g('an-content')||'';
-  const post   = _g('an-post')||'';
-  const setup  = _g('an-setup')||'';
-  const date   = _g('an-date')||nowDatetime();
-  const screens = _anScreenshots.map(s=>s.dataUrl);
-  const dir    = bias==='bullish'?'LONG':bias==='bearish'?'SHORT':'LONG';
+  const title   = _g('an-title')||'';
+  const pre     = _g('an-content')||''; // treść analizy → analiza przed wejściem
+  const post    = _g('an-post')||'';
+  const setup   = _g('an-setup')||'';
+  const screens = (_anScreenshots||[]).map(s=>s.dataUrl);
   const analysisId = _g('an-id') || null;
 
-  // Użyj zaznaczonej transakcji lub powiązanej
-  const linkedTradeId = _selectedTradeForAnalysis || _g('an-linked-trade-id') || '';
-  let entry = _g('an-entry')||'';
-  let sl    = _g('an-sl')||'';
-  let tp    = _g('an-tp')||'';
-  let size  = _g('an-size')||'';
-  let tradeSymbol = symbol;
-  let tradeDir    = dir;
-  let tradeDate   = date;
-  let tradeTf     = tf;
-  let linkedTrade = null;
-
-  if (linkedTradeId) {
-    linkedTrade = getTrades(state.currentAccountId).find(t => t.id === linkedTradeId);
-    if (linkedTrade) {
-      entry       = linkedTrade.entry  ?? entry;
-      sl          = linkedTrade.sl     ?? sl;
-      tp          = linkedTrade.tp     ?? tp;
-      size        = linkedTrade.size   ?? size;
-      tradeSymbol = linkedTrade.symbol || tradeSymbol;
-      tradeDir    = linkedTrade.dir    || tradeDir;
-      tradeDate   = linkedTrade.date   || tradeDate;
-      tradeTf     = linkedTrade.tf     || tradeTf;
-    }
+  // Musi być zaznaczona transakcja
+  const linkedTradeId = _selectedTradeForAnalysis;
+  if (!linkedTradeId) {
+    toast('Zaznacz transakcję na pasku poniżej (☑️)', 'error');
+    return;
   }
 
-  // Zapisz analizę jeśli ma tytuł
+  const trades = getTrades(state.currentAccountId);
+  const idx = trades.findIndex(t => t.id === linkedTradeId);
+  if (idx < 0) { toast('Nie znaleziono transakcji', 'error'); return; }
+
+  // Uzupełnij TYLKO puste pola — nie nadpisuj istniejących danych
+  const t = trades[idx];
+  if (pre   && !t.pre)   t.pre   = pre;
+  if (post  && !t.post)  t.post  = post;
+  if (setup && !t.setup) t.setup = setup;
+
+  // Screenshoty — dodaj z analizy (nie duplikuj)
+  if (screens.length) {
+    const existing = t.screenshots || [];
+    const newScreens = screens.filter(s => !existing.includes(s));
+    t.screenshots = [...existing, ...newScreens];
+  }
+
+  // Powiąż z analizą
+  t.linkedAnalysisId = analysisId;
+
+  trades[idx] = t;
+  saveTrades(state.currentAccountId, trades);
+
+  // Zapisz analizę
   if (title) saveAnalysis(); else closeModal('analysis-modal');
 
-  // Zapisz transakcję od razu — nie otwieraj tylko formularza
-  if (linkedTrade) {
-    // Aktualizuj istniejącą transakcję
-    const trades = getTrades(state.currentAccountId);
-    const idx = trades.findIndex(t => t.id === linkedTrade.id);
-    if (idx >= 0) {
-      if (pre) trades[idx].pre = pre;
-      if (post) trades[idx].post = post;
-      if (setup) trades[idx].setup = setup;
-      trades[idx].linkedAnalysisId = analysisId;
-      if (screens.length) trades[idx].screenshots = [...(linkedTrade.screenshots||[]), ...screens];
-      saveTrades(state.currentAccountId, trades);
-    }
-    renderTrades(); renderDashboard();
-    _selectedTradeForAnalysis = null;
-    closeModal('analysis-modal');
-    toast('Analiza powiązana z transakcją ✓', 'success');
-  } else {
-    // Utwórz nową transakcję i zapisz od razu
-    const newId = genId();
-    const newTrade = {
-      id: newId, symbol: tradeSymbol,
-      date: tradeDate.slice(0,16), dir: tradeDir,
-      status: 'open',
-      entry: parseFloat(entry)||null, sl: parseFloat(sl)||null,
-      tp: parseFloat(tp)||null, tps: [],
-      exit: null, pnl: null,
-      tf: tradeTf||'H1', setup: setup||'',
-      pre: pre||'', post: post||'',
-      screenshots: screens,
-      linkedAnalysisId: analysisId,
-      size: parseFloat(size)||null,
-      mt4Ticket: null,
-    };
-    const allTrades = getTrades(state.currentAccountId);
-    allTrades.push(newTrade);
-    saveTrades(state.currentAccountId, allTrades);
-    renderTrades(); renderDashboard();
-    _selectedTradeForAnalysis = null;
-    closeModal('analysis-modal');
-    toast('Transakcja zapisana z analizy ✓', 'success');
-  }
+  renderTrades();
+  renderDashboard();
+  _selectedTradeForAnalysis = null;
+  toast('Analiza przypisana do transakcji ✓', 'success');
 }
 
 
