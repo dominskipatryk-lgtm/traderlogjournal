@@ -7590,7 +7590,6 @@ function saveAnalysis() {
     setup:       g('an-setup')||'',
     post:        g('an-post')||'',
     screenshots: _anScreenshots ? _anScreenshots.map(s=>s.dataUrl) : [],
-    linkedAnalysisId: analysisId,
     updatedAt:   Date.now(),
   };
   const analyses = getAnalyses();
