@@ -2542,24 +2542,54 @@ function renderSummary() {
   const accounts = getAccounts();
   const acc = accounts.find(a => a.id === state.currentAccountId);
   const trades = getTrades(state.currentAccountId);
-  const closed = trades.filter(t => t.status === 'closed');
+  const closed = trades.filter(t => t.status === 'closed' && t.pnl != null);
   document.getElementById('summary-subtitle').textContent = acc ? acc.name + ' · ' + acc.broker : '';
   if (!closed.length) { document.getElementById('summary-content').innerHTML = emptyState('📊','Brak danych','Zamknij transakcje aby zobaczyć statystyki'); return; }
 
   const startCapital = acc ? (acc.capital||0) : 0;
-  const wins = closed.filter(t=>t.pnl>0), losses = closed.filter(t=>t.pnl<=0), breakevens = closed.filter(t=>t.pnl===0);
+  const wins = closed.filter(t=>t.pnl>0);
+  const losses = closed.filter(t=>t.pnl<0);
+  const breakevens = closed.filter(t=>t.pnl===0);
   const totalPnl = closed.reduce((s,t)=>s+(t.pnl||0),0);
   const winRate = Math.round(wins.length/closed.length*100);
   const avgWin  = wins.length   ? wins.reduce((s,t)=>s+t.pnl,0)/wins.length   : 0;
   const avgLoss = losses.length ? Math.abs(losses.reduce((s,t)=>s+t.pnl,0)/losses.length) : 0;
   const maxWin  = wins.length   ? Math.max(...wins.map(t=>t.pnl)) : 0;
   const maxLoss = losses.length ? Math.min(...losses.map(t=>t.pnl)) : 0;
-  const totalGross = wins.reduce((s,t)=>s+t.pnl,0);
+  const totalGross   = wins.reduce((s,t)=>s+t.pnl,0);
   const totalLossAmt = losses.reduce((s,t)=>s+(t.pnl||0),0);
-  const profitFactor = totalLossAmt<0 ? Math.abs(totalGross/totalLossAmt).toFixed(2) : '\u221e';
+  // FIX: Profit Factor — gross profit / abs(gross loss)
+  const profitFactor = totalLossAmt < 0 ? (totalGross / Math.abs(totalLossAmt)).toFixed(2) : '\u221e';
   const equity = startCapital + totalPnl;
-  const returnPct = startCapital>0 ? (totalPnl/startCapital*100).toFixed(2) : null;
+  const returnPct = startCapital > 0 ? (totalPnl/startCapital*100).toFixed(2) : null;
+  // Recovery Factor = Net P&L / Max Drawdown
+  const rrFromPnl = avgWin>0&&avgLoss>0 ? avgWin/avgLoss : null;
+  const ev = avgWin>0&&avgLoss>0 ? ((winRate/100)*avgWin-(1-winRate/100)*avgLoss) : null;
 
+  // Sortowanie chronologiczne
+  const sortedClosed = [...closed].sort((a,b)=>new Date(a.date)-new Date(b.date));
+
+  // FIX: Max Drawdown — equity peak to valley (prawidłowy algorytm)
+  let peak = startCapital, maxDD = 0, maxDDPct = 0, runningEq = startCapital;
+  sortedClosed.forEach(t => {
+    runningEq += (t.pnl||0);
+    if (runningEq > peak) peak = runningEq;
+    const dd = peak - runningEq;
+    const ddP = peak > 0 ? dd/peak*100 : 0;
+    if (dd > maxDD) { maxDD = dd; maxDDPct = ddP; }
+  });
+
+  // Recovery Factor
+  const recoveryFactor = maxDD > 0 ? (totalPnl / maxDD).toFixed(2) : null;
+
+  // Consecutive wins/losses
+  let curW=0,curL=0,maxConsecW=0,maxConsecL=0;
+  sortedClosed.forEach(t=>{
+    if(t.pnl>0){curW++;curL=0;maxConsecW=Math.max(maxConsecW,curW);}
+    else{curL++;curW=0;maxConsecL=Math.max(maxConsecL,curL);}
+  });
+
+  // R:R
   const rrTrades = closed.filter(t=>t.entry&&t.sl&&t.tp);
   let avgRR=null, rrDist={}, beWR=null;
   if (rrTrades.length) {
@@ -2570,46 +2600,92 @@ function renderSummary() {
       beWR = avgRR>0 ? 1/(1+avgRR)*100 : null;
     }
   }
-  const rrFromPnl = avgWin>0&&avgLoss>0 ? avgWin/avgLoss : null;
-  const ev = avgWin>0&&avgLoss>0 ? ((winRate/100)*avgWin-(1-winRate/100)*avgLoss).toFixed(2) : null;
 
-  const sortedClosed = [...closed].sort((a,b)=>new Date(a.date)-new Date(b.date));
-  let peak=startCapital, maxDD=0, maxDDPct=0, runningEq=startCapital, ddStart=null, maxDDStart=null;
-  sortedClosed.forEach(t=>{
-    runningEq+=(t.pnl||0);
-    if(runningEq>peak){peak=runningEq;ddStart=t.date;}
-    const dd=peak-runningEq, ddP=peak>0?dd/peak*100:0;
-    if(dd>maxDD){maxDD=dd;maxDDPct=ddP;maxDDStart=ddStart;}
-  });
-
-  let curW=0,curL=0,maxConsecW=0,maxConsecL=0;
-  sortedClosed.forEach(t=>{if(t.pnl>0){curW++;curL=0;maxConsecW=Math.max(maxConsecW,curW);}else{curL++;curW=0;maxConsecL=Math.max(maxConsecL,curL);}});
-
-  // ── CAGR kalkulacja (standard branżowy) ───────────────────────────────────
-  // Źródło: TradesViz, TradingView, Wall Street Prep
-  // Formula: (Equity/StartCapital)^(252/tradingDays) - 1
-  // Minimum okres: 30 dni — poniżej CAGR jest statystycznie bez sensu
-  let cagr = null;
-  let hpr  = null; // Holding Period Return (zwrot skumulowany bez annualizacji)
-  let cagrNote = ''; // notatka o metodzie
-  if (sortedClosed.length >= 1 && startCapital > 0 && equity > 0) {
+  // CAGR / HPR
+  let cagr=null, hpr=null, cagrNote='';
+  if (sortedClosed.length>=1 && startCapital>0 && equity>0) {
     const firstDate = new Date(sortedClosed[0].date);
     const lastDate  = new Date(sortedClosed[sortedClosed.length-1].date);
-    const calDays   = Math.max(0, (lastDate - firstDate) / 86400000);
-    // HPR = zwrot skumulowany (zawsze pokazujemy)
-    hpr = (equity / startCapital - 1) * 100;
-    // CAGR tylko jeśli period >= 30 dni i equity > 0
-    if (calDays >= 30 && equity > 0 && startCapital > 0) {
-      // Użyj dni handlowych: 252/rok, zakładamy 5/7 dni to dni handlowe
-      const tradingDays = Math.max(1, calDays * (252 / 365));
-      const rawCagr = (Math.pow(equity / startCapital, 252 / tradingDays) - 1) * 100;
-      cagr = Math.max(-999.99, Math.min(9999.99, rawCagr));
-      cagrNote = Math.round(calDays) + ' dni';
-    } else if (calDays > 0 && calDays < 30) {
-      cagrNote = 'za krótki okres (<30 dni)';
-    }
+    const calDays   = Math.max(0,(lastDate-firstDate)/86400000);
+    hpr = (equity/startCapital-1)*100;
+    if (calDays>=30 && equity>0) {
+      const tradingDays = Math.max(1,calDays*(252/365));
+      const rawCagr = (Math.pow(equity/startCapital,252/tradingDays)-1)*100;
+      cagr = Math.max(-999.99,Math.min(9999.99,rawCagr));
+      cagrNote = Math.round(calDays)+' dni';
+    } else if (calDays>0&&calDays<30) { cagrNote='za krótki okres (<30 dni)'; }
   }
 
+  // Sharpe Ratio (annualizowany, dzienny)
+  let sharpe = null;
+  if (sortedClosed.length >= 5) {
+    const dailyPnl = {};
+    sortedClosed.forEach(t => {
+      const day = (t.date||'').slice(0,10);
+      dailyPnl[day] = (dailyPnl[day]||0) + (t.pnl||0);
+    });
+    const returns = Object.values(dailyPnl);
+    const avgR = returns.reduce((s,r)=>s+r,0)/returns.length;
+    const stdR = Math.sqrt(returns.reduce((s,r)=>s+Math.pow(r-avgR,2),0)/returns.length);
+    if (stdR > 0) sharpe = ((avgR/stdR)*Math.sqrt(252)).toFixed(2);
+  }
+
+  // Avg trade duration
+  let avgDuration = null;
+  const tradesWithDates = closed.filter(t => t.date && t.exitDate);
+  if (tradesWithDates.length) {
+    const totalMs = tradesWithDates.reduce((s,t) => s + (new Date(t.exitDate)-new Date(t.date)), 0);
+    const avgMs = totalMs / tradesWithDates.length;
+    const avgH = Math.round(avgMs/3600000);
+    avgDuration = avgH < 24 ? avgH+'h' : Math.round(avgH/24)+'d';
+  }
+
+  // Best/Worst day of week
+  const byDow = {0:{n:'Ndz',pnl:0,c:0,w:0},1:{n:'Pon',pnl:0,c:0,w:0},2:{n:'Wt',pnl:0,c:0,w:0},3:{n:'Śr',pnl:0,c:0,w:0},4:{n:'Czw',pnl:0,c:0,w:0},5:{n:'Pt',pnl:0,c:0,w:0},6:{n:'Sob',pnl:0,c:0,w:0}};
+  closed.forEach(t => {
+    if (!t.date) return;
+    const d = new Date(t.date).getDay();
+    byDow[d].pnl += t.pnl||0; byDow[d].c++; if(t.pnl>0) byDow[d].w++;
+  });
+  const dowActive = Object.values(byDow).filter(d=>d.c>0);
+  const bestDow  = dowActive.length ? dowActive.reduce((b,d)=>d.pnl>b.pnl?d:b) : null;
+  const worstDow = dowActive.length ? dowActive.reduce((b,d)=>d.pnl<b.pnl?d:b) : null;
+
+  // Best/Worst hour
+  const byHour = {};
+  closed.forEach(t => {
+    if (!t.date) return;
+    const h = new Date(t.date).getHours();
+    if (!byHour[h]) byHour[h] = {pnl:0,c:0,w:0};
+    byHour[h].pnl += t.pnl||0; byHour[h].c++; if(t.pnl>0) byHour[h].w++;
+  });
+  const hourEntries = Object.entries(byHour).filter(([,d])=>d.c>=2);
+  const bestHour  = hourEntries.length ? hourEntries.reduce((b,e)=>e[1].pnl>b[1].pnl?e:b) : null;
+  const worstHour = hourEntries.length ? hourEntries.reduce((b,e)=>e[1].pnl<b[1].pnl?e:b) : null;
+
+  // Best/Worst month
+  const byMonth = {};
+  closed.forEach(t => {
+    if (!t.date) return;
+    const m = (t.date||'').slice(0,7);
+    if (!byMonth[m]) byMonth[m] = {pnl:0,c:0,w:0};
+    byMonth[m].pnl += t.pnl||0; byMonth[m].c++; if(t.pnl>0) byMonth[m].w++;
+  });
+  const monthEntries = Object.entries(byMonth);
+  const bestMonth  = monthEntries.length ? monthEntries.reduce((b,e)=>e[1].pnl>b[1].pnl?e:b) : null;
+  const worstMonth = monthEntries.length ? monthEntries.reduce((b,e)=>e[1].pnl<b[1].pnl?e:b) : null;
+
+  // Session (Asian 0-8, London 7-16, NY 13-22)
+  const bySess = {Asian:{pnl:0,c:0,w:0},London:{pnl:0,c:0,w:0},NY:{pnl:0,c:0,w:0}};
+  closed.forEach(t => {
+    if (!t.date) return;
+    const h = new Date(t.date).getUTCHours();
+    if (h>=0&&h<8)   { bySess.Asian.pnl+=t.pnl||0; bySess.Asian.c++;  if(t.pnl>0)bySess.Asian.w++;  }
+    if (h>=7&&h<16)  { bySess.London.pnl+=t.pnl||0; bySess.London.c++; if(t.pnl>0)bySess.London.w++; }
+    if (h>=13&&h<22) { bySess.NY.pnl+=t.pnl||0; bySess.NY.c++;    if(t.pnl>0)bySess.NY.w++;    }
+  });
+
+  // By symbol/setup/TF
   const dirStat = dir => { const w=dir.filter(t=>t.pnl>0); return {count:dir.length,wins:w.length,pnl:dir.reduce((s,t)=>s+(t.pnl||0),0),wr:dir.length?Math.round(w.length/dir.length*100):0}; };
   const ls=dirStat(closed.filter(t=>t.dir==='LONG')), ss=dirStat(closed.filter(t=>t.dir==='SHORT'));
 
@@ -2635,54 +2711,42 @@ function renderSummary() {
   const mRow=(label,val,sub,color)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04)"><span style="font-size:12px;color:var(--text2)">${label}</span><div style="text-align:right"><span style="font-family:var(--font-mono);font-size:13px;font-weight:600;color:${color||'var(--text)'}">${val}</span>${sub?`<div style="font-size:10px;color:var(--text3)">${sub}</div>`:''}</div></div>`;
 
   document.getElementById('summary-content').innerHTML = `
-  <div class="summary-grid" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr));margin-bottom:16px">
+  <!-- TOP CARDS -->
+  <div class="summary-grid" style="grid-template-columns:repeat(auto-fit,minmax(155px,1fr));margin-bottom:16px">
     <div class="summary-card"><div class="summary-card-title">Win Rate</div><div class="win-rate-display">${winRate}%</div><div class="progress-bar" style="margin-top:8px"><div class="progress-fill" style="width:${winRate}%;background:var(--accent)"></div></div><div style="font-size:11px;color:var(--text3);margin-top:5px">${wins.length}W &middot; ${losses.length}L &middot; ${breakevens.length}BE</div></div>
-    <div class="summary-card"><div class="summary-card-title">Ca&#322;kowity P&amp;L</div><div class="stat-value ${totalPnl>=0?'green':'red'}" style="font-size:26px;letter-spacing:-1px">${totalPnl>=0?'+':''}${fmt(totalPnl)}</div>${returnPct?`<div style="font-size:12px;color:var(--text2);margin-top:4px">Zwrot: <strong>${returnPct}%</strong></div>`:''}<div style="font-size:11px;color:var(--text3)">Equity: ${fmt(equity)}</div></div>
-    <div class="summary-card"><div class="summary-card-title">Avg R:R</div><div style="font-family:var(--font-head);font-size:28px;font-weight:800;color:var(--amber);letter-spacing:-1px">${avgRR!=null?'1:'+avgRR.toFixed(2):rrFromPnl!=null?'1:'+rrFromPnl.toFixed(2):'&#8212;'}</div>${beWR!=null?`<div style="font-size:11px;color:var(--text2)">BE WR: <strong>${beWR.toFixed(1)}%</strong> <span style="color:${winRate>=beWR?'var(--green)':'var(--red)'}">${winRate>=beWR?'&#10003;':'&#10007;'}</span></div>`:''}<div style="font-size:11px;color:var(--text3)">EV: ${ev!=null?(parseFloat(ev)>=0?'+':'')+fmt(parseFloat(ev)):' &#8212;'}</div></div>
+    <div class="summary-card"><div class="summary-card-title">Całkowity P&L</div><div class="stat-value ${totalPnl>=0?'green':'red'}" style="font-size:26px;letter-spacing:-1px">${totalPnl>=0?'+':''}${fmt(totalPnl)}</div>${returnPct?`<div style="font-size:12px;color:var(--text2);margin-top:4px">Zwrot: <strong>${returnPct}%</strong></div>`:''}<div style="font-size:11px;color:var(--text3)">Equity: ${fmt(equity)}</div></div>
+    <div class="summary-card"><div class="summary-card-title">Avg R:R</div><div style="font-family:var(--font-head);font-size:28px;font-weight:800;color:var(--amber);letter-spacing:-1px">${avgRR!=null?'1:'+avgRR.toFixed(2):rrFromPnl!=null?'1:'+rrFromPnl.toFixed(2):'&#8212;'}</div>${beWR!=null?`<div style="font-size:11px;color:var(--text2)">BE WR: <strong>${beWR.toFixed(1)}%</strong> <span style="color:${winRate>=beWR?'var(--green)':'var(--red)'}">${winRate>=beWR?'&#10003;':'&#10007;'}</span></div>`:''}<div style="font-size:11px;color:var(--text3)">EV: ${ev!=null?(ev>=0?'+':'')+fmt(ev):'&#8212;'}</div></div>
     <div class="summary-card"><div class="summary-card-title">Profit Factor</div><div style="font-family:var(--font-head);font-size:28px;font-weight:800;color:${parseFloat(profitFactor)>=1.5?'var(--accent)':parseFloat(profitFactor)>=1?'var(--amber)':'var(--red)'}">${profitFactor}</div><div style="font-size:11px;color:var(--text2);margin-top:4px">Zysk: <span class="pnl-pos">+${fmt(totalGross)}</span></div><div style="font-size:11px;color:var(--text3)">Strata: <span class="pnl-neg">${fmt(totalLossAmt)}</span></div></div>
-    <div class="summary-card"><div class="summary-card-title">Max Drawdown</div><div style="font-family:var(--font-head);font-size:24px;font-weight:800;color:${maxDDPct>20?'var(--red)':maxDDPct>10?'var(--amber)':'var(--text)'}">${maxDDPct.toFixed(2)}%</div><div style="font-size:12px;color:var(--text2);margin-top:4px">${fmt(maxDD)} USD</div><div style="font-size:11px;color:var(--text3)">Maks. obsuni&#281;cie</div></div>
-    <div class="summary-card">
-      <div class="summary-card-title">CAGR / Zwrot</div>
-      ${cagr!=null ? `
-        <div style="font-family:var(--font-head);font-size:26px;font-weight:800;letter-spacing:-1px;color:${cagr>0?'var(--accent)':cagr<0?'var(--red)':'var(--text)'}">
-          ${(cagr>=0?'+':'')+fmtPct(cagr)}
-        </div>
-        <div style="font-size:11px;color:var(--text3);margin-bottom:4px">roczna stopa zwrotu · ${cagrNote}</div>
-      ` : `
-        <div style="font-family:var(--font-head);font-size:22px;font-weight:800;color:var(--text2)">&#8212;</div>
-        <div style="font-size:11px;color:var(--amber);margin-bottom:4px">${cagrNote||'min. 30 dni transakcji'}</div>
-      `}
-      ${hpr!=null ? `<div style="font-size:13px;color:var(--text2)">HPR: <strong class="${hpr>=0?'pnl-pos':'pnl-neg'}">${hpr>=0?'+':''}${fmtPct(hpr)}</strong></div>` : ''}
-      ${returnPct ? `<div style="font-size:11px;color:var(--text3)">Equity: ${fmt(equity)} USD</div>` : ''}
-    </div>
+    <div class="summary-card"><div class="summary-card-title">Max Drawdown</div><div style="font-family:var(--font-head);font-size:24px;font-weight:800;color:${maxDDPct>20?'var(--red)':maxDDPct>10?'var(--amber)':'var(--text)'}">${maxDDPct.toFixed(2)}%</div><div style="font-size:12px;color:var(--text2);margin-top:4px">${fmt(maxDD)} USD</div><div style="font-size:11px;color:var(--text3)">Recovery: ${recoveryFactor?recoveryFactor+'x':'&#8212;'}</div></div>
+    <div class="summary-card"><div class="summary-card-title">Sharpe Ratio</div><div style="font-family:var(--font-head);font-size:28px;font-weight:800;color:${sharpe&&parseFloat(sharpe)>=1?'var(--accent)':sharpe&&parseFloat(sharpe)>=0?'var(--amber)':'var(--red)'}">${sharpe||'&#8212;'}</div><div style="font-size:11px;color:var(--text3);margin-top:4px">${sharpe?parseFloat(sharpe)>=2?'Bardzo dobry':parseFloat(sharpe)>=1?'Dobry':parseFloat(sharpe)>=0?'Akceptowalny':'Słaby':'min. 5 trans.'}</div></div>
+    <div class="summary-card"><div class="summary-card-title">CAGR / Zwrot</div>${cagr!=null?`<div style="font-family:var(--font-head);font-size:26px;font-weight:800;letter-spacing:-1px;color:${cagr>0?'var(--accent)':cagr<0?'var(--red)':'var(--text)'}">${(cagr>=0?'+':'')+fmtPct(cagr)}</div><div style="font-size:11px;color:var(--text3);margin-bottom:4px">roczna · ${cagrNote}</div>`:`<div style="font-family:var(--font-head);font-size:22px;font-weight:800;color:var(--text2)">&#8212;</div><div style="font-size:11px;color:var(--amber);margin-bottom:4px">${cagrNote||'min. 30 dni'}</div>`}${hpr!=null?`<div style="font-size:13px;color:var(--text2)">HPR: <strong class="${hpr>=0?'pnl-pos':'pnl-neg'}">${hpr>=0?'+':''}${fmtPct(hpr)}</strong></div>`:''}</div>
   </div>
+
+  <!-- ROW 2: Rentowność | Drawdown | Struktura -->
   <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px">
-    <div class="summary-card"><div class="summary-card-title" style="color:var(--accent)">&#128200; Rentowno&#347;&#263;</div>
-      ${mRow('Transakcji &#322;&#261;cznie',closed.length)}
+    <div class="summary-card"><div class="summary-card-title" style="color:var(--accent)">📈 Rentowność</div>
+      ${mRow('Transakcji łącznie',closed.length)}
       ${mRow('Zyskownych',`${wins.length} (${winRate}%)`,null,'var(--green)')}
       ${mRow('Stratnych',`${losses.length} (${100-winRate}%)`,null,'var(--red)')}
-      ${mRow('Punkt rentowno&#347;ci',breakevens.length)}
-      ${mRow('&#346;r. zysk / trade',fmt(avgWin),null,'var(--green)')}
-      ${mRow('&#346;r. strata / trade','-'+fmt(avgLoss),null,'var(--red)')}
+      ${mRow('Punkt rentowności',breakevens.length)}
+      ${mRow('Śr. zysk / trade',fmt(avgWin),null,'var(--green)')}
+      ${mRow('Śr. strata / trade','-'+fmt(avgLoss),null,'var(--red)')}
       ${mRow('Najlepszy trade','+'+fmt(maxWin),null,'var(--green)')}
       ${mRow('Najgorszy trade',fmt(maxLoss),null,'var(--red)')}
-      ${mRow('Max seria zysk.',maxConsecW,'z rz&#281;du','var(--green)')}
-      ${mRow('Max seria strat.',maxConsecL,'z rz&#281;du','var(--red)')}
+      ${mRow('Payoff Ratio',rrFromPnl?(rrFromPnl).toFixed(2)+'x':'&#8212;',null,'var(--amber)')}
+      ${mRow('EV per trade',ev!=null?(ev>=0?'+':'')+fmt(ev)+'$':'&#8212;',null,ev&&ev>=0?'var(--accent)':'var(--red)')}
     </div>
-    <div class="summary-card"><div class="summary-card-title" style="color:var(--red)">&#128201; Obsuni&#281;cia kapita&#322;u</div>
+    <div class="summary-card"><div class="summary-card-title" style="color:var(--red)">📉 Ryzyko & Drawdown</div>
       ${mRow('Max drawdown',fmt(maxDD)+' USD',maxDDPct.toFixed(2)+'%','var(--red)')}
-      ${mRow('Max DD % kapita&#322;u',maxDDPct.toFixed(2)+'%',null,maxDDPct>15?'var(--red)':maxDDPct>7?'var(--amber)':'var(--text)')}
-      ${mRow('Zwrot z max DD',maxDD>0?fmt(totalPnl/maxDD*100)+'%':'&#8212;')}
-      ${mRow('Max strata jednej sesji',fmt(maxLoss),null,'var(--red)')}
-      <div style="margin-top:12px"><div style="font-size:11px;color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Efektywno&#347;&#263; kapita&#322;u</div>
-      ${mRow('HPR (zwrot ca&#322;k.)', hpr!=null?(hpr>=0?'+':'')+fmtPct(hpr):'&#8212;', 'Holding Period Return', hpr!=null&&hpr>=0?'var(--accent)':'var(--red)'),
-      mRow('Kapita&#322; pocz&#261;tkowy',startCapital>0?fmt(startCapital)+' USD':'&#8212;')}
-      ${mRow('Zwrot z kap. pocz.',returnPct!=null?returnPct+'%':'&#8212;',null,parseFloat(returnPct||0)>=0?'var(--accent)':'var(--red)')}
-      ${startCapital>0&&maxDD>0?mRow('Zwrot / max DD',(totalPnl/maxDD).toFixed(2)+'&times;',null,'var(--amber)'):''}
-      ${mRow('CAGR', cagr!=null?(cagr>=0?'+':'')+fmtPct(cagr):(cagrNote||'min. 30 dni'), cagrNote&&cagr!=null?cagrNote:null, cagr!=null&&cagr>0?'var(--accent)':cagr!=null&&cagr<0?'var(--red)':'var(--text3)')}
-      </div>
+      ${mRow('Max DD % kapitału',maxDDPct.toFixed(2)+'%',null,maxDDPct>15?'var(--red)':maxDDPct>7?'var(--amber)':'var(--text)')}
+      ${mRow('Recovery Factor',recoveryFactor?recoveryFactor+'x':'&#8212;',null,parseFloat(recoveryFactor||0)>=1?'var(--accent)':'var(--amber)')}
+      ${mRow('Sharpe Ratio',sharpe||'&#8212;',sharpe?parseFloat(sharpe)>=1?'Dobry':'Słaby':null,sharpe&&parseFloat(sharpe)>=1?'var(--accent)':sharpe&&parseFloat(sharpe)>=0?'var(--amber)':'var(--red)')}
+      ${mRow('Max seria zysk.',maxConsecW,'z rzędu','var(--green)')}
+      ${mRow('Max seria strat.',maxConsecL,'z rzędu','var(--red)')}
+      ${mRow('HPR (zwrot całk.)',hpr!=null?(hpr>=0?'+':'')+fmtPct(hpr):'&#8212;','Holding Period Return',hpr!=null&&hpr>=0?'var(--accent)':'var(--red)')}
+      ${mRow('CAGR',cagr!=null?(cagr>=0?'+':'')+fmtPct(cagr):(cagrNote||'min. 30 dni'),cagrNote&&cagr!=null?cagrNote:null,cagr!=null&&cagr>0?'var(--accent)':cagr!=null&&cagr<0?'var(--red)':'var(--text3)')}
     </div>
-    <div class="summary-card"><div class="summary-card-title" style="color:var(--amber)">&#128176; Struktura zysku</div>
+    <div class="summary-card"><div class="summary-card-title" style="color:var(--amber)">💰 Struktura zysku</div>
       ${mRow('Zysk brutto','+'+fmt(totalGross),null,'var(--green)')}
       ${mRow('Strata brutto',fmt(totalLossAmt),null,'var(--red)')}
       ${mRow('Zysk netto',(totalPnl>=0?'+':'')+fmt(totalPnl),null,totalPnl>=0?'var(--accent)':'var(--red)')}
@@ -2693,7 +2757,7 @@ function renderSummary() {
         <tbody>
           <tr><td style="color:var(--text2);padding:4px 0">Transakcji</td><td style="text-align:center">${closed.length}</td><td style="text-align:center">${ls.count}</td><td style="text-align:center">${ss.count}</td></tr>
           <tr><td style="color:var(--text2);padding:4px 0">Win Rate</td><td style="text-align:center">${winRate}%</td><td style="text-align:center;color:${ls.wr>=50?'var(--accent)':'var(--red)'}">${ls.wr}%</td><td style="text-align:center;color:${ss.wr>=50?'var(--accent)':'var(--red)'}">${ss.wr}%</td></tr>
-          <tr><td style="color:var(--text2);padding:4px 0">P&amp;L</td>
+          <tr><td style="color:var(--text2);padding:4px 0">P&L</td>
             <td style="text-align:center;font-family:var(--font-mono)" class="${totalPnl>=0?'pnl-pos':'pnl-neg'}">${totalPnl>=0?'+':''}${fmt(totalPnl)}</td>
             <td style="text-align:center;font-family:var(--font-mono)" class="${ls.pnl>=0?'pnl-pos':'pnl-neg'}">${ls.pnl>=0?'+':''}${fmt(ls.pnl)}</td>
             <td style="text-align:center;font-family:var(--font-mono)" class="${ss.pnl>=0?'pnl-pos':'pnl-neg'}">${ss.pnl>=0?'+':''}${fmt(ss.pnl)}</td>
@@ -2702,30 +2766,65 @@ function renderSummary() {
       </table></div>
     </div>
   </div>
+
+  <!-- ROW 3: Instrument | Setup | TF -->
   <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px">
-    <div class="summary-card"><div class="summary-card-title">&#9878; Rozk&#322;ad R:R</div>
-      ${rrTrades.length?`${rrBar('<1','var(--red)')}${rrBar('1\u20132','var(--amber)')}${rrBar('2\u20133','var(--accent)')}${rrBar('3+','var(--blue)')}<div style="font-size:11px;color:var(--text3);margin-top:8px">z ${rrTrades.length} transakcji z SL+TP</div>`:'<div style="font-size:12px;color:var(--text3)">Uzupe&#322;nij SL i TP</div>'}
-    </div>
-    <div class="summary-card"><div class="summary-card-title">&#128202; Wg instrumentu</div>
-      <table style="width:100%;font-size:12px;border-collapse:collapse"><thead><tr style="color:var(--text3);font-size:10px"><th style="text-align:left;padding:3px 0">Symbol</th><th style="text-align:center">WR%</th><th style="text-align:center">R:R</th><th style="text-align:right">P&amp;L</th></tr></thead>
+    <div class="summary-card"><div class="summary-card-title">📊 Wg instrumentu</div>
+      <table style="width:100%;font-size:12px;border-collapse:collapse"><thead><tr style="color:var(--text3);font-size:10px"><th style="text-align:left;padding:3px 0">Symbol</th><th style="text-align:center">WR%</th><th style="text-align:center">R:R</th><th style="text-align:right">P&L</th></tr></thead>
       <tbody>${symRows.map(([sym,d])=>{const wr=Math.round(d.wins/d.count*100),rr=d.rrCount?(d.rrSum/d.rrCount).toFixed(1):'&#8212;';return `<tr><td style="padding:5px 0"><span class="mono" style="font-weight:600">${sym}</span></td><td style="text-align:center;color:${wr>=50?'var(--accent)':'var(--red)'}">${wr}%</td><td style="text-align:center;font-family:var(--font-mono);font-size:11px;color:var(--amber)">${rr!=='&#8212;'?'1:'+rr:'&#8212;'}</td><td style="text-align:right" class="${d.pnl>=0?'pnl-pos':'pnl-neg'}">${d.pnl>=0?'+':''}${fmt(d.pnl)}</td></tr>`;}).join('')}
       </tbody></table>
     </div>
-    <div class="summary-card"><div class="summary-card-title">&#127919; Wg setupu</div>
-      <table style="width:100%;font-size:12px;border-collapse:collapse"><thead><tr style="color:var(--text3);font-size:10px"><th style="text-align:left;padding:3px 0">Setup</th><th style="text-align:center">WR%</th><th style="text-align:center">R:R</th><th style="text-align:right">P&amp;L</th></tr></thead>
+    <div class="summary-card"><div class="summary-card-title">🎯 Wg setupu</div>
+      <table style="width:100%;font-size:12px;border-collapse:collapse"><thead><tr style="color:var(--text3);font-size:10px"><th style="text-align:left;padding:3px 0">Setup</th><th style="text-align:center">WR%</th><th style="text-align:center">R:R</th><th style="text-align:right">P&L</th></tr></thead>
       <tbody>${Object.entries(bySetup).sort((a,b)=>b[1].pnl-a[1].pnl).map(([s,d])=>{const wr=Math.round(d.wins/d.count*100),rr=d.rrCount?(d.rrSum/d.rrCount).toFixed(1):'&#8212;';return `<tr><td style="padding:5px 0"><span class="tag" style="font-size:10px">${s}</span></td><td style="text-align:center;color:${wr>=50?'var(--accent)':'var(--red)'}">${wr}%</td><td style="text-align:center;font-family:var(--font-mono);font-size:11px;color:var(--amber)">${rr!=='&#8212;'?'1:'+rr:'&#8212;'}</td><td style="text-align:right" class="${d.pnl>=0?'pnl-pos':'pnl-neg'}">${d.pnl>=0?'+':''}${fmt(d.pnl)}</td></tr>`;}).join('')}
       </tbody></table>
     </div>
+    <div class="summary-card"><div class="summary-card-title">⏱ Wg timeframe</div>
+      <table style="width:100%;font-size:12px;border-collapse:collapse"><thead><tr style="color:var(--text3);font-size:10px"><th style="text-align:left;padding:3px 0">TF</th><th style="text-align:center">Trd</th><th style="text-align:center">WR%</th><th style="text-align:right">P&L</th></tr></thead>
+      <tbody>${Object.entries(byTf).sort((a,b)=>b[1].count-a[1].count).map(([tf,d])=>{const wr=Math.round(d.wins/d.count*100);return `<tr><td style="padding:5px 0"><span class="tag" style="font-size:11px">${tf}</span></td><td style="text-align:center;color:var(--text2)">${d.count}</td><td style="text-align:center;color:${wr>=50?'var(--accent)':'var(--red)'}">${wr}%</td><td style="text-align:right" class="${d.pnl>=0?'pnl-pos':'pnl-neg'}">${d.pnl>=0?'+':''}${fmt(d.pnl)}</td></tr>`;}).join('')}
+      </tbody></table>
+    </div>
   </div>
+
+  <!-- ROW 4: Dni tygodnia | Godziny | Sesje -->
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px">
+    <div class="summary-card"><div class="summary-card-title">📅 Wg dnia tygodnia</div>
+      ${bestDow?`<div style="font-size:11px;color:var(--text3);margin-bottom:8px">Najlepszy: <strong style="color:var(--green)">${bestDow.n} (+${fmt(bestDow.pnl)})</strong> · Najgorszy: <strong style="color:var(--red)">${worstDow.n} (${fmt(worstDow.pnl)})</strong></div>`:''}
+      <table style="width:100%;font-size:12px;border-collapse:collapse">
+        <thead><tr style="color:var(--text3);font-size:10px"><th style="text-align:left;padding:3px 0">Dzień</th><th style="text-align:center">Trd</th><th style="text-align:center">WR%</th><th style="text-align:right">P&L</th></tr></thead>
+        <tbody>${Object.values(byDow).filter(d=>d.c>0).map(d=>{const wr=Math.round(d.w/d.c*100);return `<tr><td style="padding:4px 0;color:var(--text2)">${d.n}</td><td style="text-align:center;color:var(--text3)">${d.c}</td><td style="text-align:center;color:${wr>=50?'var(--accent)':'var(--red)'}">${wr}%</td><td style="text-align:right" class="${d.pnl>=0?'pnl-pos':'pnl-neg'}">${d.pnl>=0?'+':''}${fmt(d.pnl)}</td></tr>`;}).join('')}
+        </tbody>
+      </table>
+    </div>
+    <div class="summary-card"><div class="summary-card-title">🕐 Wg godziny wejścia</div>
+      ${bestHour?`<div style="font-size:11px;color:var(--text3);margin-bottom:8px">Najlepsza: <strong style="color:var(--green)">${bestHour[0]}:00 (+${fmt(bestHour[1].pnl)})</strong> · Najgorsza: <strong style="color:var(--red)">${worstHour[0]}:00 (${fmt(worstHour[1].pnl)})</strong></div>`:'<div style="font-size:12px;color:var(--text3)">Min. 2 transakcje na godzinę</div>'}
+      <table style="width:100%;font-size:12px;border-collapse:collapse">
+        <thead><tr style="color:var(--text3);font-size:10px"><th style="text-align:left;padding:3px 0">Godz.</th><th style="text-align:center">Trd</th><th style="text-align:center">WR%</th><th style="text-align:right">P&L</th></tr></thead>
+        <tbody>${Object.entries(byHour).sort((a,b)=>parseInt(a[0])-parseInt(b[0])).map(([h,d])=>{const wr=Math.round(d.w/d.c*100);return `<tr><td style="padding:4px 0;color:var(--text2);font-family:var(--font-mono)">${h}:00</td><td style="text-align:center;color:var(--text3)">${d.c}</td><td style="text-align:center;color:${wr>=50?'var(--accent)':'var(--red)'}">${wr}%</td><td style="text-align:right" class="${d.pnl>=0?'pnl-pos':'pnl-neg'}">${d.pnl>=0?'+':''}${fmt(d.pnl)}</td></tr>`;}).join('')}
+        </tbody>
+      </table>
+    </div>
+    <div class="summary-card"><div class="summary-card-title">🌍 Wg sesji</div>
+      <div style="margin-bottom:12px">
+        ${['Asian','London','NY'].map(s=>{const d=bySess[s];if(!d.c)return '';const wr=Math.round(d.w/d.c*100);return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04)"><div><div style="font-size:13px;font-weight:600">${s}</div><div style="font-size:10px;color:var(--text3)">${d.c} transakcji · ${wr}% WR</div></div><div style="text-align:right"><div class="${d.pnl>=0?'pnl-pos':'pnl-neg'}" style="font-family:var(--font-mono);font-size:13px">${d.pnl>=0?'+':''}${fmt(d.pnl)}</div></div></div>`;}).join('')}
+      </div>
+      <div style="margin-top:8px">
+        ${bestMonth?mRow('Najlepszy mies.',bestMonth[0].slice(0,7),'+'+fmt(bestMonth[1].pnl),'var(--green)'):''}
+        ${worstMonth?mRow('Najgorszy mies.',worstMonth[0].slice(0,7),fmt(worstMonth[1].pnl),'var(--red)'):''}
+      </div>
+    </div>
+  </div>
+
+  <!-- ROW 5: R:R rozkład | Tabela transakcji -->
   <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px">
-    <div class="summary-card"><div class="summary-card-title">&#128203; R:R ka&#380;dej transakcji</div>
+    <div class="summary-card"><div class="summary-card-title">📋 R:R każdej transakcji</div>
       <div style="overflow-x:auto"><table style="width:100%;font-size:12px;border-collapse:collapse">
         <thead><tr style="color:var(--text3);font-size:10px;border-bottom:1px solid var(--border)">
           <th style="text-align:left;padding:5px 8px">Data</th><th style="text-align:left;padding:5px 8px">Symbol</th>
           <th style="text-align:center;padding:5px 8px">Dir</th><th style="text-align:center;padding:5px 8px">TF</th>
           <th style="text-align:center;padding:5px 8px">Setup</th><th style="text-align:center;padding:5px 8px">Ryzyko</th>
           <th style="text-align:center;padding:5px 8px">Reward</th><th style="text-align:center;padding:5px 8px">R:R</th>
-          <th style="text-align:right;padding:5px 8px">P&amp;L</th>
+          <th style="text-align:right;padding:5px 8px">P&L</th>
         </tr></thead>
         <tbody>${[...closed].reverse().map(t=>{
           const risk=(t.entry&&t.sl)?Math.abs(t.entry-t.sl):null;
@@ -2747,22 +2846,20 @@ function renderSummary() {
       </table></div>
     </div>
     <div style="display:flex;flex-direction:column;gap:16px">
-      <div class="summary-card"><div class="summary-card-title">&#9201; Wg timeframe</div>
-        <table style="width:100%;font-size:12px;border-collapse:collapse"><thead><tr style="color:var(--text3);font-size:10px"><th style="text-align:left;padding:3px 0">TF</th><th style="text-align:center">Trd</th><th style="text-align:center">WR%</th><th style="text-align:right">P&amp;L</th></tr></thead>
-        <tbody>${Object.entries(byTf).sort((a,b)=>b[1].count-a[1].count).map(([tf,d])=>{const wr=Math.round(d.wins/d.count*100);return `<tr><td style="padding:5px 0"><span class="tag" style="font-size:11px">${tf}</span></td><td style="text-align:center;color:var(--text2)">${d.count}</td><td style="text-align:center;color:${wr>=50?'var(--accent)':'var(--red)'}">${wr}%</td><td style="text-align:right" class="${d.pnl>=0?'pnl-pos':'pnl-neg'}">${d.pnl>=0?'+':''}${fmt(d.pnl)}</td></tr>`;}).join('')}
-        </tbody></table>
+      <div class="summary-card"><div class="summary-card-title">⚖ Rozkład R:R</div>
+        ${rrTrades.length?`${rrBar('<1','var(--red)')}${rrBar('1\u20132','var(--amber)')}${rrBar('2\u20133','var(--accent)')}${rrBar('3+','var(--blue)')}<div style="font-size:11px;color:var(--text3);margin-top:8px">z ${rrTrades.length} transakcji z SL+TP</div>`:'<div style="font-size:12px;color:var(--text3)">Uzupełnij SL i TP</div>'}
       </div>
-      <div class="summary-card"><div class="summary-card-title">&#128260; Analiza serii</div>
-        ${mRow('Max seria zysk. z rz&#281;du',maxConsecW,null,'var(--green)')}
-        ${mRow('Max seria strat. z rz&#281;du',maxConsecL,null,'var(--red)')}
-        ${mRow('&#346;r. zysk / trade',fmt(avgWin),null,'var(--green)')}
-        ${mRow('&#346;r. strata / trade','-'+fmt(avgLoss),null,'var(--red)')}
-        ${mRow('EV per trade',ev!=null?(parseFloat(ev)>=0?'+':'')+fmt(parseFloat(ev)):' &#8212;',null,ev&&parseFloat(ev)>=0?'var(--accent)':'var(--red)')}
+      <div class="summary-card"><div class="summary-card-title">🔄 Analiza serii</div>
+        ${mRow('Max seria zysk. z rzędu',maxConsecW,null,'var(--green)')}
+        ${mRow('Max seria strat. z rzędu',maxConsecL,null,'var(--red)')}
+        ${mRow('Śr. zysk / trade',fmt(avgWin),null,'var(--green)')}
+        ${mRow('Śr. strata / trade','-'+fmt(avgLoss),null,'var(--red)')}
+        ${mRow('Payoff Ratio',rrFromPnl?rrFromPnl.toFixed(2)+'x':'&#8212;',null,'var(--amber)')}
+        ${mRow('EV per trade',ev!=null?(ev>=0?'+':'')+fmt(ev):'&#8212;',null,ev&&ev>=0?'var(--accent)':'var(--red)')}
       </div>
     </div>
   </div>`;
 }
-
 
 // ===== ACCOUNTS =====
 function renderAccounts() {
@@ -8978,18 +9075,35 @@ function showPasswordResetForm() {
 }
 
 async function handlePasswordResetRedirect() {
-  const params = new URLSearchParams(window.location.hash.replace('#', '?'));
+  const hash = window.location.hash;
+  if (!hash) return;
+
+  // Supabase v2 — token w hash jako #access_token=...&type=recovery
+  const params = new URLSearchParams(hash.replace('#', ''));
   const accessToken  = params.get('access_token');
   const refreshToken = params.get('refresh_token');
   const type = params.get('type');
 
-  if (type === 'recovery' && accessToken && _sb) {
-    // Ustaw sesję z tokenem resetu
-    await _sb.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
-    // Pokaż formularz nowego hasła
+  if (type === 'recovery' && accessToken) {
+    // Poczekaj aż Supabase będzie załadowany
+    let attempts = 0;
+    while (!_sb && attempts < 20) {
+      await new Promise(r => setTimeout(r, 200));
+      attempts++;
+      if (!_sb) initSupabase();
+    }
+    if (!_sb) return;
+    try {
+      await _sb.auth.setSession({ access_token: accessToken, refresh_token: refreshToken || '' });
+    } catch(e) {}
+    // Wyczyść hash z URL
+    history.replaceState(null, '', window.location.pathname);
     showPasswordResetForm();
   }
 }
+
+// Wywołaj przy starcie strony
+handlePasswordResetRedirect();
 
 
 async function submitPasswordReset() {
