@@ -711,32 +711,20 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
     <!-- FORGOT PASSWORD -->
     <div id="forgot-form" style="display:none">
       <div id="forgot-result" style="margin-top:0">
-
-        <!-- Jedyna opcja: Kod odzyskiwania -->
-        <div style="background:var(--bg3);border:1px solid var(--amber);border-radius:10px;padding:16px">
-          <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--amber)">
-            🔑 Kod odzyskiwania hasła
-          </div>
-          <div style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.7">
-            Wpisz kod który wygenerowałeś wcześniej w <strong>Ustawienia → Kod odzyskiwania</strong>.
-          </div>
-          <div id="forgot-login-display" style="display:none"></div>
-          <input class="form-input" id="recovery-code-input"
-            placeholder="XXXX-XXXX-XXXX"
-            style="margin-bottom:10px;font-family:var(--font-mono);letter-spacing:3px;text-transform:uppercase;font-size:18px;text-align:center"
-            oninput="this.value=this.value.toUpperCase()">
-          <button class="btn-primary" onclick="doRecoveryCode()">
-            🔑 Użyj kodu odzyskiwania
-          </button>
-          <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);font-size:12px;color:var(--text3);line-height:1.7">
-            ⚠️ Nie masz kodu? Niestety bez kodu odzyskiwania nie można zresetować hasła w tej wersji aplikacji.<br>
-            Kod generujesz po zalogowaniu w <strong>Ustawienia → Kod odzyskiwania</strong>.
-          </div>
+        <div class="form-group">
+          <label class="form-label">Adres e-mail</label>
+          <input class="form-input" id="forgot-email" type="email"
+            placeholder="twój@email.com" autocomplete="email"
+            onkeydown="if(event.key==='Enter')doForgotPassword()">
         </div>
-
+        <div id="forgot-msg" style="display:none;font-size:13px;padding:10px 14px;border-radius:8px;margin-bottom:12px"></div>
+        <button class="btn-primary" onclick="doForgotPassword()">
+          📧 Wyślij link do resetowania hasła
+        </button>
+        <div style="margin-top:12px;font-size:12px;color:var(--text3);line-height:1.7">
+          Wyślemy link na Twój adres email. Kliknij go aby ustawić nowe hasło.
+        </div>
       </div>
-
-      <!-- Wróć do logowania -->
       <div style="margin-top:14px;text-align:center">
         <a onclick="switchAuthTab('login')" style="font-size:12px;color:var(--text3);cursor:pointer">
           ← Wróć do logowania
@@ -744,7 +732,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
       </div>
     </div>
 
-    <!-- [v1.3] RESET HASŁA — pokazywany po kliknięciu linku z maila -->
+        <!-- [v1.3] RESET HASŁA — pokazywany po kliknięciu linku z maila -->
     <div id="reset-password-form" style="display:none">
       <div style="text-align:center;margin-bottom:24px">
         <div style="font-size:32px;margin-bottom:8px">🔐</div>
@@ -5192,6 +5180,41 @@ async function doRegister() {
 }
 
 // ── Forgot password flow ─────────────────────────────────────────────────────
+async function doForgotPassword() {
+  const emailEl = document.getElementById('forgot-email');
+  const email = (emailEl?.value || '').trim();
+
+  if (!email) {
+    const msg = document.getElementById('forgot-msg');
+    if (msg) { msg.textContent = 'Podaj adres e-mail'; msg.style.display='block'; msg.style.background='var(--red-dim)'; msg.style.color='var(--red)'; }
+    return;
+  }
+
+  const btn = document.querySelector('#forgot-form .btn-primary');
+  if (btn) { btn.textContent = '⏳ Wysyłam...'; btn.disabled = true; }
+
+  if (!_sb) initSupabase();
+  if (!_sb) {
+    if (btn) { btn.textContent = '📧 Wyślij link do resetowania hasła'; btn.disabled = false; }
+    return;
+  }
+
+  try {
+    const result = await _sb.auth.resetPasswordForEmail(email, {
+      redirectTo: 'https://traderlogjournal.com/'
+    });
+    if (btn) { btn.textContent = '📧 Wyślij link do resetowania hasła'; btn.disabled = false; }
+    const msg = document.getElementById('forgot-msg');
+    if (result.error) {
+      if (msg) { msg.textContent = 'Błąd: ' + result.error.message; msg.style.display='block'; msg.style.background='var(--red-dim)'; msg.style.color='var(--red)'; }
+    } else {
+      if (msg) { msg.textContent = '✓ Email wysłany na ' + email + '. Sprawdź skrzynkę i folder SPAM!'; msg.style.display='block'; msg.style.background='var(--green-dim)'; msg.style.color='var(--green)'; }
+    }
+  } catch(e) {
+    if (btn) { btn.textContent = '📧 Wyślij link do resetowania hasła'; btn.disabled = false; }
+  }
+}
+
 async function doForgotRequest() {
   const emailEl = document.getElementById('forgot-email');
   const email = (emailEl?.value || '').trim();
