@@ -8508,12 +8508,16 @@ function initSupabase() {
     _sb = sb_lib.createClient(_SB_URL, _SB_ANON);
   }
   _sb.auth.onAuthStateChange(async (event, session) => {
-    if (event === 'PASSWORD_RECOVERY' && session) {
-      document.getElementById('auth-screen').style.display = 'none';
+    if (event === 'PASSWORD_RECOVERY') {
+      // Pokaż formularz ustawiania nowego hasła
+      document.getElementById('auth-screen').style.display = 'flex';
       showPasswordResetForm();
       return;
     }
     if (event === 'SIGNED_IN' && session && !state.currentUser && !_appInitRunning) {
+      // Nie inicjuj aplikacji jeśli to sesja resetu hasła
+      const hash = window.location.hash;
+      if (hash.includes('type=recovery')) return;
       setTimeout(async () => {
         if (!state.currentUser && !_appInitRunning) await appInit();
       }, 800);
