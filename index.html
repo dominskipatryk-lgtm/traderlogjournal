@@ -1465,21 +1465,6 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
                 placeholder="Opisz swoją analizę rynku, kluczowe poziomy, scenariusze, uzasadnienie..." oninput="anAutosave()"></textarea>
             </div>
 
-            <!-- Powiązana transakcja -->
-            <div class="form-group-modal full">
-              <label class="form-label-modal" style="display:flex;align-items:center;justify-content:space-between">
-                <span>🔗 Powiązana transakcja</span>
-                <button type="button" onclick="clearLinkedTrade()" id="an-linked-clear" style="display:none;font-size:10px;color:var(--red);background:none;border:none;cursor:pointer">✕ Usuń powiązanie</button>
-              </label>
-              <div id="an-linked-trade-display" style="display:none;background:var(--bg3);border:1px solid var(--accent);border-radius:8px;padding:8px 12px;margin-bottom:6px;cursor:pointer;font-size:12px" onclick="goToLinkedTrade()">
-                <span style="color:var(--accent)">🔗</span> <span id="an-linked-trade-title"></span>
-              </div>
-              <select class="form-select-modal" id="an-linked-trade" onchange="onLinkedTradeChange()">
-                <option value="">— Brak powiązanej transakcji —</option>
-              </select>
-              <input type="hidden" id="an-linked-trade-id">
-            </div>
-
             <!-- ROW 8: Wnioski (full) -->
             <div class="form-group-modal full">
               <label class="form-label-modal">Wnioski / Notatki dodatkowe</label>
@@ -7124,7 +7109,10 @@ function archiveAnalysis(id) {
 function populateLinkedAnalysisSelect(symbol, currentLinkedId) {
   const sel = document.getElementById('t-linked-analysis');
   if (!sel) return;
-  const analyses = getAnalyses().filter(a => !a.archived);
+  const analyses = getAnalyses()
+    .filter(a => !a.archived)
+    // [v1.7] Ukryj analizy już przypisane do innej transakcji
+    .filter(a => !a.linkedTradeId || a.linkedTradeId === currentLinkedId);
   const matching = analyses.filter(a => !symbol || symbolsMatch(a.symbol, symbol));
   const others   = analyses.filter(a => symbol && !symbolsMatch(a.symbol, symbol));
 
@@ -7201,7 +7189,9 @@ function goToLinkedAnalysis() {
 function populateLinkedTradeSelect(symbol, currentLinkedId) {
   const sel = document.getElementById('an-linked-trade');
   if (!sel) return;
-  const trades = getTrades(state.currentAccountId);
+  const trades = getTrades(state.currentAccountId)
+    // [v1.7] Ukryj transakcje już przypisane do innej analizy
+    .filter(t => !t.linkedAnalysisId || t.linkedAnalysisId === currentLinkedId);
   const matching = trades.filter(t => !symbol || symbolsMatch(t.symbol, symbol));
   const others   = trades.filter(t => symbol && !symbolsMatch(t.symbol, symbol));
 
@@ -7600,7 +7590,7 @@ function saveAnalysis() {
     setup:       g('an-setup')||'',
     post:        g('an-post')||'',
     screenshots: _anScreenshots ? _anScreenshots.map(s=>s.dataUrl) : [],
-    linkedTradeId: g('an-linked-trade-id') || null,
+    linkedAnalysisId: analysisId,
     updatedAt:   Date.now(),
   };
   const analyses = getAnalyses();
