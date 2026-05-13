@@ -1329,9 +1329,13 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
               style="flex:1;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer">
               <option value="">— Wybierz setup —</option>
             </select>
-            <button onclick="openChecklistFromForm('an')" id="an-setup-checklist-btn"
+            <button onclick="openSetupChecklistFromForm('an')" id="an-setup-checklist-btn"
               style="background:var(--accent);color:#000;border:none;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;display:none">
-              ✅ Checklist
+              ✅ Checklist setupu
+            </button>
+            <button onclick="openSetupManager(document.getElementById('an-strategy-select').value)" id="an-setup-manage-btn"
+              style="background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;white-space:nowrap;display:none">
+              ⚙ Zarządzaj
             </button>
           </div>
           <div id="an-setup-screenshots-bar" style="display:none;margin-top:8px">
@@ -1619,8 +1623,12 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
           style="flex:1;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer">
           <option value="">— Wybierz setup —</option>
         </select>
-        <button onclick="openSetupManager(document.getElementById('trade-strategy-select').value)"
-          style="background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;white-space:nowrap">
+        <button onclick="openSetupChecklistFromForm('trade')" id="trade-setup-checklist-btn"
+          style="background:var(--accent);color:#000;border:none;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;display:none">
+          ✅ Checklist setupu
+        </button>
+        <button onclick="openSetupManager(document.getElementById('trade-strategy-select').value)" id="trade-setup-manage-btn"
+          style="background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;white-space:nowrap;display:none">
           ⚙ Zarządzaj
         </button>
       </div>
@@ -7286,57 +7294,45 @@ function renderAnLinkedTrades(symbol) {
 
   el.innerHTML = trades.slice(0, 8).map(t => {
     const isAssigned = t.linkedAnalysisId && t.linkedAnalysisId === currentAnalysisId;
+    const isSelected = _selectedTradeForAnalysis === t.id;
+    const highlight  = isAssigned || isSelected;
     const pnlStr = t.pnl != null ? (t.pnl > 0 ? '+' : '') + fmt(t.pnl) : '';
     const pnlClass = t.pnl > 0 ? 'pnl-pos' : t.pnl < 0 ? 'pnl-neg' : '';
     return `
-    <span style="display:inline-flex;align-items:center;gap:5px;background:${isAssigned?'var(--accent-dim)':'var(--bg3)'};border:1px solid ${isAssigned?'var(--accent)':'var(--border)'};border-radius:6px;padding:3px 9px;font-size:11px;margin:2px">
+    <span style="display:inline-flex;align-items:center;gap:5px;background:${highlight?'var(--accent-dim)':'var(--bg3)'};border:1px solid ${highlight?'var(--accent)':'var(--border)'};border-radius:6px;padding:3px 9px;font-size:11px;margin:2px">
       <span class="badge badge-${t.dir.toLowerCase()}" style="font-size:9px;padding:1px 5px">${t.dir}</span>
       <span class="mono" style="cursor:pointer" onclick="openDetailModal('${t.id}')">${formatDate(t.date).slice(0,10)}</span>
       ${pnlStr ? `<span class="${pnlClass}">${pnlStr}</span>` : ''}
-      <button onclick="assignTradeToAnalysis('${t.id}')" title="${isAssigned ? 'Przypisana — kliknij aby odpiąć' : 'Przypisz do tej analizy'}"
-        style="background:none;border:none;cursor:pointer;font-size:14px;padding:0;line-height:1;opacity:${isAssigned?'1':'0.4'};transition:opacity .15s"
-        onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='${isAssigned?'1':'0.4'}'">
-        ${isAssigned ? '✅' : '☑️'}
+      <button onclick="assignTradeToAnalysis('${t.id}')" title="${isAssigned ? 'Przypisana' : isSelected ? 'Zaznaczona — zapisz aby przypisać' : 'Zaznacz do przypisania'}"
+        style="background:none;border:none;cursor:pointer;font-size:14px;padding:0;line-height:1">
+        ${isAssigned ? '✅' : isSelected ? '☑️' : '⬜'}
       </button>
     </span>`;
   }).join('') + (trades.length > 8 ? `<span style="font-size:11px;color:var(--text3)"> +${trades.length - 8} więcej</span>` : '');
 }
 
-// [v1.7] Przypisz/odepnij transakcję od analizy jednym kliknięciem
+// [v1.7] Zaznacz/odznacz transakcję — zapis następuje dopiero przy "Zapisz jako Transakcję"
+let _selectedTradeForAnalysis = null;
+
 function assignTradeToAnalysis(tradeId) {
-  // Zapisz analizę jeśli ma tytuł
-  const title = (document.getElementById('an-title')?.value||'').trim();
-  if (!title) { toast('Najpierw podaj tytuł analizy', 'error'); return; }
-
-  // Zapisz analizę
-  saveAnalysis();
-
-  // Pobierz zapisane ID analizy
-  const analysisId = document.getElementById('an-id')?.value;
-  if (!analysisId) return;
+  const currentAnalysisId = document.getElementById('an-id')?.value || '';
 
   const trades = getTrades(state.currentAccountId);
-  const idx = trades.findIndex(t => t.id === tradeId);
-  if (idx < 0) return;
+  const trade = trades.find(t => t.id === tradeId);
+  if (!trade) return;
 
-  const alreadyAssigned = trades[idx].linkedAnalysisId === analysisId;
+  const alreadySelected = _selectedTradeForAnalysis === tradeId
+    || (trade.linkedAnalysisId && trade.linkedAnalysisId === currentAnalysisId);
 
-  if (alreadyAssigned) {
-    // Odepnij
-    trades[idx].linkedAnalysisId = null;
-    saveTrades(state.currentAccountId, trades);
-    toast('Transakcja odpięta od analizy', 'success');
+  if (alreadySelected) {
+    _selectedTradeForAnalysis = null;
+    toast('Zaznaczenie usunięte', 'success');
   } else {
-    // Przypisz
-    trades[idx].linkedAnalysisId = analysisId;
-    saveTrades(state.currentAccountId, trades);
-    toast('Transakcja przypisana do analizy ✓', 'success');
+    _selectedTradeForAnalysis = tradeId;
+    toast('Transakcja zaznaczona — kliknij "📈 Zapisz jako Transakcję" aby przypisać', 'success');
   }
 
-  renderTrades();
-  renderDashboard();
-
-  // Odśwież pasek transakcji
+  // Odśwież pasek
   const symbol = document.getElementById('an-symbol')?.value || '';
   renderAnLinkedTrades(symbol);
 }
@@ -7684,8 +7680,8 @@ function saveAnalysisAsTrade() {
   const dir    = bias==='bullish'?'LONG':bias==='bearish'?'SHORT':'LONG';
   const analysisId = _g('an-id') || null;
 
-  // Jeśli analiza ma powiązaną transakcję — pobierz jej dane
-  const linkedTradeId = _g('an-linked-trade-id') || '';
+  // Użyj zaznaczonej transakcji lub powiązanej
+  const linkedTradeId = _selectedTradeForAnalysis || _g('an-linked-trade-id') || '';
   let entry = _g('an-entry')||'';
   let sl    = _g('an-sl')||'';
   let tp    = _g('an-tp')||'';
@@ -7727,7 +7723,7 @@ function saveAnalysisAsTrade() {
       saveTrades(state.currentAccountId, trades);
     }
     renderTrades(); renderDashboard();
-    // Zamknij modal analizy — nie otwieraj edycji (unika duplikatów)
+    _selectedTradeForAnalysis = null;
     closeModal('analysis-modal');
     toast('Analiza powiązana z transakcją ✓', 'success');
   } else {
@@ -7751,7 +7747,7 @@ function saveAnalysisAsTrade() {
     allTrades.push(newTrade);
     saveTrades(state.currentAccountId, allTrades);
     renderTrades(); renderDashboard();
-    // Zamknij modal analizy — nie otwieraj edycji (unika duplikatów)
+    _selectedTradeForAnalysis = null;
     closeModal('analysis-modal');
     toast('Transakcja zapisana z analizy ✓', 'success');
   }
@@ -10277,9 +10273,13 @@ function onSetupChange(prefix) {
   const setup = getAllSetups().find(s => s.id === setupId);
   if (!setup) return;
 
-  // Pokaż przycisk Checklist przy setupie (jeśli setup ma punkty)
+  // Pokaż Checklist gdy setup ma punkty, Zarządzaj gdy nie ma
   if (setupChecklistBtn) {
     setupChecklistBtn.style.display = setup.points?.length > 0 ? 'block' : 'none';
+  }
+  const manageBtn = document.getElementById(prefix + '-setup-manage-btn');
+  if (manageBtn) {
+    manageBtn.style.display = setup.points?.length > 0 ? 'none' : 'block';
   }
 
   // Pokaż screenshoty wzorcowe setupu
@@ -10335,7 +10335,7 @@ function openSetupChecklist(prefix, setup) {
       scoreEl.textContent = (allDone ? '✓ ' : '⚠ ') + score;
       scoreEl.style.color = allDone ? 'var(--accent)' : 'var(--amber)';
     }
-    const noteEl = document.getElementById(prefix === 'an' ? 'an-pre' : 't-pre');
+    const noteEl = document.getElementById(prefix === 'an' ? 'an-content' : 't-pre');
     if (noteEl) {
       const tag = '[Setup: ' + setup.name + ' ' + score + (allDone ? ' ✓' : ' ⚠') + ']';
       noteEl.value = noteEl.value ? noteEl.value.replace(/\[Setup:[^\]]+\]/,'') + '\n' + tag : tag;
@@ -10343,6 +10343,17 @@ function openSetupChecklist(prefix, setup) {
     if (!allDone) toast('⚠ Nie wszystkie warunki setupu zaznaczone!', 'error');
     else toast('✓ Setup potwierdzony!', 'success');
   });
+}
+
+// Pomocnik — otwiera checklistę setupu z formularza
+function openSetupChecklistFromForm(prefix) {
+  const setupSel = document.getElementById(prefix + '-setup-select');
+  const setupId  = setupSel?.value;
+  if (!setupId) { toast('Najpierw wybierz setup', 'error'); return; }
+  const setup = getAllSetups().find(s => s.id === setupId);
+  if (!setup) return;
+  if (!setup.points?.length) { toast('Ten setup nie ma zdefiniowanych punktów checklisty', 'error'); return; }
+  openSetupChecklist(prefix, setup);
 }
 
 
