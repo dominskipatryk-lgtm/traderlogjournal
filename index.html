@@ -7693,7 +7693,14 @@ function saveAnalysisAsTrade() {
 
   // Uzupełnij TYLKO puste pola — nie nadpisuj istniejących danych
   const t = trades[idx];
-  if (pre   && !t.pre)   t.pre   = pre;
+  // Uzupełnij pola — pre łączymy z istniejącym (MT4 tag + opis analizy)
+  if (pre) {
+    if (!t.pre) {
+      t.pre = pre;
+    } else if (!t.pre.includes(pre)) {
+      t.pre = t.pre + '\n\n' + pre;
+    }
+  }
   if (post  && !t.post)  t.post  = post;
   if (setup && !t.setup) t.setup = setup;
 
@@ -8611,7 +8618,16 @@ async function closeMT4Trade(signal) {
 }
 
 function openTradeFromMT4(signal) {
-  // [v1.7] Automatycznie zapisz transakcję do dziennika
+  // [v1.7] Sprawdź czy transakcja z tym ticketem już istnieje
+  const existing = getTrades(state.currentAccountId);
+  const duplicate = existing.find(t => t.mt4Ticket && String(t.mt4Ticket) === String(signal.ticket));
+  if (duplicate) {
+    console.log('TLJ: Transakcja #' + signal.ticket + ' już istnieje — pomijam duplikat');
+    showMT4Notification(signal, duplicate.id);
+    playMT4Sound(signal.direction === 'BUY');
+    return;
+  }
+
   const id = genId();
   const trade = {
     id,
@@ -8634,17 +8650,12 @@ function openTradeFromMT4(signal) {
     mt4Ticket: signal.ticket || null,
   };
 
-  // Zapisz do dziennika
   const trades = getTrades(state.currentAccountId);
   trades.push(trade);
   saveTrades(state.currentAccountId, trades);
   renderTrades();
   renderDashboard();
-
-  // Sygnał dźwiękowy
   playMT4Sound(signal.direction === 'BUY');
-
-  // Powiadomienie z przyciskiem "Otwórz panel"
   showMT4Notification(signal, id);
 }
 
