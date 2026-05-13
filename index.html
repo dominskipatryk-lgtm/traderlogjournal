@@ -7283,14 +7283,19 @@ function renderAnLinkedTrades(symbol) {
     if (el) el.innerHTML = '<span style="color:var(--text3)">Brak powiązanych transakcji</span>';
     return;
   }
-  const trades = getTrades(state.currentAccountId).filter(t => symbolsMatch(t.symbol, symbol));
+  // Pobierz aktualne ID analizy
+  const currentAnalysisId = document.getElementById('an-id')?.value || '';
+
+  const trades = getTrades(state.currentAccountId).filter(t => {
+    if (!symbolsMatch(t.symbol, symbol)) return false;
+    // Ukryj transakcje przypisane do INNEJ analizy
+    if (t.linkedAnalysisId && t.linkedAnalysisId !== currentAnalysisId) return false;
+    return true;
+  });
   if (!trades.length) {
     el.innerHTML = '<span style="color:var(--text3)">Brak transakcji dla ' + symbol + '</span>';
     return;
   }
-
-  // Pobierz aktualne ID analizy i przypisaną transakcję
-  const currentAnalysisId = document.getElementById('an-id')?.value || '';
 
   el.innerHTML = trades.slice(0, 8).map(t => {
     const isAssigned = t.linkedAnalysisId && t.linkedAnalysisId === currentAnalysisId;
