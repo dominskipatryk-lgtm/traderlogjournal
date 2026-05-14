@@ -2414,6 +2414,10 @@ function loginAs(username, userData) {
   }
 }
 function doLogout() {
+  // Reset tokenu Drive przy wylogowaniu (token i tak wygaśnie)
+  _gapiAccessToken = null;
+  _gapiLoaded = false;
+  stopMT4Listener();
   state.currentUser = null;
   state.currentAccountId = null;
   document.getElementById('auth-screen').style.display = 'flex';
@@ -7140,22 +7144,20 @@ function saveGDriveClientId() {
 }
 
 function loadGAPI(clientId) {
-  // [v1.7] FIX: nie prosimy o token automatycznie — tylko inicjalizujemy klienta
-  // Token jest proszony dopiero gdy użytkownik kliknie przycisk (unika blokady popupów)
   const cid = GDRIVE_CLIENT_ID;
   if (document.querySelector('script[src*="accounts.google.com/gsi"]')) {
-    // Skrypt już załadowany — tylko zainicjuj klienta
     _initGapiTokenClient(cid);
     return;
   }
   const script = document.createElement('script');
   script.src = 'https://accounts.google.com/gsi/client';
   script.onload = () => _initGapiTokenClient(cid);
-  script.onerror = () => toast('Błąd ładowania Google API', 'error');
+  script.onerror = () => console.warn('Google API load failed');
   document.head.appendChild(script);
 }
 
 function _initGapiTokenClient(cid) {
+  // Główny klient — używany gdy użytkownik kliknie "Połącz"
   _gapiTokenClient = google.accounts.oauth2.initTokenClient({
     client_id: cid,
     scope: GDRIVE_SCOPES,
@@ -7164,12 +7166,35 @@ function _initGapiTokenClient(cid) {
       if (resp.access_token) {
         _gapiAccessToken = resp.access_token;
         _gapiLoaded = true;
+        localStorage.setItem('tlj_gdrive_connected_' + (state.currentUser||''), '1');
         updateGDriveStatus('✓ Połączono z Google Drive', 'ok');
         toast('Połączono z Google Drive ✓', 'success');
         renderBackupOptions();
       }
     }
   });
+
+  // Cichy refresh — jeśli poprzednio połączony, spróbuj bez okna
+  const wasConnected = localStorage.getItem('tlj_gdrive_connected_' + (state.currentUser||''));
+  if (wasConnected) {
+    try {
+      const silentClient = google.accounts.oauth2.initTokenClient({
+        client_id: cid,
+        scope: GDRIVE_SCOPES,
+        prompt: 'none',
+        callback: (resp) => {
+          if (resp.access_token && !resp.error) {
+            _gapiAccessToken = resp.access_token;
+            _gapiLoaded = true;
+            updateGDriveStatus('✓ Drive aktywny', 'ok');
+            renderBackupOptions();
+          }
+          // Błąd = użytkownik musi połączyć ręcznie — nie pokazuj okna
+        }
+      });
+      setTimeout(() => { try { silentClient.requestAccessToken(); } catch(e) {} }, 300);
+    } catch(e) {}
+  }
 }
 
 async function driveRequest(url, options = {}) {
