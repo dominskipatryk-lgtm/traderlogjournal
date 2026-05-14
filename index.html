@@ -7285,10 +7285,14 @@ function _initGapiTokenClient(cid) {
             updateGDriveStatus('✓ Drive aktywny', 'ok');
             renderBackupOptions();
           }
-          // Błąd = użytkownik musi połączyć ręcznie — nie pokazuj okna
-        }
+          // Błąd (popup zablokowany, sesja wygasła) — ignoruj, user połączy ręcznie
+        },
+        error_callback: () => {}
       });
-      setTimeout(() => { try { silentClient.requestAccessToken(); } catch(e) {} }, 300);
+      // prompt:none nie otwiera okna — bezpieczne automatycznie
+      setTimeout(() => {
+        try { silentClient.requestAccessToken({ prompt: 'none' }); } catch(e) {}
+      }, 1500);
     } catch(e) {}
   }
 }
