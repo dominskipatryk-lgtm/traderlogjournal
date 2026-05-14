@@ -6986,6 +6986,7 @@ function connectGoogleDrive() {
 
 async function backupToGoogleDrive() {
   if (!_gapiLoaded || !_gapiTokenClient) { connectGoogleDrive(); return; }
+  if (typeof gapi === 'undefined' || !gapi.client) { toast('Biblioteka Google nie jest załadowana — odśwież stronę', 'error'); return; }
   updateGDriveStatus('Zapisuję...', '');
   try {
     const db = getDB();
@@ -7158,8 +7159,12 @@ async function restoreScreenshotsFromGoogleDrive() {
     connectGoogleDrive();
     return;
   }
+  if (typeof gapi === 'undefined' || !gapi.client) {
+    toast('Biblioteka Google nie jest załadowana — odśwież stronę', 'error');
+    return;
+  }
   const token = gapi.client.getToken()?.access_token;
-  if (!token) { toast('Brak tokenu Google', 'error'); return; }
+  if (!token) { toast('Brak tokenu Google — połącz ponownie z Drive', 'error'); connectGoogleDrive(); return; }
   if (!confirm('Przywrócić screenshoty z Google Drive? Uzupełni brakujące screenshoty w transakcjach.')) return;
 
   toast('⏳ Przywracam screenshoty z Drive...', 'success');
