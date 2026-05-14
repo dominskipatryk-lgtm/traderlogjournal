@@ -3469,14 +3469,25 @@ function dvAddFiles(files) {
     const r = new FileReader();
     r.onload = async e => {
       const compressed = await compressImage(e.target.result, 800, 0.7);
-      _detailScreenshots.push({ id: genId(), dataUrl: compressed });
+      const id = genId();
+      const tradeId = _detailId;
+      const idx = _detailScreenshots.length;
+      let dataUrl = compressed;
+      if (_gapiLoaded && _gapiAccessToken && tradeId) {
+        const driveUrl = await autoUploadScreenToDrive(compressed, tradeId, idx);
+        if (driveUrl) { dataUrl = driveUrl; _driveScreenCache[driveUrl.replace('drive://','')] = compressed; }
+      }
+      _detailScreenshots.push({ id, dataUrl });
       const wrap = document.getElementById('dv-screens');
       if (wrap) {
-        wrap.innerHTML = _detailScreenshots.map(s => `
-          <div class="dv-screen-thumb">
-            <img src="${s.dataUrl}" onclick="openLightbox('${s.dataUrl}')">
+        wrap.innerHTML = _detailScreenshots.map(s => {
+          const isD = isDriveScreenshot(s.dataUrl);
+          const src = isD ? (_driveScreenCache[s.dataUrl.replace('drive://','')] || '') : s.dataUrl;
+          return `<div class="dv-screen-thumb">
+            <img src="${src}" onclick="openLightboxSmart('${s.dataUrl}','${s.id}')">
             <button class="dv-screen-del" onclick="dvRemoveScreen('${s.id}')">✕</button>
-          </div>`).join('');
+          </div>`;
+        }).join('');
       }
     };
     r.readAsDataURL(f);
@@ -3516,14 +3527,81 @@ function compressImage(dataUrl, maxWidth, quality) {
   });
 }
 
+// Auto-upload screenshota na Drive po dodaniu
+async function autoUploadScreenToDrive(dataUrl, tradeId, idx) {
+  if (!_gapiLoaded || !_gapiAccessToken || !tradeId) return null;
+  try {
+    const compressed = await compressImage(dataUrl, 800, 0.7);
+    const base64 = compressed.split(',')[1];
+    const blob = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+    const meta = JSON.stringify({ name: `tlj-${tradeId}-${idx}.jpg`, parents: ['appDataFolder'] });
+    const form = new FormData();
+    form.append('metadata', new Blob([meta], { type: 'application/json' }));
+    form.append('file', new Blob([blob], { type: 'image/jpeg' }));
+    const resp = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
+      { method: 'POST', headers: { Authorization: 'Bearer ' + _gapiAccessToken }, body: form });
+    const data = await resp.json();
+    if (data.id) {
+      // Zaktualizuj index
+      await updateDriveIndex(tradeId, idx, data.id);
+      return 'drive://' + data.id;
+    }
+  } catch(e) { console.warn('Auto Drive upload failed:', e); }
+  return null;
+}
+
+async function updateDriveIndex(tradeId, idx, fileId) {
+  if (!_gapiAccessToken) return;
+  const indexName = `tlj-screenshots-index-${state.currentUser}.json`;
+  try {
+    const searchResp = await fetch(
+      `https://www.googleapis.com/drive/v3/files?q=name='${indexName}'&spaces=appDataFolder`,
+      { headers: { Authorization: 'Bearer ' + _gapiAccessToken } });
+    const searchData = await searchResp.json();
+    let existingIndex = {};
+    let existingId = null;
+    if (searchData.files?.[0]?.id) {
+      existingId = searchData.files[0].id;
+      const idxResp = await fetch(
+        `https://www.googleapis.com/drive/v3/files/${existingId}?alt=media`,
+        { headers: { Authorization: 'Bearer ' + _gapiAccessToken } });
+      existingIndex = await idxResp.json();
+    }
+    existingIndex[`${tradeId}_${idx}`] = fileId;
+    const indexBlob = JSON.stringify(existingIndex);
+    if (existingId) {
+      await fetch(`https://www.googleapis.com/upload/drive/v3/files/${existingId}?uploadType=media`,
+        { method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + _gapiAccessToken }, body: indexBlob });
+    } else {
+      const idxMeta = JSON.stringify({ name: indexName, parents: ['appDataFolder'] });
+      const idxForm = new FormData();
+      idxForm.append('metadata', new Blob([idxMeta], { type: 'application/json' }));
+      idxForm.append('file', new Blob([indexBlob], { type: 'application/json' }));
+      await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
+        { method: 'POST', headers: { Authorization: 'Bearer ' + _gapiAccessToken }, body: idxForm });
+    }
+  } catch(e) { console.warn('Drive index update failed:', e); }
+}
+
 function handleFiles(files) {
   Array.from(files).forEach(f => {
     if (!f.type.startsWith('image/')) return;
     const reader = new FileReader();
     reader.onload = async e => {
-      // [v1.7] Kompresuj przed zapisem
       const compressed = await compressImage(e.target.result, 800, 0.7);
-      state.tempScreenshots.push({id: genId(), dataUrl: compressed});
+      const id = genId();
+      const tradeId = state.editTradeId || document.getElementById('trade-id')?.value;
+      const idx = state.tempScreenshots.length;
+      let dataUrl = compressed;
+      // Auto-upload na Drive jeśli połączony
+      if (_gapiLoaded && _gapiAccessToken && tradeId) {
+        const driveUrl = await autoUploadScreenToDrive(compressed, tradeId, idx);
+        if (driveUrl) {
+          dataUrl = driveUrl;
+          _driveScreenCache[driveUrl.replace('drive://','')] = compressed;
+        }
+      }
+      state.tempScreenshots.push({id, dataUrl});
       renderScreenshotPreviews();
     };
     reader.readAsDataURL(f);
@@ -4286,6 +4364,18 @@ async function saveDBAsync(data) {
   }
 }
 function getDB()    { return getDBSync(); }
+
+// [v1.7] renderAll z debounce — zapobiega wielokrotnym renderowaniom
+let _renderAllTimer = null;
+function renderAll() {
+  clearTimeout(_renderAllTimer);
+  _renderAllTimer = setTimeout(() => {
+    renderDashboard();
+    renderTrades();
+    if (document.getElementById('page-summary')?.classList.contains('active')) renderSummary();
+  }, 50);
+}
+
 function saveDB(db) {
   _dbCache = db;
   if (IS_ELECTRON) {
@@ -4668,7 +4758,7 @@ async function adminImport() {
     _dbCache = data;
     toast('Import zakończony ✓', 'success');
     setTimeout(() => {
-      renderDashboard(); renderTrades(); renderSummary();
+      renderAll();
       renderAccounts(); refreshTopbarAccount(); updateDraftBadges();
       updateAdminNav(); renderAdmin();
     }, 400);
@@ -5023,7 +5113,10 @@ function collectFormDraft() {
     setup:       document.getElementById('t-setup')?.value || '',
     pre:         document.getElementById('t-pre')?.value || '',
     post:        document.getElementById('t-post')?.value || '',
-    screenshots: state.tempScreenshots.map(s => s.dataUrl),
+    // [v1.7] Nie zapisuj base64 w szkicach — tylko referencje drive://
+    screenshots: state.tempScreenshots
+      .map(s => s.dataUrl)
+      .filter(d => isDriveScreenshot(d)),
     editId:      document.getElementById('trade-id')?.value || '',
     savedAt:     Date.now(),
   };
@@ -6881,7 +6974,7 @@ function manualBackupImport() {
         saveDB(data); _dbCache = data;
         toast('Import zakończony ✓', 'success');
         setTimeout(() => {
-          renderDashboard(); renderTrades(); renderSummary();
+          renderAll();
           renderAccounts(); refreshTopbarAccount(); updateDraftBadges();
         }, 400);
       } catch { toast('Błąd importu — nieprawidłowy plik', 'error'); }
@@ -7156,7 +7249,7 @@ async function restoreFromGoogleDrive() {
     const data = await fileResp.json();
     saveDB(data); _dbCache = data;
     toast('Przywrócono z Google Drive ✓', 'success');
-    renderDashboard(); renderTrades(); renderSummary();
+    renderAll();
     renderAccounts(); refreshTopbarAccount(); updateDraftBadges();
   } catch(e) { toast('Błąd przywracania: ' + e.message, 'error'); }
 }
@@ -7326,36 +7419,37 @@ async function restoreScreenshotsFromGoogleDrive() {
     let restored = 0;
 
     for (const [fileKey, fileId] of Object.entries(index)) {
-      const [tradeId, idxStr] = fileKey.split('_');
-      const idx = parseInt(idxStr);
+      const parts = fileKey.split('_');
+      const tradeId = parts[0];
+      const idx = parseInt(parts[1]);
 
-      // Znajdź transakcję w db
-      for (const key of Object.keys(db)) {
-        if (!Array.isArray(db[key])) continue;
-        const tradeIdx = db[key].findIndex(t => t.id === tradeId);
+      // Szukaj w db.trades (poprawna struktura)
+      const tradesObj = db.trades || {};
+      let found = false;
+      for (const key of Object.keys(tradesObj)) {
+        if (!Array.isArray(tradesObj[key])) continue;
+        const tradeIdx = tradesObj[key].findIndex(t => t.id === tradeId);
         if (tradeIdx < 0) continue;
-        const trade = db[key][tradeIdx];
+        const trade = tradesObj[key][tradeIdx];
         if (!trade.screenshots) trade.screenshots = [];
-        if (trade.screenshots[idx]) continue; // już jest
-
-        // Pobierz obraz z Drive
-        const imgResp = await fetch(
-          `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
-          { headers: { Authorization: 'Bearer ' + token } }
-        );
-        const blob = await imgResp.blob();
-        const dataUrl = await new Promise(res => {
-          const r = new FileReader();
-          r.onload = e => res(e.target.result);
-          r.readAsDataURL(blob);
-        });
-        trade.screenshots[idx] = dataUrl;
-        restored++;
+        // Wstaw drive:// referencję zamiast pobierać base64
+        if (!trade.screenshots[idx] || trade.screenshots[idx] === '') {
+          trade.screenshots[idx] = 'drive://' + fileId;
+          restored++;
+          found = true;
+        }
+        break;
       }
     }
 
     saveDB(db);
-    toast(`✓ Przywrócono ${restored} screenshotów z Drive`, 'success');
+    _dbCache = db;
+    renderTrades();
+    if (restored > 0) {
+      toast(`✓ Przywrócono ${restored} screenshotów — widoczne po otwarciu transakcji`, 'success');
+    } else {
+      toast('Brak screenshotów do przywrócenia (może już są przypisane)', 'success');
+    }
   } catch(e) {
     toast('Błąd przywracania screenshotów: ' + e.message, 'error');
     console.warn('Screenshot restore error:', e);
@@ -7797,7 +7891,15 @@ function anHandleFiles(files) {
     const r = new FileReader();
     r.onload = async e => {
       const compressed = await compressImage(e.target.result, 800, 0.7);
-      _anScreenshots.push({id:genId(),dataUrl:compressed});
+      const id = genId();
+      const analysisId = document.getElementById('an-id')?.value;
+      const idx = _anScreenshots.length;
+      let dataUrl = compressed;
+      if (_gapiLoaded && _gapiAccessToken && analysisId) {
+        const driveUrl = await autoUploadScreenToDrive(compressed, analysisId, idx);
+        if (driveUrl) { dataUrl = driveUrl; _driveScreenCache[driveUrl.replace('drive://','')] = compressed; }
+      }
+      _anScreenshots.push({id, dataUrl});
       renderAnScreenshots();
       anAutosave();
     };
@@ -8171,6 +8273,8 @@ function anAutosave() {
       tf:     getAnTfValue(),
       levels: _ag('an-levels')||'',
       date:   _ag('an-date')||'',
+      // [v1.7] Tylko referencje drive://, nie base64
+      screenshots: (_anScreenshots||[]).map(s=>s.dataUrl).filter(d=>isDriveScreenshot(d)),
       savedAt:Date.now(),
     };
     saveDB(db);
@@ -10298,24 +10402,72 @@ function openEditStrategy(id) {
   strDesc.value  = s.desc || '';
   strTitle.textContent = 'Edytuj strategię';
   list.innerHTML = '';
-  (s.points||[]).forEach(p => addStrategyPoint(p));
+  (s.points||[]).forEach((p, i) => addStrategyPoint(p, s.pointScreenshots?.[i] || ''));
   openModal('strategy-editor-modal');
 }
 
 
-function addStrategyPoint(text) {
+function addStrategyPoint(text, screenshot) {
   const list = document.getElementById('strategy-points-list');
   if (!list) return;
   const idx = list.children.length;
   const div = document.createElement('div');
-  div.style.cssText = 'display:flex;gap:6px;align-items:center';
+  div.style.cssText = 'display:flex;gap:6px;align-items:center;margin-bottom:4px';
+  const scrId = 'spt_' + Date.now() + '_' + idx;
+  const hasSrc = screenshot && screenshot.length > 5;
+  const thumbSrc = hasSrc && isDriveScreenshot(screenshot)
+    ? (_driveScreenCache[screenshot.replace('drive://','')] || '')
+    : (screenshot || '');
   div.innerHTML = `
     <span style="color:var(--text3);font-size:12px;min-width:18px">${idx+1}.</span>
     <input class="form-input-modal" type="text" value="${text||''}" placeholder="Opisz warunek strategii..."
       style="flex:1;font-size:13px;padding:8px 10px" onkeydown="if(event.key==='Enter'){event.preventDefault();addStrategyPoint('');}">
+    <label title="Dodaj screenshot wzorcowy" style="cursor:pointer;display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:6px;background:var(--bg3);border:1px solid var(--border)">
+      ${hasSrc
+        ? `<img src="${thumbSrc}" id="${scrId}_img" style="width:30px;height:30px;object-fit:cover;border-radius:5px" onclick="event.preventDefault();openLightboxSmart('${screenshot}','${scrId}')">`
+        : `<span style="font-size:14px">📷</span>`}
+      <input type="file" accept="image/*" style="display:none" onchange="addPointScreenshot(this,'${scrId}',event)">
+    </label>
+    <input type="hidden" id="${scrId}_data" value="${hasSrc ? screenshot : ''}">
     <button onclick="this.parentElement.remove();renumberPoints()" class="icon-btn" style="color:var(--red);font-size:14px">✕</button>`;
   list.appendChild(div);
-  if (!text) setTimeout(() => div.querySelector('input')?.focus(), 50);
+  // Jeśli screenshot jest drive:// załaduj podgląd
+  if (hasSrc && isDriveScreenshot(screenshot)) {
+    setTimeout(() => {
+      const el = document.getElementById(scrId + '_img');
+      if (el) loadDriveScreenshot(screenshot.replace('drive://',''), el);
+    }, 100);
+  }
+  if (!text) setTimeout(() => div.querySelector('input[type=text]')?.focus(), 50);
+}
+
+async function addPointScreenshot(input, scrId, event) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async e => {
+    const compressed = await compressImage(e.target.result, 800, 0.7);
+    let dataUrl = compressed;
+    // Auto-upload na Drive
+    if (_gapiLoaded && _gapiAccessToken) {
+      const driveUrl = await autoUploadScreenToDrive(compressed, 'strat_' + scrId, 0);
+      if (driveUrl) {
+        dataUrl = driveUrl;
+        _driveScreenCache[driveUrl.replace('drive://','')] = compressed;
+      }
+    }
+    // Zaktualizuj hidden input
+    const hidden = document.getElementById(scrId + '_data');
+    if (hidden) hidden.value = dataUrl;
+    // Pokaż miniaturę
+    const label = input.closest('label');
+    if (label) {
+      label.innerHTML = `<img src="${compressed}" id="${scrId}_img" style="width:30px;height:30px;object-fit:cover;border-radius:5px" onclick="event.preventDefault();openLightbox('${compressed}')">
+        <input type="file" accept="image/*" style="display:none" onchange="addPointScreenshot(this,'${scrId}',event)">`;
+    }
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
 }
 
 
@@ -10323,15 +10475,16 @@ function saveStrategy() {
   const name = document.getElementById('str-name')?.value?.trim();
   if (!name) return toast('Podaj nazwę strategii', 'error');
   const desc = document.getElementById('str-desc')?.value?.trim();
-  const points = Array.from(document.getElementById('strategy-points-list')?.querySelectorAll('input')||[])
-    .map(i => i.value.trim()).filter(Boolean);
+  const pointRows = Array.from(document.getElementById('strategy-points-list')?.children || []);
+  const points = pointRows.map(row => row.querySelector('input[type=text]')?.value?.trim()).filter(Boolean);
+  const pointScreenshots = pointRows.map(row => row.querySelector('input[type=hidden]')?.value || '');
   const id = document.getElementById('str-id')?.value;
   const strategies = getStrategies();
   if (id) {
     const idx = strategies.findIndex(s => s.id === id);
-    if (idx >= 0) strategies[idx] = { ...strategies[idx], name, desc, points };
+    if (idx >= 0) strategies[idx] = { ...strategies[idx], name, desc, points, pointScreenshots };
   } else {
-    strategies.push({ id: genId(), name, desc, points, createdAt: Date.now() });
+    strategies.push({ id: genId(), name, desc, points, pointScreenshots, createdAt: Date.now() });
   }
   saveStrategies(strategies);
   closeModal('strategy-editor-modal');
@@ -10364,15 +10517,32 @@ function openStrategyChecklist(strategyId, callback) {
   if (!nameEl || !container) { toast('Błąd: nie można otworzyć checklisty', 'error'); return; }
 
   nameEl.textContent = '🎯 ' + s.name;
-  container.innerHTML = (s.points||[]).map((p, i) => `
+  container.innerHTML = (s.points||[]).map((p, i) => {
+    const screenshot = s.pointScreenshots?.[i] || '';
+    const hasSrc = screenshot && screenshot.length > 5;
+    const isD = hasSrc && isDriveScreenshot(screenshot);
+    const thumbSrc = isD ? '' : screenshot;
+    const imgId = isD ? 'chk_img_' + i : '';
+    const imgHtml = hasSrc ? `
+      <div onclick="event.stopPropagation()" style="flex-shrink:0">
+        <img ${imgId ? `id="${imgId}"` : ''} src="${thumbSrc}" 
+          style="width:36px;height:28px;object-fit:cover;border-radius:4px;cursor:pointer;border:1px solid var(--border)"
+          onclick="openLightboxSmart('${screenshot}','chk_${i}')">
+      </div>` : '';
+    if (isD) setTimeout(() => {
+      const el = document.getElementById(imgId);
+      if (el) loadDriveScreenshot(screenshot.replace('drive://',''), el);
+    }, 150);
+    return `
     <div onclick="toggleChecklistPoint(this)" style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:8px;cursor:pointer;border:1px solid var(--border);background:var(--bg3);transition:all .15s"
       onmouseover="this.style.borderColor='var(--accent)'" onmouseout="if(!this.classList.contains('checked'))this.style.borderColor='var(--border)'">
       <div style="width:20px;height:20px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s" class="check-circle">
         <span style="display:none;color:var(--accent);font-size:12px">✓</span>
       </div>
-      <span style="font-size:13px;color:var(--text)">${i+1}. ${p}</span>
-    </div>
-  `).join('');
+      <span style="font-size:13px;color:var(--text);flex:1">${i+1}. ${p}</span>
+      ${imgHtml}
+    </div>`;
+  }).join('');
 
   _checklistCallback = callback;
   updateChecklistProgress();
@@ -10783,8 +10953,17 @@ function addSetupScreenshots(prefix, input) {
   const files = Array.from(input.files);
   files.forEach(file => {
     const reader = new FileReader();
-    reader.onload = e => {
-      _setupSessionScreenshots[prefix].push({ id: genId(), dataUrl: e.target.result });
+    reader.onload = async e => {
+      const compressed = await compressImage(e.target.result, 800, 0.7);
+      const id = genId();
+      const setupId = document.getElementById('setup-id')?.value || prefix;
+      const idx = _setupSessionScreenshots[prefix].length;
+      let dataUrl = compressed;
+      if (_gapiLoaded && _gapiAccessToken && setupId) {
+        const driveUrl = await autoUploadScreenToDrive(compressed, 'setup_' + setupId, idx);
+        if (driveUrl) { dataUrl = driveUrl; _driveScreenCache[driveUrl.replace('drive://','')] = compressed; }
+      }
+      _setupSessionScreenshots[prefix].push({ id, dataUrl });
       renderSessionScreenshots(prefix);
     };
     reader.readAsDataURL(file);
@@ -10803,9 +10982,16 @@ function renderSessionScreenshots(prefix) {
     const div = document.createElement('div');
     div.className = 'session-screenshot';
     div.style.cssText = 'position:relative;display:inline-block';
+    const isD = isDriveScreenshot(s.dataUrl);
+    const src = isD ? (_driveScreenCache[s.dataUrl.replace('drive://','')] || '') : s.dataUrl;
+    const imgId = isD ? 'setup_img_' + s.id : '';
+    if (isD) setTimeout(() => {
+      const el2 = document.getElementById(imgId);
+      if (el2) loadDriveScreenshot(s.dataUrl.replace('drive://',''), el2);
+    }, 100);
     div.innerHTML = `
-      <img src="${s.dataUrl}" style="width:70px;height:50px;object-fit:cover;border-radius:5px;cursor:pointer;border:2px solid var(--accent)"
-        onclick="openLightbox('${s.dataUrl}')" title="Twój screenshot">
+      <img ${imgId ? `id="${imgId}"` : ''} src="${src}" style="width:70px;height:50px;object-fit:cover;border-radius:5px;cursor:pointer;border:2px solid var(--accent)"
+        onclick="openLightboxSmart('${s.dataUrl}','${s.id}')" title="Twój screenshot">
       <button onclick="removeSessionScreenshot('${prefix}','${s.id}')"
         style="position:absolute;top:-5px;right:-5px;background:var(--red);color:white;border:none;border-radius:50%;width:16px;height:16px;font-size:9px;cursor:pointer">✕</button>`;
     el.insertBefore(div, el.querySelector('label'));
