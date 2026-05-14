@@ -7958,11 +7958,31 @@ function anRemoveScreen(id) {
 function renderAnScreenshots() {
   const el = document.getElementById('an-screens-preview');
   if (!el) return;
-  el.innerHTML = _anScreenshots.map(s=>`
-    <div class="screenshot-thumb" onclick="openLightbox('${s.dataUrl}')">
-      <img src="${s.dataUrl}">
+  el.innerHTML = _anScreenshots.map(s => {
+    const isD = isDriveScreenshot(s.dataUrl);
+    const driveId = isD ? s.dataUrl.replace('drive://','').replace('gdrive://','') : '';
+    const cached = isD ? (_driveScreenCache[driveId] || '') : '';
+    const imgId = isD ? 'ansc_' + driveId.slice(0,8) + '_' + s.id.slice(0,4) : '';
+    const imgSrc = isD ? (cached || '') : s.dataUrl;
+
+    if (isD && !cached) {
+      setTimeout(() => {
+        const imgEl = document.getElementById(imgId);
+        if (imgEl) loadDriveScreenshot(driveId, imgEl);
+      }, 100);
+    }
+
+    return `<div class="screenshot-thumb" onclick="openLightboxSmart('${s.dataUrl}','${s.id}')">
+      ${isD && !imgSrc
+        ? `<div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:var(--bg3)">
+            <span style="font-size:18px">☁</span>
+            <span style="font-size:9px;color:var(--text3);text-align:center;padding:0 4px">Drive</span>
+           </div>`
+        : `<img ${imgId ? `id="${imgId}"` : ''} src="${imgSrc}" style="width:100%;height:100%;object-fit:cover">`
+      }
       <button class="screenshot-del" onclick="event.stopPropagation();anRemoveScreen('${s.id}')">✕</button>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 // Paste support in analysis modal
