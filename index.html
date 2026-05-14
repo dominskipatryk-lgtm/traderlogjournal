@@ -6951,6 +6951,7 @@ function _initGapiTokenClient(cid) {
   _gapiTokenClient = google.accounts.oauth2.initTokenClient({
     client_id: cid,
     scope: GDRIVE_SCOPES,
+    prompt: 'consent',
     callback: (resp) => {
       if (resp.access_token) {
         _gapiAccessToken = resp.access_token;
@@ -6961,6 +6962,22 @@ function _initGapiTokenClient(cid) {
       }
     }
   });
+}
+
+async function driveRequest(url, options = {}) {
+  if (!_gapiAccessToken) { connectGoogleDrive(); return null; }
+  const resp = await fetch(url, {
+    ...options,
+    headers: { ...options.headers, Authorization: 'Bearer ' + _gapiAccessToken }
+  });
+  if (resp.status === 401 || resp.status === 403) {
+    _gapiAccessToken = null;
+    _gapiLoaded = false;
+    toast('Sesja Google wygasła — połącz ponownie z Drive', 'error');
+    connectGoogleDrive();
+    return null;
+  }
+  return resp;
 }
 
 function connectGoogleDrive() {
@@ -6994,8 +7011,8 @@ async function backupToGoogleDrive() {
     const json = JSON.stringify(db, null, 2);
     const fname = `traderlogjournal-${state.currentUser}-backup.json`;
     // Check if file exists
-    const searchResp = await fetch(`https://www.googleapis.com/drive/v3/files?q=name='${fname}'&spaces=drive`, {
-      headers: { Authorization: 'Bearer ' + _gapiAccessToken }
+    const searchResp = await driveRequest(`https://www.googleapis.com/drive/v3/files?q=name='${fname}'&spaces=drive`, {
+      headers: {}
     });
     const searchData = await searchResp.json();
     const fileId = searchData.files?.[0]?.id;
@@ -7020,13 +7037,13 @@ async function restoreFromGoogleDrive() {
   try {
     const fname = `traderlogjournal-${state.currentUser}-backup.json`;
     const token = _gapiAccessToken;
-    const searchResp = await fetch(`https://www.googleapis.com/drive/v3/files?q=name='${fname}'&spaces=drive`, {
+    const searchResp = await driveRequest(`https://www.googleapis.com/drive/v3/files?q=name='${fname}'&spaces=drive`, {
       headers: { Authorization: 'Bearer ' + token }
     });
     const searchData = await searchResp.json();
     const fileId = searchData.files?.[0]?.id;
     if (!fileId) { toast('Nie znaleziono backupu na Drive', 'error'); return; }
-    const fileResp = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+    const fileResp = await driveRequest(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
       headers: { Authorization: 'Bearer ' + token }
     });
     const data = await fileResp.json();
