@@ -9500,6 +9500,36 @@ function initMT4Listener() {
     .subscribe();
 
   console.log('✓ MT4 listener aktywny');
+
+  // Przetwórz zaległe sygnały — mogły dotrzeć gdy strona była odświeżana
+  setTimeout(() => processPendingMT4Signals(u.supabaseId), 2000);
+}
+
+// Pobiera i przetwarza wszystkie nieprzetworzone sygnały z Supabase
+async function processPendingMT4Signals(userId) {
+  if (!_sb || !userId) return;
+  try {
+    const { data: { session } } = await _sb.auth.getSession();
+    if (!session) return;
+    const res = await fetch(
+      _SB_URL + '/rest/v1/mt4_signals?user_id=eq.' + userId + '&processed=eq.false&order=created_at.asc&limit=50',
+      { headers: { 'apikey': _SB_ANON, 'Authorization': 'Bearer ' + session.access_token } }
+    );
+    if (!res.ok) return;
+    const signals = await res.json();
+    if (!signals?.length) return;
+    console.log('TLJ: Przetwarzam ' + signals.length + ' zaległych sygnałów MT4');
+    for (const signal of signals) {
+      await handleMT4Signal(signal);
+      // Mała przerwa między sygnałami
+      await new Promise(r => setTimeout(r, 100));
+    }
+    if (signals.length > 0) {
+      toast('MT4: Odtworzono ' + signals.length + ' zaległych sygnałów ✓', 'success');
+      renderTrades();
+      renderDashboard();
+    }
+  } catch(e) { console.warn('processPendingMT4Signals error:', e); }
 }
 
 function stopMT4Listener() {
