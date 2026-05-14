@@ -1098,6 +1098,18 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 
         <!-- MT4 Integration -->
         <div class="settings-section">
+          <div class="settings-section-title">💾 Zajętość pamięci</div>
+          <div id="storage-usage-bar" style="margin-bottom:12px"></div>
+          <button class="btn-sm" onclick="cleanOldScreenshots()" style="font-size:11px;margin-right:8px">
+            🗜 Usuń screenshoty starsze niż 30 dni
+          </button>
+          <button class="btn-sm btn-accent" onclick="backupToGoogleDrive&&backupToGoogleDrive()" style="font-size:11px">
+            ☁ Backup na Google Drive
+          </button>
+        </div>
+
+        <!-- MT4 Integration -->
+        <div class="settings-section">
           <div class="settings-section-title">🔌 Integracja z MT4</div>
           <p style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.6">
             Skopiuj swój <strong>User ID</strong> i wklej go w ustawieniach EA w MetaTrader 4.
@@ -4172,7 +4184,78 @@ function saveDB(db) {
   if (IS_ELECTRON) {
     window.electronAPI.writeDB(db).catch(()=>{});
   } else {
-    localStorage.setItem('traderlog_db', JSON.stringify(db));
+    try {
+      localStorage.setItem('traderlog_db', JSON.stringify(db));
+    } catch(e) {
+      if (e.name === 'QuotaExceededError') {
+        // Spróbuj zwolnić miejsce — usuń screenshoty z najstarszych zamkniętych transakcji
+        showStorageWarning(db);
+      }
+    }
+  }
+}
+
+function getStorageSizeMB() {
+  try {
+    const data = localStorage.getItem('traderlog_db') || '';
+    return (data.length * 2 / 1024 / 1024).toFixed(2);
+  } catch { return '?'; }
+}
+
+function showStorageWarning(db) {
+  const sizeMB = getStorageSizeMB();
+  const div = document.createElement('div');
+  div.style.cssText = 'position:fixed;top:70px;left:50%;transform:translateX(-50%);background:var(--bg2);border:2px solid var(--red);border-radius:12px;padding:20px 24px;z-index:9999;max-width:440px;box-shadow:0 8px 32px rgba(0,0,0,.6);text-align:center';
+  div.innerHTML = `
+    <div style="font-size:22px;margin-bottom:8px">⚠️</div>
+    <div style="font-weight:700;font-size:15px;margin-bottom:8px;color:var(--red)">Brak miejsca w przeglądarce</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.6">
+      Baza danych zajmuje <strong>${sizeMB} MB</strong> (limit ~5 MB).<br>
+      Screenshoty transakcji zajmują najwięcej miejsca.<br>
+      <strong>Zrób backup na Google Drive</strong> przed czyszczeniem.
+    </div>
+    <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+      <button class="btn-sm" onclick="cleanOldScreenshots();this.closest('div[style*=fixed]').remove()" style="background:var(--amber);color:#000;border:none">
+        🗜 Usuń stare screenshoty
+      </button>
+      <button class="btn-sm btn-accent" onclick="backupToGoogleDrive&&backupToGoogleDrive();this.closest('div[style*=fixed]').remove()">
+        ☁ Backup na Drive
+      </button>
+      <button class="btn-sm" onclick="this.closest('div[style*=fixed]').remove()">
+        Zamknij
+      </button>
+    </div>`;
+  document.body.appendChild(div);
+}
+
+function cleanOldScreenshots() {
+  const db = getDB();
+  let freed = 0;
+  // Usuń screenshoty z zamkniętych transakcji starszych niż 30 dni
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 30);
+
+  Object.keys(db.trades || {}).forEach(key => {
+    db.trades[key] = db.trades[key].map(t => {
+      if (t.status === 'closed' && t.date && new Date(t.date) < cutoff && t.screenshots?.length) {
+        freed += t.screenshots.length;
+        return { ...t, screenshots: [] };
+      }
+      return t;
+    });
+  });
+
+  if (freed > 0) {
+    try {
+      localStorage.setItem('traderlog_db', JSON.stringify(db));
+      _dbCache = db;
+      toast(`Zwolniono miejsce — usunięto ${freed} screenhotów sprzed 30 dni`, 'success');
+      renderTrades();
+    } catch(e) {
+      toast('Nadal brak miejsca — zrób backup i wyczyść wszystkie screenshoty', 'error');
+    }
+  } else {
+    toast('Brak starych screenhotów do usunięcia', 'success');
   }
 }
 
@@ -5424,8 +5507,23 @@ function renderSettings() {
   document.getElementById('sett-login').value = state.currentUser;
   document.getElementById('sett-name').value  = u.name  || '';
   document.getElementById('sett-email').value = u.email || '';
-  // [v1.7] Wyświetl User ID do kopiowania dla EA
-  const userIdEl = document.getElementById('sett-user-id');
+  // [v1.7] Pokaż zajętość pamięci
+  const storageBar = document.getElementById('storage-usage-bar');
+  if (storageBar) {
+    const sizeMB = parseFloat(getStorageSizeMB());
+    const pct = Math.min(100, Math.round(sizeMB / 5 * 100));
+    const color = pct > 80 ? 'var(--red)' : pct > 60 ? 'var(--amber)' : 'var(--accent)';
+    storageBar.innerHTML = `
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px">
+        <span style="color:var(--text2)">Użyte: <strong>${sizeMB} MB</strong> z ~5 MB</span>
+        <span style="color:${color};font-weight:700">${pct}%</span>
+      </div>
+      <div style="height:8px;background:var(--bg);border-radius:4px;overflow:hidden">
+        <div style="width:${pct}%;height:100%;background:${color};border-radius:4px;transition:width .3s"></div>
+      </div>
+      ${pct > 80 ? '<div style="font-size:11px;color:var(--red);margin-top:6px">⚠️ Pamięć prawie pełna — zrób backup i usuń stare screenshoty</div>' : ''}
+    `;
+  }
   if (userIdEl) userIdEl.value = u.supabaseId || '(zaloguj się przez Supabase aby uzyskać ID)';
   // Show existing recovery code if any
   if (u.recoveryCode) {
@@ -8505,7 +8603,14 @@ function initSupabase() {
       console.warn('Supabase not loaded');
       return false;
     }
-    _sb = sb_lib.createClient(_SB_URL, _SB_ANON);
+    _sb = sb_lib.createClient(_SB_URL, _SB_ANON, {
+      auth: {
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: true,
+        flowType: 'pkce'
+      }
+    });
   }
   _sb.auth.onAuthStateChange(async (event, session) => {
     if (event === 'PASSWORD_RECOVERY') {
