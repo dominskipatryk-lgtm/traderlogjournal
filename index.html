@@ -6909,6 +6909,7 @@ const GDRIVE_CLIENT_ID = '917283832876-tfkevp9mol5k7uqjo8de7mp7ej5dfoap.apps.goo
 const GDRIVE_SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.appdata';
 let _gapiLoaded = false;
 let _gapiTokenClient = null;
+let _gapiAccessToken = null; // [v1.7] przechowuje token bez potrzeby gapi.client
 
 function initGoogleDrive() {
   loadGAPI();
@@ -6952,6 +6953,7 @@ function _initGapiTokenClient(cid) {
     scope: GDRIVE_SCOPES,
     callback: (resp) => {
       if (resp.access_token) {
+        _gapiAccessToken = resp.access_token;
         _gapiLoaded = true;
         updateGDriveStatus('✓ Połączono z Google Drive', 'ok');
         toast('Połączono z Google Drive ✓', 'success');
@@ -6986,7 +6988,6 @@ function connectGoogleDrive() {
 
 async function backupToGoogleDrive() {
   if (!_gapiLoaded || !_gapiTokenClient) { connectGoogleDrive(); return; }
-  if (typeof gapi === 'undefined' || !gapi.client) { toast('Biblioteka Google nie jest załadowana — odśwież stronę', 'error'); return; }
   updateGDriveStatus('Zapisuję...', '');
   try {
     const db = getDB();
@@ -6994,7 +6995,7 @@ async function backupToGoogleDrive() {
     const fname = `traderlogjournal-${state.currentUser}-backup.json`;
     // Check if file exists
     const searchResp = await fetch(`https://www.googleapis.com/drive/v3/files?q=name='${fname}'&spaces=drive`, {
-      headers: { Authorization: 'Bearer ' + gapi.client.getToken().access_token }
+      headers: { Authorization: 'Bearer ' + _gapiAccessToken }
     });
     const searchData = await searchResp.json();
     const fileId = searchData.files?.[0]?.id;
@@ -7004,7 +7005,7 @@ async function backupToGoogleDrive() {
     const method = fileId ? 'PATCH' : 'POST';
     await fetch(url, {
       method,
-      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + gapi.client.getToken().access_token },
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + _gapiAccessToken },
       body: json
     });
     const s = getBackupSettings(); s.lastBackup = Date.now(); saveBackupSettings(s);
@@ -7015,11 +7016,10 @@ async function backupToGoogleDrive() {
 
 async function restoreFromGoogleDrive() {
   if (!_gapiLoaded) { connectGoogleDrive(); return; }
-  if (typeof gapi === 'undefined' || !gapi.client) { toast('Biblioteka Google nie jest załadowana — odśwież stronę', 'error'); return; }
   if (!confirm('Przywrócić dane z Google Drive? Obecne dane zostaną zastąpione!')) return;
   try {
     const fname = `traderlogjournal-${state.currentUser}-backup.json`;
-    const token = gapi.client.getToken().access_token;
+    const token = _gapiAccessToken;
     const searchResp = await fetch(`https://www.googleapis.com/drive/v3/files?q=name='${fname}'&spaces=drive`, {
       headers: { Authorization: 'Bearer ' + token }
     });
@@ -7053,8 +7053,8 @@ async function backupScreenshotsToGoogleDrive() {
     toast('Biblioteka Google nie jest załadowana — odśwież stronę', 'error');
     return;
   }
-  const token = gapi.client.getToken()?.access_token;
-  if (!token) { toast('Brak tokenu Google — połącz ponownie z Drive', 'error'); connectGoogleDrive(); return; }
+  const token = _gapiAccessToken;
+  if (!token) { toast('Brak tokenu — kliknij Połącz z Google Drive', 'error'); connectGoogleDrive(); return; }
 
   toast('⏳ Zapisuję screenshoty na Drive...', 'success');
   const db = getDB();
@@ -7163,8 +7163,8 @@ async function restoreScreenshotsFromGoogleDrive() {
     toast('Biblioteka Google nie jest załadowana — odśwież stronę', 'error');
     return;
   }
-  const token = gapi.client.getToken()?.access_token;
-  if (!token) { toast('Brak tokenu Google — połącz ponownie z Drive', 'error'); connectGoogleDrive(); return; }
+  const token = _gapiAccessToken;
+  if (!token) { toast('Brak tokenu — kliknij Połącz z Google Drive', 'error'); connectGoogleDrive(); return; }
   if (!confirm('Przywrócić screenshoty z Google Drive? Uzupełni brakujące screenshoty w transakcjach.')) return;
 
   toast('⏳ Przywracam screenshoty z Drive...', 'success');
