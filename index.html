@@ -780,7 +780,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 <div id="app">
   <div class="topbar">
     <div class="topbar-logo">
-      <svg width="230" height="36" viewBox="0 0 230 36" xmlns="http://www.w3.org/2000/svg" style="display:block">
+      <svg width="200" height="36" viewBox="0 0 200 36" xmlns="http://www.w3.org/2000/svg" style="display:block">
         <circle cx="18" cy="18" r="16" fill="none" stroke="#00d4a1" stroke-width="1.5"/>
         <line x1="9" y1="9" x2="9" y2="12" stroke="#ef4444" stroke-width="1.5" stroke-linecap="round"/>
         <rect x="6" y="12" width="6" height="9" rx="1" fill="#ef4444"/>
@@ -791,8 +791,8 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
         <line x1="27" y1="8" x2="27" y2="11" stroke="#00d4a1" stroke-width="1.5" stroke-linecap="round"/>
         <rect x="24" y="11" width="6" height="12" rx="1" fill="#00d4a1"/>
         <line x1="27" y1="23" x2="27" y2="26" stroke="#00d4a1" stroke-width="1.5" stroke-linecap="round"/>
-        <text x="46" y="22" font-family="var(--font-head,'Segoe UI',sans-serif)" font-weight="800" font-size="17" fill="#00d4a1" letter-spacing="-0.3">TraderLog</text>
-        <text x="142" y="22" font-family="var(--font-head,'Segoe UI',sans-serif)" font-weight="300" font-size="17" fill="var(--text3,#64748b)" letter-spacing="-0.3">Journal</text>
+        <text x="46" y="14" font-family="var(--font-head,'Segoe UI',sans-serif)" font-weight="800" font-size="14" fill="#00d4a1" letter-spacing="-0.3">TraderLog</text>
+        <text x="46" y="28" font-family="var(--font-head,'Segoe UI',sans-serif)" font-weight="300" font-size="11" fill="var(--text3,#64748b)" letter-spacing="1">Journal</text>
       </svg>
     </div>
     <nav class="topbar-nav">
@@ -1133,6 +1133,9 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
           <div id="storage-usage-bar" style="margin-bottom:12px"></div>
           <button class="btn-sm" onclick="cleanOldScreenshots()" style="font-size:11px;margin-right:8px">
             🗜 Usuń screenshoty starsze niż 30 dni
+          </button>
+          <button class="btn-sm" onclick="if(confirm('Usunąć WSZYSTKIE screenshoty?\\nDane transakcji pozostaną.'))cleanAllScreenshots()" style="font-size:11px;margin-right:8px;color:var(--red);border-color:var(--red)">
+            🗑 Usuń WSZYSTKIE screenshoty
           </button>
           <button class="btn-sm btn-accent" onclick="backupToGoogleDrive&&backupToGoogleDrive()" style="font-size:11px">
             ☁ Backup na Google Drive
@@ -3311,11 +3314,19 @@ function renderDetailModal() {
     <div class="dv-card">
       <div class="dv-card-head">📷 Screenshoty (${_detailScreenshots.length})</div>
       <div class="dv-screenshots" id="dv-screens">
-        ${_detailScreenshots.map(s => `
-          <div class="dv-screen-thumb" onclick="${_detailEditing ? '' : `openLightbox('${s.dataUrl}')`}">
-            <img src="${s.dataUrl}" onclick="${!_detailEditing ? `openLightbox('${s.dataUrl}')` : 'void(0)'}">
+        ${_detailScreenshots.map(s => {
+          const isD = isDriveScreenshot(s.dataUrl);
+          const driveId = isD ? s.dataUrl.replace('drive://','').replace('gdrive://','') : '';
+          const imgId = isD ? 'dv_'+driveId.slice(0,8)+'_'+s.id.slice(0,4) : '';
+          const imgHtml = isD
+            ? `<img id="${imgId}" src="" style="width:100%;height:100%;object-fit:cover">`
+            : `<img src="${s.dataUrl}" style="width:100%;height:100%;object-fit:cover">`;
+          if (isD) setTimeout(() => { const el = document.getElementById(imgId); if(el) loadDriveScreenshot(driveId, el); }, 150);
+          return `<div class="dv-screen-thumb" onclick="${!isD ? `openLightbox('${s.dataUrl}')` : `openLightboxSmart('${s.dataUrl}','${s.id}')`}">
+            ${imgHtml}
             <button class="dv-screen-del" onclick="event.stopPropagation();dvRemoveScreen('${s.id}')">✕</button>
-          </div>`).join('')}
+          </div>`;
+        }).join('')}
       </div>
       <div class="dv-upload-btn" onclick="document.getElementById('dv-file-input').click()">
         📎 Dodaj screenshot (klik lub Ctrl+V)
@@ -3521,13 +3532,77 @@ function dragOver(e) { e.preventDefault(); document.getElementById('upload-zone'
 function dragLeave(e) { document.getElementById('upload-zone').classList.remove('drag'); }
 function dropFiles(e) { e.preventDefault(); document.getElementById('upload-zone').classList.remove('drag'); handleFiles(e.dataTransfer.files); }
 function removeScreenshot(id) { state.tempScreenshots = state.tempScreenshots.filter(s => s.id !== id); renderScreenshotPreviews(); }
+// ═══ DRIVE SCREENSHOT LAZY LOADING ═══
+// Cache screenhotów pobranych z Drive — tylko w pamięci RAM, nie w localStorage
+const _driveScreenCache = {};
+
+// Sprawdź czy screenshot jest URL do Drive (nie base64)
+function isDriveScreenshot(url) {
+  return url && (url.startsWith('drive://') || url.startsWith('gdrive://'));
+}
+
+// Pobierz screenshot z Drive i wyświetl w img
+async function loadDriveScreenshot(driveId, imgEl) {
+  if (!driveId) return;
+  // Sprawdź cache RAM
+  if (_driveScreenCache[driveId]) {
+    imgEl.src = _driveScreenCache[driveId];
+    return;
+  }
+  imgEl.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80"><rect width="120" height="80" fill="%23161b22"/><text x="60" y="45" font-size="11" fill="%2364748b" text-anchor="middle">⏳ Ładowanie...</text></svg>';
+  if (!_gapiAccessToken) { imgEl.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80"><rect width="120" height="80" fill="%23161b22"/><text x="60" y="45" font-size="10" fill="%23ef4444" text-anchor="middle">Brak Drive</text></svg>'; return; }
+  try {
+    const resp = await driveRequest(`https://www.googleapis.com/drive/v3/files/${driveId}?alt=media&spaces=appDataFolder`);
+    if (!resp) return;
+    const blob = await resp.blob();
+    const url = URL.createObjectURL(blob);
+    _driveScreenCache[driveId] = url;
+    imgEl.src = url;
+  } catch(e) {
+    imgEl.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80"><rect width="120" height="80" fill="%23161b22"/><text x="60" y="45" font-size="10" fill="%23ef4444" text-anchor="middle">Błąd Drive</text></svg>';
+  }
+}
+
+// Renderuj screenshot — obsługuje zarówno base64 jak i Drive ID
+function renderScreenImg(url, onclick = '') {
+  if (isDriveScreenshot(url)) {
+    const driveId = url.replace('drive://', '').replace('gdrive://', '');
+    const id = 'driveimg_' + driveId.slice(0, 8);
+    setTimeout(() => {
+      const el = document.getElementById(id);
+      if (el) loadDriveScreenshot(driveId, el);
+    }, 100);
+    return `<img id="${id}" src="" style="width:100%;height:100%;object-fit:cover" ${onclick ? `onclick="${onclick}"` : ''}>`;
+  }
+  return `<img src="${url}" style="width:100%;height:100%;object-fit:cover" ${onclick ? `onclick="${onclick}"` : ''}>`;
+}
+
 function renderScreenshotPreviews() {
   const el = document.getElementById('screenshots-preview');
   el.innerHTML = state.tempScreenshots.map(s => `
-    <div class="screenshot-thumb" onclick="openLightbox('${s.dataUrl}')">
-      <img src="${s.dataUrl}">
+    <div class="screenshot-thumb" onclick="openLightboxSmart('${s.dataUrl || s.id}', '${s.id}')">
+      ${renderScreenImg(s.dataUrl, '')}
       <button class="screenshot-del" onclick="event.stopPropagation();removeScreenshot('${s.id}')">✕</button>
     </div>`).join('');
+}
+
+async function openLightboxSmart(urlOrId, id) {
+  if (isDriveScreenshot(urlOrId)) {
+    const driveId = urlOrId.replace('drive://', '').replace('gdrive://', '');
+    if (_driveScreenCache[driveId]) {
+      openLightbox(_driveScreenCache[driveId]);
+    } else {
+      toast('⏳ Pobieranie z Drive...', 'success');
+      const resp = await driveRequest(`https://www.googleapis.com/drive/v3/files/${driveId}?alt=media&spaces=appDataFolder`);
+      if (!resp) return;
+      const blob = await resp.blob();
+      const url = URL.createObjectURL(blob);
+      _driveScreenCache[driveId] = url;
+      openLightbox(url);
+    }
+  } else {
+    openLightbox(urlOrId);
+  }
 }
 
 // Paste support
@@ -4262,13 +4337,12 @@ function showStorageWarning(db) {
 function cleanOldScreenshots() {
   const db = getDB();
   let freed = 0;
-  // Usuń screenshoty z zamkniętych transakcji starszych niż 30 dni
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - 30);
 
   Object.keys(db.trades || {}).forEach(key => {
-    db.trades[key] = db.trades[key].map(t => {
-      if (t.status === 'closed' && t.date && new Date(t.date) < cutoff && t.screenshots?.length) {
+    db.trades[key] = (db.trades[key] || []).map(t => {
+      if (t.screenshots?.length && t.date && new Date(t.date) < cutoff) {
         freed += t.screenshots.length;
         return { ...t, screenshots: [] };
       }
@@ -4280,13 +4354,45 @@ function cleanOldScreenshots() {
     try {
       localStorage.setItem('traderlog_db', JSON.stringify(db));
       _dbCache = db;
-      toast(`Zwolniono miejsce — usunięto ${freed} screenhotów sprzed 30 dni`, 'success');
       renderTrades();
+      toast('Usunięto ' + freed + ' screenhotów (starsze niż 30 dni) ✓', 'success');
+      renderSettings();
     } catch(e) {
-      toast('Nadal brak miejsca — zrób backup i wyczyść wszystkie screenshoty', 'error');
+      cleanAllScreenshots();
     }
   } else {
-    toast('Brak starych screenhotów do usunięcia', 'success');
+    if (confirm('Brak screenhotów starszych niż 30 dni.\n\nCzy usunąć WSZYSTKIE screenshoty?\n(Dane transakcji pozostaną)')) {
+      cleanAllScreenshots();
+    }
+  }
+}
+
+function cleanAllScreenshots() {
+  const db = getDB();
+  let freed = 0;
+  Object.keys(db.trades || {}).forEach(key => {
+    db.trades[key] = (db.trades[key] || []).map(t => {
+      if (t.screenshots?.length) { freed += t.screenshots.length; return { ...t, screenshots: [] }; }
+      return t;
+    });
+  });
+  Object.keys(db).forEach(key => {
+    if (key.startsWith('analyses_') && Array.isArray(db[key])) {
+      db[key] = db[key].map(a => {
+        if (a.screenshots?.length) { freed += a.screenshots.length; return { ...a, screenshots: [] }; }
+        return a;
+      });
+    }
+  });
+  try {
+    localStorage.setItem('traderlog_db', JSON.stringify(db));
+    _dbCache = db;
+    renderTrades();
+    const newSize = getStorageSizeMB();
+    toast('Usunięto ' + freed + ' screenhotów. Pamięć: ' + newSize + ' MB ✓', 'success');
+    setTimeout(() => renderSettings(), 500);
+  } catch(e) {
+    toast('Błąd: ' + e.message, 'error');
   }
 }
 
@@ -7140,6 +7246,19 @@ async function backupScreenshotsToGoogleDrive() {
       const uploadData = await uploadResp.json();
       if (uploadData.id) {
         existingIndex[fileKey] = uploadData.id;
+        // [v1.7] Zastąp base64 referencją do Drive — zwalnia localStorage
+        if (db.trades) {
+          Object.keys(db.trades).forEach(k => {
+            db.trades[k] = (db.trades[k] || []).map(t => {
+              if (t.id === s.tradeId && t.screenshots?.[s.idx]) {
+                const screens = [...t.screenshots];
+                screens[s.idx] = 'drive://' + uploadData.id;
+                return { ...t, screenshots: screens };
+              }
+              return t;
+            });
+          });
+        }
         saved++;
       }
     }
@@ -7163,6 +7282,13 @@ async function backupScreenshotsToGoogleDrive() {
     }
 
     toast(`✓ Screenshoty zapisane: ${saved} nowych, ${skipped} już było na Drive`, 'success');
+    // Zapisz DB z referencjami drive:// zamiast base64
+    if (saved > 0) {
+      saveDB(db);
+      renderTrades();
+      renderSettings();
+      toast(`Zwolniono ${(saved * 0.3).toFixed(1)} MB w localStorage ✓`, 'success');
+    }
   } catch(e) {
     toast('Błąd backupu screenshotów: ' + e.message, 'error');
     console.warn('Screenshot backup error:', e);
