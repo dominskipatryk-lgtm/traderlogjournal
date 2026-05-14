@@ -1305,10 +1305,22 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
           </div>
         </div>
 
+        <!-- Strefa niebezpieczna — Usuń konto -->
+        <div class="settings-section" style="border-color:#3d1a1a">
+          <div class="settings-section-title" style="color:#ef4444">⚠️ Strefa niebezpieczna</div>
+          <p style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.6">
+            Usunięcie konta jest <strong>nieodwracalne</strong>. Wszystkie Twoje dane —
+            transakcje, analizy, strategie, ustawienia — zostaną trwale usunięte z naszych serwerów.
+            Screenshoty na Twoim Google Drive <strong>nie</strong> zostaną usunięte.
+          </p>
+          <button class="btn-sm" onclick="confirmDeleteAccount()"
+            style="background:#3d1a1a;border:1px solid #5c2b2b;color:#ef4444;font-weight:700">
+            🗑 Usuń moje konto i wszystkie dane
+          </button>
+        </div>
+
       </div>
     </div>
-
-    <!-- ANALYSIS PAGE -->
     <div id="page-analysis" class="page">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
         <div>
@@ -2453,7 +2465,92 @@ function doLogout() {
   document.getElementById('app').style.display = 'none';
 }
 
-// ===== DEMO MODE =====
+// ===== USUŃ KONTO =====
+function confirmDeleteAccount() {
+  // Modal potwierdzenia z wpisaniem loginu
+  const login = state.currentUser;
+  const overlay = document.createElement('div');
+  overlay.id = 'delete-account-modal';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+  overlay.innerHTML = `
+    <div style="background:#0d1117;border:1px solid #5c2b2b;border-radius:12px;padding:28px;max-width:420px;width:100%">
+      <div style="font-size:18px;font-weight:700;color:#ef4444;margin-bottom:12px">⚠️ Usuń konto</div>
+      <p style="font-size:13px;color:#8b949e;line-height:1.6;margin-bottom:16px">
+        Ta operacja jest <strong style="color:#e6edf3">nieodwracalna</strong>. Zostaną usunięte:<br>
+        • Wszystkie transakcje i analizy<br>
+        • Strategie i setupy<br>
+        • Twój profil i dane konta<br><br>
+        Aby potwierdzić, wpisz swój login: <strong style="color:#00d4a1">${login}</strong>
+      </p>
+      <input id="delete-confirm-input" type="text" placeholder="wpisz swój login"
+        style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #5c2b2b;background:#161b22;color:#e6edf3;font-size:14px;margin-bottom:16px;box-sizing:border-box">
+      <div style="display:flex;gap:10px">
+        <button onclick="document.getElementById('delete-account-modal').remove()"
+          style="flex:1;padding:10px;border-radius:8px;border:1px solid #21262d;background:transparent;color:#8b949e;cursor:pointer;font-size:13px">
+          Anuluj
+        </button>
+        <button onclick="executeDeleteAccount()"
+          style="flex:1;padding:10px;border-radius:8px;border:1px solid #5c2b2b;background:#3d1a1a;color:#ef4444;cursor:pointer;font-size:13px;font-weight:700">
+          🗑 Usuń na zawsze
+        </button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  setTimeout(() => document.getElementById('delete-confirm-input')?.focus(), 100);
+}
+
+async function executeDeleteAccount() {
+  const input = document.getElementById('delete-confirm-input')?.value?.trim();
+  if (input !== state.currentUser) {
+    const inp = document.getElementById('delete-confirm-input');
+    if (inp) { inp.style.borderColor = '#ef4444'; inp.placeholder = '❌ Nieprawidłowy login'; inp.value = ''; }
+    return;
+  }
+
+  const btn = document.querySelector('#delete-account-modal button:last-child');
+  if (btn) { btn.textContent = '⏳ Usuwam...'; btn.disabled = true; }
+
+  try {
+    if (!_sb) initSupabase();
+
+    // 1. Pobierz sesję
+    const { data: sessionData } = await _sb.auth.getSession();
+    const userId = sessionData?.session?.user?.id;
+
+    // 2. Usuń dane z Supabase (tabele)
+    if (userId) {
+      const headers = {
+        'apikey': _SB_ANON,
+        'Authorization': 'Bearer ' + (sessionData.session.access_token),
+        'Content-Type': 'application/json'
+      };
+      // Usuń transakcje, analizy, profil
+      await fetch(`https://ygrkcynyduuflzvbkkvo.supabase.co/rest/v1/trades?user_id=eq.${userId}`, { method: 'DELETE', headers });
+      await fetch(`https://ygrkcynyduuflzvbkkvo.supabase.co/rest/v1/analyses?user_id=eq.${userId}`, { method: 'DELETE', headers });
+      await fetch(`https://ygrkcynyduuflzvbkkvo.supabase.co/rest/v1/mt4_signals?user_id=eq.${userId}`, { method: 'DELETE', headers });
+      await fetch(`https://ygrkcynyduuflzvbkkvo.supabase.co/rest/v1/profiles?id=eq.${userId}`, { method: 'DELETE', headers });
+      // 3. Usuń konto Auth
+      await _sb.auth.signOut();
+    }
+
+    // 4. Wyczyść localStorage
+    Object.keys(localStorage).forEach(key => {
+      if (key.includes('traderlog') || key.includes('tlj_')) localStorage.removeItem(key);
+    });
+    _dbCache = {};
+
+    // 5. Zamknij modal i pokaż komunikat
+    document.getElementById('delete-account-modal')?.remove();
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('auth-screen').style.display = 'flex';
+    showAuthSuccess('✓ Konto zostało trwale usunięte. Dziękujemy za korzystanie z TraderLogJournal.');
+
+  } catch(e) {
+    toast('Błąd podczas usuwania konta: ' + e.message, 'error');
+    const btn2 = document.querySelector('#delete-account-modal button:last-child');
+    if (btn2) { btn2.textContent = '🗑 Usuń na zawsze'; btn2.disabled = false; }
+  }
+}
 function startDemoMode() {
   // Demo DB — tylko fikcyjne dane, zero dostępu do localStorage
   const demoDb = {
@@ -4825,16 +4922,19 @@ function adminResetPass(login) {
 }
 
 async function adminDeleteUser(userId, login) {
+  if (!isAdmin()) return toast('Brak uprawnień', 'error');
   if (!confirm('Usunąć użytkownika ' + login + '? Tej operacji nie można cofnąć.')) return;
   try {
-    await fetch('https://ygrkcynyduuflzvbkkvo.supabase.co/rest/v1/profiles?id=eq.' + userId, {
-      method: 'DELETE',
-      headers: {
-        'apikey': _SB_ANON,
-        'Authorization': 'Bearer ' + _SB_ANON
-      }
-    });
-    toast('Użytkownik usunięty', 'success');
+    const { data: { session } } = await _sb.auth.getSession();
+    const token = session?.access_token;
+    if (!token) return toast('Brak aktywnej sesji admina', 'error');
+    const headers = { 'apikey': _SB_ANON, 'Authorization': 'Bearer ' + token };
+    // Usuń dane użytkownika
+    await fetch(_SB_URL + '/rest/v1/trades?user_id=eq.' + userId, { method: 'DELETE', headers });
+    await fetch(_SB_URL + '/rest/v1/analyses?user_id=eq.' + userId, { method: 'DELETE', headers });
+    await fetch(_SB_URL + '/rest/v1/mt4_signals?user_id=eq.' + userId, { method: 'DELETE', headers });
+    await fetch(_SB_URL + '/rest/v1/profiles?id=eq.' + userId, { method: 'DELETE', headers });
+    toast('Użytkownik ' + login + ' usunięty ✓', 'success');
     renderAdmin();
   } catch(e) { toast('Błąd: ' + e.message, 'error'); }
 }
@@ -5674,6 +5774,17 @@ async function doLogin() {
 }
 
 async function doRegister() {
+  // Rate limiting — max 3 próby rejestracji na 10 minut
+  const rlKey = 'tlj_reg_attempts';
+  const rlData = JSON.parse(localStorage.getItem(rlKey) || '{"count":0,"since":0}');
+  const now = Date.now();
+  if (now - rlData.since > 10 * 60 * 1000) { rlData.count = 0; rlData.since = now; }
+  if (rlData.count >= 3) {
+    const wait = Math.ceil((10 * 60 * 1000 - (now - rlData.since)) / 60000);
+    return showAuthError(`Zbyt wiele prób rejestracji. Poczekaj ${wait} minut.`);
+  }
+  rlData.count++;
+  localStorage.setItem(rlKey, JSON.stringify(rlData));
   const login = (document.getElementById('reg-user')?.value||'').trim().toLowerCase();
   const email = (document.getElementById('reg-email')?.value||'').trim().toLowerCase();
   const name  = (document.getElementById('reg-name')?.value||'').trim();
@@ -9738,14 +9849,31 @@ async function handlePasswordResetRedirect() {
   const hash = window.location.hash;
   if (!hash) return;
 
-  // Supabase v2 — token w hash jako #access_token=...&type=recovery
   const params = new URLSearchParams(hash.replace('#', ''));
   const accessToken  = params.get('access_token');
   const refreshToken = params.get('refresh_token');
   const type = params.get('type');
 
   if (type === 'recovery' && accessToken) {
-    // Poczekaj aż Supabase będzie załadowany
+    // Sprawdź czy zegar jest zsynchronizowany — token JWT ma pole exp
+    try {
+      const payload = JSON.parse(atob(accessToken.split('.')[1]));
+      const now = Math.floor(Date.now() / 1000);
+      const exp = payload.exp;
+      const diff = exp - now;
+      if (diff < 0) {
+        // Token wygasł — prawdopodobnie błędny zegar
+        showAuthError('Link do resetu hasła wygasł lub zegar systemowy jest nieprawidłowy. ' +
+          'Sprawdź datę/godzinę na swoim komputerze i wyślij nowy link.');
+        history.replaceState(null, '', window.location.pathname);
+        return;
+      }
+      if (Math.abs(now - payload.iat) > 300) {
+        // Zegar rozjechany o więcej niż 5 minut
+        console.warn('TLJ: Zegar systemowy może być nieprawidłowy. Różnica:', Math.abs(now - payload.iat), 's');
+      }
+    } catch(e) {}
+
     let attempts = 0;
     while (!_sb && attempts < 20) {
       await new Promise(r => setTimeout(r, 200));
@@ -9755,8 +9883,11 @@ async function handlePasswordResetRedirect() {
     if (!_sb) return;
     try {
       await _sb.auth.setSession({ access_token: accessToken, refresh_token: refreshToken || '' });
-    } catch(e) {}
-    // Wyczyść hash z URL
+    } catch(e) {
+      showAuthError('Błąd sesji resetu. Sprawdź czy zegar systemowy jest prawidłowy i wyślij nowy link.');
+      history.replaceState(null, '', window.location.pathname);
+      return;
+    }
     history.replaceState(null, '', window.location.pathname);
     showPasswordResetForm();
   }
@@ -11824,14 +11955,17 @@ async function adminGenerateInviteLocal() {
 
   const expiresAt = new Date(Date.now() + 7*24*60*60*1000).toISOString();
 
-  // Zapisz w Supabase przez fetch (działa nawet gdy _sb jest null)
+  // Zapisz w Supabase używając tokenu admina
   try {
+    const { data: { session } } = await _sb.auth.getSession();
+    const token = session?.access_token;
+    if (!token) { toast('Brak sesji admina', 'error'); return; }
     const res = await fetch('https://ygrkcynyduuflzvbkkvo.supabase.co/rest/v1/invitations', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'apikey': _SB_ANON,
-        'Authorization': 'Bearer ' + _SB_ANON,
+        'Authorization': 'Bearer ' + token,
         'Prefer': 'return=minimal'
       },
       body: JSON.stringify({ code, expires_at: expiresAt })
@@ -12000,7 +12134,7 @@ async function appInit() {
       if (session?.user) {
         // Pobierz profil
         const profRes = await fetch(_SB_URL + '/rest/v1/profiles?id=eq.' + session.user.id + '&select=*', {
-          headers: { 'apikey': _SB_ANON, 'Authorization': 'Bearer ' + _SB_ANON }
+          headers: { 'apikey': _SB_ANON, 'Authorization': 'Bearer ' + session.access_token }
         });
         const profiles = await profRes.json();
         const profile = profiles?.[0];
