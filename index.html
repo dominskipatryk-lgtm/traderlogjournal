@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin-allow-popups">
 <title>TraderLogJournal</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js" onerror="(function(){var s=document.createElement('script');s.src='https://unpkg.com/@supabase/supabase-js@2.39.3/dist/umd/supabase.js';document.head.appendChild(s)})()"></script>
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https: data: blob:; connect-src 'self' https: wss: data: blob:;">
@@ -2434,7 +2435,7 @@ function doLogout() {
 
 // ===== DEMO MODE =====
 function startDemoMode() {
-  // Przykładowe dane demo
+  // Demo DB — tylko fikcyjne dane, zero dostępu do localStorage
   const demoDb = {
     users: {
       demo: {
@@ -2445,7 +2446,7 @@ function startDemoMode() {
     },
     accounts: {
       demo: [{
-        id: 'acc_demo1', name: 'Konto Forex', broker: 'Axi',
+        id: 'acc_demo1', name: 'Konto Forex Demo', broker: 'Demo Broker',
         capital: 10000, currency: 'USD', active: true
       }]
     },
@@ -2483,36 +2484,38 @@ function startDemoMode() {
     }
   };
 
-  // Załaduj dane demo do lokalnej bazy
+  // WAŻNE: Nadpisz cache — zero dostępu do danych prawdziwych userów
   _dbCache = demoDb;
   state.currentUser = 'demo';
   state.currentAccountId = 'acc_demo1';
   state._isDemo = true;
+  // Wyczyść supabase session żeby zapytania nie szły do bazy
+  state.supabaseUser = null;
 
   // Pokaż aplikację
   document.getElementById('auth-screen').style.display = 'none';
   document.getElementById('app').style.display = 'flex';
-
-  // Upewnij się że wszystkie strony są schowane
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
 
-  // Zaktualizuj topbar
+  // Ukryj przyciski admina
+  const adminBtn = document.querySelector('.nav-btn[onclick*="admin"]');
+  if (adminBtn) adminBtn.style.display = 'none';
+
+  // Topbar
   const userEl = document.getElementById('topbar-user');
   if (userEl) userEl.textContent = 'Demo';
-  const accEl = document.getElementById('topbar-account');
-  if (accEl) accEl.textContent = 'Konto Forex';
+  const userRole = document.getElementById('topbar-role');
+  if (userRole) userRole.style.display = 'none';
 
-  // Renderuj
   setTimeout(() => {
     renderAll();
     renderAccounts();
     refreshTopbarAccount();
     showPage('trades');
-    // Baner demo
     const banner = document.createElement('div');
     banner.id = 'demo-banner';
     banner.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#f59e0b;color:#000;text-align:center;padding:8px;font-size:13px;font-weight:600;z-index:9998';
-    banner.innerHTML = '👁 Tryb podglądu demo — dane są przykładowe i nie są zapisywane · <a onclick="document.getElementById(\'demo-banner\').remove();document.getElementById(\'app\').style.display=\'none\';document.getElementById(\'auth-screen\').style.display=\'flex\'" style="cursor:pointer;text-decoration:underline">Zaloguj się</a>';
+    banner.innerHTML = '👁 Tryb podglądu demo — dane są przykładowe · <a onclick="location.reload()" style="cursor:pointer;text-decoration:underline;color:#000">Zaloguj się</a>';
     document.body.appendChild(banner);
   }, 300);
 }
@@ -4486,6 +4489,8 @@ function renderAll() {
 
 function saveDB(db) {
   _dbCache = db;
+  // W trybie demo nie zapisuj do localStorage — dane są tymczasowe
+  if (state._isDemo) return;
   if (IS_ELECTRON) {
     window.electronAPI.writeDB(db).catch(()=>{});
   } else {
@@ -4493,7 +4498,6 @@ function saveDB(db) {
       localStorage.setItem('traderlog_db', JSON.stringify(db));
     } catch(e) {
       if (e.name === 'QuotaExceededError') {
-        // Spróbuj zwolnić miejsce — usuń screenshoty z najstarszych zamkniętych transakcji
         showStorageWarning(db);
       }
     }
@@ -7122,11 +7126,10 @@ function checkAutoDownload() {
       toast('Auto-backup pobrany przy logowaniu ✓', 'success');
     }, 2000);
   }
-  // [v1.7] Auto-backup na Google Drive przy każdym logowaniu
-  // Ładujemy skrypt GAPI w tle — token poprosimy dopiero gdy użytkownik kliknie
+  // [v1.7] Ładuj skrypt GAPI w tle — bez żadnego UI, token poprosimy gdy user kliknie
   if (s.googleDrive) {
     setTimeout(() => {
-      loadGAPI(); // tylko inicjalizacja, bez popup
+      loadGAPISilent(); // tylko inicjalizacja skryptu, bez połączenia
     }, 3000);
   }
 }
@@ -7223,6 +7226,60 @@ function initGoogleDrive() {
   loadGAPI();
 }
 
+// Cicha inicjalizacja — bez UI, bez popup
+function loadGAPISilent() {
+  const cid = GDRIVE_CLIENT_ID;
+  if (document.querySelector('script[src*="accounts.google.com/gsi"]')) {
+    _initGapiTokenClientSilent(cid);
+    return;
+  }
+  const script = document.createElement('script');
+  script.src = 'https://accounts.google.com/gsi/client';
+  script.onload = () => _initGapiTokenClientSilent(cid);
+  script.onerror = () => {};
+  document.head.appendChild(script);
+}
+
+function _initGapiTokenClientSilent(cid) {
+  _gapiTokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: cid,
+    scope: GDRIVE_SCOPES,
+    prompt: 'consent',
+    callback: (resp) => {
+      if (resp.access_token) {
+        _gapiAccessToken = resp.access_token;
+        _gapiLoaded = true;
+        localStorage.setItem('tlj_gdrive_connected_' + (state.currentUser||''), '1');
+        updateGDriveStatus('✓ Połączono z Google Drive', 'ok');
+        toast('Połączono z Google Drive ✓', 'success');
+        renderBackupOptions();
+      }
+    },
+    error_callback: () => {}
+  });
+  // Cichy refresh — prompt:none nie otwiera okna, błędy konsoli są nieszkodliwe
+  const wasConnected = localStorage.getItem('tlj_gdrive_connected_' + (state.currentUser||''));
+  if (wasConnected) {
+    try {
+      const silentClient = google.accounts.oauth2.initTokenClient({
+        client_id: cid,
+        scope: GDRIVE_SCOPES,
+        prompt: 'none',
+        callback: (resp) => {
+          if (resp.access_token && !resp.error) {
+            _gapiAccessToken = resp.access_token;
+            _gapiLoaded = true;
+          }
+        },
+        error_callback: () => {}
+      });
+      setTimeout(() => {
+        try { silentClient.requestAccessToken({ prompt: 'none' }); } catch(e) {}
+      }, 500);
+    } catch(e) {}
+  }
+}
+
 function showGDriveSetup() {
   // [v1.6] Nie potrzeba już ręcznego Client ID — wbudowany w kod
   connectGoogleDrive();
@@ -7267,10 +7324,11 @@ function _initGapiTokenClient(cid) {
         toast('Połączono z Google Drive ✓', 'success');
         renderBackupOptions();
       }
-    }
+    },
+    error_callback: () => {}
   });
 
-  // Cichy refresh — jeśli poprzednio połączony, spróbuj bez okna
+  // Cichy refresh — prompt:none nie otwiera okna
   const wasConnected = localStorage.getItem('tlj_gdrive_connected_' + (state.currentUser||''));
   if (wasConnected) {
     try {
@@ -7283,13 +7341,10 @@ function _initGapiTokenClient(cid) {
             _gapiAccessToken = resp.access_token;
             _gapiLoaded = true;
             updateGDriveStatus('✓ Drive aktywny', 'ok');
-            renderBackupOptions();
           }
-          // Błąd (popup zablokowany, sesja wygasła) — ignoruj, user połączy ręcznie
         },
         error_callback: () => {}
       });
-      // prompt:none nie otwiera okna — bezpieczne automatycznie
       setTimeout(() => {
         try { silentClient.requestAccessToken({ prompt: 'none' }); } catch(e) {}
       }, 1500);
