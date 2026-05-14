@@ -729,6 +729,26 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
           <button class="pass-eye" type="button" onclick="togglePassEye('reg-pass2',this)">👁</button>
         </div>
       </div>
+
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:16px">
+        <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;margin-bottom:10px">
+          <input type="checkbox" id="reg-consent-privacy" style="margin-top:2px;flex-shrink:0;width:16px;height:16px;accent-color:var(--accent)">
+          <span style="font-size:12px;color:var(--text2);line-height:1.5">
+            Przeczytałem/am i akceptuję
+            <a href="/privacy.html" target="_blank" style="color:var(--accent)">Politykę Prywatności</a>
+            TraderLogJournal, w tym informację o przetwarzaniu danych osobowych (GDPR). *
+          </span>
+        </label>
+        <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer">
+          <input type="checkbox" id="reg-consent-terms" style="margin-top:2px;flex-shrink:0;width:16px;height:16px;accent-color:var(--accent)">
+          <span style="font-size:12px;color:var(--text2);line-height:1.5">
+            Przeczytałem/am i akceptuję
+            <a href="/terms.html" target="_blank" style="color:var(--accent)">Warunki Korzystania</a>
+            z serwisu. *
+          </span>
+        </label>
+      </div>
+
       <button class="btn-primary" onclick="doRegister()">Utwórz konto</button>
     </div>
 
@@ -5666,6 +5686,13 @@ async function doRegister() {
   if (pass.length < 6) return showAuthError('Hasło minimum 6 znaków');
   if (pass !== pass2) return showAuthError('Hasła nie są zgodne');
 
+  // Walidacja zgód GDPR
+  const consentPrivacy = document.getElementById('reg-consent-privacy')?.checked;
+  const consentTerms   = document.getElementById('reg-consent-terms')?.checked;
+  if (!consentPrivacy) return showAuthError('Musisz zaakceptować Politykę Prywatności');
+  if (!consentTerms)   return showAuthError('Musisz zaakceptować Warunki Korzystania');
+  const consentAt = new Date().toISOString();
+
   const btn = document.querySelector('#register-form .btn-primary');
   if (btn) { btn.textContent = '⏳ Tworzę konto...'; btn.disabled = true; }
 
@@ -5687,12 +5714,21 @@ async function doRegister() {
     const { data, error } = await _sb.auth.signUp({ email, password: pass, options: { data: { login, name: name||login } } });
     if (error) return done('Błąd: ' + error.message);
 
-    // Utwórz profil
+    // Utwórz profil z datą zgody GDPR
     if (data.user) {
       await fetch('https://ygrkcynyduuflzvbkkvo.supabase.co/rest/v1/profiles', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'apikey': _SB_ANON, 'Authorization': 'Bearer ' + _SB_ANON, 'Prefer': 'return=minimal' },
-        body: JSON.stringify({ id: data.user.id, login, name: name||login, email: email || data.user.email, role: 'user', active: false })
+        body: JSON.stringify({
+          id: data.user.id,
+          login, name: name||login,
+          email: email || data.user.email,
+          role: 'user', active: false,
+          consent_at: consentAt,
+          consent_privacy: true,
+          consent_terms: true,
+          terms_version: '1.1'
+        })
       });
     }
 
