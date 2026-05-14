@@ -661,6 +661,13 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
       </svg>
     </div>
     <div class="auth-subtitle">Profesjonalny dziennik Tradera</div>
+
+    <!-- DEMO BUTTON -->
+    <div style="text-align:center;margin-bottom:12px">
+      <button onclick="startDemoMode()" style="background:transparent;border:1px solid var(--accent);color:var(--accent);padding:8px 24px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;width:100%">
+        👁 Podgląd demo — bez logowania
+      </button>
+    </div>
     <div class="auth-tabs">
       <div class="auth-tab active" onclick="switchAuthTab('login')" data-i18n="auth_login_tab">Logowanie</div>
       <div class="auth-tab" onclick="switchAuthTab('register')" data-i18n="auth_reg_tab">Rejestracja</div>
@@ -2117,6 +2124,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
         <div class="modal-body">
           <div id="checklist-strategy-name" style="font-size:13px;color:var(--accent);font-weight:700;margin-bottom:14px"></div>
           <div id="checklist-points" style="display:flex;flex-direction:column;gap:8px"></div>
+          <div id="checklist-setup-screenshots" style="display:none;margin-top:14px;padding-top:12px;border-top:1px solid #21262d"></div>
           <div id="checklist-progress-bar" style="margin-top:16px">
             <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text3);margin-bottom:6px">
               <span>Postęp</span>
@@ -2424,8 +2432,90 @@ function doLogout() {
   document.getElementById('app').style.display = 'none';
 }
 
-// ===== DEMO DATA =====
-// seedDemoData removed
+// ===== DEMO MODE =====
+function startDemoMode() {
+  // Przykładowe dane demo
+  const demoDb = {
+    users: {
+      demo: {
+        login: 'demo', name: 'Demo Trader', email: 'demo@traderlogjournal.com',
+        role: 'user', active: true, supabaseId: 'demo-id',
+        createdAt: Date.now()
+      }
+    },
+    accounts: {
+      demo: [{
+        id: 'acc_demo1', name: 'Konto Forex', broker: 'Axi',
+        capital: 10000, currency: 'USD', active: true
+      }]
+    },
+    trades: {
+      acc_demo1: [
+        { id: 'tr1', symbol: 'EURUSD', dir: 'LONG', status: 'closed',
+          date: '2026-05-10T09:22:00', exitDate: '2026-05-10T14:35:00',
+          entry: 1.08542, sl: 1.08200, tp: 1.09100, exit: 1.09100,
+          pnl: 82, size: 0.5, tf: 'H1', setup: 'PAC', screenshots: [],
+          pre: 'BOS na H1, retest OB, dobry moment wejścia',
+          post: 'Idealny trade, TP trafiony w punkt' },
+        { id: 'tr2', symbol: 'GBPUSD', dir: 'SHORT', status: 'closed',
+          date: '2026-05-11T11:10:00', exitDate: '2026-05-11T13:20:00',
+          entry: 1.27350, sl: 1.27650, tp: 1.26800, exit: 1.27600,
+          pnl: -50, size: 0.3, tf: 'M15', setup: 'PAC', screenshots: [],
+          pre: 'ChoCH na M15, wejście przy FVG',
+          post: 'Przedwczesne wyjście na SL, struktura była dobra' },
+        { id: 'tr3', symbol: 'XAUUSD', dir: 'LONG', status: 'closed',
+          date: '2026-05-12T08:00:00', exitDate: '2026-05-12T16:45:00',
+          entry: 2318.50, sl: 2310.00, tp: 2340.00, exit: 2340.00,
+          pnl: 215, size: 0.1, tf: 'H4', setup: 'SMC', screenshots: [],
+          pre: 'Premium/Discount, OB H4 potwierdzony',
+          post: 'Cierpliwe czekanie opłaciło się' },
+        { id: 'tr4', symbol: 'EURUSD', dir: 'SHORT', status: 'closed',
+          date: '2026-05-13T13:30:00', exitDate: '2026-05-13T15:10:00',
+          entry: 1.08820, sl: 1.09050, tp: 1.08350, exit: 1.08350,
+          pnl: 147, size: 0.5, tf: 'H1', setup: 'PAC', screenshots: [],
+          pre: 'London kill zone, inducement zabrany',
+          post: 'Perfect execution' },
+        { id: 'tr5', symbol: 'USDJPY', dir: 'LONG', status: 'open',
+          date: '2026-05-14T09:15:00',
+          entry: 155.420, sl: 154.900, tp: 156.500,
+          pnl: 35, size: 0.2, tf: 'H1', setup: 'PAC', screenshots: [] },
+      ]
+    }
+  };
+
+  // Załaduj dane demo do lokalnej bazy
+  _dbCache = demoDb;
+  state.currentUser = 'demo';
+  state.currentAccountId = 'acc_demo1';
+  state._isDemo = true;
+
+  // Pokaż aplikację
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+
+  // Upewnij się że wszystkie strony są schowane
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+
+  // Zaktualizuj topbar
+  const userEl = document.getElementById('topbar-user');
+  if (userEl) userEl.textContent = 'Demo';
+  const accEl = document.getElementById('topbar-account');
+  if (accEl) accEl.textContent = 'Konto Forex';
+
+  // Renderuj
+  setTimeout(() => {
+    renderAll();
+    renderAccounts();
+    refreshTopbarAccount();
+    showPage('trades');
+    // Baner demo
+    const banner = document.createElement('div');
+    banner.id = 'demo-banner';
+    banner.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#f59e0b;color:#000;text-align:center;padding:8px;font-size:13px;font-weight:600;z-index:9998';
+    banner.innerHTML = '👁 Tryb podglądu demo — dane są przykładowe i nie są zapisywane · <a onclick="document.getElementById(\'demo-banner\').remove();document.getElementById(\'app\').style.display=\'none\';document.getElementById(\'auth-screen\').style.display=\'flex\'" style="cursor:pointer;text-decoration:underline">Zaloguj się</a>';
+    document.body.appendChild(banner);
+  }, 300);
+}
 
 // ===== NAVIGATION =====
 function showPage(page) {
@@ -10419,14 +10509,6 @@ function openNewStrategy() {
   const strDesc = document.getElementById('str-desc');
   const strList = document.getElementById('strategy-points-list');
   const strTitle = document.getElementById('strategy-editor-title');
-  // [v1.5] DEBUG: pokaż który element jest null
-  console.log('openNewStrategy debug:', {
-    'str-id': !!strId,
-    'str-name': !!strName,
-    'str-desc': !!strDesc,
-    'strategy-points-list': !!strList,
-    'strategy-editor-title': !!strTitle
-  });
   if (!strId || !strName || !strDesc || !strList || !strTitle) {
     toast('Błąd: nie można otworzyć edytora strategii', 'error');
     return;
@@ -10482,14 +10564,14 @@ function addStrategyPoint(text, screenshot) {
     <span style="color:var(--text3);font-size:12px;min-width:18px">${idx+1}.</span>
     <input class="form-input-modal" type="text" value="${text||''}" placeholder="Opisz warunek strategii..."
       style="flex:1;font-size:13px;padding:8px 10px" onkeydown="if(event.key==='Enter'){event.preventDefault();addStrategyPoint('');}">
-    <label title="Dodaj screenshot wzorcowy" style="cursor:pointer;display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:6px;background:var(--bg3);border:1px solid var(--border)">
+    <label title="Dodaj screenshot wzorcowy" style="cursor:pointer;display:flex;align-items:center;justify-content:center;width:32px;height:32px;flex-shrink:0;border-radius:6px;background:#1e2d3d;border:1px solid #30455d">
       ${hasSrc
         ? `<img src="${thumbSrc}" id="${scrId}_img" style="width:30px;height:30px;object-fit:cover;border-radius:5px" onclick="event.preventDefault();openLightboxSmart('${screenshot}','${scrId}')">`
-        : `<span style="font-size:14px">📷</span>`}
+        : `<span style="font-size:16px;line-height:1">📷</span>`}
       <input type="file" accept="image/*" style="display:none" onchange="addPointScreenshot(this,'${scrId}',event)">
     </label>
     <input type="hidden" id="${scrId}_data" value="${hasSrc ? screenshot : ''}">
-    <button onclick="this.parentElement.remove();renumberPoints()" class="icon-btn" style="color:var(--red);font-size:14px">✕</button>`;
+    <button onclick="this.parentElement.remove();renumberPoints()" class="icon-btn" style="color:#ef4444;font-size:16px;background:none;border:none;cursor:pointer;padding:4px;flex-shrink:0">✕</button>`;
   list.appendChild(div);
   // Jeśli screenshot jest drive:// załaduj podgląd
   if (hasSrc && isDriveScreenshot(screenshot)) {
@@ -10586,9 +10668,9 @@ function openStrategyChecklist(strategyId, callback) {
     const imgHtml = hasSrc ? `
       <div onclick="event.stopPropagation()" style="flex-shrink:0">
         <img ${imgId ? `id="${imgId}"` : ''} src="${thumbSrc}" 
-          style="width:36px;height:28px;object-fit:cover;border-radius:4px;cursor:pointer;border:1px solid var(--border)"
+          style="width:36px;height:28px;object-fit:cover;border-radius:4px;cursor:pointer;border:1px solid #30455d"
           onclick="openLightboxSmart('${screenshot}','chk_${i}')">
-      </div>` : '';
+      </div>` : `<div onclick="event.stopPropagation()" style="flex-shrink:0;width:36px;height:28px;border-radius:4px;background:#1e2d3d;border:1px solid #30455d;display:flex;align-items:center;justify-content:center;cursor:pointer" title="Brak screenshota dla tego punktu"><span style="font-size:14px;opacity:.4">📷</span></div>`;
     if (isD) setTimeout(() => {
       const el = document.getElementById(imgId);
       if (el) loadDriveScreenshot(screenshot.replace('drive://',''), el);
@@ -10789,28 +10871,90 @@ function openEditSetup(id) {
   document.getElementById('setup-editor-title').textContent = 'Edytuj setup: ' + s.name;
   const list = document.getElementById('setup-points-list');
   list.innerHTML = '';
-  (s.points||[]).forEach(p => addSetupPoint(p));
+  (s.points||[]).forEach((p, i) => addSetupPoint(p, s.pointScreenshots?.[i] || ''));
   _currentSetupScreenshots = (s.screenshots||[]).map((url, i) => ({id: 'ss_'+i, dataUrl: url}));
   renderSetupRefScreenshots();
   openModal('setup-editor-modal');
 }
 
 
-function addSetupPoint(text) {
+function addSetupPoint(text, screenshot) {
   const list = document.getElementById('setup-points-list');
   if (!list) return;
   const idx = list.children.length;
   const div = document.createElement('div');
-  div.style.cssText = 'display:flex;gap:6px;align-items:center';
+  div.style.cssText = 'display:flex;gap:6px;align-items:center;margin-bottom:4px';
+  const scrId = 'ssp_' + Date.now() + '_' + idx;
+  const hasSrc = screenshot && screenshot.length > 5;
+  const thumbSrc = hasSrc && isDriveScreenshot(screenshot)
+    ? (_driveScreenCache[screenshot.replace('drive://','')] || '')
+    : (screenshot || '');
+  const imgContent = hasSrc
+    ? '<img src="' + thumbSrc + '" id="' + scrId + '_img" style="width:30px;height:30px;object-fit:cover;border-radius:5px" onclick="event.preventDefault();openLightboxSmart(\'' + screenshot + '\',\'' + scrId + '\')">'
+    : '<span style="font-size:16px;line-height:1">📷</span>';
   div.innerHTML = `
-    <span style="color:var(--text3);font-size:12px;min-width:18px">${idx+1}.</span>
+    <span style="color:#64748b;font-size:12px;min-width:18px">${idx+1}.</span>
     <input class="form-input-modal" type="text" value="${(text||'').replace(/"/g,'&quot;')}" placeholder="Warunek wejścia..."
-      style="flex:1;font-size:13px;padding:8px 10px" onkeydown="if(event.key==='Enter'){event.preventDefault();addSetupPoint('');}">
-    <button onclick="this.parentElement.remove()" class="icon-btn" style="color:var(--red)">✕</button>`;
+      style="flex:1;font-size:13px;padding:8px 10px" onkeydown="if(event.key===\'Enter\'){event.preventDefault();addSetupPoint(\'\');}">
+    <label title="Dodaj screenshot dla tego punktu" style="cursor:pointer;display:flex;align-items:center;justify-content:center;width:32px;height:32px;flex-shrink:0;border-radius:6px;background:#1e2d3d;border:1px solid #30455d">
+      ${imgContent}
+      <input type="file" accept="image/*" style="display:none" onchange="addSetupPointScreenshot(this,\'${scrId}\',event)">
+    </label>
+    <input type="hidden" id="${scrId}_data" value="${hasSrc ? screenshot : ''}">
+    <button onclick="this.parentElement.remove();renumberSetupPoints()" class="icon-btn" style="color:#ef4444;font-size:16px;background:none;border:none;cursor:pointer;padding:4px;flex-shrink:0">✕</button>`;
   list.appendChild(div);
-  if (!text) setTimeout(() => div.querySelector('input')?.focus(), 50);
+  if (hasSrc && isDriveScreenshot(screenshot)) {
+    setTimeout(() => {
+      const el = document.getElementById(scrId + '_img');
+      if (el) loadDriveScreenshot(screenshot.replace('drive://',''), el);
+    }, 100);
+  }
+  if (!text) setTimeout(() => div.querySelector('input[type=text]')?.focus(), 50);
 }
 
+
+async function addSetupPointScreenshot(input, scrId, event) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async e => {
+    const original = e.target.result;
+    const compressed = await compressImage(original, 800, 0.7);
+    let dataUrl = compressed;
+    if (_gapiLoaded && _gapiAccessToken) {
+      const driveUrl = await autoUploadScreenToDrive(original, 'setup_pt_' + scrId, 0);
+      if (driveUrl) { dataUrl = driveUrl; _driveScreenCache[driveUrl.replace('drive://','')] = compressed; }
+    }
+    const hidden = document.getElementById(scrId + '_data');
+    if (hidden) hidden.value = dataUrl;
+    const label = input.closest('label');
+    if (label) {
+      const src = _driveScreenCache[dataUrl.replace('drive://','')] || dataUrl;
+      label.innerHTML = `<img src="${src}" style="width:30px;height:30px;object-fit:cover;border-radius:5px;cursor:pointer" onclick="event.preventDefault();openLightboxSmart('${dataUrl}','${scrId}')">
+        <input type="file" accept="image/*" style="display:none" onchange="addSetupPointScreenshot(this,'${scrId}',event)">`;
+    }
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
+
+function renumberSetupPoints() {
+  const list = document.getElementById('setup-points-list');
+  if (!list) return;
+  Array.from(list.children).forEach((row, i) => {
+    const num = row.querySelector('span');
+    if (num) num.textContent = (i+1) + '.';
+  });
+}
+
+function renumberPoints() {
+  const list = document.getElementById('strategy-points-list');
+  if (!list) return;
+  Array.from(list.children).forEach((row, i) => {
+    const num = row.querySelector('span');
+    if (num) num.textContent = (i+1) + '.';
+  });
+}
 
 function addSetupRefScreenshots(input) {
   const files = Array.from(input.files);
@@ -10870,17 +11014,18 @@ function saveSetup() {
   if (!name) return toast('Podaj nazwę setupu', 'error');
   const strategyId = document.getElementById('setup-strategy-id')?.value;
   if (!strategyId) return;
-  const desc   = document.getElementById('setup-desc')?.value?.trim();
-  const points = Array.from(document.getElementById('setup-points-list')?.querySelectorAll('input')||[])
-    .map(i => i.value.trim()).filter(Boolean);
+  const desc = document.getElementById('setup-desc')?.value?.trim() || '';
+  const pointRows = Array.from(document.getElementById('setup-points-list')?.children || []);
+  const points = pointRows.map(row => row.querySelector('input[type=text]')?.value?.trim()).filter(Boolean);
+  const pointScreenshots = pointRows.map(row => row.querySelector('input[type=hidden]')?.value || '');
   const screenshots = _currentSetupScreenshots.map(s => s.dataUrl);
   const id = document.getElementById('setup-id')?.value;
   const setups = getAllSetups();
   if (id) {
     const idx = setups.findIndex(s => s.id === id);
-    if (idx >= 0) setups[idx] = { ...setups[idx], name, desc, points, screenshots };
+    if (idx >= 0) setups[idx] = { ...setups[idx], name, desc, points, pointScreenshots, screenshots };
   } else {
-    setups.push({ id: genId(), strategyId, name, desc, points, screenshots, createdAt: Date.now() });
+    setups.push({ id: genId(), strategyId, name, desc, points, pointScreenshots, screenshots, createdAt: Date.now() });
   }
   saveAllSetups(setups);
   closeModal('setup-editor-modal');
@@ -10989,23 +11134,50 @@ function onSetupChange(prefix) {
 
 
 function openSetupChecklist(prefix, setup) {
-  // Użyj ogólnego checklistModal ale z punktami setupu
-  const strategies = getStrategies();
-  // Tymczasowo stwórz obiekt "strategii" z punktami setupu
-  const tempStrategy = { ...setup, id: setup.id + '_temp' };
-  const origStrategies = getStrategies();
-  // Patch strategies temporarily
-  const db = getDB();
-  const key = 'strategies_' + (state.currentUser||'');
-  db[key] = [...origStrategies, tempStrategy];
-  saveDB(db);
+  const nameEl    = document.getElementById('checklist-strategy-name');
+  const container = document.getElementById('checklist-points');
+  const titleEl   = document.querySelector('#strategy-checklist-modal .modal-title');
+  if (!nameEl || !container) { toast('Błąd: nie można otworzyć checklisty', 'error'); return; }
 
-  openStrategyChecklist(setup.id + '_temp', (score, allDone) => {
-    // Przywróć oryginalne strategie
-    const db2 = getDB();
-    db2[key] = origStrategies;
-    saveDB(db2);
+  // Ustaw tytuł i nazwę setupu (nie strategii)
+  if (titleEl) titleEl.textContent = '✅ Checklist setupu';
+  nameEl.textContent = '⚙ ' + setup.name;
 
+  // Renderuj punkty setupu — tylko per-punkt screenshoty
+  const setupScreenshots = setup.screenshots || [];
+  container.innerHTML = (setup.points||[]).map((p, i) => {
+    // Tylko screenshot per-punkt — nie ogólny
+    const screenshot = setup.pointScreenshots?.[i] || '';
+    const hasSrc = screenshot && screenshot.length > 5;
+    const isD = hasSrc && isDriveScreenshot(screenshot);
+    const src = isD ? (_driveScreenCache[screenshot.replace('drive://','')] || '') : screenshot;
+    const imgId = isD ? 'schk_img_' + i : '';
+    if (isD) setTimeout(() => {
+      const el = document.getElementById(imgId);
+      if (el) loadDriveScreenshot(screenshot.replace('drive://',''), el);
+    }, 150);
+    const imgHtml = hasSrc
+      ? `<div onclick="event.stopPropagation()" style="flex-shrink:0">
+          <img ${imgId ? `id="${imgId}"` : ''} src="${src}"
+            style="width:36px;height:28px;object-fit:cover;border-radius:4px;cursor:pointer;border:1px solid #30455d"
+            onclick="openLightboxSmart('${screenshot}','schk_${i}')">
+         </div>`
+      : `<div style="flex-shrink:0;width:36px;height:28px;border-radius:4px;background:#1e2d3d;border:1px solid #30455d;display:flex;align-items:center;justify-content:center" title="Brak screenshota"><span style="font-size:12px;opacity:.3">📷</span></div>`;
+
+    return `<div onclick="toggleChecklistPoint(this)"
+      style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:8px;cursor:pointer;border:1px solid #21262d;background:#161b22;transition:all .15s"
+      onmouseover="this.style.borderColor='#00d4a1'" onmouseout="if(!this.classList.contains('checked'))this.style.borderColor='#21262d'">
+      <div style="width:20px;height:20px;border-radius:50%;border:2px solid #21262d;display:flex;align-items:center;justify-content:center;flex-shrink:0" class="check-circle">
+        <span style="display:none;color:#00d4a1;font-size:12px">✓</span>
+      </div>
+      <span style="font-size:13px;color:#e6edf3;flex:1">${i+1}. ${p}</span>
+      ${imgHtml}
+    </div>`;
+  }).join('');
+
+  _checklistCallback = (score, allDone) => {
+    // Przywróć tytuł strategii
+    if (titleEl) titleEl.textContent = '✅ Checklist strategii';
     const scoreEl = document.getElementById(prefix + '-checklist-score');
     if (scoreEl) {
       scoreEl.textContent = (allDone ? '✓ ' : '⚠ ') + score;
@@ -11013,7 +11185,38 @@ function openSetupChecklist(prefix, setup) {
     }
     if (!allDone) toast('⚠ Nie wszystkie warunki setupu zaznaczone!', 'error');
     else toast('✓ Setup potwierdzony!', 'success');
-  });
+  };
+
+  // Screenshoty wzorcowe setupu — pod listą punktów
+  const setupScreenshotsEl = document.getElementById('checklist-setup-screenshots');
+  if (setupScreenshotsEl) {
+    const setupScreenshots = setup.screenshots || [];
+    if (setupScreenshots.length) {
+      setupScreenshotsEl.style.display = 'block';
+      setupScreenshotsEl.innerHTML = `
+        <div style="font-size:11px;color:#64748b;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Wzorcowe screenshoty setupu</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          ${setupScreenshots.map((src, i) => {
+            const isD = isDriveScreenshot(src);
+            const imgSrc = isD ? (_driveScreenCache[src.replace('drive://','')] || '') : src;
+            const imgId = isD ? 'cssl_' + i : '';
+            if (isD) setTimeout(() => {
+              const el = document.getElementById(imgId);
+              if (el) loadDriveScreenshot(src.replace('drive://',''), el);
+            }, 200);
+            return `<img ${imgId ? `id="${imgId}"` : ''} src="${imgSrc}"
+              style="width:80px;height:56px;object-fit:cover;border-radius:6px;cursor:pointer;border:1px solid #30455d"
+              onclick="openLightboxSmart('${src}','cssl_${i}')">`;
+          }).join('')}
+        </div>`;
+    } else {
+      setupScreenshotsEl.style.display = 'none';
+      setupScreenshotsEl.innerHTML = '';
+    }
+  }
+
+  updateChecklistProgress();
+  document.getElementById('strategy-checklist-modal').classList.add('open');
 }
 
 // Pomocnik — otwiera checklistę setupu z formularza
