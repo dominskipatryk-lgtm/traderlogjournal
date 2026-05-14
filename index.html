@@ -3472,14 +3472,15 @@ function dvAddFiles(files) {
     if (!f.type.startsWith('image/')) return;
     const r = new FileReader();
     r.onload = async e => {
-      const compressed = await compressImage(e.target.result, 800, 0.7);
+      const original = e.target.result;
+      const compressed = await compressImage(original, 800, 0.7);
       const id = genId();
       const tradeId = _detailId;
       const idx = _detailScreenshots.length;
       let dataUrl = compressed;
       if (_gapiLoaded && _gapiAccessToken && tradeId) {
-        const driveUrl = await autoUploadScreenToDrive(compressed, tradeId, idx);
-        if (driveUrl) { dataUrl = driveUrl; _driveScreenCache[driveUrl.replace('drive://','')] = compressed; }
+        const driveUrl = await autoUploadScreenToDrive(original, tradeId, idx);
+        if (driveUrl) { dataUrl = driveUrl; } // oryginał na Drive }
       }
       _detailScreenshots.push({ id, dataUrl });
       const wrap = document.getElementById('dv-screens');
@@ -3535,19 +3536,26 @@ function compressImage(dataUrl, maxWidth, quality) {
 async function autoUploadScreenToDrive(dataUrl, tradeId, idx) {
   if (!_gapiLoaded || !_gapiAccessToken || !tradeId) return null;
   try {
-    const compressed = await compressImage(dataUrl, 800, 0.7);
-    const base64 = compressed.split(',')[1];
+    // Wysyłamy oryginał na Drive — bez kompresji dla pełnej jakości
+    const base64 = dataUrl.split(',')[1];
+    const mimeMatch = dataUrl.match(/data:([^;]+);/);
+    const mime = mimeMatch ? mimeMatch[1] : 'image/jpeg';
     const blob = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
-    const meta = JSON.stringify({ name: `tlj-${tradeId}-${idx}.jpg`, parents: ['appDataFolder'] });
+    const meta = JSON.stringify({
+      name: `tlj-${tradeId}-${idx}.jpg`,
+      parents: ['appDataFolder']
+    });
     const form = new FormData();
     form.append('metadata', new Blob([meta], { type: 'application/json' }));
-    form.append('file', new Blob([blob], { type: 'image/jpeg' }));
+    form.append('file', new Blob([blob], { type: mime }));
     const resp = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
       { method: 'POST', headers: { Authorization: 'Bearer ' + _gapiAccessToken }, body: form });
     const data = await resp.json();
     if (data.id) {
-      // Zaktualizuj index
       await updateDriveIndex(tradeId, idx, data.id);
+      // Cache blob URL dla podglądu w RAM
+      const blobUrl = URL.createObjectURL(new Blob([blob], { type: mime }));
+      _driveScreenCache[data.id] = blobUrl;
       return 'drive://' + data.id;
     }
   } catch(e) { console.warn('Auto Drive upload failed:', e); }
@@ -3592,18 +3600,16 @@ function handleFiles(files) {
     if (!f.type.startsWith('image/')) return;
     const reader = new FileReader();
     reader.onload = async e => {
-      const compressed = await compressImage(e.target.result, 800, 0.7);
+      const original = e.target.result;
+      const compressed = await compressImage(original, 800, 0.7);
       const id = genId();
       const tradeId = state.editTradeId || document.getElementById('trade-id')?.value;
       const idx = state.tempScreenshots.length;
-      let dataUrl = compressed;
-      // Auto-upload na Drive jeśli połączony
+      let dataUrl = compressed; // skompresowany lokalnie
+      // Auto-upload oryginału na Drive
       if (_gapiLoaded && _gapiAccessToken && tradeId) {
-        const driveUrl = await autoUploadScreenToDrive(compressed, tradeId, idx);
-        if (driveUrl) {
-          dataUrl = driveUrl;
-          _driveScreenCache[driveUrl.replace('drive://','')] = compressed;
-        }
+        const driveUrl = await autoUploadScreenToDrive(original, tradeId, idx);
+        if (driveUrl) { dataUrl = driveUrl; } // Drive zastępuje lokalny cache
       }
       state.tempScreenshots.push({id, dataUrl});
       renderScreenshotPreviews();
@@ -7923,14 +7929,15 @@ function anHandleFiles(files) {
     if (!f.type.startsWith('image/')) return;
     const r = new FileReader();
     r.onload = async e => {
-      const compressed = await compressImage(e.target.result, 800, 0.7);
+      const original = e.target.result;
+      const compressed = await compressImage(original, 800, 0.7);
       const id = genId();
       const analysisId = document.getElementById('an-id')?.value;
       const idx = _anScreenshots.length;
       let dataUrl = compressed;
       if (_gapiLoaded && _gapiAccessToken && analysisId) {
-        const driveUrl = await autoUploadScreenToDrive(compressed, analysisId, idx);
-        if (driveUrl) { dataUrl = driveUrl; _driveScreenCache[driveUrl.replace('drive://','')] = compressed; }
+        const driveUrl = await autoUploadScreenToDrive(original, analysisId, idx);
+        if (driveUrl) { dataUrl = driveUrl; } // oryginał na Drive }
       }
       _anScreenshots.push({id, dataUrl});
       renderAnScreenshots();
@@ -10486,7 +10493,7 @@ async function addPointScreenshot(input, scrId, event) {
       const driveUrl = await autoUploadScreenToDrive(compressed, 'strat_' + scrId, 0);
       if (driveUrl) {
         dataUrl = driveUrl;
-        _driveScreenCache[driveUrl.replace('drive://','')] = compressed;
+        // cache blob URL jest ustawiany w autoUploadScreenToDrive
       }
     }
     // Zaktualizuj hidden input
@@ -10789,8 +10796,18 @@ function addSetupRefScreenshots(input) {
   const files = Array.from(input.files);
   files.forEach(file => {
     const reader = new FileReader();
-    reader.onload = e => {
-      _currentSetupScreenshots.push({ id: 'ss_' + Date.now() + Math.random(), dataUrl: e.target.result });
+    reader.onload = async e => {
+      const original = e.target.result;
+      const compressed = await compressImage(original, 800, 0.7);
+      const id = 'ss_' + Date.now() + Math.random();
+      let dataUrl = compressed;
+      const setupId = document.getElementById('setup-id-field')?.value || 'setup_ref';
+      const idx = _currentSetupScreenshots.length;
+      if (_gapiLoaded && _gapiAccessToken) {
+        const driveUrl = await autoUploadScreenToDrive(original, 'setupref_' + setupId, idx);
+        if (driveUrl) { dataUrl = driveUrl; }
+      }
+      _currentSetupScreenshots.push({ id, dataUrl });
       renderSetupRefScreenshots();
     };
     reader.readAsDataURL(file);
@@ -10802,14 +10819,23 @@ function addSetupRefScreenshots(input) {
 function renderSetupRefScreenshots() {
   const el = document.getElementById('setup-ref-screenshots');
   if (!el) return;
-  el.innerHTML = _currentSetupScreenshots.map(s => `
+  el.innerHTML = _currentSetupScreenshots.map(s => {
+    const isD = isDriveScreenshot(s.dataUrl);
+    const src = isD ? (_driveScreenCache[s.dataUrl.replace('drive://','')] || '') : s.dataUrl;
+    const imgId = isD ? 'sref_' + s.id.slice(-6) : '';
+    if (isD) setTimeout(() => {
+      const img = document.getElementById(imgId);
+      if (img) loadDriveScreenshot(s.dataUrl.replace('drive://',''), img);
+    }, 100);
+    return `
     <div style="position:relative;display:inline-block">
-      <img src="${s.dataUrl}" style="width:100px;height:70px;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:pointer"
-        onclick="openLightbox('${s.dataUrl}')">
+      <img ${imgId ? `id="${imgId}"` : ''} src="${src}"
+        style="width:100px;height:70px;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:pointer"
+        onclick="openLightboxSmart('${s.dataUrl}','${s.id}')">
       <button onclick="removeSetupScreenshot('${s.id}')"
         style="position:absolute;top:-6px;right:-6px;background:var(--red);color:white;border:none;border-radius:50%;width:18px;height:18px;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 }
 
 
@@ -10987,14 +11013,15 @@ function addSetupScreenshots(prefix, input) {
   files.forEach(file => {
     const reader = new FileReader();
     reader.onload = async e => {
-      const compressed = await compressImage(e.target.result, 800, 0.7);
+      const original = e.target.result;
+      const compressed = await compressImage(original, 800, 0.7);
       const id = genId();
       const setupId = document.getElementById('setup-id')?.value || prefix;
       const idx = _setupSessionScreenshots[prefix].length;
       let dataUrl = compressed;
       if (_gapiLoaded && _gapiAccessToken && setupId) {
-        const driveUrl = await autoUploadScreenToDrive(compressed, 'setup_' + setupId, idx);
-        if (driveUrl) { dataUrl = driveUrl; _driveScreenCache[driveUrl.replace('drive://','')] = compressed; }
+        const driveUrl = await autoUploadScreenToDrive(original, 'setup_' + setupId, idx);
+        if (driveUrl) { dataUrl = driveUrl; }
       }
       _setupSessionScreenshots[prefix].push({ id, dataUrl });
       renderSessionScreenshots(prefix);
