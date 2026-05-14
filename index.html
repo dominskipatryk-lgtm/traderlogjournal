@@ -3622,23 +3622,26 @@ function isDriveScreenshot(url) {
 
 // Pobierz screenshot z Drive i wyświetl w img
 async function loadDriveScreenshot(driveId, imgEl) {
-  if (!driveId) return;
+  if (!driveId || !imgEl) return;
   // Sprawdź cache RAM
   if (_driveScreenCache[driveId]) {
     imgEl.src = _driveScreenCache[driveId];
     return;
   }
-  imgEl.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80"><rect width="120" height="80" fill="%23161b22"/><text x="60" y="45" font-size="11" fill="%2364748b" text-anchor="middle">⏳ Ładowanie...</text></svg>';
-  if (!_gapiAccessToken) { imgEl.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80"><rect width="120" height="80" fill="%23161b22"/><text x="60" y="45" font-size="10" fill="%23ef4444" text-anchor="middle">Brak Drive</text></svg>'; return; }
+  if (!_gapiAccessToken) return;
   try {
-    const resp = await driveRequest(`https://www.googleapis.com/drive/v3/files/${driveId}?alt=media&spaces=appDataFolder`);
+    const resp = await driveRequest(
+      `https://www.googleapis.com/drive/v3/files/${driveId}?alt=media`,
+      { headers: {} }
+    );
     if (!resp) return;
     const blob = await resp.blob();
-    const url = URL.createObjectURL(blob);
-    _driveScreenCache[driveId] = url;
-    imgEl.src = url;
+    // Użyj blob URL — akceptowane przez CSP (blob:)
+    const blobUrl = URL.createObjectURL(blob);
+    _driveScreenCache[driveId] = blobUrl;
+    if (imgEl && imgEl.isConnected) imgEl.src = blobUrl;
   } catch(e) {
-    imgEl.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80"><rect width="120" height="80" fill="%23161b22"/><text x="60" y="45" font-size="10" fill="%23ef4444" text-anchor="middle">Błąd Drive</text></svg>';
+    console.warn('Drive load error:', e);
   }
 }
 
@@ -3646,12 +3649,17 @@ async function loadDriveScreenshot(driveId, imgEl) {
 function renderScreenImg(url, onclick = '') {
   if (isDriveScreenshot(url)) {
     const driveId = url.replace('drive://', '').replace('gdrive://', '');
-    const id = 'driveimg_' + driveId.slice(0, 8);
-    setTimeout(() => {
-      const el = document.getElementById(id);
-      if (el) loadDriveScreenshot(driveId, el);
-    }, 100);
-    return `<img id="${id}" src="" style="width:100%;height:100%;object-fit:cover" ${onclick ? `onclick="${onclick}"` : ''}>`;
+    const cached = _driveScreenCache[driveId];
+    const id = 'driveimg_' + driveId.slice(0, 8) + '_' + Math.random().toString(36).slice(2,6);
+    // Jeśli mamy w cache — użyj od razu, jeśli nie — załaduj async
+    const initialSrc = cached || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80"><rect width="120" height="80" fill="%230d1117"/><text x="60" y="45" font-size="11" fill="%2364748b" text-anchor="middle">&#x23F3;</text></svg>';
+    if (!cached) {
+      setTimeout(() => {
+        const el = document.getElementById(id);
+        if (el) loadDriveScreenshot(driveId, el);
+      }, 100);
+    }
+    return `<img id="${id}" src="${initialSrc}" style="width:100%;height:100%;object-fit:cover" ${onclick ? `onclick="${onclick}"` : ''}>`;
   }
   return `<img src="${url}" style="width:100%;height:100%;object-fit:cover" ${onclick ? `onclick="${onclick}"` : ''}>`;
 }
