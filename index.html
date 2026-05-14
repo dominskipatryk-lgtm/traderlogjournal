@@ -5529,7 +5529,7 @@ function genRecoveryToken() {
 }
 
 // ===== SETTINGS PAGE =====
-function renderSettings() {
+async function renderSettings() {
   if (!state.currentUser) return;
   const users = getUsers();
   const u = users[state.currentUser] || {};
@@ -5555,7 +5555,24 @@ function renderSettings() {
       ${pct > 80 ? '<div style="font-size:11px;color:var(--red);margin-top:6px">⚠️ Pamięć prawie pełna — zrób backup i usuń stare screenshoty</div>' : ''}
     `;
   }
-  if (userIdEl) userIdEl.value = u.supabaseId || '(zaloguj się przez Supabase aby uzyskać ID)';
+  // [v1.7] Wyświetl User ID — pobierz z sesji Supabase jeśli brak w lokalnych danych
+  if (userIdEl) {
+    let uid = u.supabaseId;
+    if (!uid && _sb) {
+      try {
+        const { data } = await _sb.auth.getSession();
+        uid = data?.session?.user?.id;
+        if (uid) {
+          const users = getUsers();
+          if (users[state.currentUser]) {
+            users[state.currentUser].supabaseId = uid;
+            saveUsers(users);
+          }
+        }
+      } catch(e) {}
+    }
+    userIdEl.value = uid || '— wyloguj się i zaloguj ponownie —';
+  }
   // Show existing recovery code if any
   if (u.recoveryCode) {
     document.getElementById('recovery-code-display').style.display = 'block';
