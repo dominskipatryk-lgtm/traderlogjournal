@@ -1,0 +1,28 @@
+{
+  "name": "TraderLogJournal",
+  "short_name": "TLJournal",
+  "description": "Profesjonalny dziennik tradera — zarządzaj transakcjami i analizuj wyniki.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0a0c0f",
+  "theme_color": "#00d4a1",
+  "lang": "pl",
+  "icons": [
+    {
+      "src": "logo_E_120.png",
+      "sizes": "120x120",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "logo_E_512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["finance", "productivity"],
+  "screenshots": [],
+  "prefer_related_applications": false
+}

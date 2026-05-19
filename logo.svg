@@ -1,0 +1,26 @@
+<svg width="600" height="160" viewBox="0 0 600 160" xmlns="http://www.w3.org/2000/svg">
+  <!-- Okrąg -->
+  <circle cx="80" cy="80" r="68" fill="none" stroke="#00d4a1" stroke-width="2.5"/>
+
+  <!-- Świeca 1 — niedźwiedzia -->
+  <line x1="48" y1="38" x2="48" y2="52" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round"/>
+  <rect x="38" y="52" width="20" height="34" rx="3" fill="#ef4444"/>
+  <line x1="48" y1="86" x2="48" y2="100" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- Świeca 2 — bycza duża -->
+  <line x1="80" y1="28" x2="80" y2="42" stroke="#00d4a1" stroke-width="2.5" stroke-linecap="round"/>
+  <rect x="70" y="42" width="20" height="66" rx="3" fill="#00d4a1"/>
+  <line x1="80" y1="108" x2="80" y2="122" stroke="#00d4a1" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- Świeca 3 — bycza średnia -->
+  <line x1="112" y1="44" x2="112" y2="58" stroke="#00d4a1" stroke-width="2.5" stroke-linecap="round"/>
+  <rect x="102" y="58" width="20" height="46" rx="3" fill="#00d4a1"/>
+  <line x1="112" y1="104" x2="112" y2="118" stroke="#00d4a1" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- Tekst TraderLog -->
+  <text x="172" y="72" font-family="'Segoe UI', system-ui, sans-serif" font-weight="800" font-size="48" fill="#e2e8f0" letter-spacing="-1">TraderLog</text>
+  <!-- Tekst Journal -->
+  <text x="172" y="72" font-family="'Segoe UI', system-ui, sans-serif" font-weight="300" font-size="48" fill="#64748b" letter-spacing="-0.5" dx="258">Journal</text>
+  <!-- Tagline -->
+  <text x="172" y="112" font-family="'Segoe UI', system-ui, sans-serif" font-weight="400" font-size="17" fill="#334155" letter-spacing="3.5">TRADING JOURNAL</text>
+</svg>

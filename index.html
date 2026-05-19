@@ -1,13 +1,76 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin-allow-popups">
-<title>TraderLogJournal</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js" onerror="(function(){var s=document.createElement('script');s.src='https://unpkg.com/@supabase/supabase-js@2.39.3/dist/umd/supabase.js';document.head.appendChild(s)})()"></script>
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https: data: blob:; connect-src 'self' https: wss: data: blob:;">
+<meta name="description" content="Profesjonalny dziennik tradera — zarządzaj transakcjami, analizuj wyniki i śledź swoje konto tradingowe.">
+<meta name="robots" content="index, follow">
+<!-- TODO: zastąp poniższy kod kodem weryfikacji Google Search Console -->
+<!-- <meta name="google-site-verification" content="TWOJ_KOD_Z_SEARCH_CONSOLE"> -->
+<meta name="theme-color" content="#00d4a1">
+<meta name="msapplication-TileColor" content="#00d4a1">
+<meta name="msapplication-TileImage" content="/logo_E_120.png">
+
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://traderlogjournal.com/">
+<meta property="og:title" content="TraderLogJournal — Profesjonalny dziennik tradera">
+<meta property="og:description" content="Zarządzaj transakcjami, analizuj wyniki i śledź swoje konto tradingowe. Bezpłatny dziennik dla traderów.">
+<meta property="og:image" content="https://traderlogjournal.com/logo_E_512.png">
+<meta property="og:image:width" content="512">
+<meta property="og:image:height" content="512">
+<meta property="og:locale" content="pl_PL">
+<meta property="og:locale:alternate" content="en_GB">
+<meta property="og:site_name" content="TraderLogJournal">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="TraderLogJournal — Profesjonalny dziennik tradera">
+<meta name="twitter:description" content="Zarządzaj transakcjami, analizuj wyniki i śledź swoje konto tradingowe.">
+<meta name="twitter:image" content="https://traderlogjournal.com/logo_E_512.png">
+
+<!-- Canonical & Alternate -->
+<link rel="canonical" href="https://traderlogjournal.com/">
+<link rel="alternate" hreflang="pl" href="https://traderlogjournal.com/">
+<link rel="alternate" hreflang="en" href="https://traderlogjournal.com/?lang=en">
+<link rel="alternate" hreflang="x-default" href="https://traderlogjournal.com/">
+
+<!-- Icons & PWA -->
+<link rel="icon" type="image/png" sizes="120x120" href="logo_E_120.png">
+<link rel="icon" type="image/png" sizes="512x512" href="logo_E_512.png">
+<link rel="apple-touch-icon" href="logo_E_120.png">
+<link rel="manifest" href="manifest.json">
+
+<!-- JSON-LD Structured Data -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "TraderLogJournal",
+  "url": "https://traderlogjournal.com/",
+  "description": "Profesjonalny dziennik tradera — zarządzaj transakcjami, analizuj wyniki i śledź swoje konto tradingowe.",
+  "applicationCategory": "FinanceApplication",
+  "operatingSystem": "Web",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "PLN"
+  },
+  "author": {
+    "@type": "Organization",
+    "name": "TraderLogJournal"
+  },
+  "logo": "https://traderlogjournal.com/logo_E_512.png",
+  "image": "https://traderlogjournal.com/logo_E_512.png",
+  "inLanguage": ["pl", "en"]
+}
+</script>
+
+<title>TraderLogJournal — Profesjonalny dziennik tradera</title>
+<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js" onerror="(function(){var s=document.createElement('script');s.defer=true;s.src='https://unpkg.com/@supabase/supabase-js@2.39.3/dist/umd/supabase.js';document.head.appendChild(s)})()"></script>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https: data: blob:; connect-src 'self' https: wss: data: blob:;">
   <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -160,8 +223,8 @@ body {
 .page.active { display: block; }
 
 /* Dashboard */
-.page-title { font-family: var(--font-head); font-size: 26px; font-weight: 800; margin-bottom: 6px; letter-spacing: -0.5px; }
-.page-subtitle { color: var(--text2); font-size: 14px; margin-bottom: 28px; }
+.page-title, h1.page-title { font-family: var(--font-head); font-size: 26px; font-weight: 800; margin-bottom: 6px; letter-spacing: -0.5px; }
+.page-subtitle, p.page-subtitle { color: var(--text2); font-size: 14px; margin-bottom: 28px; }
 .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 28px; }
 .stat-card {
   background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg);
@@ -401,6 +464,16 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 .dv-screen-thumb:hover img { opacity:.85; }
 .dv-screen-del { position:absolute; top:4px; right:4px; background:rgba(0,0,0,.75); border:none; color:var(--red); border-radius:4px; width:22px; height:22px; cursor:pointer; font-size:13px; display:none; align-items:center; justify-content:center; }
 .detail-editing .dv-screen-del { display:flex; }
+/* Cloud placeholder for Drive screenshots not yet loaded */
+.drive-cloud-ph {
+  width:100%; height:100%; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; background:var(--bg3);
+  cursor:pointer; gap:5px; transition:background .15s; border:none; padding:0;
+}
+.drive-cloud-ph:hover { background:var(--bg4); }
+.drive-cloud-ph:hover .dcp-icon { opacity:.9; }
+.dcp-icon { opacity:.5; transition:opacity .15s; }
+.dcp-label { font-size:9px; color:var(--text3); font-family:var(--font-mono); letter-spacing:.5px; }
 .dv-upload-btn { margin:0 16px 12px; padding:10px; border:2px dashed var(--border2); border-radius:8px; text-align:center; cursor:pointer; font-size:12px; color:var(--text3); display:none; transition:all .2s; }
 .dv-upload-btn:hover { border-color:var(--accent); color:var(--accent); }
 .detail-editing .dv-upload-btn { display:block; }
@@ -637,15 +710,24 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 .routine-title { font-size:13px; font-weight:600; color:var(--text); line-height:1.3; }
 .routine-sub { font-size:11px; color:var(--text3); margin-top:2px; line-height:1.4; }
 .routine-item.done .routine-icon::after { content:" ✓"; font-size:12px; color:var(--accent); }
+/* Skip to content */
+.skip-link {
+  position: absolute; top: -100px; left: 8px; z-index: 9999;
+  background: var(--accent); color: #000; padding: 8px 16px;
+  border-radius: 0 0 8px 8px; font-weight: 700; font-size: 13px;
+  text-decoration: none; transition: top .2s;
+}
+.skip-link:focus { top: 0; }
 </style>
 </head>
 <body>
+<a class="skip-link" href="#main-content">Przejdź do treści</a>
 
 <!-- AUTH SCREEN -->
-<div id="auth-screen">
+<div id="auth-screen" role="main">
   <div class="auth-card">
     <div class="auth-logo">
-      <svg width="280" height="50" viewBox="0 0 280 50" xmlns="http://www.w3.org/2000/svg" style="display:block;margin:0 auto">
+      <svg width="280" height="50" viewBox="0 0 280 50" xmlns="http://www.w3.org/2000/svg" style="display:block;margin:0 auto" aria-hidden="true" role="img" aria-label="TraderLogJournal logo">
         <circle cx="25" cy="25" r="23" fill="none" stroke="#00d4a1" stroke-width="2"/>
         <line x1="13" y1="13" x2="13" y2="17" stroke="#ef4444" stroke-width="2" stroke-linecap="round"/>
         <rect x="9" y="17" width="8" height="12" rx="1.5" fill="#ef4444"/>
@@ -662,7 +744,6 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
       </svg>
     </div>
     <div class="auth-subtitle">Profesjonalny dziennik Tradera</div>
-
     <div class="auth-tabs">
       <div class="auth-tab active" onclick="switchAuthTab('login')" data-i18n="auth_login_tab">Logowanie</div>
       <div class="auth-tab" onclick="switchAuthTab('register')" data-i18n="auth_reg_tab">Rejestracja</div>
@@ -681,35 +762,12 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
         <label class="form-label">Hasło</label>
         <div class="pass-wrap">
           <input class="form-input" id="login-pass" type="password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
-          <button class="pass-eye" type="button" onclick="togglePassEye('login-pass',this)">👁</button>
+          <button class="pass-eye" type="button" onclick="togglePassEye('login-pass',this)" aria-label="Pokaż/ukryj hasło">👁</button>
         </div>
       </div>
       <button class="btn-primary" type="button" onclick="doLogin()">Zaloguj się</button>
-
-      <div style="display:flex;align-items:center;gap:10px;margin:14px 0">
-        <div style="flex:1;height:1px;background:var(--border)"></div>
-        <span style="font-size:12px;color:var(--text3)">lub</span>
-        <div style="flex:1;height:1px;background:var(--border)"></div>
-      </div>
-
-      <button type="button" onclick="doLoginWithGoogle()"
-        style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px">
-        <svg width="18" height="18" viewBox="0 0 24 24">
-          <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-          <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-          <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
-          <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-        </svg>
-        Zaloguj się przez Google
-      </button>
-
       <div class="auth-demo" style="margin-top:12px">
         <a onclick="switchAuthTab('forgot')" style="color:var(--text3)">Zapomniałem hasła?</a>
-      </div>
-      <div style="margin-top:10px;text-align:center;font-size:11px;color:var(--text3)">
-        <a href="/privacy.html" target="_blank" style="color:var(--text3);text-decoration:underline">Polityka Prywatności</a>
-        &nbsp;·&nbsp;
-        <a href="/terms.html" target="_blank" style="color:var(--text3);text-decoration:underline">Warunki Korzystania</a>
       </div>
     </div>
 
@@ -734,7 +792,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
         <label class="form-label">Hasło *</label>
         <div class="pass-wrap">
           <input class="form-input" id="reg-pass" type="password" placeholder="min. 6 znaków" autocomplete="new-password" oninput="checkPassStrength('reg-pass','reg-strength','reg-hint')">
-          <button class="pass-eye" type="button" onclick="togglePassEye('reg-pass',this)">👁</button>
+          <button class="pass-eye" type="button" onclick="togglePassEye('reg-pass',this)" aria-label="Pokaż/ukryj hasło">👁</button>
         </div>
         <div class="pass-strength"><div class="pass-strength-bar" id="reg-strength"></div></div>
         <div class="pass-hint" id="reg-hint"></div>
@@ -743,47 +801,10 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
         <label class="form-label">Powtórz hasło *</label>
         <div class="pass-wrap">
           <input class="form-input" id="reg-pass2" type="password" placeholder="••••••••" autocomplete="new-password">
-          <button class="pass-eye" type="button" onclick="togglePassEye('reg-pass2',this)">👁</button>
+          <button class="pass-eye" type="button" onclick="togglePassEye('reg-pass2',this)" aria-label="Pokaż/ukryj hasło">👁</button>
         </div>
       </div>
-
-      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:16px">
-        <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;margin-bottom:10px">
-          <input type="checkbox" id="reg-consent-privacy" style="margin-top:2px;flex-shrink:0;width:16px;height:16px;accent-color:var(--accent)">
-          <span style="font-size:12px;color:var(--text2);line-height:1.5">
-            Przeczytałem/am i akceptuję
-            <a href="/privacy.html" target="_blank" style="color:var(--accent)">Politykę Prywatności</a>
-            TraderLogJournal, w tym informację o przetwarzaniu danych osobowych (GDPR). *
-          </span>
-        </label>
-        <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer">
-          <input type="checkbox" id="reg-consent-terms" style="margin-top:2px;flex-shrink:0;width:16px;height:16px;accent-color:var(--accent)">
-          <span style="font-size:12px;color:var(--text2);line-height:1.5">
-            Przeczytałem/am i akceptuję
-            <a href="/terms.html" target="_blank" style="color:var(--accent)">Warunki Korzystania</a>
-            z serwisu. *
-          </span>
-        </label>
-      </div>
-
       <button class="btn-primary" onclick="doRegister()">Utwórz konto</button>
-
-      <div style="display:flex;align-items:center;gap:10px;margin:14px 0">
-        <div style="flex:1;height:1px;background:var(--border)"></div>
-        <span style="font-size:12px;color:var(--text3)">lub</span>
-        <div style="flex:1;height:1px;background:var(--border)"></div>
-      </div>
-
-      <button type="button" onclick="doLoginWithGoogle()"
-        style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px">
-        <svg width="18" height="18" viewBox="0 0 24 24">
-          <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-          <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-          <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
-          <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-        </svg>
-        Zarejestruj się przez Google
-      </button>
     </div>
 
     <!-- FORGOT PASSWORD -->
@@ -822,14 +843,14 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
         <label class="form-label">Nowe hasło</label>
         <div class="pass-wrap">
           <input class="form-input" id="reset-pass1" type="password" placeholder="minimum 6 znaków" autocomplete="new-password" onkeydown="if(event.key==='Enter')submitPasswordReset()">
-          <button class="pass-eye" type="button" onclick="togglePassEye('reset-pass1',this)">👁</button>
+          <button class="pass-eye" type="button" onclick="togglePassEye('reset-pass1',this)" aria-label="Pokaż/ukryj hasło">👁</button>
         </div>
       </div>
       <div class="form-group">
         <label class="form-label">Powtórz hasło</label>
         <div class="pass-wrap">
           <input class="form-input" id="reset-pass2" type="password" placeholder="powtórz hasło" autocomplete="new-password" onkeydown="if(event.key==='Enter')submitPasswordReset()">
-          <button class="pass-eye" type="button" onclick="togglePassEye('reset-pass2',this)">👁</button>
+          <button class="pass-eye" type="button" onclick="togglePassEye('reset-pass2',this)" aria-label="Pokaż/ukryj hasło">👁</button>
         </div>
       </div>
       <button class="btn-primary" type="button" onclick="submitPasswordReset()">Zapisz nowe hasło</button>
@@ -840,9 +861,9 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 
 <!-- APP -->
 <div id="app">
-  <div class="topbar">
+  <header class="topbar">
     <div class="topbar-logo">
-      <svg width="200" height="36" viewBox="0 0 200 36" xmlns="http://www.w3.org/2000/svg" style="display:block">
+      <svg width="200" height="36" viewBox="0 0 200 36" xmlns="http://www.w3.org/2000/svg" style="display:block" aria-hidden="true">
         <circle cx="18" cy="18" r="16" fill="none" stroke="#00d4a1" stroke-width="1.5"/>
         <line x1="9" y1="9" x2="9" y2="12" stroke="#ef4444" stroke-width="1.5" stroke-linecap="round"/>
         <rect x="6" y="12" width="6" height="9" rx="1" fill="#ef4444"/>
@@ -857,7 +878,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
         <text x="46" y="28" font-family="var(--font-head,'Segoe UI',sans-serif)" font-weight="300" font-size="11" fill="var(--text3,#64748b)" letter-spacing="1">Journal</text>
       </svg>
     </div>
-    <nav class="topbar-nav">
+    <nav class="topbar-nav" aria-label="Nawigacja główna">
       <button class="nav-btn active" onclick="showPage('dashboard')" data-i18n="nav_dashboard">Dashboard</button>
       <button class="nav-btn" onclick="showPage('trades')" data-i18n="nav_trades">Transakcje</button>
       <button class="nav-btn" onclick="showPage('summary')" data-i18n="nav_summary">Podsumowanie</button>
@@ -889,16 +910,16 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
         <span>👤</span>
         <span id="topbar-username">—</span>
       </div>
-      <div class="lang-switch"><button class="lang-btn active" id="lang-pl" onclick="setLang('pl')">PL</button><button class="lang-btn" id="lang-en" onclick="setLang('en')">EN</button></div><button class="btn-sm" onclick="showPage('settings')" data-i18n="nav_settings">⚙️ Ustawienia</button><button class="btn-sm" onclick="doLogout()" data-i18n="logout">Wyloguj</button>
+      <div class="lang-switch" role="group" aria-label="Wybór języka"><button class="lang-btn active" id="lang-pl" onclick="setLang('pl')" aria-label="Język polski">PL</button><button class="lang-btn" id="lang-en" onclick="setLang('en')" aria-label="English">EN</button></div><button class="btn-sm" onclick="showPage('settings')" data-i18n="nav_settings" aria-label="Ustawienia">⚙️ Ustawienia</button><button class="btn-sm" onclick="doLogout()" data-i18n="logout" aria-label="Wyloguj się">Wyloguj</button>
     </div>
-  </div>
+  </header>
 
-  <div class="main-content">
+  <main class="main-content" id="main-content">
 
     <!-- DASHBOARD -->
     <div id="page-dashboard" class="page active">
-      <div class="page-title" id="dash-title">Dashboard</div>
-      <div class="page-subtitle" id="dash-subtitle">Podsumowanie aktywnego konta</div>
+      <h1 class="page-title" id="dash-title">Dashboard</h1>
+      <p class="page-subtitle" id="dash-subtitle">Podsumowanie aktywnego konta</p>
       <div class="stats-grid" id="dash-stats"></div>
       <div class="equity-chart-wrap">
         <div class="chart-title" data-i18n="dash_equity_curve">Krzywa kapitału</div>
@@ -1339,22 +1360,10 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
           </div>
         </div>
 
-        <!-- Strefa niebezpieczna — Usuń konto -->
-        <div class="settings-section" style="border-color:#3d1a1a">
-          <div class="settings-section-title" style="color:#ef4444">⚠️ Strefa niebezpieczna</div>
-          <p style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.6">
-            Usunięcie konta jest <strong>nieodwracalne</strong>. Wszystkie Twoje dane —
-            transakcje, analizy, strategie, ustawienia — zostaną trwale usunięte z naszych serwerów.
-            Screenshoty na Twoim Google Drive <strong>nie</strong> zostaną usunięte.
-          </p>
-          <button class="btn-sm" onclick="confirmDeleteAccount()"
-            style="background:#3d1a1a;border:1px solid #5c2b2b;color:#ef4444;font-weight:700">
-            🗑 Usuń moje konto i wszystkie dane
-          </button>
-        </div>
-
       </div>
     </div>
+
+    <!-- ANALYSIS PAGE -->
     <div id="page-analysis" class="page">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
         <div>
@@ -1389,11 +1398,11 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 
 
     <!-- AI SCREENSHOT ANALYSIS MODAL -->
-    <div class="modal-overlay" id="ai-modal">
+    <div class="modal-overlay" id="ai-modal" role="dialog" aria-modal="true" aria-label="AI Analiza">
       <div class="modal" style="max-width:600px">
         <div class="modal-header">
           <div class="modal-title">🤖 Analiza AI — wykryte dane</div>
-          <button class="modal-close" onclick="closeModal('ai-modal')">✕</button>
+          <button class="modal-close" onclick="closeModal('ai-modal')" aria-label="Zamknij">✕</button>
         </div>
         <div class="modal-body">
           <div id="ai-modal-content">
@@ -1411,11 +1420,11 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
     </div>
 
     <!-- ANALYSIS MODAL -->
-    <div class="modal-overlay" id="analysis-modal">
+    <div class="modal-overlay" id="analysis-modal" role="dialog" aria-modal="true" aria-label="Analiza">
       <div class="modal" style="max-width:860px">
         <div class="modal-header">
           <div class="modal-title" id="analysis-modal-title">Nowa analiza</div>
-          <button class="modal-close" onclick="closeModal('analysis-modal')">✕</button>
+          <button class="modal-close" onclick="closeModal('analysis-modal')" aria-label="Zamknij">✕</button>
         </div>
         <!-- Pasek strategii i setupu -->
         <div style="padding:10px 20px;background:var(--bg);border-bottom:1px solid var(--border)">
@@ -1701,15 +1710,15 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
       </div>
     </div>
 
-  </div>
+  </main>
 </div>
 
 <!-- TRADE MODAL -->
-<div class="modal-overlay" id="trade-modal">
+<div class="modal-overlay" id="trade-modal" role="dialog" aria-modal="true" aria-label="Transakcja">
   <div class="modal">
     <div class="modal-header">
       <div class="modal-title" id="modal-title">Nowa transakcja</div>
-      <button class="modal-close" onclick="closeModal('trade-modal')">✕</button>
+      <button class="modal-close" onclick="closeModal('trade-modal')" aria-label="Zamknij">✕</button>
     </div>
     <!-- Pasek strategii i setupu -->
     <div style="padding:10px 20px;background:var(--bg);border-bottom:1px solid var(--border)">
@@ -1992,11 +2001,11 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 </div>
 
 <!-- ACCOUNT MODAL -->
-<div class="modal-overlay" id="account-modal">
+<div class="modal-overlay" id="account-modal" role="dialog" aria-modal="true" aria-label="Konto">
   <div class="modal" style="max-width:460px">
     <div class="modal-header">
       <div class="modal-title" id="acc-modal-title">Nowe konto</div>
-      <button class="modal-close" onclick="closeModal('account-modal')">✕</button>
+      <button class="modal-close" onclick="closeModal('account-modal')" aria-label="Zamknij">✕</button>
     </div>
     <div class="modal-body">
       <input type="hidden" id="acc-id">
@@ -2055,7 +2064,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 </div>
 
 <!-- TRADE DETAIL MODAL -->
-<div class="modal-overlay" id="detail-modal">
+<div class="modal-overlay" id="detail-modal" role="dialog" aria-modal="true" aria-label="Szczegóły transakcji">
   <div class="modal" style="max-width:1040px">
     <div class="modal-header" style="padding:18px 24px">
       <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0">
@@ -2067,7 +2076,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
         <button class="btn-sm" id="detail-next-btn" title="Następna transakcja">Nast. →</button>
         <button class="btn-sm btn-accent" id="detail-edit-toggle" onclick="detailToggleEdit()">✏️ Edytuj</button>
         <button class="btn-sm del" id="detail-del-btn" style="color:var(--red);border-color:var(--red)" onclick="detailDeleteCurrent()">🗑</button>
-        <button class="modal-close" onclick="closeModal('detail-modal')" style="margin-left:4px">✕</button>
+        <button class="modal-close" onclick="closeModal('detail-modal')" style="margin-left:4px" aria-label="Zamknij">✕</button>
       </div>
     </div>
     <div class="modal-body" id="detail-modal-body" style="padding:20px 24px"></div>
@@ -2080,11 +2089,11 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 
 
 <!-- ADD USER MODAL -->
-<div class="modal-overlay" id="add-user-modal">
+<div class="modal-overlay" id="add-user-modal" role="dialog" aria-modal="true" aria-label="Dodaj użytkownika">
   <div class="modal" style="max-width:440px">
     <div class="modal-header">
       <div class="modal-title" id="add-user-modal-title">Dodaj użytkownika</div>
-      <button class="modal-close" onclick="closeModal('add-user-modal')">✕</button>
+      <button class="modal-close" onclick="closeModal('add-user-modal')" aria-label="Zamknij">✕</button>
     </div>
     <div class="modal-body">
       <input type="hidden" id="au-original-login">
@@ -2119,9 +2128,9 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 
 
 <!-- LIGHTBOX -->
-<div id="lightbox" onclick="closeLightbox()">
-  <button id="lightbox-close" onclick="closeLightbox()">✕</button>
-  <img id="lightbox-img" src="" alt="">
+<div id="lightbox" onclick="closeLightbox()" role="dialog" aria-modal="true" aria-label="Podgląd screenshotu">
+  <button id="lightbox-close" onclick="closeLightbox()" aria-label="Zamknij podgląd">✕</button>
+  <img id="lightbox-img" src="" alt="Screenshot transakcji">
 </div>
 
 <!-- TOAST -->
@@ -2129,11 +2138,11 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 
 <!-- STRATEGY MODALS — wstawione po buildReportHTML -->
     <!-- STRATEGY MANAGER MODAL -->
-<div class="modal-overlay" id="strategy-modal">
+<div class="modal-overlay" id="strategy-modal" role="dialog" aria-modal="true" aria-label="Strategia">
       <div class="modal" style="max-width:600px">
         <div class="modal-header">
           <div class="modal-title">🎯 Moje strategie</div>
-          <button class="modal-close" onclick="closeModal('strategy-modal')">✕</button>
+          <button class="modal-close" onclick="closeModal('strategy-modal')" aria-label="Zamknij">✕</button>
         </div>
         <div class="modal-body">
           <div style="margin-bottom:16px">
@@ -2147,11 +2156,11 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 </div>
 
     <!-- STRATEGY EDITOR MODAL -->
-<div class="modal-overlay" id="strategy-editor-modal">
+<div class="modal-overlay" id="strategy-editor-modal" role="dialog" aria-modal="true" aria-label="Edytor strategii">
       <div class="modal" style="max-width:620px">
         <div class="modal-header">
           <div class="modal-title" id="strategy-editor-title">Nowa strategia</div>
-          <button class="modal-close" onclick="closeModal('strategy-editor-modal')">✕</button>
+          <button class="modal-close" onclick="closeModal('strategy-editor-modal')" aria-label="Zamknij">✕</button>
         </div>
         <div class="modal-body">
           <div class="form-group-modal">
@@ -2182,16 +2191,15 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 </div>
 
     <!-- STRATEGY CHECKLIST MODAL (przy analizie/transakcji) -->
-<div class="modal-overlay" id="strategy-checklist-modal">
+<div class="modal-overlay" id="strategy-checklist-modal" role="dialog" aria-modal="true" aria-label="Checklista strategii">
       <div class="modal" style="max-width:500px">
         <div class="modal-header">
           <div class="modal-title">✅ Checklist strategii</div>
-          <button class="modal-close" onclick="closeModal('strategy-checklist-modal')">✕</button>
+          <button class="modal-close" onclick="closeModal('strategy-checklist-modal')" aria-label="Zamknij">✕</button>
         </div>
         <div class="modal-body">
           <div id="checklist-strategy-name" style="font-size:13px;color:var(--accent);font-weight:700;margin-bottom:14px"></div>
           <div id="checklist-points" style="display:flex;flex-direction:column;gap:8px"></div>
-          <div id="checklist-setup-screenshots" style="display:none;margin-top:14px;padding-top:12px;border-top:1px solid #21262d"></div>
           <div id="checklist-progress-bar" style="margin-top:16px">
             <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text3);margin-bottom:6px">
               <span>Postęp</span>
@@ -2214,11 +2222,11 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 
 
     <!-- SETUP MANAGER MODAL -->
-<div class="modal-overlay" id="setup-manager-modal">
+<div class="modal-overlay" id="setup-manager-modal" role="dialog" aria-modal="true" aria-label="Menedżer setupów">
       <div class="modal" style="max-width:620px">
         <div class="modal-header">
           <div class="modal-title">📐 Setupy strategii: <span id="setup-manager-strategy-name" style="color:var(--accent)"></span></div>
-          <button class="modal-close" onclick="closeModal('setup-manager-modal')">✕</button>
+          <button class="modal-close" onclick="closeModal('setup-manager-modal')" aria-label="Zamknij">✕</button>
         </div>
         <div class="modal-body">
           <div style="margin-bottom:14px">
@@ -2231,11 +2239,11 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 </div>
 
     <!-- SETUP EDITOR MODAL -->
-<div class="modal-overlay" id="setup-editor-modal">
+<div class="modal-overlay" id="setup-editor-modal" role="dialog" aria-modal="true" aria-label="Edytor setupu">
       <div class="modal" style="max-width:640px">
         <div class="modal-header">
           <div class="modal-title" id="setup-editor-title">Nowy setup</div>
-          <button class="modal-close" onclick="closeModal('setup-editor-modal')">✕</button>
+          <button class="modal-close" onclick="closeModal('setup-editor-modal')" aria-label="Zamknij">✕</button>
         </div>
         <div class="modal-body">
           <div class="form-group-modal">
@@ -2274,7 +2282,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 
 
 <!-- DAILY ROUTINE MODAL -->
-    <div class="modal-overlay" id="routine-modal" style="z-index:10000">
+    <div class="modal-overlay" id="routine-modal" role="dialog" aria-modal="true" aria-label="Dzienna rutyna" style="z-index:10000">
       <div class="modal" style="max-width:720px;padding:0;overflow:hidden">
         <div style="background:linear-gradient(135deg,#0a0a1a 0%,#1a1a2e 100%);padding:24px 28px 20px">
           <div style="display:flex;justify-content:space-between;align-items:center">
@@ -2401,8 +2409,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 // [v1.1] SECURITY FIX: Zmień klucz w panelu Supabase jeśli był publiczny w starszej wersji
 const _SB_URL  = 'https://ygrkcynyduuflzvbkkvo.supabase.co';
 const _SB_ANON = 'sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK';
-const _ADMIN_EMAIL = atob('ZG9taW5za2lwYXRyeWtAZ21haWwuY29t');
-function safeAttr(v) { return String(v||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;'); }
+const _ADMIN_EMAIL = 'dominskipatryk@gmail.com';
 
 // ===== STATE =====
 let state = {
@@ -2460,10 +2467,7 @@ function loginAs(username, userData) {
   if (userData.role === 'admin') {
     const ub = document.getElementById('topbar-username');
     if (ub && !ub.parentElement.querySelector('.admin-badge')) {
-      const badge = document.createElement('span');
-      badge.className = 'admin-badge';
-      badge.textContent = 'ADMIN';
-      ub.parentElement.appendChild(badge);
+      ub.parentElement.innerHTML += ' <span class="admin-badge">ADMIN</span>';
     }
   }
   const accounts = getAccounts();
@@ -2493,166 +2497,18 @@ function loginAs(username, userData) {
     return;
   }
 }
-async function doLogout() {
-  // Reset Drive
-  _gapiAccessToken = null;
-  _gapiLoaded = false;
-  stopMT4Listener();
-  // Wyloguj z Supabase — usuwa sesję z localStorage
-  try {
-    if (_sb) await _sb.auth.signOut();
-  } catch(e) {}
-  // Wyczyść stan lokalny
+function doLogout() {
+  if (_sb) _sb.auth.signOut().catch(() => {});
+  // Usuń sesję Supabase z localStorage synchronicznie — nie czekamy na async signOut
+  Object.keys(localStorage).filter(k => k.startsWith('sb-')).forEach(k => localStorage.removeItem(k));
   state.currentUser = null;
   state.currentAccountId = null;
-  state.supabaseUser = null;
-  _appInitRunning = false;
-  _dbCache = {};
-  // Pokaż ekran logowania
   document.getElementById('auth-screen').style.display = 'flex';
   document.getElementById('app').style.display = 'none';
 }
 
-// ===== GOOGLE OAuth LOGIN =====
-async function doLoginWithGoogle() {
-  if (!_sb) initSupabase();
-  if (!_sb) return showAuthError('Brak połączenia z serwerem');
-  try {
-    const { error } = await _sb.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: window.location.origin + window.location.pathname,
-        queryParams: { access_type: 'offline', prompt: 'consent' }
-      }
-    });
-    if (error) showAuthError('Błąd logowania Google: ' + error.message);
-  } catch(e) { showAuthError('Błąd: ' + e.message); }
-}
-
-async function handleGoogleOAuthRedirect() {
-  const hash = window.location.hash;
-  const search = window.location.search;
-  if (!hash.includes('access_token') && !search.includes('code=')) return;
-  if (!_sb) initSupabase();
-  if (!_sb) return;
-  try {
-    const { data, error } = await _sb.auth.getSession();
-    if (error || !data.session) return;
-    const user = data.session.user;
-    const profRes = await fetch(_SB_URL + '/rest/v1/profiles?id=eq.' + user.id + '&select=id,login,active', {
-      headers: { 'apikey': _SB_ANON, 'Authorization': 'Bearer ' + data.session.access_token }
-    });
-    const profiles = await profRes.json();
-    if (!profiles?.length) {
-      // Nowy user przez Google — utwórz profil automatycznie
-      const base = (user.email.split('@')[0]).toLowerCase().replace(/[^a-z0-9_]/g,'_');
-      const login = base + '_' + Math.random().toString(36).slice(2,5);
-      await fetch(_SB_URL + '/rest/v1/profiles', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'apikey': _SB_ANON, 'Authorization': 'Bearer ' + data.session.access_token, 'Prefer': 'return=minimal' },
-        body: JSON.stringify({
-          id: user.id, login,
-          name: user.user_metadata?.full_name || base,
-          email: user.email,
-          role: 'user', active: true,
-          consent_at: new Date().toISOString(),
-          consent_privacy: true, consent_terms: true, terms_version: '1.1'
-        })
-      });
-    }
-    history.replaceState(null, '', window.location.pathname);
-    await appInit();
-  } catch(e) { console.error('Google OAuth error:', e); }
-}
-
-handleGoogleOAuthRedirect();
-
-// ===== USUŃ KONTO =====
-function confirmDeleteAccount() {
-  // Modal potwierdzenia z wpisaniem loginu
-  const login = state.currentUser;
-  const overlay = document.createElement('div');
-  overlay.id = 'delete-account-modal';
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
-  overlay.innerHTML = `
-    <div style="background:#0d1117;border:1px solid #5c2b2b;border-radius:12px;padding:28px;max-width:420px;width:100%">
-      <div style="font-size:18px;font-weight:700;color:#ef4444;margin-bottom:12px">⚠️ Usuń konto</div>
-      <p style="font-size:13px;color:#8b949e;line-height:1.6;margin-bottom:16px">
-        Ta operacja jest <strong style="color:#e6edf3">nieodwracalna</strong>. Zostaną usunięte:<br>
-        • Wszystkie transakcje i analizy<br>
-        • Strategie i setupy<br>
-        • Twój profil i dane konta<br><br>
-        Aby potwierdzić, wpisz swój login: <strong style="color:#00d4a1">${login}</strong>
-      </p>
-      <input id="delete-confirm-input" type="text" placeholder="wpisz swój login"
-        style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #5c2b2b;background:#161b22;color:#e6edf3;font-size:14px;margin-bottom:16px;box-sizing:border-box">
-      <div style="display:flex;gap:10px">
-        <button onclick="document.getElementById('delete-account-modal').remove()"
-          style="flex:1;padding:10px;border-radius:8px;border:1px solid #21262d;background:transparent;color:#8b949e;cursor:pointer;font-size:13px">
-          Anuluj
-        </button>
-        <button onclick="executeDeleteAccount()"
-          style="flex:1;padding:10px;border-radius:8px;border:1px solid #5c2b2b;background:#3d1a1a;color:#ef4444;cursor:pointer;font-size:13px;font-weight:700">
-          🗑 Usuń na zawsze
-        </button>
-      </div>
-    </div>`;
-  document.body.appendChild(overlay);
-  setTimeout(() => document.getElementById('delete-confirm-input')?.focus(), 100);
-}
-
-async function executeDeleteAccount() {
-  const input = document.getElementById('delete-confirm-input')?.value?.trim();
-  if (input !== state.currentUser) {
-    const inp = document.getElementById('delete-confirm-input');
-    if (inp) { inp.style.borderColor = '#ef4444'; inp.placeholder = '❌ Nieprawidłowy login'; inp.value = ''; }
-    return;
-  }
-
-  const btn = document.querySelector('#delete-account-modal button:last-child');
-  if (btn) { btn.textContent = '⏳ Usuwam...'; btn.disabled = true; }
-
-  try {
-    if (!_sb) initSupabase();
-
-    // 1. Pobierz sesję
-    const { data: sessionData } = await _sb.auth.getSession();
-    const userId = sessionData?.session?.user?.id;
-
-    // 2. Usuń dane z Supabase (tabele)
-    if (userId) {
-      const headers = {
-        'apikey': _SB_ANON,
-        'Authorization': 'Bearer ' + (sessionData.session.access_token),
-        'Content-Type': 'application/json'
-      };
-      // Usuń transakcje, analizy, profil
-      await fetch(`https://ygrkcynyduuflzvbkkvo.supabase.co/rest/v1/trades?user_id=eq.${userId}`, { method: 'DELETE', headers });
-      await fetch(`https://ygrkcynyduuflzvbkkvo.supabase.co/rest/v1/analyses?user_id=eq.${userId}`, { method: 'DELETE', headers });
-      await fetch(`https://ygrkcynyduuflzvbkkvo.supabase.co/rest/v1/mt4_signals?user_id=eq.${userId}`, { method: 'DELETE', headers });
-      await fetch(`https://ygrkcynyduuflzvbkkvo.supabase.co/rest/v1/profiles?id=eq.${userId}`, { method: 'DELETE', headers });
-      // 3. Usuń konto Auth
-      await _sb.auth.signOut();
-    }
-
-    // 4. Wyczyść localStorage
-    Object.keys(localStorage).forEach(key => {
-      if (key.includes('traderlog') || key.includes('tlj_')) localStorage.removeItem(key);
-    });
-    _dbCache = {};
-
-    // 5. Zamknij modal i pokaż komunikat
-    document.getElementById('delete-account-modal')?.remove();
-    document.getElementById('app').style.display = 'none';
-    document.getElementById('auth-screen').style.display = 'flex';
-    showAuthSuccess('✓ Konto zostało trwale usunięte. Dziękujemy za korzystanie z TraderLogJournal.');
-
-  } catch(e) {
-    toast('Błąd podczas usuwania konta: ' + e.message, 'error');
-    const btn2 = document.querySelector('#delete-account-modal button:last-child');
-    if (btn2) { btn2.textContent = '🗑 Usuń na zawsze'; btn2.disabled = false; }
-  }
-}
+// ===== DEMO DATA =====
+// seedDemoData removed
 
 // ===== NAVIGATION =====
 function showPage(page) {
@@ -3374,7 +3230,7 @@ function saveTrade() {
     setup: document.getElementById('t-setup').value,
     pre: document.getElementById('t-pre').value,
     post: document.getElementById('t-post').value,
-    screenshots: state.tempScreenshots.map(s => s.dataUrl),
+    screenshots: state.tempScreenshots.filter(s => s.dataUrl && !s.uploading).map(s => s.dataUrl),
     mt4Ticket: parseInt(document.getElementById('t-mt4-ticket')?.value) || null,
     linkedAnalysisId: document.getElementById('t-linked-analysis-id')?.value || null,
   };
@@ -3546,15 +3402,9 @@ function renderDetailModal() {
       <div class="dv-card-head">📷 Screenshoty (${_detailScreenshots.length})</div>
       <div class="dv-screenshots" id="dv-screens">
         ${_detailScreenshots.map(s => {
-          const isD = isDriveScreenshot(s.dataUrl);
-          const driveId = isD ? s.dataUrl.replace('drive://','').replace('gdrive://','') : '';
-          const imgId = isD ? 'dv_'+driveId.slice(0,8)+'_'+s.id.slice(0,4) : '';
-          const imgHtml = isD
-            ? `<img id="${imgId}" src="" style="width:100%;height:100%;object-fit:cover">`
-            : `<img src="${s.dataUrl}" style="width:100%;height:100%;object-fit:cover">`;
-          if (isD) setTimeout(() => { const el = document.getElementById(imgId); if(el) loadDriveScreenshot(driveId, el); }, 150);
-          return `<div class="dv-screen-thumb" onclick="${!isD ? `openLightbox('${safeAttr(s.dataUrl)}')` : `openLightboxSmart('${safeAttr(s.dataUrl)}','${safeAttr(s.id)}')`}">
-            ${imgHtml}
+          if (!s.dataUrl) return `<div class="dv-screen-thumb" style="display:flex;align-items:center;justify-content:center;background:var(--bg3)"><span style="font-size:10px;color:var(--text3)">⏳</span></div>`;
+          return `<div class="dv-screen-thumb">
+            ${renderScreenImg(s.dataUrl, `openLightboxSmart('${s.dataUrl}','${s.id}')`, s.id)}
             <button class="dv-screen-del" onclick="event.stopPropagation();dvRemoveScreen('${s.id}')">✕</button>
           </div>`;
         }).join('')}
@@ -3658,7 +3508,7 @@ function detailSaveEdit() {
   if (isNaN(t.pnl)) t.pnl = null;
   t.pre     = document.getElementById('dv-pre')?.value || '';
   t.post    = document.getElementById('dv-post')?.value || '';
-  t.screenshots = _detailScreenshots.map(s => s.dataUrl);
+  t.screenshots = _detailScreenshots.filter(s => s.dataUrl && !s.uploading).map(s => s.dataUrl);
   trades[idx] = t;
   saveTrades(state.currentAccountId, trades);
   saveSymbol(t.symbol);
@@ -3683,44 +3533,47 @@ function detailDeleteCurrent() {
 }
 
 // ── screenshots in detail ──
+function renderDvScreens() {
+  const wrap = document.getElementById('dv-screens');
+  if (!wrap) return;
+  wrap.innerHTML = _detailScreenshots.map(s => {
+    if (s.uploading) return `<div class="dv-screen-thumb" style="display:flex;align-items:center;justify-content:center;background:var(--bg3)"><span style="font-size:10px;color:var(--text3)">⏳</span></div>`;
+    return `<div class="dv-screen-thumb">
+      ${renderScreenImg(s.dataUrl, `openLightboxSmart('${s.dataUrl}','${s.id}')`, s.id)}
+      <button class="dv-screen-del" onclick="event.stopPropagation();dvRemoveScreen('${s.id}')">✕</button>
+    </div>`;
+  }).join('');
+}
 function dvRemoveScreen(id) {
   _detailScreenshots = _detailScreenshots.filter(s => s.id !== id);
-  const wrap = document.getElementById('dv-screens');
-  if (wrap) {
-    wrap.innerHTML = _detailScreenshots.map(s => `
-      <div class="dv-screen-thumb">
-        <img src="${s.dataUrl}">
-        <button class="dv-screen-del" onclick="dvRemoveScreen('${s.id}')">✕</button>
-      </div>`).join('');
-  }
+  renderDvScreens();
 }
 function dvAddFiles(files) {
+  if (!_gapiLoaded || !_gapiAccessToken) {
+    toast('Połącz z Google Drive aby dodać screenshoty ☁️', 'error');
+    connectGoogleDrive();
+    return;
+  }
   Array.from(files).forEach(f => {
     if (!f.type.startsWith('image/')) return;
     const r = new FileReader();
     r.onload = async e => {
-      const original = e.target.result;
-      const compressed = await compressImage(original, 800, 0.7);
+      const compressed = await compressImage(e.target.result, 800, 0.7);
       const id = genId();
       const tradeId = _detailId;
       const idx = _detailScreenshots.length;
-      let dataUrl = compressed;
-      if (_gapiLoaded && _gapiAccessToken && tradeId) {
-        const driveUrl = await autoUploadScreenToDrive(original, tradeId, idx);
-        if (driveUrl) { dataUrl = driveUrl; } // oryginał na Drive }
+      _detailScreenshots.push({ id, dataUrl: null, uploading: true });
+      renderDvScreens();
+      const driveUrl = await autoUploadScreenToDrive(compressed, tradeId, idx);
+      if (driveUrl) {
+        _driveScreenCache[driveUrl.replace('drive://','')] = compressed;
+        const s = _detailScreenshots.find(s => s.id === id);
+        if (s) { s.dataUrl = driveUrl; s.uploading = false; }
+      } else {
+        _detailScreenshots = _detailScreenshots.filter(s => s.id !== id);
+        toast('Błąd wgrywania na Drive', 'error');
       }
-      _detailScreenshots.push({ id, dataUrl });
-      const wrap = document.getElementById('dv-screens');
-      if (wrap) {
-        wrap.innerHTML = _detailScreenshots.map(s => {
-          const isD = isDriveScreenshot(s.dataUrl);
-          const src = isD ? (_driveScreenCache[s.dataUrl.replace('drive://','')] || '') : s.dataUrl;
-          return `<div class="dv-screen-thumb">
-            <img src="${src}" onclick="openLightboxSmart('${safeAttr(s.dataUrl)}','${safeAttr(s.id)}')">
-            <button class="dv-screen-del" onclick="dvRemoveScreen('${s.id}')">✕</button>
-          </div>`;
-        }).join('');
-      }
+      renderDvScreens();
     };
     r.readAsDataURL(f);
   });
@@ -3759,88 +3612,55 @@ function compressImage(dataUrl, maxWidth, quality) {
   });
 }
 
-// Auto-upload screenshota na Drive po dodaniu
+// Upload screenshota do folderu TraderLogJournal w Drive użytkownika
+// dataUrl może być już skompresowanym base64 — nie kompresujemy ponownie
 async function autoUploadScreenToDrive(dataUrl, tradeId, idx) {
-  if (!_gapiLoaded || !_gapiAccessToken || !tradeId) return null;
+  if (!_gapiLoaded || !_gapiAccessToken) return null;
   try {
-    // Wysyłamy oryginał na Drive — bez kompresji dla pełnej jakości
+    const folderId = await getDriveFolderId();
+    if (!folderId) return null;
     const base64 = dataUrl.split(',')[1];
-    const mimeMatch = dataUrl.match(/data:([^;]+);/);
-    const mime = mimeMatch ? mimeMatch[1] : 'image/jpeg';
     const blob = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
-    const meta = JSON.stringify({
-      name: `tlj-${tradeId}-${idx}.jpg`,
-      parents: ['appDataFolder']
-    });
+    const name = tradeId ? `tlj-${tradeId}-${idx}.jpg` : `tlj-screen-${Date.now()}.jpg`;
+    const meta = JSON.stringify({ name, parents: [folderId] });
     const form = new FormData();
     form.append('metadata', new Blob([meta], { type: 'application/json' }));
-    form.append('file', new Blob([blob], { type: mime }));
+    form.append('file', new Blob([blob], { type: 'image/jpeg' }));
     const resp = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
       { method: 'POST', headers: { Authorization: 'Bearer ' + _gapiAccessToken }, body: form });
-    if (!resp.ok) { console.warn('Drive upload failed:', resp.status); return null; }
     const data = await resp.json();
-    if (data.id) {
-      await updateDriveIndex(tradeId, idx, data.id);
-      // Cache blob URL dla podglądu w RAM
-      const blobUrl = URL.createObjectURL(new Blob([blob], { type: mime }));
-      _driveScreenCache[data.id] = blobUrl;
-      return 'drive://' + data.id;
-    }
-  } catch(e) { console.warn('Auto Drive upload failed:', e); }
+    if (data.id) return 'drive://' + data.id;
+  } catch(e) { console.warn('Drive upload failed:', e); }
   return null;
 }
 
-async function updateDriveIndex(tradeId, idx, fileId) {
-  if (!_gapiAccessToken) return;
-  const indexName = `tlj-screenshots-index-${state.currentUser}.json`;
-  try {
-    const indexNameEsc = indexName.replace(/'/g, "\\'");
-    const searchResp = await fetch(
-      `https://www.googleapis.com/drive/v3/files?q=name='${indexNameEsc}'&spaces=appDataFolder`,
-      { headers: { Authorization: 'Bearer ' + _gapiAccessToken } });
-    const searchData = await searchResp.json();
-    let existingIndex = {};
-    let existingId = null;
-    if (searchData.files?.[0]?.id) {
-      existingId = searchData.files[0].id;
-      const idxResp = await fetch(
-        `https://www.googleapis.com/drive/v3/files/${existingId}?alt=media`,
-        { headers: { Authorization: 'Bearer ' + _gapiAccessToken } });
-      existingIndex = await idxResp.json();
-    }
-    existingIndex[`${tradeId}_${idx}`] = fileId;
-    const indexBlob = JSON.stringify(existingIndex);
-    if (existingId) {
-      await fetch(`https://www.googleapis.com/upload/drive/v3/files/${existingId}?uploadType=media`,
-        { method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + _gapiAccessToken }, body: indexBlob });
-    } else {
-      const idxMeta = JSON.stringify({ name: indexName, parents: ['appDataFolder'] });
-      const idxForm = new FormData();
-      idxForm.append('metadata', new Blob([idxMeta], { type: 'application/json' }));
-      idxForm.append('file', new Blob([indexBlob], { type: 'application/json' }));
-      await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
-        { method: 'POST', headers: { Authorization: 'Bearer ' + _gapiAccessToken }, body: idxForm });
-    }
-  } catch(e) { console.warn('Drive index update failed:', e); }
-}
 
 function handleFiles(files) {
+  if (!_gapiLoaded || !_gapiAccessToken) {
+    toast('Połącz z Google Drive aby dodać screenshoty ☁️', 'error');
+    connectGoogleDrive();
+    return;
+  }
   Array.from(files).forEach(f => {
     if (!f.type.startsWith('image/')) return;
     const reader = new FileReader();
     reader.onload = async e => {
-      const original = e.target.result;
-      const compressed = await compressImage(original, 800, 0.7);
+      const compressed = await compressImage(e.target.result, 800, 0.7);
       const id = genId();
       const tradeId = state.editTradeId || document.getElementById('trade-id')?.value;
       const idx = state.tempScreenshots.length;
-      let dataUrl = compressed; // skompresowany lokalnie
-      // Auto-upload oryginału na Drive
-      if (_gapiLoaded && _gapiAccessToken && tradeId) {
-        const driveUrl = await autoUploadScreenToDrive(original, tradeId, idx);
-        if (driveUrl) { dataUrl = driveUrl; } // Drive zastępuje lokalny cache
+      // Dodaj placeholder "wgrywanie..." natychmiast
+      state.tempScreenshots.push({ id, dataUrl: null, uploading: true });
+      renderScreenshotPreviews();
+      const driveUrl = await autoUploadScreenToDrive(compressed, tradeId, idx);
+      if (driveUrl) {
+        _driveScreenCache[driveUrl.replace('drive://','')] = compressed;
+        const s = state.tempScreenshots.find(s => s.id === id);
+        if (s) { s.dataUrl = driveUrl; s.uploading = false; }
+      } else {
+        state.tempScreenshots = state.tempScreenshots.filter(s => s.id !== id);
+        toast('Błąd wgrywania na Drive — spróbuj ponownie', 'error');
       }
-      state.tempScreenshots.push({id, dataUrl});
       renderScreenshotPreviews();
     };
     reader.readAsDataURL(f);
@@ -3861,55 +3681,90 @@ function isDriveScreenshot(url) {
 
 // Pobierz screenshot z Drive i wyświetl w img
 async function loadDriveScreenshot(driveId, imgEl) {
-  if (!driveId || !imgEl) return;
+  if (!driveId) return;
   // Sprawdź cache RAM
   if (_driveScreenCache[driveId]) {
     imgEl.src = _driveScreenCache[driveId];
     return;
   }
-  if (!_gapiAccessToken) return;
+  imgEl.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80"><rect width="120" height="80" fill="%23161b22"/><text x="60" y="45" font-size="11" fill="%2364748b" text-anchor="middle">⏳ Ładowanie...</text></svg>';
+  if (!_gapiAccessToken) { imgEl.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80"><rect width="120" height="80" fill="%23161b22"/><text x="60" y="45" font-size="10" fill="%23ef4444" text-anchor="middle">Brak Drive</text></svg>'; return; }
   try {
-    const resp = await driveRequest(
-      `https://www.googleapis.com/drive/v3/files/${driveId}?alt=media`,
-      { headers: {} }
-    );
+    const resp = await driveRequest(`https://www.googleapis.com/drive/v3/files/${driveId}?alt=media`);
     if (!resp) return;
     const blob = await resp.blob();
-    // Użyj blob URL — akceptowane przez CSP (blob:)
-    const blobUrl = URL.createObjectURL(blob);
-    _driveScreenCache[driveId] = blobUrl;
-    if (imgEl && imgEl.isConnected) imgEl.src = blobUrl;
+    const url = URL.createObjectURL(blob);
+    _driveScreenCache[driveId] = url;
+    imgEl.src = url;
   } catch(e) {
-    console.warn('Drive load error:', e);
+    imgEl.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80"><rect width="120" height="80" fill="%23161b22"/><text x="60" y="45" font-size="10" fill="%23ef4444" text-anchor="middle">Błąd Drive</text></svg>';
   }
 }
 
-// Renderuj screenshot — obsługuje zarówno base64 jak i Drive ID
-function renderScreenImg(url, onclick = '') {
+// Renderuj screenshot — obsługuje Drive ID (chmurka gdy nie połączony) i base64
+function renderScreenImg(url, onclick = '', sid = '') {
+  if (!url) return `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--bg3)"><span style="font-size:10px;color:var(--text3)">⏳</span></div>`;
   if (isDriveScreenshot(url)) {
     const driveId = url.replace('drive://', '').replace('gdrive://', '');
-    const cached = _driveScreenCache[driveId];
-    const id = 'driveimg_' + driveId.slice(0, 8) + '_' + Math.random().toString(36).slice(2,6);
-    // Jeśli mamy w cache — użyj od razu, jeśli nie — załaduj async
-    const initialSrc = cached || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80"><rect width="120" height="80" fill="%230d1117"/><text x="60" y="45" font-size="11" fill="%2364748b" text-anchor="middle">&#x23F3;</text></svg>';
-    if (!cached) {
-      setTimeout(() => {
-        const el = document.getElementById(id);
-        if (el) loadDriveScreenshot(driveId, el);
-      }, 100);
+    const imgId = 'driveimg_' + driveId.slice(0, 8) + (sid ? '_' + sid.slice(0, 4) : '');
+    if (_gapiAccessToken) {
+      setTimeout(() => { const el = document.getElementById(imgId); if (el) loadDriveScreenshot(driveId, el); }, 100);
+      return `<img id="${imgId}" src="" style="width:100%;height:100%;object-fit:cover;cursor:pointer" ${onclick ? `onclick="${onclick}"` : ''}>`;
     }
-    return `<img id="${id}" src="${initialSrc}" style="width:100%;height:100%;object-fit:cover" ${onclick ? `onclick="${onclick}"` : ''}>`;
+    // Drive nie połączony — pokaż chmurę
+    const safeOnclick = onclick.replace(/'/g, '&#39;');
+    return `<button class="drive-cloud-ph" data-driveid="${driveId}" data-screenid="${sid}" data-onclick="${safeOnclick}" onclick="connectAndShowDrive('${driveId}','${sid}',this,'${safeOnclick}')" title="Załaduj z Google Drive">
+      <svg class="dcp-icon" width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" stroke="#4f9eff" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg>
+      <span class="dcp-label">DRIVE</span>
+    </button>`;
   }
   return `<img src="${url}" style="width:100%;height:100%;object-fit:cover" ${onclick ? `onclick="${onclick}"` : ''}>`;
 }
 
+// Po kliknięciu w chmurę: połącz Drive i wczytaj obraz
+function connectAndShowDrive(driveId, screenId, placeholder, onclickStr) {
+  if (_gapiAccessToken) {
+    // Już połączony — od razu wczytaj
+    const imgId = 'driveimg_' + driveId.slice(0,8) + (screenId ? '_' + screenId.slice(0,4) : '');
+    const img = document.createElement('img');
+    img.id = imgId;
+    img.style.cssText = 'width:100%;height:100%;object-fit:cover;cursor:pointer';
+    if (onclickStr) img.setAttribute('onclick', onclickStr.replace(/&#39;/g, "'"));
+    placeholder.replaceWith(img);
+    loadDriveScreenshot(driveId, img);
+    return;
+  }
+  toast('Łączenie z Google Drive...', 'success');
+  connectGoogleDrive();
+  // Po połączeniu reloadDriveScreenshots() zamieni wszystkie chmurki na obrazy
+}
+
+// Po połączeniu z Drive — zastąp wszystkie chmurki obrazami
+function reloadDriveScreenshots() {
+  document.querySelectorAll('.drive-cloud-ph[data-driveid]').forEach(ph => {
+    const driveId = ph.dataset.driveid;
+    const screenId = ph.dataset.screenid || '';
+    const onclickStr = (ph.dataset.onclick || '').replace(/&#39;/g, "'");
+    const imgId = 'driveimg_' + driveId.slice(0,8) + (screenId ? '_' + screenId.slice(0,4) : '');
+    const img = document.createElement('img');
+    img.id = imgId;
+    img.style.cssText = 'width:100%;height:100%;object-fit:cover;cursor:pointer';
+    if (onclickStr) img.setAttribute('onclick', onclickStr);
+    ph.replaceWith(img);
+    loadDriveScreenshot(driveId, img);
+  });
+}
+
 function renderScreenshotPreviews() {
   const el = document.getElementById('screenshots-preview');
-  el.innerHTML = state.tempScreenshots.map(s => `
-    <div class="screenshot-thumb" onclick="openLightboxSmart('${safeAttr(s.dataUrl || s.id)}', '${safeAttr(s.id)}')">
-      ${renderScreenImg(s.dataUrl, '')}
+  if (!el) return;
+  el.innerHTML = state.tempScreenshots.map(s => {
+    if (s.uploading || !s.dataUrl) return `<div class="screenshot-thumb" style="display:flex;align-items:center;justify-content:center;background:var(--bg3)"><span style="font-size:10px;color:var(--text3)">⏳ Drive...</span></div>`;
+    return `<div class="screenshot-thumb">
+      ${renderScreenImg(s.dataUrl, `openLightboxSmart('${s.dataUrl}','${s.id}')`, s.id)}
       <button class="screenshot-del" onclick="event.stopPropagation();removeScreenshot('${s.id}')">✕</button>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 async function openLightboxSmart(urlOrId, id) {
@@ -3919,7 +3774,7 @@ async function openLightboxSmart(urlOrId, id) {
       openLightbox(_driveScreenCache[driveId]);
     } else {
       toast('⏳ Pobieranie z Drive...', 'success');
-      const resp = await driveRequest(`https://www.googleapis.com/drive/v3/files/${driveId}?alt=media&spaces=appDataFolder`);
+      const resp = await driveRequest(`https://www.googleapis.com/drive/v3/files/${driveId}?alt=media`);
       if (!resp) return;
       const blob = await resp.blob();
       const url = URL.createObjectURL(blob);
@@ -4611,18 +4466,6 @@ async function saveDBAsync(data) {
   }
 }
 function getDB()    { return getDBSync(); }
-
-// [v1.7] renderAll z debounce — zapobiega wielokrotnym renderowaniom
-let _renderAllTimer = null;
-function renderAll() {
-  clearTimeout(_renderAllTimer);
-  _renderAllTimer = setTimeout(() => {
-    renderDashboard();
-    renderTrades();
-    if (document.getElementById('page-summary')?.classList.contains('active')) renderSummary();
-  }, 50);
-}
-
 function saveDB(db) {
   _dbCache = db;
   if (IS_ELECTRON) {
@@ -4632,6 +4475,7 @@ function saveDB(db) {
       localStorage.setItem('traderlog_db', JSON.stringify(db));
     } catch(e) {
       if (e.name === 'QuotaExceededError') {
+        // Spróbuj zwolnić miejsce — usuń screenshoty z najstarszych zamkniętych transakcji
         showStorageWarning(db);
       }
     }
@@ -4939,19 +4783,16 @@ function adminResetPass(login) {
 }
 
 async function adminDeleteUser(userId, login) {
-  if (!isAdmin()) return toast('Brak uprawnień', 'error');
   if (!confirm('Usunąć użytkownika ' + login + '? Tej operacji nie można cofnąć.')) return;
   try {
-    const { data: { session } } = await _sb.auth.getSession();
-    const token = session?.access_token;
-    if (!token) return toast('Brak aktywnej sesji admina', 'error');
-    const headers = { 'apikey': _SB_ANON, 'Authorization': 'Bearer ' + token };
-    // Usuń dane użytkownika
-    await fetch(_SB_URL + '/rest/v1/trades?user_id=eq.' + userId, { method: 'DELETE', headers });
-    await fetch(_SB_URL + '/rest/v1/analyses?user_id=eq.' + userId, { method: 'DELETE', headers });
-    await fetch(_SB_URL + '/rest/v1/mt4_signals?user_id=eq.' + userId, { method: 'DELETE', headers });
-    await fetch(_SB_URL + '/rest/v1/profiles?id=eq.' + userId, { method: 'DELETE', headers });
-    toast('Użytkownik ' + login + ' usunięty ✓', 'success');
+    await fetch('https://ygrkcynyduuflzvbkkvo.supabase.co/rest/v1/profiles?id=eq.' + userId, {
+      method: 'DELETE',
+      headers: {
+        'apikey': _SB_ANON,
+        'Authorization': 'Bearer ' + _SB_ANON
+      }
+    });
+    toast('Użytkownik usunięty', 'success');
     renderAdmin();
   } catch(e) { toast('Błąd: ' + e.message, 'error'); }
 }
@@ -5007,7 +4848,7 @@ async function adminImport() {
     _dbCache = data;
     toast('Import zakończony ✓', 'success');
     setTimeout(() => {
-      renderAll();
+      renderDashboard(); renderTrades(); renderSummary();
       renderAccounts(); refreshTopbarAccount(); updateDraftBadges();
       updateAdminNav(); renderAdmin();
     }, 400);
@@ -5362,10 +5203,7 @@ function collectFormDraft() {
     setup:       document.getElementById('t-setup')?.value || '',
     pre:         document.getElementById('t-pre')?.value || '',
     post:        document.getElementById('t-post')?.value || '',
-    // [v1.7] Nie zapisuj base64 w szkicach — tylko referencje drive://
-    screenshots: state.tempScreenshots
-      .map(s => s.dataUrl)
-      .filter(d => isDriveScreenshot(d)),
+    screenshots: state.tempScreenshots.filter(s => s.dataUrl && !s.uploading).map(s => s.dataUrl),
     editId:      document.getElementById('trade-id')?.value || '',
     savedAt:     Date.now(),
   };
@@ -5791,17 +5629,6 @@ async function doLogin() {
 }
 
 async function doRegister() {
-  // Rate limiting — max 3 próby rejestracji na 10 minut
-  const rlKey = 'tlj_reg_attempts';
-  const rlData = JSON.parse(localStorage.getItem(rlKey) || '{"count":0,"since":0}');
-  const now = Date.now();
-  if (now - rlData.since > 10 * 60 * 1000) { rlData.count = 0; rlData.since = now; }
-  if (rlData.count >= 3) {
-    const wait = Math.ceil((10 * 60 * 1000 - (now - rlData.since)) / 60000);
-    return showAuthError(`Zbyt wiele prób rejestracji. Poczekaj ${wait} minut.`);
-  }
-  rlData.count++;
-  localStorage.setItem(rlKey, JSON.stringify(rlData));
   const login = (document.getElementById('reg-user')?.value||'').trim().toLowerCase();
   const email = (document.getElementById('reg-email')?.value||'').trim().toLowerCase();
   const name  = (document.getElementById('reg-name')?.value||'').trim();
@@ -5813,13 +5640,6 @@ async function doRegister() {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return showAuthError('Nieprawidłowy format email');
   if (pass.length < 6) return showAuthError('Hasło minimum 6 znaków');
   if (pass !== pass2) return showAuthError('Hasła nie są zgodne');
-
-  // Walidacja zgód GDPR
-  const consentPrivacy = document.getElementById('reg-consent-privacy')?.checked;
-  const consentTerms   = document.getElementById('reg-consent-terms')?.checked;
-  if (!consentPrivacy) return showAuthError('Musisz zaakceptować Politykę Prywatności');
-  if (!consentTerms)   return showAuthError('Musisz zaakceptować Warunki Korzystania');
-  const consentAt = new Date().toISOString();
 
   const btn = document.querySelector('#register-form .btn-primary');
   if (btn) { btn.textContent = '⏳ Tworzę konto...'; btn.disabled = true; }
@@ -5842,21 +5662,12 @@ async function doRegister() {
     const { data, error } = await _sb.auth.signUp({ email, password: pass, options: { data: { login, name: name||login } } });
     if (error) return done('Błąd: ' + error.message);
 
-    // Utwórz profil z datą zgody GDPR
+    // Utwórz profil
     if (data.user) {
       await fetch('https://ygrkcynyduuflzvbkkvo.supabase.co/rest/v1/profiles', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'apikey': _SB_ANON, 'Authorization': 'Bearer ' + _SB_ANON, 'Prefer': 'return=minimal' },
-        body: JSON.stringify({
-          id: data.user.id,
-          login, name: name||login,
-          email: email || data.user.email,
-          role: 'user', active: false,
-          consent_at: consentAt,
-          consent_privacy: true,
-          consent_terms: true,
-          terms_version: '1.1'
-        })
+        body: JSON.stringify({ id: data.user.id, login, name: name||login, email: email || data.user.email, role: 'user', active: false })
       });
     }
 
@@ -5888,7 +5699,7 @@ async function doForgotPassword() {
 
   try {
     const result = await _sb.auth.resetPasswordForEmail(email, {
-      redirectTo: 'https://traderlogjournal.com/'
+      redirectTo: window.location.origin + '/'
     });
     if (btn) { btn.textContent = '📧 Wyślij link do resetowania hasła'; btn.disabled = false; }
     const msg = document.getElementById('forgot-msg');
@@ -5930,7 +5741,7 @@ async function doForgotRequest() {
 
   try {
     const result = await _sb.auth.resetPasswordForEmail(email, {
-      redirectTo: 'https://traderlogjournal.com/'
+      redirectTo: window.location.origin + '/'
     });
     if (btn) { btn.textContent = '📧 Wyślij link do resetowania'; btn.disabled = false; }
     if (result.error) {
@@ -7250,7 +7061,7 @@ function manualBackupImport() {
         saveDB(data); _dbCache = data;
         toast('Import zakończony ✓', 'success');
         setTimeout(() => {
-          renderAll();
+          renderDashboard(); renderTrades(); renderSummary();
           renderAccounts(); refreshTopbarAccount(); updateDraftBadges();
         }, 400);
       } catch { toast('Błąd importu — nieprawidłowy plik', 'error'); }
@@ -7290,10 +7101,11 @@ function checkAutoDownload() {
       toast('Auto-backup pobrany przy logowaniu ✓', 'success');
     }, 2000);
   }
-  // [v1.7] Ładuj skrypt GAPI w tle — bez żadnego UI, token poprosimy gdy user kliknie
+  // [v1.7] Auto-backup na Google Drive przy każdym logowaniu
+  // Ładujemy skrypt GAPI w tle — token poprosimy dopiero gdy użytkownik kliknie
   if (s.googleDrive) {
     setTimeout(() => {
-      loadGAPISilent(); // tylko inicjalizacja skryptu, bez połączenia
+      loadGAPI(); // tylko inicjalizacja, bez popup
     }, 3000);
   }
 }
@@ -7381,67 +7193,39 @@ function showBackupReminder(msg, urgent) {
 
 // ── Google Drive (GAPI) ───────────────────────────────────────────────────────
 const GDRIVE_CLIENT_ID = '917283832876-tfkevp9mol5k7uqjo8de7mp7ej5dfoap.apps.googleusercontent.com';
-const GDRIVE_SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.appdata';
+const GDRIVE_SCOPES = 'https://www.googleapis.com/auth/drive.file';
+const GDRIVE_FOLDER_NAME = 'TraderLogJournal';
 let _gapiLoaded = false;
 let _gapiTokenClient = null;
-let _gapiAccessToken = null; // [v1.7] przechowuje token bez potrzeby gapi.client
+let _gapiAccessToken = null;
+let _driveFolderId = null; // ID folderu TraderLogJournal w Drive użytkownika
+
+async function getDriveFolderId() {
+  if (_driveFolderId) return _driveFolderId;
+  if (!_gapiAccessToken) return null;
+  try {
+    const q = encodeURIComponent(`name='${GDRIVE_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false`);
+    const resp = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)`,
+      { headers: { Authorization: 'Bearer ' + _gapiAccessToken } });
+    const data = await resp.json();
+    if (data.files?.[0]?.id) {
+      _driveFolderId = data.files[0].id;
+      return _driveFolderId;
+    }
+    // Utwórz folder jeśli nie istnieje
+    const createResp = await fetch('https://www.googleapis.com/drive/v3/files', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + _gapiAccessToken },
+      body: JSON.stringify({ name: GDRIVE_FOLDER_NAME, mimeType: 'application/vnd.google-apps.folder' })
+    });
+    const folder = await createResp.json();
+    if (folder.id) { _driveFolderId = folder.id; return _driveFolderId; }
+  } catch(e) { console.warn('getDriveFolderId error:', e); }
+  return null;
+}
 
 function initGoogleDrive() {
   loadGAPI();
-}
-
-// Cicha inicjalizacja — bez UI, bez popup
-function loadGAPISilent() {
-  const cid = GDRIVE_CLIENT_ID;
-  if (document.querySelector('script[src*="accounts.google.com/gsi"]')) {
-    _initGapiTokenClientSilent(cid);
-    return;
-  }
-  const script = document.createElement('script');
-  script.src = 'https://accounts.google.com/gsi/client';
-  script.onload = () => _initGapiTokenClientSilent(cid);
-  script.onerror = () => {};
-  document.head.appendChild(script);
-}
-
-function _initGapiTokenClientSilent(cid) {
-  _gapiTokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: cid,
-    scope: GDRIVE_SCOPES,
-    prompt: 'consent',
-    callback: (resp) => {
-      if (resp.access_token) {
-        _gapiAccessToken = resp.access_token;
-        _gapiLoaded = true;
-        localStorage.setItem('tlj_gdrive_connected_' + (state.currentUser||''), '1');
-        updateGDriveStatus('✓ Połączono z Google Drive', 'ok');
-        toast('Połączono z Google Drive ✓', 'success');
-        renderBackupOptions();
-      }
-    },
-    error_callback: () => {}
-  });
-  // Cichy refresh — prompt:none nie otwiera okna, błędy konsoli są nieszkodliwe
-  const wasConnected = localStorage.getItem('tlj_gdrive_connected_' + (state.currentUser||''));
-  if (wasConnected) {
-    try {
-      const silentClient = google.accounts.oauth2.initTokenClient({
-        client_id: cid,
-        scope: GDRIVE_SCOPES,
-        prompt: 'none',
-        callback: (resp) => {
-          if (resp.access_token && !resp.error) {
-            _gapiAccessToken = resp.access_token;
-            _gapiLoaded = true;
-          }
-        },
-        error_callback: () => {}
-      });
-      setTimeout(() => {
-        try { silentClient.requestAccessToken({ prompt: 'none' }); } catch(e) {}
-      }, 500);
-    } catch(e) {}
-  }
 }
 
 function showGDriveSetup() {
@@ -7461,20 +7245,22 @@ function saveGDriveClientId() {
 }
 
 function loadGAPI(clientId) {
+  // [v1.7] FIX: nie prosimy o token automatycznie — tylko inicjalizujemy klienta
+  // Token jest proszony dopiero gdy użytkownik kliknie przycisk (unika blokady popupów)
   const cid = GDRIVE_CLIENT_ID;
   if (document.querySelector('script[src*="accounts.google.com/gsi"]')) {
+    // Skrypt już załadowany — tylko zainicjuj klienta
     _initGapiTokenClient(cid);
     return;
   }
   const script = document.createElement('script');
   script.src = 'https://accounts.google.com/gsi/client';
   script.onload = () => _initGapiTokenClient(cid);
-  script.onerror = () => console.warn('Google API load failed');
+  script.onerror = () => toast('Błąd ładowania Google API', 'error');
   document.head.appendChild(script);
 }
 
 function _initGapiTokenClient(cid) {
-  // Główny klient — używany gdy użytkownik kliknie "Połącz"
   _gapiTokenClient = google.accounts.oauth2.initTokenClient({
     client_id: cid,
     scope: GDRIVE_SCOPES,
@@ -7483,37 +7269,14 @@ function _initGapiTokenClient(cid) {
       if (resp.access_token) {
         _gapiAccessToken = resp.access_token;
         _gapiLoaded = true;
-        localStorage.setItem('tlj_gdrive_connected_' + (state.currentUser||''), '1');
+        _driveFolderId = null; // reset — pobierzemy nowy przy pierwszym upload/read
         updateGDriveStatus('✓ Połączono z Google Drive', 'ok');
         toast('Połączono z Google Drive ✓', 'success');
         renderBackupOptions();
+        reloadDriveScreenshots();
       }
-    },
-    error_callback: () => {}
+    }
   });
-
-  // Cichy refresh — prompt:none nie otwiera okna
-  const wasConnected = localStorage.getItem('tlj_gdrive_connected_' + (state.currentUser||''));
-  if (wasConnected) {
-    try {
-      const silentClient = google.accounts.oauth2.initTokenClient({
-        client_id: cid,
-        scope: GDRIVE_SCOPES,
-        prompt: 'none',
-        callback: (resp) => {
-          if (resp.access_token && !resp.error) {
-            _gapiAccessToken = resp.access_token;
-            _gapiLoaded = true;
-            updateGDriveStatus('✓ Drive aktywny', 'ok');
-          }
-        },
-        error_callback: () => {}
-      });
-      setTimeout(() => {
-        try { silentClient.requestAccessToken({ prompt: 'none' }); } catch(e) {}
-      }, 1500);
-    } catch(e) {}
-  }
 }
 
 async function driveRequest(url, options = {}) {
@@ -7562,30 +7325,29 @@ async function backupToGoogleDrive() {
     const db = getDB();
     const json = JSON.stringify(db, null, 2);
     const fname = `traderlogjournal-${state.currentUser}-backup.json`;
-    const fnameEsc = fname.replace(/'/g, "\\'");
-    const searchResp = await driveRequest(`https://www.googleapis.com/drive/v3/files?q=name='${fnameEsc}'&spaces=drive`, {
+    // Check if file exists
+    const searchResp = await driveRequest(`https://www.googleapis.com/drive/v3/files?q=name='${fname}'&spaces=drive`, {
       headers: {}
     });
-    if (!searchResp) return;
     const searchData = await searchResp.json();
     const fileId = searchData.files?.[0]?.id;
     if (fileId) {
-      const patchResp = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
+      // Plik istnieje — aktualizuj tylko treść
+      await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + _gapiAccessToken },
         body: json
       });
-      if (!patchResp.ok) throw new Error('Błąd aktualizacji pliku: ' + patchResp.status);
     } else {
+      // Nowy plik — multipart żeby ustawić nazwę i treść jednocześnie
       const boundary = 'tlj_backup_boundary';
       const meta = JSON.stringify({ name: fname, mimeType: 'application/json' });
       const body = `--${boundary}\r\nContent-Type: application/json\r\n\r\n${meta}\r\n--${boundary}\r\nContent-Type: application/json\r\n\r\n${json}\r\n--${boundary}--`;
-      const postResp = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+      await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
         method: 'POST',
         headers: { 'Content-Type': `multipart/related; boundary=${boundary}`, Authorization: 'Bearer ' + _gapiAccessToken },
         body
       });
-      if (!postResp.ok) throw new Error('Błąd tworzenia pliku: ' + postResp.status);
     }
     const s = getBackupSettings(); s.lastBackup = Date.now(); saveBackupSettings(s);
     updateGDriveStatus('✓ Zapisano na Google Drive — ' + new Date().toLocaleTimeString('pl-PL'), 'ok');
@@ -7611,7 +7373,7 @@ async function restoreFromGoogleDrive() {
     const data = await fileResp.json();
     saveDB(data); _dbCache = data;
     toast('Przywrócono z Google Drive ✓', 'success');
-    renderAll();
+    renderDashboard(); renderTrades(); renderSummary();
     renderAccounts(); refreshTopbarAccount(); updateDraftBadges();
   } catch(e) { toast('Błąd przywracania: ' + e.message, 'error'); }
 }
@@ -7621,201 +7383,46 @@ function updateGDriveStatus(msg, cls) {
   if (el) { el.textContent = msg; el.className = 'backup-status ' + cls; }
 }
 
-// [v1.7] Backup screenshotów na Google Drive (appdata)
+// Migracja istniejących base64 screenshotów na Drive (dla starych transakcji)
 async function backupScreenshotsToGoogleDrive() {
-  if (!_gapiLoaded || !_gapiTokenClient) {
-    toast('Najpierw połącz z Google Drive', 'error');
-    connectGoogleDrive();
-    return;
-  }
-
-  const token = _gapiAccessToken;
-  if (!token) { toast('Brak tokenu — kliknij Połącz z Google Drive', 'error'); connectGoogleDrive(); return; }
-
-  toast('⏳ Zapisuję screenshoty na Drive...', 'success');
+  if (!_gapiLoaded || !_gapiAccessToken) { toast('Najpierw połącz z Google Drive', 'error'); connectGoogleDrive(); return; }
   const db = getDB();
-  let saved = 0, skipped = 0;
-
-  try {
-    // Zbierz wszystkie screenshoty z transakcji
-    const allScreenshots = [];
-    Object.keys(db).forEach(key => {
-      if (!key.startsWith('trades_') && !Array.isArray(db[key])) return;
-      const trades = Array.isArray(db[key]) ? db[key] : [];
-      trades.forEach(trade => {
-        (trade.screenshots || []).forEach((dataUrl, idx) => {
-          if (dataUrl?.startsWith('data:image')) {
-            allScreenshots.push({ tradeId: trade.id, idx, dataUrl, key });
-          }
-        });
+  const allScreenshots = [];
+  const tradesObj = db.trades || {};
+  Object.keys(tradesObj).forEach(key => {
+    (Array.isArray(tradesObj[key]) ? tradesObj[key] : []).forEach(trade => {
+      (trade.screenshots || []).forEach((dataUrl, idx) => {
+        if (dataUrl?.startsWith('data:image')) allScreenshots.push({ tradeId: trade.id, idx, dataUrl, key });
       });
     });
-
-    if (!allScreenshots.length) {
-      toast('Brak screenshotów do zapisania', 'success');
-      return;
-    }
-
-    // Sprawdź istniejący index
-    const indexName = `tlj-screenshots-index-${state.currentUser}.json`;
-    const indexSearch = await fetch(
-      `https://www.googleapis.com/drive/v3/files?q=name='${indexName}'&spaces=appDataFolder`,
-      { headers: { Authorization: 'Bearer ' + token } }
-    );
-    const indexData = await indexSearch.json();
-    const existingIndex = {};
-    if (indexData.files?.[0]?.id) {
-      const idxResp = await fetch(
-        `https://www.googleapis.com/drive/v3/files/${indexData.files[0].id}?alt=media`,
-        { headers: { Authorization: 'Bearer ' + token } }
-      );
-      const idxJson = await idxResp.json();
-      Object.assign(existingIndex, idxJson);
-    }
-
-    // Zapisz każdy screenshot który jeszcze nie jest na Drive
+  });
+  if (!allScreenshots.length) { toast('Brak base64 screenshotów — wszystkie już na Drive ✓', 'success'); return; }
+  toast(`⏳ Wgrywam ${allScreenshots.length} screenshotów na Drive...`, 'success');
+  let saved = 0;
+  try {
     for (const s of allScreenshots) {
-      const fileKey = `${s.tradeId}_${s.idx}`;
-      if (existingIndex[fileKey]) { skipped++; continue; }
-
-      // Kompresuj
       const compressed = await compressImage(s.dataUrl, 800, 0.7);
-      const base64 = compressed.split(',')[1];
-      const blob = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
-
-      const meta = JSON.stringify({
-        name: `tlj-${s.tradeId}-${s.idx}.jpg`,
-        parents: ['appDataFolder']
-      });
-
-      const form = new FormData();
-      form.append('metadata', new Blob([meta], { type: 'application/json' }));
-      form.append('file', new Blob([blob], { type: 'image/jpeg' }));
-
-      const uploadResp = await fetch(
-        'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
-        { method: 'POST', headers: { Authorization: 'Bearer ' + token }, body: form }
-      );
-      const uploadData = await uploadResp.json();
-      if (uploadData.id) {
-        existingIndex[fileKey] = uploadData.id;
-        // [v1.7] Zastąp base64 referencją do Drive — zwalnia localStorage
-        if (db.trades) {
-          Object.keys(db.trades).forEach(k => {
-            db.trades[k] = (db.trades[k] || []).map(t => {
-              if (t.id === s.tradeId && t.screenshots?.[s.idx]) {
-                const screens = [...t.screenshots];
-                screens[s.idx] = 'drive://' + uploadData.id;
-                return { ...t, screenshots: screens };
-              }
-              return t;
-            });
-          });
-        }
+      const driveUrl = await autoUploadScreenToDrive(compressed, s.tradeId, s.idx);
+      if (driveUrl) {
+        tradesObj[s.key] = tradesObj[s.key].map(t => {
+          if (t.id !== s.tradeId) return t;
+          const screens = [...(t.screenshots || [])];
+          screens[s.idx] = driveUrl;
+          return { ...t, screenshots: screens };
+        });
         saved++;
       }
     }
-
-    // Zapisz zaktualizowany index
-    const indexBlob = JSON.stringify(existingIndex);
-    if (indexData.files?.[0]?.id) {
-      await fetch(
-        `https://www.googleapis.com/upload/drive/v3/files/${indexData.files[0].id}?uploadType=media`,
-        { method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token }, body: indexBlob }
-      );
-    } else {
-      const idxMeta = JSON.stringify({ name: indexName, parents: ['appDataFolder'] });
-      const idxForm = new FormData();
-      idxForm.append('metadata', new Blob([idxMeta], { type: 'application/json' }));
-      idxForm.append('file', new Blob([indexBlob], { type: 'application/json' }));
-      await fetch(
-        'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
-        { method: 'POST', headers: { Authorization: 'Bearer ' + token }, body: idxForm }
-      );
-    }
-
-    toast(`✓ Screenshoty zapisane: ${saved} nowych, ${skipped} już było na Drive`, 'success');
-    // Zapisz DB z referencjami drive:// zamiast base64
-    if (saved > 0) {
-      saveDB(db);
-      renderTrades();
-      renderSettings();
-      toast(`Zwolniono ${(saved * 0.3).toFixed(1)} MB w localStorage ✓`, 'success');
-    }
-  } catch(e) {
-    toast('Błąd backupu screenshotów: ' + e.message, 'error');
-    console.warn('Screenshot backup error:', e);
-  }
+    if (saved > 0) { db.trades = tradesObj; saveDB(db); _dbCache = db; renderTrades(); renderSettings(); }
+    toast(`✓ Przeniesiono ${saved} screenshotów na Drive — zwolniono localStorage`, 'success');
+  } catch(e) { toast('Błąd migracji: ' + e.message, 'error'); }
 }
 
-// [v1.7] Przywracanie screenshotów z Google Drive
+// Przywracanie — screenshoty są już na Drive jako drive:// referencje; ta funkcja tylko odświeża widok
 async function restoreScreenshotsFromGoogleDrive() {
-  if (!_gapiLoaded || !_gapiTokenClient) {
-    toast('Najpierw połącz z Google Drive', 'error');
-    connectGoogleDrive();
-    return;
-  }
-
-  const token = _gapiAccessToken;
-  if (!token) { toast('Brak tokenu — kliknij Połącz z Google Drive', 'error'); connectGoogleDrive(); return; }
-  if (!confirm('Przywrócić screenshoty z Google Drive? Uzupełni brakujące screenshoty w transakcjach.')) return;
-
-  toast('⏳ Przywracam screenshoty z Drive...', 'success');
-
-  try {
-    const indexName = `tlj-screenshots-index-${state.currentUser}.json`;
-    const indexSearch = await fetch(
-      `https://www.googleapis.com/drive/v3/files?q=name='${indexName}'&spaces=appDataFolder`,
-      { headers: { Authorization: 'Bearer ' + token } }
-    );
-    const indexData = await indexSearch.json();
-    if (!indexData.files?.[0]?.id) { toast('Brak backupu screenshotów na Drive', 'error'); return; }
-
-    const idxResp = await fetch(
-      `https://www.googleapis.com/drive/v3/files/${indexData.files[0].id}?alt=media`,
-      { headers: { Authorization: 'Bearer ' + token } }
-    );
-    const index = await idxResp.json();
-
-    const db = getDB();
-    let restored = 0;
-
-    for (const [fileKey, fileId] of Object.entries(index)) {
-      const parts = fileKey.split('_');
-      const tradeId = parts[0];
-      const idx = parseInt(parts[1]);
-
-      // Szukaj w db.trades (poprawna struktura)
-      const tradesObj = db.trades || {};
-      let found = false;
-      for (const key of Object.keys(tradesObj)) {
-        if (!Array.isArray(tradesObj[key])) continue;
-        const tradeIdx = tradesObj[key].findIndex(t => t.id === tradeId);
-        if (tradeIdx < 0) continue;
-        const trade = tradesObj[key][tradeIdx];
-        if (!trade.screenshots) trade.screenshots = [];
-        // Wstaw drive:// referencję zamiast pobierać base64
-        if (!trade.screenshots[idx] || trade.screenshots[idx] === '') {
-          trade.screenshots[idx] = 'drive://' + fileId;
-          restored++;
-          found = true;
-        }
-        break;
-      }
-    }
-
-    saveDB(db);
-    _dbCache = db;
-    renderTrades();
-    if (restored > 0) {
-      toast(`✓ Przywrócono ${restored} screenshotów — widoczne po otwarciu transakcji`, 'success');
-    } else {
-      toast('Brak screenshotów do przywrócenia (może już są przypisane)', 'success');
-    }
-  } catch(e) {
-    toast('Błąd przywracania screenshotów: ' + e.message, 'error');
-    console.warn('Screenshot restore error:', e);
-  }
+  if (!_gapiLoaded || !_gapiAccessToken) { toast('Najpierw połącz z Google Drive', 'error'); connectGoogleDrive(); return; }
+  toast('✓ Screenshoty są pobierane z Drive na bieżąco — otwórz transakcję aby zobaczyć', 'success');
+  reloadDriveScreenshots();
 }
 
 // ── Server backup notify ──────────────────────────────────────────────────────
@@ -8248,21 +7855,30 @@ document.addEventListener('click', e => {
 
 // ── Screenshots in analysis ───────────────────────────────────────────────────
 function anHandleFiles(files) {
+  if (!_gapiLoaded || !_gapiAccessToken) {
+    toast('Połącz z Google Drive aby dodać screenshoty ☁️', 'error');
+    connectGoogleDrive();
+    return;
+  }
   Array.from(files).forEach(f => {
     if (!f.type.startsWith('image/')) return;
     const r = new FileReader();
     r.onload = async e => {
-      const original = e.target.result;
-      const compressed = await compressImage(original, 800, 0.7);
+      const compressed = await compressImage(e.target.result, 800, 0.7);
       const id = genId();
       const analysisId = document.getElementById('an-id')?.value;
       const idx = _anScreenshots.length;
-      let dataUrl = compressed;
-      if (_gapiLoaded && _gapiAccessToken && analysisId) {
-        const driveUrl = await autoUploadScreenToDrive(original, analysisId, idx);
-        if (driveUrl) { dataUrl = driveUrl; } // oryginał na Drive }
+      _anScreenshots.push({ id, dataUrl: null, uploading: true });
+      renderAnScreenshots();
+      const driveUrl = await autoUploadScreenToDrive(compressed, analysisId, idx);
+      if (driveUrl) {
+        _driveScreenCache[driveUrl.replace('drive://','')] = compressed;
+        const s = _anScreenshots.find(s => s.id === id);
+        if (s) { s.dataUrl = driveUrl; s.uploading = false; }
+      } else {
+        _anScreenshots = _anScreenshots.filter(s => s.id !== id);
+        toast('Błąd wgrywania na Drive', 'error');
       }
-      _anScreenshots.push({id, dataUrl});
       renderAnScreenshots();
       anAutosave();
     };
@@ -8282,27 +7898,9 @@ function renderAnScreenshots() {
   const el = document.getElementById('an-screens-preview');
   if (!el) return;
   el.innerHTML = _anScreenshots.map(s => {
-    const isD = isDriveScreenshot(s.dataUrl);
-    const driveId = isD ? s.dataUrl.replace('drive://','').replace('gdrive://','') : '';
-    const cached = isD ? (_driveScreenCache[driveId] || '') : '';
-    const imgId = isD ? 'ansc_' + driveId.slice(0,8) + '_' + s.id.slice(0,4) : '';
-    const imgSrc = isD ? (cached || '') : s.dataUrl;
-
-    if (isD && !cached) {
-      setTimeout(() => {
-        const imgEl = document.getElementById(imgId);
-        if (imgEl) loadDriveScreenshot(driveId, imgEl);
-      }, 100);
-    }
-
-    return `<div class="screenshot-thumb" onclick="openLightboxSmart('${safeAttr(s.dataUrl)}','${safeAttr(s.id)}')">
-      ${isD && !imgSrc
-        ? `<div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:var(--bg3)">
-            <span style="font-size:18px">☁</span>
-            <span style="font-size:9px;color:var(--text3);text-align:center;padding:0 4px">Drive</span>
-           </div>`
-        : `<img ${imgId ? `id="${imgId}"` : ''} src="${imgSrc}" style="width:100%;height:100%;object-fit:cover">`
-      }
+    if (s.uploading || !s.dataUrl) return `<div class="screenshot-thumb" style="display:flex;align-items:center;justify-content:center;background:var(--bg3)"><span style="font-size:10px;color:var(--text3)">⏳ Drive...</span></div>`;
+    return `<div class="screenshot-thumb">
+      ${renderScreenImg(s.dataUrl, `openLightboxSmart('${s.dataUrl}','${s.id}')`, s.id)}
       <button class="screenshot-del" onclick="event.stopPropagation();anRemoveScreen('${s.id}')">✕</button>
     </div>`;
   }).join('');
@@ -8548,7 +8146,7 @@ function saveAnalysis() {
     size:        parseFloat(g('an-size'))||null,
     setup:       g('an-setup')||'',
     post:        g('an-post')||'',
-    screenshots: _anScreenshots ? _anScreenshots.map(s=>s.dataUrl) : [],
+    screenshots: _anScreenshots ? _anScreenshots.filter(s => s.dataUrl && !s.uploading).map(s=>s.dataUrl) : [],
     updatedAt:   Date.now(),
   };
   const analyses = getAnalyses();
@@ -8582,7 +8180,7 @@ function saveAnalysisAsTrade() {
   const pre     = _g('an-content')||''; // treść analizy → analiza przed wejściem
   const post    = _g('an-post')||'';
   const setup   = _g('an-setup')||'';
-  const screens = (_anScreenshots||[]).map(s=>s.dataUrl);
+  const screens = (_anScreenshots||[]).filter(s => s.dataUrl && !s.uploading).map(s=>s.dataUrl);
   const analysisId = _g('an-id') || null;
 
   // Musi być zaznaczona transakcja
@@ -8656,8 +8254,6 @@ function anAutosave() {
       tf:     getAnTfValue(),
       levels: _ag('an-levels')||'',
       date:   _ag('an-date')||'',
-      // [v1.7] Tylko referencje drive://, nie base64
-      screenshots: (_anScreenshots||[]).map(s=>s.dataUrl).filter(d=>isDriveScreenshot(d)),
       savedAt:Date.now(),
     };
     saveDB(db);
@@ -9270,7 +8866,6 @@ async function testApiConnection() {
 // [v1.1] _SB_URL i _SB_ANON przeniesione na górę skryptu (przed STATE)
 let _sb = null;
 let _appInitRunning = false;
-let _authListenerRegistered = false;
 (function tryInitNow() {
   const lib = window.supabase || window.Supabase;
   if (lib && lib.createClient) {
@@ -9302,8 +8897,6 @@ function initSupabase() {
       }
     });
   }
-  if (_authListenerRegistered) return true;
-  _authListenerRegistered = true;
   _sb.auth.onAuthStateChange(async (event, session) => {
     if (event === 'PASSWORD_RECOVERY') {
       // Pokaż formularz ustawiania nowego hasła
@@ -9432,36 +9025,6 @@ function initMT4Listener() {
     .subscribe();
 
   console.log('✓ MT4 listener aktywny');
-
-  // Przetwórz zaległe sygnały — mogły dotrzeć gdy strona była odświeżana
-  setTimeout(() => processPendingMT4Signals(u.supabaseId), 2000);
-}
-
-// Pobiera i przetwarza wszystkie nieprzetworzone sygnały z Supabase
-async function processPendingMT4Signals(userId) {
-  if (!_sb || !userId) return;
-  try {
-    const { data: { session } } = await _sb.auth.getSession();
-    if (!session) return;
-    const res = await fetch(
-      _SB_URL + '/rest/v1/mt4_signals?user_id=eq.' + userId + '&processed=eq.false&order=created_at.asc&limit=50',
-      { headers: { 'apikey': _SB_ANON, 'Authorization': 'Bearer ' + session.access_token } }
-    );
-    if (!res.ok) return;
-    const signals = await res.json();
-    if (!signals?.length) return;
-    console.log('TLJ: Przetwarzam ' + signals.length + ' zaległych sygnałów MT4');
-    for (const signal of signals) {
-      await handleMT4Signal(signal);
-      // Mała przerwa między sygnałami
-      await new Promise(r => setTimeout(r, 100));
-    }
-    if (signals.length > 0) {
-      toast('MT4: Odtworzono ' + signals.length + ' zaległych sygnałów ✓', 'success');
-      renderTrades();
-      renderDashboard();
-    }
-  } catch(e) { console.warn('processPendingMT4Signals error:', e); }
 }
 
 function stopMT4Listener() {
@@ -9909,31 +9472,14 @@ async function handlePasswordResetRedirect() {
   const hash = window.location.hash;
   if (!hash) return;
 
+  // Supabase v2 — token w hash jako #access_token=...&type=recovery
   const params = new URLSearchParams(hash.replace('#', ''));
   const accessToken  = params.get('access_token');
   const refreshToken = params.get('refresh_token');
   const type = params.get('type');
 
   if (type === 'recovery' && accessToken) {
-    // Sprawdź czy zegar jest zsynchronizowany — token JWT ma pole exp
-    try {
-      const payload = JSON.parse(atob(accessToken.split('.')[1]));
-      const now = Math.floor(Date.now() / 1000);
-      const exp = payload.exp;
-      const diff = exp - now;
-      if (diff < 0) {
-        // Token wygasł — prawdopodobnie błędny zegar
-        showAuthError('Link do resetu hasła wygasł lub zegar systemowy jest nieprawidłowy. ' +
-          'Sprawdź datę/godzinę na swoim komputerze i wyślij nowy link.');
-        history.replaceState(null, '', window.location.pathname);
-        return;
-      }
-      if (Math.abs(now - payload.iat) > 300) {
-        // Zegar rozjechany o więcej niż 5 minut
-        console.warn('TLJ: Zegar systemowy może być nieprawidłowy. Różnica:', Math.abs(now - payload.iat), 's');
-      }
-    } catch(e) {}
-
+    // Poczekaj aż Supabase będzie załadowany
     let attempts = 0;
     while (!_sb && attempts < 20) {
       await new Promise(r => setTimeout(r, 200));
@@ -9943,11 +9489,8 @@ async function handlePasswordResetRedirect() {
     if (!_sb) return;
     try {
       await _sb.auth.setSession({ access_token: accessToken, refresh_token: refreshToken || '' });
-    } catch(e) {
-      showAuthError('Błąd sesji resetu. Sprawdź czy zegar systemowy jest prawidłowy i wyślij nowy link.');
-      history.replaceState(null, '', window.location.pathname);
-      return;
-    }
+    } catch(e) {}
+    // Wyczyść hash z URL
     history.replaceState(null, '', window.location.pathname);
     showPasswordResetForm();
   }
@@ -10795,6 +10338,14 @@ function openNewStrategy() {
   const strDesc = document.getElementById('str-desc');
   const strList = document.getElementById('strategy-points-list');
   const strTitle = document.getElementById('strategy-editor-title');
+  // [v1.5] DEBUG: pokaż który element jest null
+  console.log('openNewStrategy debug:', {
+    'str-id': !!strId,
+    'str-name': !!strName,
+    'str-desc': !!strDesc,
+    'strategy-points-list': !!strList,
+    'strategy-editor-title': !!strTitle
+  });
   if (!strId || !strName || !strDesc || !strList || !strTitle) {
     toast('Błąd: nie można otworzyć edytora strategii', 'error');
     return;
@@ -10850,14 +10401,14 @@ function addStrategyPoint(text, screenshot) {
     <span style="color:var(--text3);font-size:12px;min-width:18px">${idx+1}.</span>
     <input class="form-input-modal" type="text" value="${text||''}" placeholder="Opisz warunek strategii..."
       style="flex:1;font-size:13px;padding:8px 10px" onkeydown="if(event.key==='Enter'){event.preventDefault();addStrategyPoint('');}">
-    <label title="Dodaj screenshot wzorcowy" style="cursor:pointer;display:flex;align-items:center;justify-content:center;width:32px;height:32px;flex-shrink:0;border-radius:6px;background:#1e2d3d;border:1px solid #30455d">
+    <label title="Dodaj screenshot wzorcowy" style="cursor:pointer;display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:6px;background:var(--bg3);border:1px solid var(--border)">
       ${hasSrc
         ? `<img src="${thumbSrc}" id="${scrId}_img" style="width:30px;height:30px;object-fit:cover;border-radius:5px" onclick="event.preventDefault();openLightboxSmart('${screenshot}','${scrId}')">`
-        : `<span style="font-size:16px;line-height:1">📷</span>`}
+        : `<span style="font-size:14px">📷</span>`}
       <input type="file" accept="image/*" style="display:none" onchange="addPointScreenshot(this,'${scrId}',event)">
     </label>
     <input type="hidden" id="${scrId}_data" value="${hasSrc ? screenshot : ''}">
-    <button onclick="this.parentElement.remove();renumberPoints()" class="icon-btn" style="color:#ef4444;font-size:16px;background:none;border:none;cursor:pointer;padding:4px;flex-shrink:0">✕</button>`;
+    <button onclick="this.parentElement.remove();renumberPoints()" class="icon-btn" style="color:var(--red);font-size:14px">✕</button>`;
   list.appendChild(div);
   // Jeśli screenshot jest drive:// załaduj podgląd
   if (hasSrc && isDriveScreenshot(screenshot)) {
@@ -10872,24 +10423,20 @@ function addStrategyPoint(text, screenshot) {
 async function addPointScreenshot(input, scrId, event) {
   const file = input.files[0];
   if (!file) return;
+  if (!_gapiLoaded || !_gapiAccessToken) { toast('Połącz z Google Drive aby dodać screenshoty ☁️', 'error'); connectGoogleDrive(); input.value=''; return; }
+  const label = input.closest('label');
+  if (label) label.style.opacity = '0.5';
   const reader = new FileReader();
   reader.onload = async e => {
     const compressed = await compressImage(e.target.result, 800, 0.7);
-    let dataUrl = compressed;
-    // Auto-upload na Drive
-    if (_gapiLoaded && _gapiAccessToken) {
-      const driveUrl = await autoUploadScreenToDrive(compressed, 'strat_' + scrId, 0);
-      if (driveUrl) {
-        dataUrl = driveUrl;
-        // cache blob URL jest ustawiany w autoUploadScreenToDrive
-      }
-    }
-    // Zaktualizuj hidden input
+    const driveUrl = await autoUploadScreenToDrive(compressed, 'strat_' + scrId, 0);
+    const dataUrl = driveUrl || null;
+    if (!dataUrl) { toast('Błąd wgrywania na Drive', 'error'); if (label) label.style.opacity = '1'; return; }
+    _driveScreenCache[driveUrl.replace('drive://','')] = compressed;
     const hidden = document.getElementById(scrId + '_data');
     if (hidden) hidden.value = dataUrl;
-    // Pokaż miniaturę
-    const label = input.closest('label');
     if (label) {
+      label.style.opacity = '1';
       label.innerHTML = `<img src="${compressed}" id="${scrId}_img" style="width:30px;height:30px;object-fit:cover;border-radius:5px" onclick="event.preventDefault();openLightbox('${compressed}')">
         <input type="file" accept="image/*" style="display:none" onchange="addPointScreenshot(this,'${scrId}',event)">`;
     }
@@ -10954,9 +10501,9 @@ function openStrategyChecklist(strategyId, callback) {
     const imgHtml = hasSrc ? `
       <div onclick="event.stopPropagation()" style="flex-shrink:0">
         <img ${imgId ? `id="${imgId}"` : ''} src="${thumbSrc}" 
-          style="width:36px;height:28px;object-fit:cover;border-radius:4px;cursor:pointer;border:1px solid #30455d"
+          style="width:36px;height:28px;object-fit:cover;border-radius:4px;cursor:pointer;border:1px solid var(--border)"
           onclick="openLightboxSmart('${screenshot}','chk_${i}')">
-      </div>` : `<div onclick="event.stopPropagation()" style="flex-shrink:0;width:36px;height:28px;border-radius:4px;background:#1e2d3d;border:1px solid #30455d;display:flex;align-items:center;justify-content:center;cursor:pointer" title="Brak screenshota dla tego punktu"><span style="font-size:14px;opacity:.4">📷</span></div>`;
+      </div>` : '';
     if (isD) setTimeout(() => {
       const el = document.getElementById(imgId);
       if (el) loadDriveScreenshot(screenshot.replace('drive://',''), el);
@@ -11157,107 +10704,48 @@ function openEditSetup(id) {
   document.getElementById('setup-editor-title').textContent = 'Edytuj setup: ' + s.name;
   const list = document.getElementById('setup-points-list');
   list.innerHTML = '';
-  (s.points||[]).forEach((p, i) => addSetupPoint(p, s.pointScreenshots?.[i] || ''));
+  (s.points||[]).forEach(p => addSetupPoint(p));
   _currentSetupScreenshots = (s.screenshots||[]).map((url, i) => ({id: 'ss_'+i, dataUrl: url}));
   renderSetupRefScreenshots();
   openModal('setup-editor-modal');
 }
 
 
-function addSetupPoint(text, screenshot) {
+function addSetupPoint(text) {
   const list = document.getElementById('setup-points-list');
   if (!list) return;
   const idx = list.children.length;
   const div = document.createElement('div');
-  div.style.cssText = 'display:flex;gap:6px;align-items:center;margin-bottom:4px';
-  const scrId = 'ssp_' + Date.now() + '_' + idx;
-  const hasSrc = screenshot && screenshot.length > 5;
-  const thumbSrc = hasSrc && isDriveScreenshot(screenshot)
-    ? (_driveScreenCache[screenshot.replace('drive://','')] || '')
-    : (screenshot || '');
-  const imgContent = hasSrc
-    ? '<img src="' + thumbSrc + '" id="' + scrId + '_img" style="width:30px;height:30px;object-fit:cover;border-radius:5px" onclick="event.preventDefault();openLightboxSmart(\'' + screenshot + '\',\'' + scrId + '\')">'
-    : '<span style="font-size:16px;line-height:1">📷</span>';
+  div.style.cssText = 'display:flex;gap:6px;align-items:center';
   div.innerHTML = `
-    <span style="color:#64748b;font-size:12px;min-width:18px">${idx+1}.</span>
+    <span style="color:var(--text3);font-size:12px;min-width:18px">${idx+1}.</span>
     <input class="form-input-modal" type="text" value="${(text||'').replace(/"/g,'&quot;')}" placeholder="Warunek wejścia..."
-      style="flex:1;font-size:13px;padding:8px 10px" onkeydown="if(event.key===\'Enter\'){event.preventDefault();addSetupPoint(\'\');}">
-    <label title="Dodaj screenshot dla tego punktu" style="cursor:pointer;display:flex;align-items:center;justify-content:center;width:32px;height:32px;flex-shrink:0;border-radius:6px;background:#1e2d3d;border:1px solid #30455d">
-      ${imgContent}
-      <input type="file" accept="image/*" style="display:none" onchange="addSetupPointScreenshot(this,\'${scrId}\',event)">
-    </label>
-    <input type="hidden" id="${scrId}_data" value="${hasSrc ? screenshot : ''}">
-    <button onclick="this.parentElement.remove();renumberSetupPoints()" class="icon-btn" style="color:#ef4444;font-size:16px;background:none;border:none;cursor:pointer;padding:4px;flex-shrink:0">✕</button>`;
+      style="flex:1;font-size:13px;padding:8px 10px" onkeydown="if(event.key==='Enter'){event.preventDefault();addSetupPoint('');}">
+    <button onclick="this.parentElement.remove()" class="icon-btn" style="color:var(--red)">✕</button>`;
   list.appendChild(div);
-  if (hasSrc && isDriveScreenshot(screenshot)) {
-    setTimeout(() => {
-      const el = document.getElementById(scrId + '_img');
-      if (el) loadDriveScreenshot(screenshot.replace('drive://',''), el);
-    }, 100);
-  }
-  if (!text) setTimeout(() => div.querySelector('input[type=text]')?.focus(), 50);
+  if (!text) setTimeout(() => div.querySelector('input')?.focus(), 50);
 }
 
-
-async function addSetupPointScreenshot(input, scrId, event) {
-  const file = input.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = async e => {
-    const original = e.target.result;
-    const compressed = await compressImage(original, 800, 0.7);
-    let dataUrl = compressed;
-    if (_gapiLoaded && _gapiAccessToken) {
-      const driveUrl = await autoUploadScreenToDrive(original, 'setup_pt_' + scrId, 0);
-      if (driveUrl) { dataUrl = driveUrl; _driveScreenCache[driveUrl.replace('drive://','')] = compressed; }
-    }
-    const hidden = document.getElementById(scrId + '_data');
-    if (hidden) hidden.value = dataUrl;
-    const label = input.closest('label');
-    if (label) {
-      const src = _driveScreenCache[dataUrl.replace('drive://','')] || dataUrl;
-      label.innerHTML = `<img src="${src}" style="width:30px;height:30px;object-fit:cover;border-radius:5px;cursor:pointer" onclick="event.preventDefault();openLightboxSmart('${dataUrl}','${scrId}')">
-        <input type="file" accept="image/*" style="display:none" onchange="addSetupPointScreenshot(this,'${scrId}',event)">`;
-    }
-  };
-  reader.readAsDataURL(file);
-  input.value = '';
-}
-
-function renumberSetupPoints() {
-  const list = document.getElementById('setup-points-list');
-  if (!list) return;
-  Array.from(list.children).forEach((row, i) => {
-    const num = row.querySelector('span');
-    if (num) num.textContent = (i+1) + '.';
-  });
-}
-
-function renumberPoints() {
-  const list = document.getElementById('strategy-points-list');
-  if (!list) return;
-  Array.from(list.children).forEach((row, i) => {
-    const num = row.querySelector('span');
-    if (num) num.textContent = (i+1) + '.';
-  });
-}
 
 function addSetupRefScreenshots(input) {
+  if (!_gapiLoaded || !_gapiAccessToken) { toast('Połącz z Google Drive aby dodać screenshoty ☁️', 'error'); connectGoogleDrive(); input.value=''; return; }
   const files = Array.from(input.files);
   files.forEach(file => {
     const reader = new FileReader();
     reader.onload = async e => {
-      const original = e.target.result;
-      const compressed = await compressImage(original, 800, 0.7);
+      const compressed = await compressImage(e.target.result, 800, 0.7);
       const id = 'ss_' + Date.now() + Math.random();
-      let dataUrl = compressed;
-      const setupId = document.getElementById('setup-id-field')?.value || 'setup_ref';
-      const idx = _currentSetupScreenshots.length;
-      if (_gapiLoaded && _gapiAccessToken) {
-        const driveUrl = await autoUploadScreenToDrive(original, 'setupref_' + setupId, idx);
-        if (driveUrl) { dataUrl = driveUrl; }
+      _currentSetupScreenshots.push({ id, dataUrl: null, uploading: true });
+      renderSetupRefScreenshots();
+      const driveUrl = await autoUploadScreenToDrive(compressed, 'setup_ref', _currentSetupScreenshots.length);
+      if (driveUrl) {
+        _driveScreenCache[driveUrl.replace('drive://','')] = compressed;
+        const s = _currentSetupScreenshots.find(s => s.id === id);
+        if (s) { s.dataUrl = driveUrl; s.uploading = false; }
+      } else {
+        _currentSetupScreenshots = _currentSetupScreenshots.filter(s => s.id !== id);
+        toast('Błąd wgrywania na Drive', 'error');
       }
-      _currentSetupScreenshots.push({ id, dataUrl });
       renderSetupRefScreenshots();
     };
     reader.readAsDataURL(file);
@@ -11270,20 +10758,11 @@ function renderSetupRefScreenshots() {
   const el = document.getElementById('setup-ref-screenshots');
   if (!el) return;
   el.innerHTML = _currentSetupScreenshots.map(s => {
-    const isD = isDriveScreenshot(s.dataUrl);
-    const src = isD ? (_driveScreenCache[s.dataUrl.replace('drive://','')] || '') : s.dataUrl;
-    const imgId = isD ? 'sref_' + s.id.slice(-6) : '';
-    if (isD) setTimeout(() => {
-      const img = document.getElementById(imgId);
-      if (img) loadDriveScreenshot(s.dataUrl.replace('drive://',''), img);
-    }, 100);
-    return `
-    <div style="position:relative;display:inline-block">
-      <img ${imgId ? `id="${imgId}"` : ''} src="${src}"
-        style="width:100px;height:70px;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:pointer"
-        onclick="openLightboxSmart('${safeAttr(s.dataUrl)}','${safeAttr(s.id)}')">
-      <button onclick="removeSetupScreenshot('${s.id}')"
-        style="position:absolute;top:-6px;right:-6px;background:var(--red);color:white;border:none;border-radius:50%;width:18px;height:18px;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
+    if (s.uploading || !s.dataUrl) return `<div style="width:100px;height:70px;display:inline-flex;align-items:center;justify-content:center;background:var(--bg3);border-radius:6px;border:1px solid var(--border)"><span style="font-size:10px;color:var(--text3)">⏳</span></div>`;
+    const inner = renderScreenImg(s.dataUrl, `openLightboxSmart('${s.dataUrl}','${s.id}')`, s.id);
+    return `<div style="position:relative;display:inline-block;width:100px;height:70px;border-radius:6px;overflow:hidden;border:1px solid var(--border)">
+      ${inner}
+      <button onclick="removeSetupScreenshot('${s.id}')" style="position:absolute;top:-6px;right:-6px;background:var(--red);color:white;border:none;border-radius:50%;width:18px;height:18px;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
     </div>`;
   }).join('');
 }
@@ -11300,18 +10779,17 @@ function saveSetup() {
   if (!name) return toast('Podaj nazwę setupu', 'error');
   const strategyId = document.getElementById('setup-strategy-id')?.value;
   if (!strategyId) return;
-  const desc = document.getElementById('setup-desc')?.value?.trim() || '';
-  const pointRows = Array.from(document.getElementById('setup-points-list')?.children || []);
-  const points = pointRows.map(row => row.querySelector('input[type=text]')?.value?.trim()).filter(Boolean);
-  const pointScreenshots = pointRows.map(row => row.querySelector('input[type=hidden]')?.value || '');
-  const screenshots = _currentSetupScreenshots.map(s => s.dataUrl);
+  const desc   = document.getElementById('setup-desc')?.value?.trim();
+  const points = Array.from(document.getElementById('setup-points-list')?.querySelectorAll('input')||[])
+    .map(i => i.value.trim()).filter(Boolean);
+  const screenshots = _currentSetupScreenshots.filter(s => s.dataUrl && !s.uploading).map(s => s.dataUrl);
   const id = document.getElementById('setup-id')?.value;
   const setups = getAllSetups();
   if (id) {
     const idx = setups.findIndex(s => s.id === id);
-    if (idx >= 0) setups[idx] = { ...setups[idx], name, desc, points, pointScreenshots, screenshots };
+    if (idx >= 0) setups[idx] = { ...setups[idx], name, desc, points, screenshots };
   } else {
-    setups.push({ id: genId(), strategyId, name, desc, points, pointScreenshots, screenshots, createdAt: Date.now() });
+    setups.push({ id: genId(), strategyId, name, desc, points, screenshots, createdAt: Date.now() });
   }
   saveAllSetups(setups);
   closeModal('setup-editor-modal');
@@ -11420,50 +10898,23 @@ function onSetupChange(prefix) {
 
 
 function openSetupChecklist(prefix, setup) {
-  const nameEl    = document.getElementById('checklist-strategy-name');
-  const container = document.getElementById('checklist-points');
-  const titleEl   = document.querySelector('#strategy-checklist-modal .modal-title');
-  if (!nameEl || !container) { toast('Błąd: nie można otworzyć checklisty', 'error'); return; }
+  // Użyj ogólnego checklistModal ale z punktami setupu
+  const strategies = getStrategies();
+  // Tymczasowo stwórz obiekt "strategii" z punktami setupu
+  const tempStrategy = { ...setup, id: setup.id + '_temp' };
+  const origStrategies = getStrategies();
+  // Patch strategies temporarily
+  const db = getDB();
+  const key = 'strategies_' + (state.currentUser||'');
+  db[key] = [...origStrategies, tempStrategy];
+  saveDB(db);
 
-  // Ustaw tytuł i nazwę setupu (nie strategii)
-  if (titleEl) titleEl.textContent = '✅ Checklist setupu';
-  nameEl.textContent = '⚙ ' + setup.name;
+  openStrategyChecklist(setup.id + '_temp', (score, allDone) => {
+    // Przywróć oryginalne strategie
+    const db2 = getDB();
+    db2[key] = origStrategies;
+    saveDB(db2);
 
-  // Renderuj punkty setupu — tylko per-punkt screenshoty
-  const setupScreenshots = setup.screenshots || [];
-  container.innerHTML = (setup.points||[]).map((p, i) => {
-    // Tylko screenshot per-punkt — nie ogólny
-    const screenshot = setup.pointScreenshots?.[i] || '';
-    const hasSrc = screenshot && screenshot.length > 5;
-    const isD = hasSrc && isDriveScreenshot(screenshot);
-    const src = isD ? (_driveScreenCache[screenshot.replace('drive://','')] || '') : screenshot;
-    const imgId = isD ? 'schk_img_' + i : '';
-    if (isD) setTimeout(() => {
-      const el = document.getElementById(imgId);
-      if (el) loadDriveScreenshot(screenshot.replace('drive://',''), el);
-    }, 150);
-    const imgHtml = hasSrc
-      ? `<div onclick="event.stopPropagation()" style="flex-shrink:0">
-          <img ${imgId ? `id="${imgId}"` : ''} src="${src}"
-            style="width:36px;height:28px;object-fit:cover;border-radius:4px;cursor:pointer;border:1px solid #30455d"
-            onclick="openLightboxSmart('${screenshot}','schk_${i}')">
-         </div>`
-      : `<div style="flex-shrink:0;width:36px;height:28px;border-radius:4px;background:#1e2d3d;border:1px solid #30455d;display:flex;align-items:center;justify-content:center" title="Brak screenshota"><span style="font-size:12px;opacity:.3">📷</span></div>`;
-
-    return `<div onclick="toggleChecklistPoint(this)"
-      style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:8px;cursor:pointer;border:1px solid #21262d;background:#161b22;transition:all .15s"
-      onmouseover="this.style.borderColor='#00d4a1'" onmouseout="if(!this.classList.contains('checked'))this.style.borderColor='#21262d'">
-      <div style="width:20px;height:20px;border-radius:50%;border:2px solid #21262d;display:flex;align-items:center;justify-content:center;flex-shrink:0" class="check-circle">
-        <span style="display:none;color:#00d4a1;font-size:12px">✓</span>
-      </div>
-      <span style="font-size:13px;color:#e6edf3;flex:1">${i+1}. ${p}</span>
-      ${imgHtml}
-    </div>`;
-  }).join('');
-
-  _checklistCallback = (score, allDone) => {
-    // Przywróć tytuł strategii
-    if (titleEl) titleEl.textContent = '✅ Checklist strategii';
     const scoreEl = document.getElementById(prefix + '-checklist-score');
     if (scoreEl) {
       scoreEl.textContent = (allDone ? '✓ ' : '⚠ ') + score;
@@ -11471,38 +10922,7 @@ function openSetupChecklist(prefix, setup) {
     }
     if (!allDone) toast('⚠ Nie wszystkie warunki setupu zaznaczone!', 'error');
     else toast('✓ Setup potwierdzony!', 'success');
-  };
-
-  // Screenshoty wzorcowe setupu — pod listą punktów
-  const setupScreenshotsEl = document.getElementById('checklist-setup-screenshots');
-  if (setupScreenshotsEl) {
-    const setupScreenshots = setup.screenshots || [];
-    if (setupScreenshots.length) {
-      setupScreenshotsEl.style.display = 'block';
-      setupScreenshotsEl.innerHTML = `
-        <div style="font-size:11px;color:#64748b;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Wzorcowe screenshoty setupu</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          ${setupScreenshots.map((src, i) => {
-            const isD = isDriveScreenshot(src);
-            const imgSrc = isD ? (_driveScreenCache[src.replace('drive://','')] || '') : src;
-            const imgId = isD ? 'cssl_' + i : '';
-            if (isD) setTimeout(() => {
-              const el = document.getElementById(imgId);
-              if (el) loadDriveScreenshot(src.replace('drive://',''), el);
-            }, 200);
-            return `<img ${imgId ? `id="${imgId}"` : ''} src="${imgSrc}"
-              style="width:80px;height:56px;object-fit:cover;border-radius:6px;cursor:pointer;border:1px solid #30455d"
-              onclick="openLightboxSmart('${src}','cssl_${i}')">`;
-          }).join('')}
-        </div>`;
-    } else {
-      setupScreenshotsEl.style.display = 'none';
-      setupScreenshotsEl.innerHTML = '';
-    }
-  }
-
-  updateChecklistProgress();
-  document.getElementById('strategy-checklist-modal').classList.add('open');
+  });
 }
 
 // Pomocnik — otwiera checklistę setupu z formularza
@@ -11518,21 +10938,26 @@ function openSetupChecklistFromForm(prefix) {
 
 
 function addSetupScreenshots(prefix, input) {
+  if (!_gapiLoaded || !_gapiAccessToken) { toast('Połącz z Google Drive aby dodać screenshoty ☁️', 'error'); connectGoogleDrive(); input.value=''; return; }
   const files = Array.from(input.files);
   files.forEach(file => {
     const reader = new FileReader();
     reader.onload = async e => {
-      const original = e.target.result;
-      const compressed = await compressImage(original, 800, 0.7);
+      const compressed = await compressImage(e.target.result, 800, 0.7);
       const id = genId();
       const setupId = document.getElementById('setup-id')?.value || prefix;
       const idx = _setupSessionScreenshots[prefix].length;
-      let dataUrl = compressed;
-      if (_gapiLoaded && _gapiAccessToken && setupId) {
-        const driveUrl = await autoUploadScreenToDrive(original, 'setup_' + setupId, idx);
-        if (driveUrl) { dataUrl = driveUrl; }
+      _setupSessionScreenshots[prefix].push({ id, dataUrl: null, uploading: true });
+      renderSessionScreenshots(prefix);
+      const driveUrl = await autoUploadScreenToDrive(compressed, 'setup_' + setupId, idx);
+      if (driveUrl) {
+        _driveScreenCache[driveUrl.replace('drive://','')] = compressed;
+        const s = _setupSessionScreenshots[prefix].find(s => s.id === id);
+        if (s) { s.dataUrl = driveUrl; s.uploading = false; }
+      } else {
+        _setupSessionScreenshots[prefix] = _setupSessionScreenshots[prefix].filter(s => s.id !== id);
+        toast('Błąd wgrywania na Drive', 'error');
       }
-      _setupSessionScreenshots[prefix].push({ id, dataUrl });
       renderSessionScreenshots(prefix);
     };
     reader.readAsDataURL(file);
@@ -11550,19 +10975,13 @@ function renderSessionScreenshots(prefix) {
   screens.forEach(s => {
     const div = document.createElement('div');
     div.className = 'session-screenshot';
-    div.style.cssText = 'position:relative;display:inline-block';
-    const isD = isDriveScreenshot(s.dataUrl);
-    const src = isD ? (_driveScreenCache[s.dataUrl.replace('drive://','')] || '') : s.dataUrl;
-    const imgId = isD ? 'setup_img_' + s.id : '';
-    if (isD) setTimeout(() => {
-      const el2 = document.getElementById(imgId);
-      if (el2) loadDriveScreenshot(s.dataUrl.replace('drive://',''), el2);
-    }, 100);
-    div.innerHTML = `
-      <img ${imgId ? `id="${imgId}"` : ''} src="${src}" style="width:70px;height:50px;object-fit:cover;border-radius:5px;cursor:pointer;border:2px solid var(--accent)"
-        onclick="openLightboxSmart('${safeAttr(s.dataUrl)}','${safeAttr(s.id)}')" title="Twój screenshot">
-      <button onclick="removeSessionScreenshot('${prefix}','${s.id}')"
-        style="position:absolute;top:-5px;right:-5px;background:var(--red);color:white;border:none;border-radius:50%;width:16px;height:16px;font-size:9px;cursor:pointer">✕</button>`;
+    div.style.cssText = 'position:relative;display:inline-block;width:70px;height:50px;border-radius:5px;overflow:hidden;border:2px solid var(--accent)';
+    if (s.uploading || !s.dataUrl) {
+      div.innerHTML = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--bg3)"><span style="font-size:9px;color:var(--text3)">⏳</span></div><button onclick="removeSessionScreenshot('${prefix}','${s.id}')" style="position:absolute;top:-5px;right:-5px;background:var(--red);color:white;border:none;border-radius:50%;width:16px;height:16px;font-size:9px;cursor:pointer">✕</button>`;
+    } else {
+      div.innerHTML = renderScreenImg(s.dataUrl, `openLightboxSmart('${s.dataUrl}','${s.id}')`, s.id) +
+        `<button onclick="removeSessionScreenshot('${prefix}','${s.id}')" style="position:absolute;top:-5px;right:-5px;background:var(--red);color:white;border:none;border-radius:50%;width:16px;height:16px;font-size:9px;cursor:pointer">✕</button>`;
+    }
     el.insertBefore(div, el.querySelector('label'));
   });
 }
@@ -12015,17 +11434,14 @@ async function adminGenerateInviteLocal() {
 
   const expiresAt = new Date(Date.now() + 7*24*60*60*1000).toISOString();
 
-  // Zapisz w Supabase używając tokenu admina
+  // Zapisz w Supabase przez fetch (działa nawet gdy _sb jest null)
   try {
-    const { data: { session } } = await _sb.auth.getSession();
-    const token = session?.access_token;
-    if (!token) { toast('Brak sesji admina', 'error'); return; }
     const res = await fetch('https://ygrkcynyduuflzvbkkvo.supabase.co/rest/v1/invitations', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'apikey': _SB_ANON,
-        'Authorization': 'Bearer ' + token,
+        'Authorization': 'Bearer ' + _SB_ANON,
         'Prefer': 'return=minimal'
       },
       body: JSON.stringify({ code, expires_at: expiresAt })
@@ -12145,6 +11561,13 @@ async function appInit() {
   _appInitRunning = true;
   try {
   initLang();
+  // Czekaj na załadowanie Supabase (defer może opóźnić skrypt zewnętrzny)
+  if (!window.supabase && !window.Supabase) {
+    await new Promise(resolve => {
+      const t = setInterval(() => { if (window.supabase || window.Supabase) { clearInterval(t); resolve(); } }, 40);
+      setTimeout(() => { clearInterval(t); resolve(); }, 3000);
+    });
+  }
   initSupabase();
   await initDB();
   const _users = getUsers();
@@ -12194,7 +11617,7 @@ async function appInit() {
       if (session?.user) {
         // Pobierz profil
         const profRes = await fetch(_SB_URL + '/rest/v1/profiles?id=eq.' + session.user.id + '&select=*', {
-          headers: { 'apikey': _SB_ANON, 'Authorization': 'Bearer ' + session.access_token }
+          headers: { 'apikey': _SB_ANON, 'Authorization': 'Bearer ' + _SB_ANON }
         });
         const profiles = await profRes.json();
         const profile = profiles?.[0];
@@ -12233,7 +11656,14 @@ function showNoUsersHint() {
   showAuthSuccess(msg);
   // Nowi użytkownicy dostają rolę 'user', nie admin
 }
+
+// Rejestracja Service Worker (PWA)
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/service-worker.js')
+      .catch(() => {}); // SW opcjonalny — nie blokuje działania aplikacji
+  });
+}
 </script>
 </body>
 </html>
-
