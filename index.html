@@ -9274,12 +9274,12 @@ async function sbGetSession() {
 async function sbSyncDown(userId, userLogin) {
   if (!_sb || !userId) return;
   try {
+    const db = getDB();
+    const loginKey = userLogin || state.currentUser || db.currentUser;
+
     // Sync accounts
     const { data: accounts } = await _sb.from('accounts').select('*').eq('user_id', userId);
     if (accounts?.length) {
-      const db = getDB();
-      // Zapisz konta w formacie zgodnym z getAccounts() - klucz to currentUser
-      const loginKey = userLogin || state.currentUser || db.currentUser;
       if (loginKey) {
         if (!db.accounts) db.accounts = {};
         db.accounts[loginKey] = accounts.map(a => ({
@@ -9292,26 +9292,26 @@ async function sbSyncDown(userId, userLogin) {
         }));
         saveDB(db);
       }
-    }
-    
-    // Sync trades for each account
-    if (accounts?.length) {
+
+      // Sync trades for each account
       const accIds = accounts.map(a => a.id);
       const { data: trades } = await _sb.from('trades').select('*').in('account_id', accIds);
       if (trades?.length) {
-        const db = getDB();
-        const tradeLoginKey = loginKey || userLogin || state.currentUser;
         trades.forEach(t => {
           const key = 'trades_' + t.account_id;
           if (!db[key]) db[key] = [];
           const idx = db[key].findIndex(x => x.id === t.id);
+          // Zachowaj istniejące screenshots (Drive URLs) jeśli Supabase nie ma
+          const existingScreenshots = idx >= 0 ? (db[key][idx].screenshots || []) : [];
+          const sbScreenshots = Array.isArray(t.screenshots) ? t.screenshots : [];
           const trade = {
             id: t.id, symbol: t.symbol, dir: t.direction,
             status: t.status, entry: t.entry, sl: t.sl, tp: t.tp,
             tps: t.tps || [], exit: t.exit_price, size: t.size,
             pnl: t.pnl, tf: t.tf, setup: t.setup,
             pre: t.pre_analysis, post: t.post_notes,
-            date: t.trade_date, screenshots: [],
+            date: t.trade_date,
+            screenshots: sbScreenshots.length ? sbScreenshots : existingScreenshots,
             updatedAt: new Date(t.updated_at).getTime()
           };
           if (idx >= 0) db[key][idx] = trade;
@@ -9320,24 +9320,24 @@ async function sbSyncDown(userId, userLogin) {
         saveDB(db);
       }
     }
-    
+
     // Sync analyses
     const { data: analyses } = await _sb.from('analyses').select('*').eq('user_id', userId);
     if (analyses?.length) {
-      const db = getDB();
       const accId = state.currentAccountId || (accounts?.[0]?.id);
-      const key = 'analyses_' + (db.currentUser || '') + '_' + (accId || '');
+      const key = 'analyses_' + (loginKey || '') + '_' + (accId || '');
       db[key] = analyses.map(a => ({
         id: a.id, title: a.title, symbol: a.symbol,
         type: a.type, bias: a.bias, tf: a.tf, setup: a.setup,
         content: a.content, levels: a.levels,
         entry: a.entry, sl: a.sl, tp: a.tp,
         post: a.post_notes, date: a.analysis_date,
-        screenshots: [], updatedAt: new Date(a.updated_at).getTime()
+        screenshots: Array.isArray(a.screenshots) ? a.screenshots : [],
+        updatedAt: new Date(a.updated_at).getTime()
       }));
       saveDB(db);
     }
-    
+
     console.log('✓ Sync z Supabase zakończony');
   } catch(e) {
     console.warn('Sync error:', e.message);
@@ -9361,6 +9361,7 @@ async function sbSyncTrade(trade, accountId) {
     pre_analysis: trade.pre || null, post_notes: trade.post || null,
     trade_date: trade.date || new Date().toISOString(),
     updated_at: new Date().toISOString(),
+    screenshots: (trade.screenshots || []).filter(s => typeof s === 'string' && s.startsWith('drive://')),
   };
   
   try {
