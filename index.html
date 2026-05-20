@@ -11714,7 +11714,7 @@ async function appInit() {
       if (session?.user) {
         // Pobierz profil
         const profRes = await fetch(_SB_URL + '/rest/v1/profiles?id=eq.' + session.user.id + '&select=*', {
-          headers: { 'apikey': _SB_ANON, 'Authorization': 'Bearer ' + _SB_ANON }
+          headers: { 'apikey': _SB_ANON, 'Authorization': 'Bearer ' + session.access_token }
         });
         const profiles = await profRes.json();
         const profile = profiles?.[0];
