@@ -5555,7 +5555,12 @@ async function doLogin() {
     // Zaloguj przez Supabase
     const { data, error } = await _sb.auth.signInWithPassword({ email, password: pass });
     if (btn) { btn.textContent = 'Zaloguj się'; btn.disabled = false; }
-    if (error) return showAuthError('Nieprawidłowy login lub hasło');
+    if (error) {
+      if (error.message?.toLowerCase().includes('email not confirmed')) {
+        return showAuthError('Potwierdź adres e-mail — sprawdź skrzynkę pocztową (też folder SPAM).');
+      }
+      return showAuthError('Nieprawidłowy login lub hasło');
+    }
 
     // Sprawdź profil i active
     let profile = null;
