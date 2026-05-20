@@ -5395,16 +5395,26 @@ function adminResetPass(login) {
 }
 
 async function adminDeleteUser(userId, login) {
+  if (!isAdmin()) { toast('Brak uprawnień', 'error'); return; }
   if (!confirm('Usunąć użytkownika ' + login + '? Tej operacji nie można cofnąć.')) return;
   try {
-    await fetch('https://ygrkcynyduuflzvbkkvo.supabase.co/rest/v1/profiles?id=eq.' + userId, {
+    const { data: { session } } = await _sb.auth.getSession();
+    const adminToken = session?.access_token;
+    if (!adminToken) { toast('Brak sesji — zaloguj się ponownie', 'error'); return; }
+    const res = await fetch(_SB_URL + '/rest/v1/profiles?id=eq.' + encodeURIComponent(userId), {
       method: 'DELETE',
       headers: {
         'apikey': _SB_ANON,
-        'Authorization': 'Bearer ' + _SB_ANON
+        'Authorization': 'Bearer ' + adminToken
       }
     });
-    toast('Użytkownik usunięty', 'success');
+    if (!res.ok) {
+      const errText = await res.text();
+      console.warn('Delete error:', res.status, errText);
+      toast('Błąd usuwania (' + res.status + ')', 'error');
+      return;
+    }
+    toast('Użytkownik usunięty ✓', 'success');
     renderAdmin();
   } catch(e) { toast('Błąd: ' + e.message, 'error'); }
 }
@@ -5416,7 +5426,7 @@ function adminNukeAll() {
   // Keep only admin
   const adminUser = state.currentUser;
   const myData = users[adminUser];
-  const emptyDB = { users: { [adminUser]: myData } };
+  const emptyDB = { users: { [adminUser]: myData }, accounts: {}, trades: {} };
   saveDB(emptyDB);
   _dbCache = emptyDB;
   toast('Baza wyczyszczona', 'success');
@@ -6330,48 +6340,8 @@ async function doForgotPassword() {
   }
 }
 
-async function doForgotRequest() {
-  const emailEl = document.getElementById('forgot-email');
-  const email = (emailEl?.value || '').trim();
-  const codeEl = document.getElementById('recovery-code-input');
-  const code  = (codeEl?.value || '').trim();
-
-  // Jeśli wpisano kod odzyskiwania - użyj go
-  if (code && code.length > 0) {
-    doRecoveryCode();
-    return;
-  }
-
-  if (!email) { showAuthError('Podaj adres e-mail'); return; }
-
-  const btn = document.querySelector('#forgot-form .btn-primary');
-  if (btn) { btn.textContent = '⏳ Wysyłam...'; btn.disabled = true; }
-
-  // Upewnij się że Supabase jest załadowany
-  if (!_sb) { initSupabase(); }
-
-  if (!_sb) {
-    if (btn) { btn.textContent = '📧 Wyślij link'; btn.disabled = false; }
-    showAuthError('Błąd połączenia. Odśwież stronę (F5) i spróbuj ponownie.');
-    return;
-  }
-
-  try {
-    const result = await _sb.auth.resetPasswordForEmail(email, {
-      redirectTo: window.location.origin + '/'
-    });
-    if (btn) { btn.textContent = '📧 Wyślij link do resetowania'; btn.disabled = false; }
-    if (result.error) {
-      showAuthError('Błąd: ' + result.error.message);
-    } else {
-      showAuthError('');
-      showAuthSuccess('✓ Email wysłany na ' + email + '. Sprawdź skrzynkę i folder SPAM!');
-    }
-  } catch(e) {
-    if (btn) { btn.textContent = '📧 Wyślij link do resetowania'; btn.disabled = false; }
-    showAuthError('Błąd: ' + e.message);
-  }
-}
+// doForgotRequest — alias dla doForgotPassword (zachowany dla kompatybilności)
+function doForgotRequest() { doForgotPassword(); }
 
 function openMailToAdmin() {
   const login = window._forgotLogin || '(nieznany)';
@@ -9999,6 +9969,7 @@ async function sbSyncDown(userId, userLogin) {
           traderPct: a.trader_pct || null,
           type: a.type || 'forex', capital: parseFloat(a.capital) || 0,
           strategy: a.strategy || '', color: a.color || '#00d4a1',
+          currency: a.currency || 'USD',
           createdAt: new Date(a.created_at).getTime()
         }));
         saveDB(db);
@@ -10027,6 +9998,10 @@ async function sbSyncDown(userId, userLogin) {
             pre: t.pre_analysis, post: t.post_notes,
             date: t.trade_date,
             screenshots: sbScreenshots.length ? sbScreenshots : existingScreenshots,
+            emotionPre: t.emotion_pre || null,
+            emotionPost: t.emotion_post || null,
+            linkedAnalysisId: t.linked_analysis_id || null,
+            mt4Ticket: t.mt4_ticket || null,
             updatedAt: sbUpdatedAt
           };
           if (idx >= 0) db[key][idx] = trade;
@@ -10199,6 +10174,7 @@ function exportSummaryPDF() {
   const dateStr = now.toLocaleDateString('pl-PL', { year:'numeric', month:'long', day:'numeric' });
 
   const win = window.open('', '_blank', 'width=900,height=700');
+  if (!win) { toast('Przeglądarka zablokowała popup — zezwól na wyskakujące okna dla tej strony', 'error'); return; }
   win.document.write(`<!DOCTYPE html><html lang="pl"><head>
 <meta charset="UTF-8">
 <title>TraderLogJournal — Raport ${acc.name}</title>
@@ -10272,6 +10248,7 @@ async function sbSyncAccount(acc) {
     trader_pct: acc.traderPct || null,
     type: acc.type || 'forex', capital: acc.capital || 0,
     strategy: acc.strategy || '', color: acc.color || '#00d4a1',
+    currency: acc.currency || 'USD',
   };
   try {
     if (acc.sbId) {
@@ -10326,6 +10303,10 @@ async function sbSyncTrade(trade, accountId) {
     trade_date: trade.date || new Date().toISOString(),
     updated_at: new Date().toISOString(),
     screenshots: (trade.screenshots || []).filter(s => typeof s === 'string' && s.startsWith('drive://')),
+    emotion_pre: trade.emotionPre || null,
+    emotion_post: trade.emotionPost || null,
+    linked_analysis_id: trade.linkedAnalysisId || null,
+    mt4_ticket: trade.mt4Ticket || null,
   };
   
   try {
@@ -10610,6 +10591,7 @@ function generateReportPDF() {
   // Build HTML report and convert to printable PDF
   const html = buildReportHTML(d);
   const win = window.open('', '_blank');
+  if (!win) { toast('Przeglądarka zablokowała popup — zezwól na wyskakujące okna dla tej strony', 'error'); return; }
   win.document.write(html);
   win.document.close();
   setTimeout(() => { win.print(); }, 500);
