@@ -12251,12 +12251,27 @@ async function appInit() {
       const { data: { session } } = await _sb.auth.getSession();
       // [v1.1] SECURITY FIX: usunięto console.log z danymi sesji
       if (session?.user) {
-        // Pobierz profil
-        const profRes = await fetch(_SB_URL + '/rest/v1/profiles?id=eq.' + session.user.id + '&select=*', {
-          headers: { 'apikey': _SB_ANON, 'Authorization': 'Bearer ' + session.access_token }
-        });
-        const profiles = await profRes.json();
-        const profile = profiles?.[0];
+        // Pobierz profil — osobny try/catch, błąd sieci nie powinien wylogować
+        let profile = null;
+        try {
+          const profRes = await fetch(_SB_URL + '/rest/v1/profiles?id=eq.' + session.user.id + '&select=*', {
+            headers: { 'apikey': _SB_ANON, 'Authorization': 'Bearer ' + session.access_token }
+          });
+          if (profRes.ok) {
+            const profiles = await profRes.json();
+            profile = profiles?.[0];
+          }
+        } catch(fetchErr) { console.warn('Profile fetch error (session still valid):', fetchErr.message); }
+
+        // Jeśli profil niedostępny — spróbuj odtworzyć z lokalnych danych
+        if (!profile) {
+          const cachedUsers = getUsers();
+          const cachedLogin = Object.keys(cachedUsers).find(k => cachedUsers[k].supabaseId === session.user.id);
+          if (cachedLogin) {
+            profile = { login: cachedLogin, ...cachedUsers[cachedLogin], active: true };
+          }
+        }
+
         if (profile && (profile.role === 'admin' || profile.active !== false)) {
           const users = getUsers();
           users[profile.login] = {
@@ -12269,8 +12284,9 @@ async function appInit() {
             createdAt: Date.now(),
           };
           saveUsers(users);
-          await sbSyncDown(session.user.id, profile.login);
+          // Zaloguj od razu — sync uruchom w tle żeby nie blokować przy problemach z siecią
           loginAs(profile.login, users[profile.login]);
+          sbSyncDown(session.user.id, profile.login).catch(e => console.warn('Sync after restore failed:', e.message));
           return; // Zalogowano - nie pokazuj ekranu logowania
         }
       }
