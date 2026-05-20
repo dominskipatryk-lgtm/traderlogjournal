@@ -2590,6 +2590,8 @@ function loginAs(username, userData) {
   setTimeout(initMT4Listener, 2000);
   // Auto-połącz Google Drive jeśli użytkownik wcześniej je włączył
   setTimeout(() => { if (getBackupSettings().googleDrive) connectGoogleDrive(); }, 1500);
+  // Synchronizuj zmiany offline jeśli są
+  setTimeout(checkPendingSync, 3500);
   _lastSyncTime = Date.now();
   startAutoSync();
   updateSyncIndicator();
@@ -3404,6 +3406,12 @@ function saveTrade() {
   if (!symbol) return toast('Podaj instrument', 'error');
   saveSymbol(symbol);
   if (!state.currentAccountId) return toast('Wybierz konto', 'error');
+  const _entryRaw = document.getElementById('t-entry').value;
+  const _exitRaw  = document.getElementById('t-exit').value;
+  const _sizeRaw  = document.getElementById('t-size').value;
+  if (_entryRaw && isNaN(parseFloat(_entryRaw))) return toast('Cena wejścia musi być liczbą', 'error');
+  if (_exitRaw  && isNaN(parseFloat(_exitRaw)))  return toast('Cena wyjścia musi być liczbą', 'error');
+  if (_sizeRaw  && isNaN(parseFloat(_sizeRaw)))  return toast('Rozmiar pozycji musi być liczbą', 'error');
   const id = document.getElementById('trade-id').value || genId();
   const trade = {
     id, symbol,
@@ -3424,8 +3432,9 @@ function saveTrade() {
     emotionPre: document.getElementById('t-emotion-pre')?.value || null,
     emotionPost: document.getElementById('t-emotion-post')?.value || null,
     screenshots: state.tempScreenshots.filter(s => s.dataUrl && !s.uploading).map(s => s.dataUrl),
-    mt4Ticket: parseInt(document.getElementById('t-mt4-ticket')?.value) || null,
+    mt4Ticket: (() => { const v = parseInt(document.getElementById('t-mt4-ticket')?.value); return Number.isFinite(v) ? v : null; })(),
     linkedAnalysisId: document.getElementById('t-linked-analysis-id')?.value || null,
+    updatedAt: Date.now(),
   };
   const trades = getTrades(state.currentAccountId);
   const idx = trades.findIndex(t => t.id === id);
@@ -3705,7 +3714,7 @@ function selectDvLinkedAnalysis(analysisId) {
   const trades = getTrades(state.currentAccountId);
   const idx = trades.findIndex(t => t.id === _detailId);
   if (idx < 0) return;
-  trades[idx] = { ...trades[idx], linkedAnalysisId: analysisId };
+  trades[idx] = { ...trades[idx], linkedAnalysisId: analysisId, updatedAt: Date.now() };
   saveTrades(state.currentAccountId, trades);
   renderDetailModal();
   renderTrades();
@@ -3716,7 +3725,7 @@ function dvUnlinkAnalysis(tradeId) {
   const trades = getTrades(state.currentAccountId);
   const idx = trades.findIndex(t => t.id === tradeId);
   if (idx < 0) return;
-  trades[idx] = { ...trades[idx], linkedAnalysisId: null };
+  trades[idx] = { ...trades[idx], linkedAnalysisId: null, updatedAt: Date.now() };
   saveTrades(state.currentAccountId, trades);
   renderDetailModal();
   renderTrades();
@@ -3776,6 +3785,7 @@ function detailSaveEdit() {
   t.emotionPre  = document.getElementById('dv-emotion-pre')?.value || null;
   t.emotionPost = document.getElementById('dv-emotion-post')?.value || null;
   t.screenshots = _detailScreenshots.filter(s => s.dataUrl && !s.uploading).map(s => s.dataUrl);
+  t.updatedAt = Date.now();
   trades[idx] = t;
   saveTrades(state.currentAccountId, trades);
   saveSymbol(t.symbol);
@@ -4748,6 +4758,15 @@ function saveDB(db) {
   } else {
     try {
       localStorage.setItem('traderlog_db', JSON.stringify(db));
+      // Proaktywne ostrzeżenie gdy >80% limitu ~5MB (raz na sesję)
+      if (!saveDB._warnedStorage) {
+        const sizeMB = parseFloat(getStorageSizeMB());
+        if (sizeMB > 4) {
+          saveDB._warnedStorage = true;
+          const pct = Math.round(sizeMB / 5 * 100);
+          toast(`⚠️ Pamięć przeglądarki ${pct}% pełna (${sizeMB} MB). Rozważ usunięcie screenshotów lub backup na Drive.`, 'error');
+        }
+      }
     } catch(e) {
       if (e.name === 'QuotaExceededError') {
         // Spróbuj zwolnić miejsce — usuń screenshoty z najstarszych zamkniętych transakcji
@@ -4958,8 +4977,8 @@ async function renderAdmin() {
           <td style="font-size:12px;color:var(--text3)">${u.email||'—'}</td>
           <td style="font-size:11px;color:var(--text3)">${u.created_at ? new Date(u.created_at).toLocaleDateString('pl-PL') : '—'}</td>
           <td><div class="action-btns">
-            <button class="btn-sm btn-accent" style="font-size:11px" onclick="adminActivateUser('${u.id}')">✓ Aktywuj</button>
-            <button class="btn-sm" style="font-size:11px;color:var(--red);border-color:var(--red)" onclick="adminDeleteUser('${u.id}','${u.login||''}')">✗ Odrzuć</button>
+            <button class="btn-sm btn-accent" style="font-size:11px" onclick="adminActivateUser(${JSON.stringify(u.id)})">✓ Aktywuj</button>
+            <button class="btn-sm" style="font-size:11px;color:var(--red);border-color:var(--red)" onclick="adminDeleteUser(${JSON.stringify(u.id)},${JSON.stringify(u.login||'')})">✗ Odrzuć</button>
           </div></td>
         </tr>`).join('')}
         </tbody></table>
@@ -4985,8 +5004,8 @@ async function renderAdmin() {
           <td><span style="font-size:11px;color:${statusColor}">${statusLabel}</span></td>
           <td style="font-size:11px;color:var(--text3)">${u.email||'—'}</td>
           <td><div class="action-btns">
-            ${!u.active ? `<button class="btn-sm btn-accent" style="font-size:10px" onclick="adminActivateUser('${u.id}')">Aktywuj</button>` : ''}
-            ${!isMe ? `<button class="icon-btn del" onclick="adminDeleteUser('${u.id}','${u.login||''}')" title="Usuń">🗑</button>` : ''}
+            ${!u.active ? `<button class="btn-sm btn-accent" style="font-size:10px" onclick="adminActivateUser(${JSON.stringify(u.id)})">Aktywuj</button>` : ''}
+            ${!isMe ? `<button class="icon-btn del" onclick="adminDeleteUser(${JSON.stringify(u.id)},${JSON.stringify(u.login||'')})" title="Usuń">🗑</button>` : ''}
           </div></td>
         </tr>`;
       }).join('')}</tbody>
@@ -7560,7 +7579,7 @@ function _initGapiTokenClient(cid) {
   });
 }
 
-async function driveRequest(url, options = {}) {
+async function driveRequest(url, options = {}, _retry = false) {
   if (!_gapiAccessToken) { connectGoogleDrive(); return null; }
   const resp = await fetch(url, {
     ...options,
@@ -7569,9 +7588,27 @@ async function driveRequest(url, options = {}) {
   if (resp.status === 401 || resp.status === 403) {
     _gapiAccessToken = null;
     _gapiLoaded = false;
-    toast('Sesja Google wygasła — połącz ponownie z Drive', 'error');
-    connectGoogleDrive();
-    return null;
+    if (_retry) {
+      toast('Sesja Google wygasła — połącz ponownie z Drive', 'error');
+      return null;
+    }
+    // Próba cichego odświeżenia tokenu
+    return new Promise((resolve) => {
+      if (!_gapiTokenClient) { toast('Sesja Google wygasła — połącz ponownie z Drive', 'error'); resolve(null); return; }
+      const prevCb = _gapiTokenClient.callback;
+      _gapiTokenClient.callback = async (r) => {
+        _gapiTokenClient.callback = prevCb;
+        if (r.access_token) {
+          _gapiAccessToken = r.access_token;
+          _gapiLoaded = true;
+          resolve(await driveRequest(url, options, true));
+        } else {
+          toast('Sesja Google wygasła — połącz ponownie z Drive', 'error');
+          resolve(null);
+        }
+      };
+      _gapiTokenClient.requestAccessToken({ prompt: '' });
+    });
   }
   return resp;
 }
@@ -7610,6 +7647,7 @@ async function backupToGoogleDrive() {
     const searchResp = await driveRequest(`https://www.googleapis.com/drive/v3/files?q=name='${fname}'&spaces=drive`, {
       headers: {}
     });
+    if (!searchResp) return;
     const searchData = await searchResp.json();
     const fileId = searchData.files?.[0]?.id;
     if (fileId) {
@@ -7645,12 +7683,14 @@ async function restoreFromGoogleDrive() {
     const searchResp = await driveRequest(`https://www.googleapis.com/drive/v3/files?q=name='${fname}'&spaces=drive`, {
       headers: { Authorization: 'Bearer ' + token }
     });
+    if (!searchResp) return;
     const searchData = await searchResp.json();
     const fileId = searchData.files?.[0]?.id;
     if (!fileId) { toast('Nie znaleziono backupu na Drive', 'error'); return; }
     const fileResp = await driveRequest(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
       headers: { Authorization: 'Bearer ' + token }
     });
+    if (!fileResp) return;
     const data = await fileResp.json();
     saveDB(data); _dbCache = data;
     toast('Przywrócono z Google Drive ✓', 'success');
@@ -8155,12 +8195,14 @@ function assignTradeToAnalysis(tradeId) {
   const isLinked = t.linkedAnalysisId === currentAnalysisId;
   if (isLinked) {
     t.linkedAnalysisId = null;
+    t.updatedAt = Date.now();
     trades[idx] = t;
     saveTrades(state.currentAccountId, trades);
     _selectedTradeForAnalysis = null;
     toast('Powiązanie usunięte', 'success');
   } else {
     t.linkedAnalysisId = currentAnalysisId;
+    t.updatedAt = Date.now();
     trades[idx] = t;
     saveTrades(state.currentAccountId, trades);
     _selectedTradeForAnalysis = tradeId;
@@ -8567,6 +8609,7 @@ function saveAnalysisAsTrade() {
 
   // Powiąż z analizą
   t.linkedAnalysisId = analysisId;
+  t.updatedAt = Date.now();
 
   trades[idx] = t;
   saveTrades(state.currentAccountId, trades);
@@ -9387,10 +9430,13 @@ function stopMT4Listener() {
 
 async function handleMT4Signal(signal) {
   if (!signal || signal.processed) return;
+  if (!signal.id) { console.warn('MT4: sygnał bez id, pomijam', signal); return; }
+  if (!signal.ticket && signal.event !== 'CLOSE') { console.warn('MT4: sygnał bez ticket, pomijam', signal); return; }
 
   try {
-    await _sb.from('mt4_signals').update({ processed: true }).eq('id', signal.id);
-  } catch(e) {}
+    const { error } = await _sb.from('mt4_signals').update({ processed: true }).eq('id', signal.id);
+    if (error) { console.warn('MT4: nie udało się oznaczyć sygnału jako processed, pomijam', error); return; }
+  } catch(e) { console.warn('MT4: błąd oznaczania sygnału', e); return; }
 
   // [v1.7] Znajdź konto w dzienniku po numerze MT4
   const accounts = getAccounts();
@@ -9796,6 +9842,8 @@ function stopAutoSync() {
 function queueWrite(fn) {
   if (_isOnline) { fn(); return; }
   _offlineQueue.push(fn);
+  // Oznacz że są lokalne zmiany do zsynchronizowania po powrocie online
+  try { localStorage.setItem('_pendingSync_' + (state.currentUser||''), '1'); } catch(e) {}
   toast('📴 Offline — zmiana zostanie zsynchronizowana po powrocie do sieci', 'info');
 }
 
@@ -9805,7 +9853,21 @@ async function processOfflineQueue() {
   const queue = [..._offlineQueue];
   _offlineQueue = [];
   for (const fn of queue) { try { await fn(); } catch(e) { _offlineQueue.push(fn); } }
-  if (!_offlineQueue.length) toast('✓ Kolejka offline zsynchronizowana', 'success');
+  if (!_offlineQueue.length) {
+    try { localStorage.removeItem('_pendingSync_' + (state.currentUser||'')); } catch(e) {}
+    toast('✓ Kolejka offline zsynchronizowana', 'success');
+  }
+}
+
+function checkPendingSync() {
+  try {
+    if (localStorage.getItem('_pendingSync_' + (state.currentUser||''))) {
+      toast('🔄 Wykryto niezasynchronizowane zmiany — synchronizuję...', 'info');
+      sbFullSyncUp().then(() => {
+        localStorage.removeItem('_pendingSync_' + (state.currentUser||''));
+      }).catch(() => {});
+    }
+  } catch(e) {}
 }
 
 // CSV Export
