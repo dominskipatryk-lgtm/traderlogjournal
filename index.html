@@ -107,11 +107,68 @@ body {
   font-family: var(--font-body);
   min-height: 100vh;
   line-height: 1.6;
+  transition: background .2s, color .2s;
 }
+
+/* ======= LIGHT MODE ======= */
+body.light-mode {
+  --bg:      #f5f7fa;
+  --bg2:     #ffffff;
+  --bg3:     #eef1f6;
+  --bg4:     #e2e8f0;
+  --border:  #d1d9e6;
+  --border2: #b8c4d8;
+  --text:    #1a202c;
+  --text2:   #4a5568;
+  --text3:   #718096;
+  --accent-dim: rgba(0,180,137,0.12);
+  --red-dim:    rgba(220,53,69,0.10);
+  --green-dim:  rgba(0,180,137,0.12);
+  --amber-dim:  rgba(202,138,4,0.12);
+  --blue-dim:   rgba(37,99,235,0.10);
+}
+body.light-mode .topbar { box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+body.light-mode .auth-card { box-shadow: 0 4px 24px rgba(0,0,0,.08); }
+body.light-mode .summary-card { box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+body.light-mode .table-wrap { box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+body.light-mode .modal { box-shadow: 0 8px 40px rgba(0,0,0,.15); }
+body.light-mode tr:nth-child(even) { background: rgba(0,0,0,.02); }
+
+/* Przycisk trybu — ikona */
+.theme-toggle {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 8px; padding: 5px 9px; font-size: 14px;
+  cursor: pointer; transition: all .2s; line-height: 1;
+  color: var(--text2); display: flex; align-items: center;
+}
+.theme-toggle:hover { border-color: var(--accent); }
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: var(--bg2); }
 ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+/* ======= METRIC TOOLTIP ======= */
+.metric-help {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--border2); color: var(--text3);
+  font-size: 9px; font-weight: 700; cursor: help;
+  margin-left: 4px; vertical-align: middle;
+  position: relative; font-family: var(--font-body);
+  flex-shrink: 0;
+}
+.metric-help::after {
+  content: attr(data-tip);
+  position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+  background: var(--bg4); border: 1px solid var(--border2);
+  color: var(--text); font-size: 11px; line-height: 1.5;
+  padding: 6px 10px; border-radius: 7px; white-space: pre-line;
+  width: max-content; max-width: 240px;
+  pointer-events: none; opacity: 0; transition: opacity .15s;
+  z-index: 9999; font-weight: 400; font-family: var(--font-body);
+  box-shadow: 0 4px 16px rgba(0,0,0,.4);
+}
+.metric-help:hover::after { opacity: 1; }
 
 /* ======= AUTH SCREEN ======= */
 #auth-screen {
@@ -206,7 +263,26 @@ body {
   background: var(--bg3); border: 1px solid var(--border); border-radius: 8px;
   padding: 6px 12px; font-size: 13px; color: var(--text2);
   display: flex; align-items: center; gap: 8px;
+  cursor: pointer; position: relative; user-select: none;
 }
+.user-badge:hover { border-color: var(--accent); color: var(--text); }
+.user-menu {
+  position: absolute; top: calc(100% + 6px); right: 0;
+  background: var(--bg2); border: 1px solid var(--border2);
+  border-radius: 10px; min-width: 170px; z-index: 500;
+  box-shadow: 0 8px 32px rgba(0,0,0,.4); overflow: hidden;
+  display: none;
+}
+.user-badge.open .user-menu { display: block; }
+.user-menu-item {
+  padding: 10px 16px; font-size: 13px; cursor: pointer;
+  color: var(--text2); display: flex; align-items: center; gap: 8px;
+  transition: background .15s;
+}
+.user-menu-item:hover { background: var(--bg3); color: var(--text); }
+.user-menu-item.danger { color: var(--red); }
+.user-menu-item.danger:hover { background: var(--red-dim); }
+.user-menu-sep { border-top: 1px solid var(--border); margin: 4px 0; }
 .btn-sm {
   padding: 6px 14px; border-radius: 8px; font-size: 13px; font-weight: 600;
   cursor: pointer; transition: all .2s; border: 1px solid var(--border);
@@ -726,6 +802,103 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
   text-decoration: none; transition: top .2s;
 }
 .skip-link:focus { top: 0; }
+
+/* ======= RESPONSYWNOŚĆ MOBILE ======= */
+@media (max-width: 1024px) {
+  .topbar { padding: 0 16px; gap: 8px; }
+  .topbar-nav { gap: 2px; margin-left: 12px; }
+  .nav-btn { padding: 5px 10px; font-size: 12px; }
+  .main-content { padding: 20px 16px; }
+  .stats-grid, .summary-grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+  .summary-grid[style*="grid-template-columns:1fr 1fr 1fr"] { grid-template-columns: 1fr 1fr !important; }
+}
+
+@media (max-width: 768px) {
+  /* Topbar — hamburger layout */
+  .topbar { height: auto; flex-wrap: wrap; padding: 8px 12px; gap: 6px; }
+  .topbar-logo-wrap { display: flex; align-items: center; }
+  .topbar-nav {
+    order: 3; width: 100%; margin-left: 0;
+    overflow-x: auto; -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px; gap: 2px;
+    scrollbar-width: none;
+  }
+  .topbar-nav::-webkit-scrollbar { display: none; }
+  .nav-btn { padding: 5px 9px; font-size: 11px; white-space: nowrap; flex-shrink: 0; }
+  .topbar-right { margin-left: auto; gap: 6px; }
+  .account-selector { padding: 4px 8px; font-size: 12px; }
+  .lang-switch { display: none; }
+
+  /* Główna treść */
+  .main-content { padding: 16px 12px; }
+  .page-title, h1.page-title { font-size: 20px; }
+  .page-subtitle { font-size: 13px; margin-bottom: 18px; }
+
+  /* Siatka statystyk */
+  .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .summary-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px; }
+
+  /* Karty */
+  .stat-card { padding: 14px 12px; }
+  .stat-value { font-size: 20px; }
+  .summary-card { padding: 14px 12px; }
+
+  /* Filtry i tabele */
+  .filter-bar { flex-wrap: wrap; gap: 6px; }
+  .filter-bar .search-input { width: 100%; }
+  .filter-bar .filter-select { flex: 1; min-width: 120px; }
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* Kalkulator — kolumny */
+  .summary-grid[style*="grid-template-columns:1fr 1fr"],
+  div[style*="grid-template-columns:1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+  div[style*="grid-template-columns:repeat(3,1fr)"],
+  div[style*="grid-template-columns: repeat(3, 1fr)"] {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  /* Modalne */
+  .modal { width: calc(100vw - 24px); max-width: 100% !important; margin: 12px; max-height: calc(100vh - 24px); }
+  .modal-body { max-height: 60vh; }
+  .form-grid { grid-template-columns: 1fr !important; }
+  .form-grid .form-group-modal.full { grid-column: 1 !important; }
+
+  /* Wykres equity */
+  .equity-chart-wrap { margin: 0 -12px 16px; }
+  .chart-area { min-height: 120px; }
+
+  /* Sekcja summary — siatka 3 kol → 1 */
+  div[style*="grid-template-columns:1fr 1fr 1fr"] { grid-template-columns: 1fr !important; }
+
+  /* Accounts grid */
+  .accounts-grid { grid-template-columns: 1fr !important; }
+
+  /* Admin grid */
+  div[style*="grid-template-columns:2fr 1fr"] { grid-template-columns: 1fr !important; }
+
+  /* Kalkulator narzędzi */
+  div[style*="grid-template-columns:1fr 1fr;gap:20px;max-width"] { grid-template-columns: 1fr !important; }
+  div[style*="grid-template-columns:1fr 1fr;gap:20px;max-width:800"] { grid-template-columns: 1fr !important; }
+
+  /* MT4 dropdown */
+  #mt4-terminal-dropdown { min-width: 260px; right: -60px; }
+
+  /* Auth screen na malym */
+  .auth-card { padding: 28px 20px; }
+  .auth-tabs { gap: 2px; }
+  .auth-tab { padding: 7px 6px; font-size: 12px; }
+}
+
+@media (max-width: 480px) {
+  .stats-grid { grid-template-columns: 1fr; }
+  .topbar-right .account-selector span:last-child { display: none; }
+  .nav-btn { padding: 4px 7px; font-size: 11px; }
+  .modal-header { padding: 14px 16px; }
+  .modal-body { padding: 14px 16px; }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+}
 </style>
 </head>
 <body>
@@ -887,14 +1060,15 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
       </svg>
     </div>
     <nav class="topbar-nav" aria-label="Nawigacja główna">
-      <button class="nav-btn active" onclick="showPage('dashboard')" data-i18n="nav_dashboard">Dashboard</button>
-      <button class="nav-btn" onclick="showPage('trades')" data-i18n="nav_trades">Transakcje</button>
-      <button class="nav-btn" onclick="showPage('summary')" data-i18n="nav_summary">Podsumowanie</button>
-      <button class="nav-btn" onclick="showPage('accounts')" data-i18n="nav_accounts">Konta</button>
+      <button class="nav-btn active" onclick="showPage('dashboard')" data-i18n="nav_dashboard">📊 Dashboard</button>
+      <button class="nav-btn" onclick="showPage('trades')" data-i18n="nav_trades">📋 Transakcje</button>
+      <button class="nav-btn" onclick="showPage('summary')" data-i18n="nav_summary">📈 Podsumowanie</button>
+      <button class="nav-btn" onclick="showPage('accounts')" data-i18n="nav_accounts">🏦 Konta</button>
       <button class="nav-btn" onclick="showPage('drafts')" id="nav-drafts">📝 Szkice <span id="nav-draft-badge" style="display:none;background:var(--amber);color:#000;border-radius:10px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:2px"></span></button>
       <button class="nav-btn" onclick="showPage('analysis')" data-i18n="nav_analysis">🔍 Analiza</button>
       <button class="nav-btn" onclick="showPage('tools')" id="nav-tools">🛠 Narzędzia</button>
-      <button class="nav-btn" onclick="showPage('admin')" id="nav-admin" style="display:none">⚙️ Admin</button>
+      <button class="nav-btn" onclick="showPage('settings')" id="nav-settings" data-i18n="nav_settings">⚙️ Ustawienia</button>
+      <button class="nav-btn" onclick="showPage('admin')" id="nav-admin" style="display:none">🔧 Admin</button>
     </nav>
     <div class="topbar-right">
       <!-- [v1.7] MT4 Live Terminal -->
@@ -914,13 +1088,20 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
         <div class="account-dot" id="topbar-dot"></div>
         <span id="topbar-account-name">—</span>
       </div>
-      <div class="user-badge">
-        <span>👤</span>
-        <span id="topbar-username">—</span>
-      </div>
       <span id="sync-indicator" style="font-size:10px;color:var(--text3);font-family:var(--font-mono);display:none"></span>
       <button id="sync-refresh-btn" onclick="manualSync()" style="display:none;background:none;border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:11px;color:var(--text2);cursor:pointer" title="Odśwież dane">🔄</button>
-      <div class="lang-switch" role="group" aria-label="Wybór języka"><button class="lang-btn active" id="lang-pl" onclick="setLang('pl')" aria-label="Język polski">PL</button><button class="lang-btn" id="lang-en" onclick="setLang('en')" aria-label="English">EN</button></div><button class="btn-sm" onclick="showPage('settings')" data-i18n="nav_settings" aria-label="Ustawienia">⚙️ Ustawienia</button><button class="btn-sm" onclick="doLogout()" data-i18n="logout" aria-label="Wyloguj się">Wyloguj</button>
+      <button class="theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()" title="Przełącz motyw jasny/ciemny" aria-label="Przełącz motyw">🌙</button>
+      <div class="lang-switch" role="group" aria-label="Wybór języka"><button class="lang-btn active" id="lang-pl" onclick="setLang('pl')" aria-label="Język polski">PL</button><button class="lang-btn" id="lang-en" onclick="setLang('en')" aria-label="English">EN</button></div>
+      <div class="user-badge" id="user-badge-wrap" onclick="toggleUserMenu(event)">
+        <span>👤</span>
+        <span id="topbar-username">—</span>
+        <span style="font-size:10px;color:var(--text3)">▾</span>
+        <div class="user-menu" id="user-menu">
+          <div class="user-menu-item" onclick="showPage('settings');closeUserMenu()">⚙️ Ustawienia</div>
+          <div class="user-menu-sep"></div>
+          <div class="user-menu-item danger" onclick="doLogout()">🚪 Wyloguj się</div>
+        </div>
+      </div>
     </div>
   </header>
 
@@ -989,6 +1170,25 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
           <option value="win">Win</option>
           <option value="loss">Loss</option>
         </select>
+        <select class="filter-select" id="filter-emotion" onchange="renderTrades()" title="Filtruj po emocji przed wejściem">
+          <option value="">🧠 Emocje: Wszystkie</option>
+          <optgroup label="Przed wejściem">
+            <option value="pre:Spokojny">😌 Spokojny (pre)</option>
+            <option value="pre:Pewny">💪 Pewny (pre)</option>
+            <option value="pre:Podekscytowany">🔥 Podekscytowany (pre)</option>
+            <option value="pre:Zaniepokojony">😟 Zaniepokojony (pre)</option>
+            <option value="pre:FOMO">😰 FOMO (pre)</option>
+            <option value="pre:Revenge">😡 Revenge (pre)</option>
+          </optgroup>
+          <optgroup label="Po zamknięciu">
+            <option value="post:Zadowolony">😊 Zadowolony (post)</option>
+            <option value="post:Spokojny">😌 Spokojny (post)</option>
+            <option value="post:Żałuję">😔 Żałuję (post)</option>
+            <option value="post:Sfrustrowany">😤 Sfrustrowany (post)</option>
+            <option value="post:Chciwy">🤑 Chciwy (post)</option>
+            <option value="post:Neutralny">🧘 Neutralny (post)</option>
+          </optgroup>
+        </select>
         <div class="draft-indicator" id="draft-indicator-trades" onclick="showPage('drafts')" title="Masz niezapisane wersje robocze">▸ Wersje robocze <span id="draft-count-trades"></span></div>
         <button class="btn-sm" onclick="exportTradesToCSV()" style="margin-left:auto;font-size:12px" title="Eksportuj do CSV">⬇ CSV</button>
         <button class="btn-sm btn-accent" onclick="openTradeModalWithDraftCheck()">+ Nowa transakcja</button>
@@ -1041,7 +1241,10 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
       </div>
       </div>
       <!-- PODSUMOWANIE -->
-      <div class="page-title">Podsumowanie konta</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <div class="page-title" style="margin-bottom:0">Podsumowanie konta</div>
+        <button class="btn-sm" onclick="exportSummaryPDF()" title="Eksportuj raport do PDF" style="font-size:12px;flex-shrink:0">🖨 Drukuj / PDF</button>
+      </div>
       <div class="page-subtitle" id="summary-subtitle">Szczegółowe statystyki</div>
       <div id="summary-content"></div>
     </div>
@@ -1191,7 +1394,30 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
                 <select id="bc-broker" onchange="calcBrokerPreview()"
                   style="width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px 8px;font-size:13px">
                   <option value="">— Wybierz brokera —</option>
+                  <option value="__custom__">✏️ Własny (podaj stawki ręcznie)</option>
                 </select>
+              </div>
+              <!-- Własne stawki — pojawia się gdy wybrano "Własny" -->
+              <div id="bc-custom-fields" style="display:none;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:12px;display:none;flex-direction:column;gap:8px">
+                <div style="font-size:11px;color:var(--accent);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Własne stawki brokera</div>
+                <div>
+                  <label class="form-label" style="font-size:10px">Typ prowizji</label>
+                  <select id="bc-custom-type" onchange="calcBrokerPreview()" style="width:100%;background:var(--bg4);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:5px 8px;font-size:12px">
+                    <option value="commission">Prowizja ($/lot round-trip)</option>
+                    <option value="spread">Spread (pipy)</option>
+                    <option value="both">Prowizja + Spread</option>
+                  </select>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                  <div>
+                    <label class="form-label" style="font-size:10px">Prowizja ($/lot)</label>
+                    <input id="bc-custom-comm" type="number" step="0.1" value="7" oninput="calcBrokerPreview()" style="width:100%;background:var(--bg4);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:5px 8px;font-size:12px">
+                  </div>
+                  <div>
+                    <label class="form-label" style="font-size:10px">Spread (pipy)</label>
+                    <input id="bc-custom-spread" type="number" step="0.1" value="0.5" oninput="calcBrokerPreview()" style="width:100%;background:var(--bg4);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:5px 8px;font-size:12px">
+                  </div>
+                </div>
               </div>
               <div>
                 <label class="form-label" style="font-size:11px">Instrument</label>
@@ -2606,7 +2832,36 @@ function loginAs(username, userData) {
     return;
   }
 }
+// ===== THEME =====
+function toggleTheme() {
+  const isLight = document.body.classList.toggle('light-mode');
+  localStorage.setItem('tlj-theme', isLight ? 'light' : 'dark');
+  const btn = document.getElementById('theme-toggle-btn');
+  if (btn) btn.textContent = isLight ? '☀️' : '🌙';
+}
+function initTheme() {
+  const saved = localStorage.getItem('tlj-theme');
+  if (saved === 'light') {
+    document.body.classList.add('light-mode');
+    const btn = document.getElementById('theme-toggle-btn');
+    if (btn) btn.textContent = '☀️';
+  }
+}
+document.addEventListener('DOMContentLoaded', initTheme);
+
+function toggleUserMenu(e) {
+  e.stopPropagation();
+  const wrap = document.getElementById('user-badge-wrap');
+  wrap.classList.toggle('open');
+}
+function closeUserMenu() {
+  document.getElementById('user-badge-wrap')?.classList.remove('open');
+}
+document.addEventListener('click', () => closeUserMenu());
+
 function doLogout() {
+  closeUserMenu();
+  if (!confirm('Wylogować się?')) return;
   stopAutoSync();
   _lastSyncTime = null;
   const ind = document.getElementById('sync-indicator');
@@ -2756,6 +3011,14 @@ function renderTrades() {
   if (status) trades = trades.filter(t => t.status === status);
   if (result === 'win') trades = trades.filter(t => t.pnl > 0);
   if (result === 'loss') trades = trades.filter(t => t.pnl <= 0 && t.pnl !== null);
+  const emotionFilter = document.getElementById('filter-emotion')?.value || '';
+  if (emotionFilter) {
+    const [emotionField, emotionVal] = emotionFilter.split(':');
+    trades = trades.filter(t => {
+      const raw = emotionField === 'pre' ? (t.emotionPre || '') : (t.emotionPost || '');
+      return raw === emotionVal;
+    });
+  }
   const reversed = [...trades].reverse();
   document.getElementById('trades-table').innerHTML = buildTradesTable(reversed);
 }
@@ -2969,7 +3232,7 @@ function renderSummary() {
 
   const rrTotal=Object.values(rrDist).reduce((s,v)=>s+v,0);
   const rrBar=(key,color)=>{const n=rrDist[key]||0,pct=rrTotal?Math.round(n/rrTotal*100):0;return `<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span style="color:var(--text2)">R:R ${key}</span><span style="font-family:var(--font-mono)">${n} <span style="color:var(--text3)">(${pct}%)</span></span></div><div style="height:5px;background:var(--bg);border-radius:3px"><div style="width:${pct}%;height:100%;background:${color};border-radius:3px"></div></div></div>`;};
-  const mRow=(label,val,sub,color)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04)"><span style="font-size:12px;color:var(--text2)">${label}</span><div style="text-align:right"><span style="font-family:var(--font-mono);font-size:13px;font-weight:600;color:${color||'var(--text)'}">${val}</span>${sub?`<div style="font-size:10px;color:var(--text3)">${sub}</div>`:''}</div></div>`;
+  const mRow=(label,val,sub,color,tip)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04)"><span style="font-size:12px;color:var(--text2);display:flex;align-items:center">${label}${tip?`<span class="metric-help" data-tip="${tip}">?</span>`:''}</span><div style="text-align:right"><span style="font-family:var(--font-mono);font-size:13px;font-weight:600;color:${color||'var(--text)'}">${val}</span>${sub?`<div style="font-size:10px;color:var(--text3)">${sub}</div>`:''}</div></div>`;
 
   document.getElementById('summary-content').innerHTML = `
   <!-- TOP CARDS -->
@@ -2977,10 +3240,10 @@ function renderSummary() {
     <div class="summary-card"><div class="summary-card-title">Win Rate</div><div class="win-rate-display">${winRate}%</div><div class="progress-bar" style="margin-top:8px"><div class="progress-fill" style="width:${winRate}%;background:var(--accent)"></div></div><div style="font-size:11px;color:var(--text3);margin-top:5px">${wins.length}W &middot; ${losses.length}L &middot; ${breakevens.length}BE</div></div>
     <div class="summary-card"><div class="summary-card-title">Całkowity P&L</div><div class="stat-value ${totalPnl>=0?'green':'red'}" style="font-size:26px;letter-spacing:-1px">${totalPnl>=0?'+':''}${fmt(totalPnl)}</div>${returnPct?`<div style="font-size:12px;color:var(--text2);margin-top:4px">Zwrot: <strong>${returnPct}%</strong></div>`:''}<div style="font-size:11px;color:var(--text3)">Equity: ${fmt(equity)} ${curr}</div></div>
     <div class="summary-card"><div class="summary-card-title">Avg R:R</div><div style="font-family:var(--font-head);font-size:28px;font-weight:800;color:var(--amber);letter-spacing:-1px">${avgRR!=null?'1:'+avgRR.toFixed(2):rrFromPnl!=null?'1:'+rrFromPnl.toFixed(2):'&#8212;'}</div>${beWR!=null?`<div style="font-size:11px;color:var(--text2)">BE WR: <strong>${beWR.toFixed(1)}%</strong> <span style="color:${winRate>=beWR?'var(--green)':'var(--red)'}">${winRate>=beWR?'&#10003;':'&#10007;'}</span></div>`:''}<div style="font-size:11px;color:var(--text3)">EV: ${ev!=null?(ev>=0?'+':'')+fmt(ev):'&#8212;'}</div></div>
-    <div class="summary-card"><div class="summary-card-title">Profit Factor</div><div style="font-family:var(--font-head);font-size:28px;font-weight:800;color:${parseFloat(profitFactor)>=1.5?'var(--accent)':parseFloat(profitFactor)>=1?'var(--amber)':'var(--red)'}">${profitFactor}</div><div style="font-size:11px;color:var(--text2);margin-top:4px">Zysk: <span class="pnl-pos">+${fmt(totalGross)}</span></div><div style="font-size:11px;color:var(--text3)">Strata: <span class="pnl-neg">${fmt(totalLossAmt)}</span></div></div>
-    <div class="summary-card"><div class="summary-card-title">Max Drawdown</div><div style="font-family:var(--font-head);font-size:24px;font-weight:800;color:${maxDDPct>20?'var(--red)':maxDDPct>10?'var(--amber)':'var(--text)'}">${maxDDPct.toFixed(2)}%</div><div style="font-size:12px;color:var(--text2);margin-top:4px">${fmt(maxDD)} ${curr}</div><div style="font-size:11px;color:var(--text3)">Recovery: ${recoveryFactor?recoveryFactor+'x':'&#8212;'}</div></div>
-    <div class="summary-card"><div class="summary-card-title">Sharpe Ratio</div><div style="font-family:var(--font-head);font-size:28px;font-weight:800;color:${sharpe&&parseFloat(sharpe)>=1?'var(--accent)':sharpe&&parseFloat(sharpe)>=0?'var(--amber)':'var(--red)'}">${sharpe||'&#8212;'}</div><div style="font-size:11px;color:var(--text3);margin-top:4px">${sharpe?parseFloat(sharpe)>=2?'Bardzo dobry':parseFloat(sharpe)>=1?'Dobry':parseFloat(sharpe)>=0?'Akceptowalny':'Słaby':'min. 5 trans.'}</div></div>
-    <div class="summary-card"><div class="summary-card-title">CAGR / Zwrot</div>${cagr!=null?`<div style="font-family:var(--font-head);font-size:26px;font-weight:800;letter-spacing:-1px;color:${cagr>0?'var(--accent)':cagr<0?'var(--red)':'var(--text)'}">${(cagr>=0?'+':'')+fmtPct(cagr)}</div><div style="font-size:11px;color:var(--text3);margin-bottom:4px">roczna · ${cagrNote}</div>`:`<div style="font-family:var(--font-head);font-size:22px;font-weight:800;color:var(--text2)">&#8212;</div><div style="font-size:11px;color:var(--amber);margin-bottom:4px">${cagrNote||'min. 30 dni'}</div>`}${hpr!=null?`<div style="font-size:13px;color:var(--text2)">HPR: <strong class="${hpr>=0?'pnl-pos':'pnl-neg'}">${hpr>=0?'+':''}${fmtPct(hpr)}</strong></div>`:''}</div>
+    <div class="summary-card"><div class="summary-card-title">Profit Factor <span class="metric-help" data-tip="Zysk brutto / Strata brutto.\n<1 = stratny system\n1–1.5 = przeciętny\n>1.5 = dobry\n>2 = bardzo dobry">?</span></div><div style="font-family:var(--font-head);font-size:28px;font-weight:800;color:${parseFloat(profitFactor)>=1.5?'var(--accent)':parseFloat(profitFactor)>=1?'var(--amber)':'var(--red)'}">${profitFactor}</div><div style="font-size:11px;color:var(--text2);margin-top:4px">Zysk: <span class="pnl-pos">+${fmt(totalGross)}</span></div><div style="font-size:11px;color:var(--text3)">Strata: <span class="pnl-neg">${fmt(totalLossAmt)}</span></div></div>
+    <div class="summary-card"><div class="summary-card-title">Max Drawdown <span class="metric-help" data-tip="Największy spadek kapitału od szczytu.\nIm niższy %, tym lepsze zarządzanie ryzykiem.\n<10% = świetny\n10–20% = akceptowalny\n>20% = niebezpieczny">?</span></div><div style="font-family:var(--font-head);font-size:24px;font-weight:800;color:${maxDDPct>20?'var(--red)':maxDDPct>10?'var(--amber)':'var(--text)'}">${maxDDPct.toFixed(2)}%</div><div style="font-size:12px;color:var(--text2);margin-top:4px">${fmt(maxDD)} ${curr}</div><div style="font-size:11px;color:var(--text3)">Recovery: ${recoveryFactor?recoveryFactor+'x':'&#8212;'}</div></div>
+    <div class="summary-card"><div class="summary-card-title">Sharpe Ratio <span class="metric-help" data-tip="Zwrot na jednostkę ryzyka (annualizowany).\n<0 = gorszy niż bez ryzyka\n0–1 = akceptowalny\n1–2 = dobry\n>2 = bardzo dobry\nMin. 5 zamkniętych transakcji.">?</span></div><div style="font-family:var(--font-head);font-size:28px;font-weight:800;color:${sharpe&&parseFloat(sharpe)>=1?'var(--accent)':sharpe&&parseFloat(sharpe)>=0?'var(--amber)':'var(--red)'}">${sharpe||'&#8212;'}</div><div style="font-size:11px;color:var(--text3);margin-top:4px">${sharpe?parseFloat(sharpe)>=2?'Bardzo dobry':parseFloat(sharpe)>=1?'Dobry':parseFloat(sharpe)>=0?'Akceptowalny':'Słaby':'min. 5 trans.'}</div></div>
+    <div class="summary-card"><div class="summary-card-title">CAGR / Zwrot <span class="metric-help" data-tip="CAGR — roczna stopa wzrostu skumulowanego.\nUmożliwia porównanie wyników z różnych okresów.\nMin. 30 dni historii.\nHPR = łączny zwrot bez normalizacji czasu.">?</span></div>${cagr!=null?`<div style="font-family:var(--font-head);font-size:26px;font-weight:800;letter-spacing:-1px;color:${cagr>0?'var(--accent)':cagr<0?'var(--red)':'var(--text)'}">${(cagr>=0?'+':'')+fmtPct(cagr)}</div><div style="font-size:11px;color:var(--text3);margin-bottom:4px">roczna · ${cagrNote}</div>`:`<div style="font-family:var(--font-head);font-size:22px;font-weight:800;color:var(--text2)">&#8212;</div><div style="font-size:11px;color:var(--amber);margin-bottom:4px">${cagrNote||'min. 30 dni'}</div>`}${hpr!=null?`<div style="font-size:13px;color:var(--text2)">HPR: <strong class="${hpr>=0?'pnl-pos':'pnl-neg'}">${hpr>=0?'+':''}${fmtPct(hpr)}</strong></div>`:''}</div>
   </div>
 
   <!-- ROW 2: Rentowność | Drawdown | Struktura -->
@@ -2994,18 +3257,18 @@ function renderSummary() {
       ${mRow('Śr. strata / trade','-'+fmt(avgLoss),null,'var(--red)')}
       ${mRow('Najlepszy trade','+'+fmt(maxWin),null,'var(--green)')}
       ${mRow('Najgorszy trade',fmt(maxLoss),null,'var(--red)')}
-      ${mRow('Payoff Ratio',rrFromPnl?(rrFromPnl).toFixed(2)+'x':'&#8212;',null,'var(--amber)')}
-      ${mRow('EV per trade',ev!=null?(ev>=0?'+':'')+fmt(ev)+' '+curr:'&#8212;',null,ev&&ev>=0?'var(--accent)':'var(--red)')}
+      ${mRow('Payoff Ratio',rrFromPnl?(rrFromPnl).toFixed(2)+'x':'&#8212;',null,'var(--amber)','Śr. zysk / Śr. strata.\nIm wyższy, tym większe zyski względem strat.\n>1 = zyski są wyższe niż straty')}
+      ${mRow('EV per trade',ev!=null?(ev>=0?'+':'')+fmt(ev)+' '+curr:'&#8212;',null,ev&&ev>=0?'var(--accent)':'var(--red)','Expected Value — oczekiwana wartość per trade.\nEV = (WR × ŚrZysk) − ((1−WR) × ŚrStrata)\n>0 = system ma przewagę statystyczną')}
     </div>
     <div class="summary-card"><div class="summary-card-title" style="color:var(--red)">📉 Ryzyko & Drawdown</div>
       ${mRow('Max drawdown',fmt(maxDD)+' '+curr,maxDDPct.toFixed(2)+'%','var(--red)')}
       ${mRow('Max DD % kapitału',maxDDPct.toFixed(2)+'%',null,maxDDPct>15?'var(--red)':maxDDPct>7?'var(--amber)':'var(--text)')}
-      ${mRow('Recovery Factor',recoveryFactor?recoveryFactor+'x':'&#8212;',null,parseFloat(recoveryFactor||0)>=1?'var(--accent)':'var(--amber)')}
-      ${mRow('Sharpe Ratio',sharpe||'&#8212;',sharpe?parseFloat(sharpe)>=1?'Dobry':'Słaby':null,sharpe&&parseFloat(sharpe)>=1?'var(--accent)':sharpe&&parseFloat(sharpe)>=0?'var(--amber)':'var(--red)')}
+      ${mRow('Recovery Factor',recoveryFactor?recoveryFactor+'x':'&#8212;',null,parseFloat(recoveryFactor||0)>=1?'var(--accent)':'var(--amber)','Zysk netto / Max Drawdown.\n≥1 = odbiłeś straty w pełni.\n≥2 = bardzo dobre zarządzanie ryzykiem.')}
+      ${mRow('Sharpe Ratio',sharpe||'&#8212;',sharpe?parseFloat(sharpe)>=1?'Dobry':'Słaby':null,sharpe&&parseFloat(sharpe)>=1?'var(--accent)':sharpe&&parseFloat(sharpe)>=0?'var(--amber)':'var(--red)','Zwrot na jednostkę ryzyka (annualizowany).\n<0 = gorszy niż bez ryzyka\n0–1 = akceptowalny\n1–2 = dobry\n>2 = bardzo dobry')}
       ${mRow('Max seria zysk.',maxConsecW,'z rzędu','var(--green)')}
       ${mRow('Max seria strat.',maxConsecL,'z rzędu','var(--red)')}
-      ${mRow('HPR (zwrot całk.)',hpr!=null?(hpr>=0?'+':'')+fmtPct(hpr):'&#8212;','Holding Period Return',hpr!=null&&hpr>=0?'var(--accent)':'var(--red)')}
-      ${mRow('CAGR',cagr!=null?(cagr>=0?'+':'')+fmtPct(cagr):(cagrNote||'min. 30 dni'),cagrNote&&cagr!=null?cagrNote:null,cagr!=null&&cagr>0?'var(--accent)':cagr!=null&&cagr<0?'var(--red)':'var(--text3)')}
+      ${mRow('HPR (zwrot całk.)',hpr!=null?(hpr>=0?'+':'')+fmtPct(hpr):'&#8212;','Holding Period Return',hpr!=null&&hpr>=0?'var(--accent)':'var(--red)','Holding Period Return — łączny % zwrot\nod pierwszej do ostatniej transakcji.\nNie uwzględnia czasu (w odróżnieniu od CAGR).')}
+      ${mRow('CAGR',cagr!=null?(cagr>=0?'+':'')+fmtPct(cagr):(cagrNote||'min. 30 dni'),cagrNote&&cagr!=null?cagrNote:null,cagr!=null&&cagr>0?'var(--accent)':cagr!=null&&cagr<0?'var(--red)':'var(--text3)','Compound Annual Growth Rate — roczna stopa\nwzrostu skumulowanego. Porównuje wyniki\nniezależnie od długości okresu.')}
     </div>
     <div class="summary-card"><div class="summary-card-title" style="color:var(--amber)">💰 Struktura zysku</div>
       ${mRow('Zysk brutto','+'+fmt(totalGross),null,'var(--green)')}
@@ -3427,6 +3690,14 @@ function saveTrade() {
   if (_entryRaw && isNaN(parseFloat(_entryRaw))) return toast('Cena wejścia musi być liczbą', 'error');
   if (_exitRaw  && isNaN(parseFloat(_exitRaw)))  return toast('Cena wyjścia musi być liczbą', 'error');
   if (_sizeRaw  && isNaN(parseFloat(_sizeRaw)))  return toast('Rozmiar pozycji musi być liczbą', 'error');
+  // Walidacja sumy % TP
+  let _tpTotalPct = 0;
+  for (let i = 1; i <= 4; i++) {
+    const price = parseFloat(document.getElementById('t-tp' + i)?.value);
+    const pct   = parseFloat(document.getElementById('t-tp' + i + '-pct')?.value);
+    if (price && !isNaN(price) && !isNaN(pct) && pct > 0) _tpTotalPct += pct;
+  }
+  if (_tpTotalPct > 100) return toast('Suma % zamknięcia na poziomach TP wynosi ' + _tpTotalPct + '% — musi być ≤ 100%', 'error');
   const id = document.getElementById('trade-id').value || genId();
   const trade = {
     id, symbol,
@@ -3657,6 +3928,28 @@ function renderDetailModal() {
         <input type="file" id="dv-file-input" multiple accept="image/*" style="display:none" onchange="dvAddFiles(this.files)">
       </div>
     </div>
+    <!-- Historia zmian -->
+    ${(t.editHistory && t.editHistory.length) ? `<div class="dv-card">
+      <div class="dv-card-head" style="cursor:pointer;user-select:none" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
+        🕓 Historia zmian <span style="font-size:11px;color:var(--text3);font-weight:400">(${t.editHistory.length}) — kliknij aby rozwinąć</span>
+      </div>
+      <div style="display:none">
+        ${[...t.editHistory].reverse().map(entry => {
+          const d = new Date(entry.ts);
+          const dateStr = d.toLocaleDateString('pl-PL') + ' ' + d.toLocaleTimeString('pl-PL', {hour:'2-digit',minute:'2-digit'});
+          const fieldsList = entry.fields.map(f => `<div style="display:flex;gap:8px;font-size:11px;padding:2px 0">
+            <span style="color:var(--text3);min-width:100px">${f.label}:</span>
+            <span style="color:var(--red);text-decoration:line-through;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.from ?? '—'}</span>
+            <span style="color:var(--text3)">→</span>
+            <span style="color:var(--accent);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.to ?? '—'}</span>
+          </div>`).join('');
+          return `<div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04)">
+            <div style="font-size:11px;color:var(--text3);margin-bottom:4px;font-family:var(--font-mono)">${dateStr}</div>
+            ${fieldsList}
+          </div>`;
+        }).join('')}
+      </div>
+    </div>` : (t.updatedAt ? `<div style="font-size:11px;color:var(--text3);padding:6px 2px;text-align:right">Ostatnio edytowano: ${new Date(t.updatedAt).toLocaleDateString('pl-PL')} ${new Date(t.updatedAt).toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'})}</div>` : '')}
   </div>
 </div>`;
 }
@@ -3800,7 +4093,17 @@ function detailSaveEdit() {
   t.emotionPre  = document.getElementById('dv-emotion-pre')?.value || null;
   t.emotionPost = document.getElementById('dv-emotion-post')?.value || null;
   t.screenshots = _detailScreenshots.filter(s => s.dataUrl && !s.uploading).map(s => s.dataUrl);
+
+  // Historia zmian
+  const _EDIT_FIELDS = { symbol:'Symbol', dir:'Kierunek', date:'Data wejścia', tf:'Timeframe', status:'Status', setup:'Setup', entry:'Cena wejścia', exit:'Cena wyjścia', sl:'Stop Loss', tp:'Take Profit', size:'Wolumen', pnl:'P&L', pre:'Analiza pre', post:'Wnioski post', emotionPre:'Emocja pre', emotionPost:'Emocja post' };
+  const prev = trades[idx];
+  const changed = Object.keys(_EDIT_FIELDS).filter(k => String(t[k]??'') !== String(prev[k]??''));
+  if (changed.length > 0) {
+    const histEntry = { ts: Date.now(), fields: changed.map(k => ({ k, label: _EDIT_FIELDS[k], from: prev[k]??null, to: t[k]??null })) };
+    t.editHistory = [...(prev.editHistory||[]), histEntry].slice(-20);
+  }
   t.updatedAt = Date.now();
+
   trades[idx] = t;
   saveTrades(state.currentAccountId, trades);
   saveSymbol(t.symbol);
@@ -9885,6 +10188,55 @@ function checkPendingSync() {
   } catch(e) {}
 }
 
+// PDF Export — raport podsumowania
+function exportSummaryPDF() {
+  const acc = getAccounts().find(a => a.id === state.currentAccountId);
+  if (!acc) { toast('Wybierz konto', 'error'); return; }
+  const summaryEl = document.getElementById('summary-content');
+  if (!summaryEl || !summaryEl.innerHTML.trim()) { toast('Brak danych do eksportu', 'error'); return; }
+
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('pl-PL', { year:'numeric', month:'long', day:'numeric' });
+
+  const win = window.open('', '_blank', 'width=900,height=700');
+  win.document.write(`<!DOCTYPE html><html lang="pl"><head>
+<meta charset="UTF-8">
+<title>TraderLogJournal — Raport ${acc.name}</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #fff; color: #1a1a2e; padding: 20mm 16mm; font-size: 12px; line-height: 1.5; }
+  h1 { font-size: 22px; font-weight: 800; color: #00b589; margin-bottom: 4px; }
+  .sub { color: #666; font-size: 13px; margin-bottom: 20px; }
+  .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
+  .summary-card { background: #f8f9fa; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; break-inside: avoid; }
+  .summary-card-title { font-size: 10px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
+  .stat-value, .win-rate-display { font-size: 22px; font-weight: 800; }
+  .green { color: #00b589; } .red { color: #e53e3e; } .amber { color: #d69e2e; }
+  .pnl-pos { color: #00b589; } .pnl-neg { color: #e53e3e; }
+  .progress-bar { height: 4px; background: #e2e8f0; border-radius: 2px; margin-top: 6px; }
+  .progress-fill { height: 100%; background: #00b589; border-radius: 2px; }
+  div[style*="grid-template-columns:1fr 1fr 1fr"] { display: grid !important; grid-template-columns: repeat(3,1fr) !important; gap: 10px !important; }
+  table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  th, td { text-align: left; padding: 4px 6px; border-bottom: 1px solid #eee; }
+  th { color: #888; font-weight: 600; }
+  .metric-help { display: none; }
+  footer { margin-top: 24px; font-size: 10px; color: #aaa; text-align: center; border-top: 1px solid #eee; padding-top: 10px; }
+  @media print {
+    body { padding: 10mm; }
+    @page { margin: 10mm; size: A4; }
+    .summary-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+</style>
+</head><body>
+<h1>TraderLogJournal — Raport tradingowy</h1>
+<div class="sub">${acc.name} &nbsp;·&nbsp; ${acc.broker || '—'} &nbsp;·&nbsp; ${acc.type || '—'} &nbsp;·&nbsp; Wygenerowano: ${dateStr}</div>
+${summaryEl.innerHTML}
+<footer>TraderLogJournal · traderlogjournal.com · Raport wygenerowany ${dateStr}</footer>
+</body></html>`);
+  win.document.close();
+  setTimeout(() => win.print(), 600);
+}
+
 // CSV Export
 function exportTradesToCSV() {
   const accounts = getAccounts();
@@ -11705,6 +12057,20 @@ function switchToolsTab(tab) {
   });
   if (tab === 'strategies') renderToolsStrategies();
   if (tab === 'brokers') initBrokerCalc();
+  if (tab === 'calculator') {
+    const acc = getAccounts().find(a => a.id === state.currentAccountId);
+    if (acc) {
+      const trades = getTrades(state.currentAccountId);
+      const pnl = trades.filter(t=>t.status==='closed').reduce((s,t)=>s+(t.pnl||0),0);
+      const capital = (acc.capital||0) + pnl;
+      const rCap = document.getElementById('r-capital');
+      const rrCap = document.getElementById('rr-capital');
+      if (rCap && !rCap.value) rCap.value = capital.toFixed(2);
+      if (rrCap && !rrCap.value) rrCap.value = capital.toFixed(2);
+      if (typeof calcRisk === 'function') calcRisk();
+      if (typeof calcRR === 'function') calcRR();
+    }
+  }
 }
 
 
@@ -11816,23 +12182,41 @@ function calcBrokerPreview() {
   const size      = parseFloat(document.getElementById('bc-size')?.value) || 0;
   const pnl       = parseFloat(document.getElementById('bc-pnl')?.value) || 0;
   const el        = document.getElementById('bc-result');
+  const customFields = document.getElementById('bc-custom-fields');
   if (!el) return;
+
+  // Pokaż/ukryj własne stawki
+  if (customFields) customFields.style.display = brokerKey === '__custom__' ? 'flex' : 'none';
 
   if (!brokerKey) { el.innerHTML = '<div style="color:var(--text3)">Wybierz brokera...</div>'; return; }
   if (!size) { el.innerHTML = '<div style="color:var(--text3)">Wpisz wolumen...</div>'; return; }
 
-  const broker = BROKER_COMMISSIONS[brokerKey];
-  const cost   = calcBrokerCost(symbol, size, pnl, brokerKey, 'taker');
-  const netPnl = cost ? pnl - cost : pnl;
+  // Obsługa własnego brokera
+  let broker, cost;
+  if (brokerKey === '__custom__') {
+    const customType   = document.getElementById('bc-custom-type')?.value || 'commission';
+    const customComm   = parseFloat(document.getElementById('bc-custom-comm')?.value) || 0;
+    const customSpread = parseFloat(document.getElementById('bc-custom-spread')?.value) || 0;
+    broker = { name: 'Własny broker', type: customType, commission: customComm, spreadPips: customSpread };
+    const pipVal = PIP_VALUES[symbol] || 10;
+    if (customType === 'commission') cost = customComm * size;
+    else if (customType === 'spread') cost = customSpread * pipVal * size;
+    else cost = (customComm * size) + (customSpread * pipVal * size);
+  } else {
+    broker = BROKER_COMMISSIONS[brokerKey];
+    cost   = calcBrokerCost(symbol, size, pnl, brokerKey, 'taker');
+  }
+
+  const netPnl = (cost != null) ? pnl - cost : pnl;
   const pipVal = PIP_VALUES[symbol] || 10;
 
   let html = `
     <div style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border)">
       <div style="font-size:12px;color:var(--text3);margin-bottom:4px">Broker</div>
-      <div style="font-size:15px;font-weight:700">${broker.name}</div>
+      <div style="font-size:15px;font-weight:700">${broker?.name || '—'}</div>
     </div>`;
 
-  if (broker.type === 'percent') {
+  if (broker?.type === 'percent') {
     html += `
     <div style="display:flex;justify-content:space-between;padding:5px 0"><span style="color:var(--text2)">Maker fee:</span><span>${broker.makerPct}%</span></div>
     <div style="display:flex;justify-content:space-between;padding:5px 0"><span style="color:var(--text2)">Taker fee:</span><span>${broker.takerPct}%</span></div>`;
