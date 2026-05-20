@@ -2626,6 +2626,8 @@ function doLogout() {
 
 // ===== NAVIGATION =====
 function showPage(page) {
+  // Zamknij wszystkie otwarte modale przy zmianie zakładki
+  document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('page-' + page).classList.add('active');
