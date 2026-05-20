@@ -1,7 +1,7 @@
 // TraderLogJournal Service Worker v1.0
 // Strategia: cache-first dla assets, network-first dla danych
 
-const CACHE_NAME = 'tlj-v1';
+const CACHE_NAME = 'tlj-v4';
 const OFFLINE_URL = '/';
 
 // Pliki do cache przy instalacji (shell aplikacji)
