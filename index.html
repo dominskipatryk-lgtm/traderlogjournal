@@ -9448,14 +9448,23 @@ async function adminActivateUser(userId) {
           const profiles = await profRes.json();
           const p = profiles?.[0];
           if (p?.email) {
-            const subject = encodeURIComponent('Twoje konto TraderLogJournal zostało aktywowane');
+            const subject = encodeURIComponent('Twoje konto TraderLogJournal jest aktywne — możesz się zalogować!');
             const body = encodeURIComponent(
-              'Witaj ' + (p.name || p.login || '') + ',\n\n' +
-              'Twoje konto w aplikacji TraderLogJournal zostało aktywowane.\n\n' +
-              'Możesz teraz zalogować się na stronie:\n' +
-              'https://traderlogjournal.com\n\n' +
-              'Login: ' + (p.login || '') + '\n\n' +
-              'Pozdrawiam,\nZespół TraderLogJournal'
+              'Witaj ' + (p.name || p.login || '') + '!\n\n' +
+              'Twoje konto w aplikacji TraderLogJournal zostało właśnie aktywowane.\n' +
+              'Od teraz możesz w pełni korzystać z dziennika transakcji.\n\n' +
+              '——————————————————\n' +
+              '  DANE LOGOWANIA\n' +
+              '——————————————————\n' +
+              '  Adres aplikacji : https://traderlogjournal.com\n' +
+              '  Login           : ' + (p.login || '') + '\n' +
+              '  Hasło           : (podane przy rejestracji)\n' +
+              '——————————————————\n\n' +
+              'Jeśli nie pamiętasz hasła, skorzystaj z opcji "Zapomniałem hasła" na stronie logowania.\n\n' +
+              'W razie pytań odpowiedz na tego maila — chętnie pomogę.\n\n' +
+              'Powodzenia w tradingu!\n' +
+              'Patryk\n' +
+              'TraderLogJournal · https://traderlogjournal.com'
             );
             window.open('mailto:' + p.email + '?subject=' + subject + '&body=' + body, '_blank');
           }
