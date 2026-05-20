@@ -2628,7 +2628,17 @@ function doLogout() {
 function showPage(page) {
   // Zamknij wszystkie otwarte modale przy zmianie zakładki
   document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  // Jawnie ukryj sub-taby narzędzi gdy opuszczasz stronę tools
+  if (page !== 'tools') {
+    ['calculator','strategies','brokers'].forEach(t => {
+      const el = document.getElementById('tools-tab-' + t);
+      if (el) el.style.display = 'none';
+    });
+  }
+  document.querySelectorAll('.page').forEach(p => {
+    p.classList.remove('active');
+    p.style.display = '';  // wyczyść ewentualne inline display
+  });
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('page-' + page).classList.add('active');
   // Highlight correct nav button by onclick content
