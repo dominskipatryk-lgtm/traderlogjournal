@@ -336,6 +336,15 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 }
 .form-select-modal:focus { border-color: var(--accent); }
 
+/* Emotion buttons */
+.emotion-btn {
+  background: var(--bg3); border: 1px solid var(--border2); border-radius: 20px;
+  color: var(--text2); font-size: 12px; padding: 5px 12px; cursor: pointer;
+  font-family: var(--font-body); transition: all .15s;
+}
+.emotion-btn:hover { border-color: var(--accent); color: var(--text); }
+.emotion-btn.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+
 /* Screenshot upload */
 .upload-zone {
   border: 2px dashed var(--border2); border-radius: 12px; padding: 24px;
@@ -921,6 +930,30 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
     <div id="page-dashboard" class="page active">
       <h1 class="page-title" id="dash-title">Dashboard</h1>
       <p class="page-subtitle" id="dash-subtitle">Podsumowanie aktywnego konta</p>
+      <!-- TradingView Ticker Tape -->
+      <div id="tv-ticker-wrap" style="margin:-4px -24px 16px;overflow:hidden;border-bottom:1px solid var(--border)">
+        <div class="tradingview-widget-container">
+          <div class="tradingview-widget-container__widget"></div>
+          <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
+          {
+            "symbols":[
+              {"proName":"FX_IDC:EURUSD","title":"EUR/USD"},
+              {"proName":"FX_IDC:GBPUSD","title":"GBP/USD"},
+              {"proName":"FX_IDC:USDJPY","title":"USD/JPY"},
+              {"proName":"TVC:GOLD","title":"Gold"},
+              {"proName":"CRYPTOCAP:BTC","title":"Bitcoin"},
+              {"proName":"TVC:SPX","title":"S&P 500"},
+              {"proName":"TVC:US10Y","title":"US 10Y"}
+            ],
+            "showSymbolLogo":true,
+            "isTransparent":true,
+            "displayMode":"adaptive",
+            "colorTheme":"dark",
+            "locale":"en"
+          }
+          </script>
+        </div>
+      </div>
       <div class="stats-grid" id="dash-stats"></div>
       <div class="equity-chart-wrap">
         <div class="chart-title" data-i18n="dash_equity_curve">Krzywa kapitału</div>
@@ -1385,7 +1418,13 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
           <div class="page-title" id="analysis-page-title">Notatki analityczne</div>
           <div class="page-subtitle" data-i18n="analysis_subtitle">Zapisuj analizy rynku niezależnie od transakcji</div>
         </div>
-        <button class="btn-sm btn-accent" onclick="openNewAnalysis()">+ Nowa analiza</button>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden">
+            <button id="an-view-list" onclick="setAnalysisView('list')" class="tf-toggle-btn active" title="Widok listy">☰ Lista</button>
+            <button id="an-view-cal" onclick="setAnalysisView('calendar')" class="tf-toggle-btn" title="Widok kalendarza">📅 Kalendarz</button>
+          </div>
+          <button class="btn-sm btn-accent" onclick="openNewAnalysis()">+ Nowa analiza</button>
+        </div>
       </div>
       <!-- Filters -->
       <div class="filter-bar" style="margin-bottom:16px">
@@ -1929,7 +1968,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
           </div>
           <div class="form-group-modal">
             <label class="form-label-modal" style="display:flex;justify-content:space-between;align-items:center">
-              <span>P&amp;L (USD)</span>
+              <span id="pnl-currency-label">P&amp;L</span>
               <span style="font-size:10px;color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">auto z cen · edytowalne</span>
             </label>
             <div style="position:relative">
@@ -1976,9 +2015,15 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
           <div id="t-linked-analysis-display" style="display:none;background:var(--bg3);border:1px solid var(--accent);border-radius:8px;padding:8px 12px;margin-bottom:6px;cursor:pointer;font-size:12px" onclick="goToLinkedAnalysis()">
             <span style="color:var(--accent)">🔗</span> <span id="t-linked-analysis-title"></span>
           </div>
-          <select class="form-select-modal" id="t-linked-analysis" onchange="onLinkedAnalysisChange()">
-            <option value="">— Brak powiązanej analizy —</option>
-          </select>
+          <div style="position:relative">
+            <input class="form-input-modal" id="t-linked-analysis-search"
+              placeholder="🔍 Szukaj analizy (symbol lub tytuł)..."
+              oninput="filterLinkedAnalysisList(this.value)"
+              onfocus="filterLinkedAnalysisList(this.value)"
+              onblur="setTimeout(()=>{const d=document.getElementById('t-linked-analysis-dd');if(d)d.style.display='none'},200)"
+              autocomplete="off" style="font-size:13px">
+            <div id="t-linked-analysis-dd" style="display:none;position:absolute;z-index:200;width:100%;background:var(--bg2);border:1px solid var(--accent);border-radius:8px;overflow:hidden;top:calc(100% + 4px);box-shadow:0 8px 24px rgba(0,0,0,.4);max-height:220px;overflow-y:auto"></div>
+          </div>
           <input type="hidden" id="t-linked-analysis-id">
         </div>
         <div class="form-group-modal full">
@@ -1988,6 +2033,30 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
         <div class="form-group-modal full">
           <label class="form-label-modal">Wnioski po zamknięciu</label>
           <textarea class="form-input-modal" id="t-post" placeholder="Co poszło dobrze? Co można było zrobić lepiej?"></textarea>
+        </div>
+        <div class="form-group-modal full">
+          <label class="form-label-modal" style="margin-bottom:8px">🧠 Stan emocjonalny <span style="font-size:10px;color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">— przed wejściem</span></label>
+          <div id="emotion-pre-picker" style="display:flex;flex-wrap:wrap;gap:6px">
+            <button type="button" class="emotion-btn" data-emotion="Spokojny" onclick="toggleEmotion('pre','Spokojny',this)">😌 Spokojny</button>
+            <button type="button" class="emotion-btn" data-emotion="Pewny" onclick="toggleEmotion('pre','Pewny',this)">💪 Pewny</button>
+            <button type="button" class="emotion-btn" data-emotion="Podekscytowany" onclick="toggleEmotion('pre','Podekscytowany',this)">🔥 Podekscytowany</button>
+            <button type="button" class="emotion-btn" data-emotion="Zaniepokojony" onclick="toggleEmotion('pre','Zaniepokojony',this)">😟 Zaniepokojony</button>
+            <button type="button" class="emotion-btn" data-emotion="FOMO" onclick="toggleEmotion('pre','FOMO',this)">😰 FOMO</button>
+            <button type="button" class="emotion-btn" data-emotion="Revenge" onclick="toggleEmotion('pre','Revenge',this)">😡 Revenge</button>
+          </div>
+          <input type="hidden" id="t-emotion-pre">
+        </div>
+        <div class="form-group-modal full">
+          <label class="form-label-modal" style="margin-bottom:8px">🧠 Stan emocjonalny <span style="font-size:10px;color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">— po zamknięciu</span></label>
+          <div id="emotion-post-picker" style="display:flex;flex-wrap:wrap;gap:6px">
+            <button type="button" class="emotion-btn" data-emotion="Zadowolony" onclick="toggleEmotion('post','Zadowolony',this)">😊 Zadowolony</button>
+            <button type="button" class="emotion-btn" data-emotion="Spokojny" onclick="toggleEmotion('post','Spokojny',this)">😌 Spokojny</button>
+            <button type="button" class="emotion-btn" data-emotion="Żałuję" onclick="toggleEmotion('post','Żałuję',this)">😔 Żałuję</button>
+            <button type="button" class="emotion-btn" data-emotion="Sfrustrowany" onclick="toggleEmotion('post','Sfrustrowany',this)">😤 Sfrustrowany</button>
+            <button type="button" class="emotion-btn" data-emotion="Chciwy" onclick="toggleEmotion('post','Chciwy',this)">🤑 Chciwy</button>
+            <button type="button" class="emotion-btn" data-emotion="Neutralny" onclick="toggleEmotion('post','Neutralny',this)">🧘 Neutralny</button>
+          </div>
+          <input type="hidden" id="t-emotion-post">
         </div>
         <div class="form-group-modal full">
           <label class="form-label-modal">Screenshoty</label>
@@ -2040,8 +2109,23 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
         <input class="form-input-modal" id="acc-broker" placeholder="np. Capital.com, Binance">
       </div>
       <div class="form-group-modal" style="margin-bottom:16px">
-        <label class="form-label-modal">Kapitał startowy (USD)</label>
+        <label class="form-label-modal">Kapitał startowy</label>
         <input class="form-input-modal" id="acc-capital" type="number" placeholder="10000">
+      </div>
+      <div class="form-group-modal" style="margin-bottom:16px">
+        <label class="form-label-modal">Waluta konta</label>
+        <select class="form-select-modal" id="acc-currency">
+          <option value="USD">USD — Dolar</option>
+          <option value="EUR">EUR — Euro</option>
+          <option value="GBP">GBP — Funt</option>
+          <option value="PLN">PLN — Złoty</option>
+          <option value="CHF">CHF — Frank</option>
+          <option value="JPY">JPY — Jen</option>
+          <option value="AUD">AUD — Dolar australijski</option>
+          <option value="CAD">CAD — Dolar kanadyjski</option>
+          <option value="BTC">BTC — Bitcoin</option>
+          <option value="USDT">USDT — Tether</option>
+        </select>
       </div>
       <div class="form-group-modal" style="margin-bottom:16px">
         <label class="form-label-modal">Strategia</label>
@@ -2591,11 +2675,12 @@ function renderDashboard() {
   const rr = avgLoss ? Math.abs(avgWin / avgLoss).toFixed(2) : '—';
   const equity = (acc.capital || 0) + totalPnl;
 
+  const curr = getCurrSym(acc.id);
   document.getElementById('dash-stats').innerHTML = `
-    <div class="stat-card"><div class="stat-label">Kapitał</div><div class="stat-value">${fmt(equity)}</div><div class="stat-sub">Start: ${fmt(acc.capital)}</div></div>
-    <div class="stat-card"><div class="stat-label">P&L Total</div><div class="stat-value ${totalPnl>=0?'green':'red'}">${totalPnl>=0?'+':''}${fmt(totalPnl)}</div><div class="stat-sub">${closed.length} zamkniętych</div></div>
+    <div class="stat-card"><div class="stat-label">Kapitał</div><div class="stat-value">${fmt(equity)} <span style="font-size:12px;color:var(--text3)">${curr}</span></div><div class="stat-sub">Start: ${fmt(acc.capital)} ${curr}</div></div>
+    <div class="stat-card"><div class="stat-label">P&L Total</div><div class="stat-value ${totalPnl>=0?'green':'red'}">${totalPnl>=0?'+':''}${fmt(totalPnl)} <span style="font-size:12px;color:var(--text3)">${curr}</span></div><div class="stat-sub">${closed.length} zamkniętych</div></div>
     <div class="stat-card"><div class="stat-label">Win Rate</div><div class="stat-value amber">${winRate}%</div><div class="stat-sub">${wins.length}W / ${losses.length}L</div></div>
-    <div class="stat-card"><div class="stat-label">Risk/Reward</div><div class="stat-value">${rr}</div><div class="stat-sub">Śr. win: ${fmt(avgWin)}</div></div>
+    <div class="stat-card"><div class="stat-label">Risk/Reward</div><div class="stat-value">${rr}</div><div class="stat-sub">Śr. win: ${fmt(avgWin)} ${curr}</div></div>
     <div class="stat-card"><div class="stat-label">Otwarte</div><div class="stat-value">${trades.filter(t=>t.status==='open').length}</div><div class="stat-sub">Pozycje aktywne</div></div>
     <div class="stat-card"><div class="stat-label">Wszystkich</div><div class="stat-value">${trades.length}</div><div class="stat-sub">Transakcji łącznie</div></div>
   `;
@@ -2702,6 +2787,7 @@ function renderSummary() {
   document.getElementById('summary-subtitle').textContent = acc ? acc.name + ' · ' + acc.broker : '';
   if (!closed.length) { document.getElementById('summary-content').innerHTML = emptyState('📊','Brak danych','Zamknij transakcje aby zobaczyć statystyki'); return; }
 
+  const curr = getCurrSym(acc?.id);
   const startCapital = acc ? (acc.capital||0) : 0;
   const wins = closed.filter(t=>t.pnl>0);
   const losses = closed.filter(t=>t.pnl<0);
@@ -2870,10 +2956,10 @@ function renderSummary() {
   <!-- TOP CARDS -->
   <div class="summary-grid" style="grid-template-columns:repeat(auto-fit,minmax(155px,1fr));margin-bottom:16px">
     <div class="summary-card"><div class="summary-card-title">Win Rate</div><div class="win-rate-display">${winRate}%</div><div class="progress-bar" style="margin-top:8px"><div class="progress-fill" style="width:${winRate}%;background:var(--accent)"></div></div><div style="font-size:11px;color:var(--text3);margin-top:5px">${wins.length}W &middot; ${losses.length}L &middot; ${breakevens.length}BE</div></div>
-    <div class="summary-card"><div class="summary-card-title">Całkowity P&L</div><div class="stat-value ${totalPnl>=0?'green':'red'}" style="font-size:26px;letter-spacing:-1px">${totalPnl>=0?'+':''}${fmt(totalPnl)}</div>${returnPct?`<div style="font-size:12px;color:var(--text2);margin-top:4px">Zwrot: <strong>${returnPct}%</strong></div>`:''}<div style="font-size:11px;color:var(--text3)">Equity: ${fmt(equity)}</div></div>
+    <div class="summary-card"><div class="summary-card-title">Całkowity P&L</div><div class="stat-value ${totalPnl>=0?'green':'red'}" style="font-size:26px;letter-spacing:-1px">${totalPnl>=0?'+':''}${fmt(totalPnl)}</div>${returnPct?`<div style="font-size:12px;color:var(--text2);margin-top:4px">Zwrot: <strong>${returnPct}%</strong></div>`:''}<div style="font-size:11px;color:var(--text3)">Equity: ${fmt(equity)} ${curr}</div></div>
     <div class="summary-card"><div class="summary-card-title">Avg R:R</div><div style="font-family:var(--font-head);font-size:28px;font-weight:800;color:var(--amber);letter-spacing:-1px">${avgRR!=null?'1:'+avgRR.toFixed(2):rrFromPnl!=null?'1:'+rrFromPnl.toFixed(2):'&#8212;'}</div>${beWR!=null?`<div style="font-size:11px;color:var(--text2)">BE WR: <strong>${beWR.toFixed(1)}%</strong> <span style="color:${winRate>=beWR?'var(--green)':'var(--red)'}">${winRate>=beWR?'&#10003;':'&#10007;'}</span></div>`:''}<div style="font-size:11px;color:var(--text3)">EV: ${ev!=null?(ev>=0?'+':'')+fmt(ev):'&#8212;'}</div></div>
     <div class="summary-card"><div class="summary-card-title">Profit Factor</div><div style="font-family:var(--font-head);font-size:28px;font-weight:800;color:${parseFloat(profitFactor)>=1.5?'var(--accent)':parseFloat(profitFactor)>=1?'var(--amber)':'var(--red)'}">${profitFactor}</div><div style="font-size:11px;color:var(--text2);margin-top:4px">Zysk: <span class="pnl-pos">+${fmt(totalGross)}</span></div><div style="font-size:11px;color:var(--text3)">Strata: <span class="pnl-neg">${fmt(totalLossAmt)}</span></div></div>
-    <div class="summary-card"><div class="summary-card-title">Max Drawdown</div><div style="font-family:var(--font-head);font-size:24px;font-weight:800;color:${maxDDPct>20?'var(--red)':maxDDPct>10?'var(--amber)':'var(--text)'}">${maxDDPct.toFixed(2)}%</div><div style="font-size:12px;color:var(--text2);margin-top:4px">${fmt(maxDD)} USD</div><div style="font-size:11px;color:var(--text3)">Recovery: ${recoveryFactor?recoveryFactor+'x':'&#8212;'}</div></div>
+    <div class="summary-card"><div class="summary-card-title">Max Drawdown</div><div style="font-family:var(--font-head);font-size:24px;font-weight:800;color:${maxDDPct>20?'var(--red)':maxDDPct>10?'var(--amber)':'var(--text)'}">${maxDDPct.toFixed(2)}%</div><div style="font-size:12px;color:var(--text2);margin-top:4px">${fmt(maxDD)} ${curr}</div><div style="font-size:11px;color:var(--text3)">Recovery: ${recoveryFactor?recoveryFactor+'x':'&#8212;'}</div></div>
     <div class="summary-card"><div class="summary-card-title">Sharpe Ratio</div><div style="font-family:var(--font-head);font-size:28px;font-weight:800;color:${sharpe&&parseFloat(sharpe)>=1?'var(--accent)':sharpe&&parseFloat(sharpe)>=0?'var(--amber)':'var(--red)'}">${sharpe||'&#8212;'}</div><div style="font-size:11px;color:var(--text3);margin-top:4px">${sharpe?parseFloat(sharpe)>=2?'Bardzo dobry':parseFloat(sharpe)>=1?'Dobry':parseFloat(sharpe)>=0?'Akceptowalny':'Słaby':'min. 5 trans.'}</div></div>
     <div class="summary-card"><div class="summary-card-title">CAGR / Zwrot</div>${cagr!=null?`<div style="font-family:var(--font-head);font-size:26px;font-weight:800;letter-spacing:-1px;color:${cagr>0?'var(--accent)':cagr<0?'var(--red)':'var(--text)'}">${(cagr>=0?'+':'')+fmtPct(cagr)}</div><div style="font-size:11px;color:var(--text3);margin-bottom:4px">roczna · ${cagrNote}</div>`:`<div style="font-family:var(--font-head);font-size:22px;font-weight:800;color:var(--text2)">&#8212;</div><div style="font-size:11px;color:var(--amber);margin-bottom:4px">${cagrNote||'min. 30 dni'}</div>`}${hpr!=null?`<div style="font-size:13px;color:var(--text2)">HPR: <strong class="${hpr>=0?'pnl-pos':'pnl-neg'}">${hpr>=0?'+':''}${fmtPct(hpr)}</strong></div>`:''}</div>
   </div>
@@ -2890,10 +2976,10 @@ function renderSummary() {
       ${mRow('Najlepszy trade','+'+fmt(maxWin),null,'var(--green)')}
       ${mRow('Najgorszy trade',fmt(maxLoss),null,'var(--red)')}
       ${mRow('Payoff Ratio',rrFromPnl?(rrFromPnl).toFixed(2)+'x':'&#8212;',null,'var(--amber)')}
-      ${mRow('EV per trade',ev!=null?(ev>=0?'+':'')+fmt(ev)+'$':'&#8212;',null,ev&&ev>=0?'var(--accent)':'var(--red)')}
+      ${mRow('EV per trade',ev!=null?(ev>=0?'+':'')+fmt(ev)+' '+curr:'&#8212;',null,ev&&ev>=0?'var(--accent)':'var(--red)')}
     </div>
     <div class="summary-card"><div class="summary-card-title" style="color:var(--red)">📉 Ryzyko & Drawdown</div>
-      ${mRow('Max drawdown',fmt(maxDD)+' USD',maxDDPct.toFixed(2)+'%','var(--red)')}
+      ${mRow('Max drawdown',fmt(maxDD)+' '+curr,maxDDPct.toFixed(2)+'%','var(--red)')}
       ${mRow('Max DD % kapitału',maxDDPct.toFixed(2)+'%',null,maxDDPct>15?'var(--red)':maxDDPct>7?'var(--amber)':'var(--text)')}
       ${mRow('Recovery Factor',recoveryFactor?recoveryFactor+'x':'&#8212;',null,parseFloat(recoveryFactor||0)>=1?'var(--accent)':'var(--amber)')}
       ${mRow('Sharpe Ratio',sharpe||'&#8212;',sharpe?parseFloat(sharpe)>=1?'Dobry':'Słaby':null,sharpe&&parseFloat(sharpe)>=1?'var(--accent)':sharpe&&parseFloat(sharpe)>=0?'var(--amber)':'var(--red)')}
@@ -3014,7 +3100,36 @@ function renderSummary() {
         ${mRow('EV per trade',ev!=null?(ev>=0?'+':'')+fmt(ev):'&#8212;',null,ev&&ev>=0?'var(--accent)':'var(--red)')}
       </div>
     </div>
-  </div>`;
+  </div>
+
+  ${(() => {
+    const emoTrades = closed.filter(t => t.emotionPre || t.emotionPost);
+    if (!emoTrades.length) return '';
+    const byEmo = {};
+    emoTrades.forEach(t => {
+      const e = t.emotionPre || t.emotionPost;
+      if (!byEmo[e]) byEmo[e] = {count:0, pnl:0, wins:0};
+      byEmo[e].count++; byEmo[e].pnl += t.pnl||0;
+      if (t.pnl>0) byEmo[e].wins++;
+    });
+    const rows = Object.entries(byEmo).sort((a,b)=>b[1].pnl-a[1].pnl).map(([e,d]) => {
+      const wr = Math.round(d.wins/d.count*100);
+      return `<tr>
+        <td style="padding:5px 0;font-size:13px">${e}</td>
+        <td style="text-align:center;color:var(--text3)">${d.count}</td>
+        <td style="text-align:center;color:${wr>=50?'var(--accent)':'var(--red)'}">${wr}%</td>
+        <td style="text-align:right" class="${d.pnl>=0?'pnl-pos':'pnl-neg'}">${d.pnl>=0?'+':''}${fmt(d.pnl)} ${curr}</td>
+      </tr>`;
+    }).join('');
+    return `<div style="margin-bottom:16px">
+      <div class="summary-card"><div class="summary-card-title">🧠 Psychologia — emocje vs. wynik</div>
+        <table style="width:100%;font-size:12px;border-collapse:collapse">
+          <thead><tr style="color:var(--text3);font-size:10px"><th style="text-align:left;padding:3px 0">Emocja</th><th style="text-align:center">Trd</th><th style="text-align:center">WR%</th><th style="text-align:right">P&L</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>`;
+  })()}`;
 }
 
 // ===== ACCOUNTS =====
@@ -3067,6 +3182,7 @@ function openAccountModal() {
   document.getElementById('acc-capital').value = '';
   document.getElementById('acc-strategy').value = '';
   document.getElementById('acc-mt4-login').value = '';
+  document.getElementById('acc-currency').value = 'USD';
   document.getElementById('acc-modal-title').textContent = 'Nowe konto';
   document.querySelectorAll('.color-swatch').forEach((s,i) => s.classList.toggle('selected', i===0));
   openModal('account-modal');
@@ -3082,6 +3198,7 @@ function openEditAccount(id) {
   document.getElementById('acc-strategy').value = acc.strategy || '';
   document.getElementById('acc-type').value = acc.type || 'Forex';
   document.getElementById('acc-mt4-login').value = acc.mt4Login || '';
+  document.getElementById('acc-currency').value = acc.currency || 'USD';
   document.getElementById('acc-modal-title').textContent = 'Edytuj konto';
   document.querySelectorAll('.color-swatch').forEach(s => s.classList.toggle('selected', s.dataset.color === acc.color));
   openModal('account-modal');
@@ -3097,6 +3214,7 @@ function saveAccount() {
     type: document.getElementById('acc-type').value,
     broker: document.getElementById('acc-broker').value,
     capital: parseFloat(document.getElementById('acc-capital').value) || 0,
+    currency: document.getElementById('acc-currency').value || 'USD',
     strategy: document.getElementById('acc-strategy').value,
     mt4Login: document.getElementById('acc-mt4-login').value || '',
   };
@@ -3128,6 +3246,47 @@ function selectColor(el) {
   el.classList.add('selected');
 }
 
+// ===== EMOTION HELPERS =====
+function toggleEmotion(type, value, btn) {
+  const hiddenId = type === 'pre' ? 't-emotion-pre' : 't-emotion-post';
+  const pickerId = type === 'pre' ? 'emotion-pre-picker' : 'emotion-post-picker';
+  const currentVal = document.getElementById(hiddenId)?.value;
+  const newVal = currentVal === value ? '' : value;
+  document.getElementById(hiddenId).value = newVal;
+  document.querySelectorAll('#' + pickerId + ' .emotion-btn').forEach(b => b.classList.remove('active'));
+  if (newVal) btn.classList.add('active');
+}
+function toggleDvEmotion(type, value, btn) {
+  const hiddenId = type === 'pre' ? 'dv-emotion-pre' : 'dv-emotion-post';
+  const pickerId = type === 'pre' ? 'dv-emotion-pre-picker' : 'dv-emotion-post-picker';
+  const currentVal = document.getElementById(hiddenId)?.value;
+  const newVal = currentVal === value ? '' : value;
+  document.getElementById(hiddenId).value = newVal;
+  document.querySelectorAll('#' + pickerId + ' .emotion-btn').forEach(b => b.classList.remove('active'));
+  if (newVal) btn.classList.add('active');
+}
+function _dvEmoPicker(type, cur) {
+  const opts = type === 'pre'
+    ? [['😌','Spokojny'],['💪','Pewny'],['🔥','Podekscytowany'],['😟','Zaniepokojony'],['😰','FOMO'],['😡','Revenge']]
+    : [['😊','Zadowolony'],['😌','Spokojny'],['😔','Żałuję'],['😤','Sfrustrowany'],['🤑','Chciwy'],['🧘','Neutralny']];
+  const pid = 'dv-emotion-' + type + '-picker';
+  const hid = 'dv-emotion-' + type;
+  const lbl = type === 'pre' ? 'Przed wejściem' : 'Po zamknięciu';
+  const btns = opts.map(([em, val]) =>
+    `<button type="button" class="emotion-btn${cur===val?' active':''}" data-emotion="${val}" onclick="toggleDvEmotion('${type}','${val}',this)">${em} ${val}</button>`
+  ).join('');
+  return `<div style="margin-bottom:8px"><div style="font-size:11px;color:var(--text3);margin-bottom:5px">${lbl}</div><div id="${pid}" style="display:flex;flex-wrap:wrap;gap:5px">${btns}</div><input type="hidden" id="${hid}" value="${cur||''}"></div>`;
+}
+function setEmotionUI(type, value) {
+  const hiddenId = type === 'pre' ? 't-emotion-pre' : 't-emotion-post';
+  const pickerId = type === 'pre' ? 'emotion-pre-picker' : 'emotion-post-picker';
+  const hidden = document.getElementById(hiddenId);
+  if (hidden) hidden.value = value || '';
+  document.querySelectorAll('#' + pickerId + ' .emotion-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.emotion === value);
+  });
+}
+
 // ===== TRADE MODAL =====
 function openTradeModal() {
   state.editTradeId = null;
@@ -3147,6 +3306,9 @@ function openTradeModal() {
   document.getElementById('t-setup').value = '';
   document.getElementById('t-pre').value = '';
   document.getElementById('t-post').value = '';
+  setEmotionUI('pre', '');
+  setEmotionUI('post', '');
+  const _pclNew = document.getElementById('pnl-currency-label'); if (_pclNew) _pclNew.textContent = 'P&L (' + getCurrSym() + ')';
   document.getElementById('modal-title').textContent = 'Nowa transakcja';
   _pnlManual = false;
   const _pp = document.getElementById('pnl-preview'); if(_pp) { _pp.textContent=''; }
@@ -3186,6 +3348,9 @@ function openEditModal(id) {
   document.getElementById('t-setup').value = t.setup || '';
   document.getElementById('t-pre').value = t.pre || '';
   document.getElementById('t-post').value = t.post || '';
+  setEmotionUI('pre', t.emotionPre || '');
+  setEmotionUI('post', t.emotionPost || '');
+  const _pclEdit = document.getElementById('pnl-currency-label'); if (_pclEdit) _pclEdit.textContent = 'P&L (' + getCurrSym() + ')';
   document.getElementById('modal-title').textContent = 'Edytuj: ' + t.symbol;
   _draftKey = 'edit_' + id;
   _pnlManual = false;
@@ -3254,6 +3419,8 @@ function saveTrade() {
     setup: document.getElementById('t-setup').value,
     pre: document.getElementById('t-pre').value,
     post: document.getElementById('t-post').value,
+    emotionPre: document.getElementById('t-emotion-pre')?.value || null,
+    emotionPost: document.getElementById('t-emotion-post')?.value || null,
     screenshots: state.tempScreenshots.filter(s => s.dataUrl && !s.uploading).map(s => s.dataUrl),
     mt4Ticket: parseInt(document.getElementById('t-mt4-ticket')?.value) || null,
     linkedAnalysisId: document.getElementById('t-linked-analysis-id')?.value || null,
@@ -3305,7 +3472,7 @@ function renderDetailModal() {
 
   // Header
   const pnlClass = t.pnl > 0 ? 'pnl-pos' : t.pnl < 0 ? 'pnl-neg' : '';
-  const pnlStr = t.pnl != null ? (t.pnl > 0 ? '+' : '') + fmt(t.pnl) + ' USD' : '—';
+  const pnlStr = t.pnl != null ? (t.pnl > 0 ? '+' : '') + fmt(t.pnl) + ' ' + getCurrSym() : '—';
   document.getElementById('detail-modal-title').textContent = t.symbol;
   document.getElementById('detail-badges').innerHTML =
     `<span class="badge badge-${t.dir.toLowerCase()}">${t.dir}</span>` +
@@ -3399,16 +3566,32 @@ function renderDetailModal() {
   <!-- RIGHT COL -->
   <div class="dv-col">
     <!-- Powiązana analiza -->
-    ${t.linkedAnalysisId ? (() => {
-      const la = getAnalyses().find(a => a.id === t.linkedAnalysisId);
-      return la ? `<div class="dv-card" style="border-color:var(--blue);background:var(--blue-dim)">
-        <div class="dv-card-head" style="color:var(--blue)">🔗 Powiązana analiza</div>
-        <div style="font-weight:700;font-size:13px;margin-bottom:4px">${escHtml(la.title)}</div>
-        ${la.symbol?`<div style="font-size:11px;color:var(--text3);margin-bottom:6px">${la.symbol}${la.tf?' · '+la.tf:''}</div>`:''}
-        ${la.content?`<div style="font-size:12px;color:var(--text2);line-height:1.6;max-height:80px;overflow:hidden">${escHtml(la.content.slice(0,300))}${la.content.length>300?'…':''}</div>`:''}
-        <button onclick="openEditAnalysis('${la.id}')" class="btn-sm" style="margin-top:8px;font-size:11px">📖 Otwórz analizę</button>
-      </div>` : '';
-    })() : ''}
+    ${(() => {
+      const la = t.linkedAnalysisId ? getAnalyses().find(a => a.id === t.linkedAnalysisId) : null;
+      if (la) {
+        return `<div class="dv-card" style="border-color:var(--blue);background:var(--blue-dim)">
+          <div class="dv-card-head" style="color:var(--blue);display:flex;justify-content:space-between;align-items:center">
+            <span>🔗 Powiązana analiza</span>
+            <button onclick="dvUnlinkAnalysis('${t.id}')" style="background:none;border:none;cursor:pointer;font-size:10px;color:var(--red);padding:0" title="Usuń powiązanie">✕ usuń</button>
+          </div>
+          <div style="font-weight:700;font-size:13px;margin-bottom:4px">${escHtml(la.title)}</div>
+          ${la.symbol?`<div style="font-size:11px;color:var(--text3);margin-bottom:6px">${la.symbol}${la.tf?' · '+la.tf:''}</div>`:''}
+          ${la.content?`<div style="font-size:12px;color:var(--text2);line-height:1.6;max-height:80px;overflow:hidden">${escHtml(la.content.slice(0,300))}${la.content.length>300?'…':''}</div>`:''}
+          <button onclick="openEditAnalysis('${la.id}')" class="btn-sm" style="margin-top:8px;font-size:11px">📖 Otwórz analizę</button>
+        </div>`;
+      }
+      return `<div class="dv-card" style="border-style:dashed">
+        <div class="dv-card-head" style="color:var(--text3)">🔗 Powiązana analiza</div>
+        <div style="position:relative;margin-top:4px">
+          <input id="dv-link-search" class="form-input-modal" placeholder="🔍 Szukaj analizy..."
+            oninput="filterDvLinkList(this.value)"
+            onfocus="filterDvLinkList(this.value)"
+            onblur="setTimeout(()=>{const d=document.getElementById('dv-link-dd');if(d)d.style.display='none'},200)"
+            autocomplete="off" style="font-size:12px;padding:7px 10px">
+          <div id="dv-link-dd" style="display:none;position:absolute;z-index:200;width:100%;background:var(--bg2);border:1px solid var(--accent);border-radius:8px;overflow:hidden;top:calc(100%+4px);box-shadow:0 8px 24px rgba(0,0,0,.4);max-height:200px;overflow-y:auto"></div>
+        </div>
+      </div>`;
+    })()}
     <!-- Analiza -->
     <div class="dv-card">
       <div class="dv-card-head">📝 Analiza przed wejściem</div>
@@ -3421,6 +3604,16 @@ function renderDetailModal() {
       <div class="dv-notes">${escHtml(t.post) || '<span style="color:var(--text3);font-style:italic">Brak opisu</span>'}</div>
       <div class="dv-notes-edit"><textarea id="dv-post" placeholder="Co poszło dobrze? Co można było zrobić lepiej?">${t.post||''}</textarea></div>
     </div>
+    <!-- Emocje -->
+    ${(_detailEditing || t.emotionPre || t.emotionPost) ? `<div class="dv-card">
+      <div class="dv-card-head">🧠 Stan emocjonalny</div>
+      <div class="dv-notes" style="display:${_detailEditing?'none':'block'}">
+        ${t.emotionPre ? `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:11px;color:var(--text3);min-width:80px">Przed wejściem</span><span class="tag" style="font-size:12px">${t.emotionPre}</span></div>` : ''}
+        ${t.emotionPost ? `<div style="display:flex;align-items:center;gap:8px"><span style="font-size:11px;color:var(--text3);min-width:80px">Po zamknięciu</span><span class="tag" style="font-size:12px">${t.emotionPost}</span></div>` : ''}
+        ${!t.emotionPre && !t.emotionPost ? '<span style="color:var(--text3);font-style:italic;font-size:12px">Brak danych</span>' : ''}
+      </div>
+      <div class="dv-notes-edit">${_dvEmoPicker('pre', t.emotionPre||'')}${_dvEmoPicker('post', t.emotionPost||'')}</div>
+    </div>` : ''}
     <!-- Screenshots -->
     <div class="dv-card">
       <div class="dv-card-head">📷 Screenshoty (${_detailScreenshots.length})</div>
@@ -3482,6 +3675,52 @@ function escHtml(s) {
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
+// ── quick link from detail modal ──
+function filterDvLinkList(q) {
+  const dd = document.getElementById('dv-link-dd');
+  if (!dd) return;
+  const analyses = getAnalyses().filter(a => !a.archived);
+  const tradeSymbol = (() => { const trades = getTrades(state.currentAccountId); return (trades.find(t => t.id === _detailId)||{}).symbol || ''; })();
+  const filtered = analyses.filter(a => {
+    if (!q) return true;
+    return [(a.symbol||''), a.title, (a.date||'').slice(0,10)].join(' ').toLowerCase().includes(q.toLowerCase());
+  });
+  const matching = filtered.filter(a => tradeSymbol && symbolsMatch(a.symbol, tradeSymbol));
+  const others   = filtered.filter(a => !tradeSymbol || !symbolsMatch(a.symbol, tradeSymbol));
+  const all = [...matching, ...others].slice(0, 10);
+  if (!all.length) { dd.style.display = 'none'; return; }
+  dd.style.display = 'block';
+  dd.innerHTML = all.map(a => {
+    const isM = tradeSymbol && symbolsMatch(a.symbol, tradeSymbol);
+    return `<div onmousedown="selectDvLinkedAnalysis('${a.id}')" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;font-size:12px" onmouseover="this.style.background='var(--accent-dim)'" onmouseout="this.style.background=''">
+      ${a.symbol?`<span class="tag" style="font-size:10px;${isM?'color:var(--accent);border-color:var(--accent)':''}">${a.symbol}</span>`:''}
+      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.title}</span>
+      <span style="color:var(--text3);font-size:11px;flex-shrink:0">${(a.date||'').slice(0,10)}</span>
+    </div>`;
+  }).join('');
+}
+function selectDvLinkedAnalysis(analysisId) {
+  const trades = getTrades(state.currentAccountId);
+  const idx = trades.findIndex(t => t.id === _detailId);
+  if (idx < 0) return;
+  trades[idx] = { ...trades[idx], linkedAnalysisId: analysisId };
+  saveTrades(state.currentAccountId, trades);
+  renderDetailModal();
+  renderTrades();
+  toast('Analiza powiązana ✓', 'success');
+}
+function dvUnlinkAnalysis(tradeId) {
+  if (!confirm('Usunąć powiązanie z analizą?')) return;
+  const trades = getTrades(state.currentAccountId);
+  const idx = trades.findIndex(t => t.id === tradeId);
+  if (idx < 0) return;
+  trades[idx] = { ...trades[idx], linkedAnalysisId: null };
+  saveTrades(state.currentAccountId, trades);
+  renderDetailModal();
+  renderTrades();
+  toast('Powiązanie usunięte', 'success');
+}
+
 // ── toggle edit mode ──
 function detailToggleEdit() {
   _detailEditing = !_detailEditing;
@@ -3530,8 +3769,10 @@ function detailSaveEdit() {
   t.size    = parseFloat(document.getElementById('dv-size')?.value) || null;
   t.pnl     = parseFloat(document.getElementById('dv-pnl')?.value);
   if (isNaN(t.pnl)) t.pnl = null;
-  t.pre     = document.getElementById('dv-pre')?.value || '';
-  t.post    = document.getElementById('dv-post')?.value || '';
+  t.pre        = document.getElementById('dv-pre')?.value || '';
+  t.post       = document.getElementById('dv-post')?.value || '';
+  t.emotionPre  = document.getElementById('dv-emotion-pre')?.value || null;
+  t.emotionPost = document.getElementById('dv-emotion-post')?.value || null;
   t.screenshots = _detailScreenshots.filter(s => s.dataUrl && !s.uploading).map(s => s.dataUrl);
   trades[idx] = t;
   saveTrades(state.currentAccountId, trades);
@@ -3856,6 +4097,12 @@ function toast(msg, type = 'success') {
 }
 
 // ===== HELPERS =====
+const _CURR_SYMBOLS = {USD:'$',EUR:'€',GBP:'£',PLN:'zł',CHF:'CHF',JPY:'¥',AUD:'A$',CAD:'C$',BTC:'₿',USDT:'₮'};
+function getCurrSym(accId) {
+  const a = getAccounts().find(x => x.id === (accId || state.currentAccountId));
+  const c = a?.currency || 'USD';
+  return _CURR_SYMBOLS[c] || c;
+}
 function fmt(n) {
   if (n == null || isNaN(n)) return '—';
   return new Intl.NumberFormat('pl-PL', {minimumFractionDigits: 2, maximumFractionDigits: 2}).format(n);
@@ -4234,7 +4481,9 @@ function autoPnl(force) {
   const sign  = pnlRounded >= 0 ? '+' : '';
 
   // Pokaż preview przy labelu
-  preview.innerHTML = `<span style="color:${color}">${sign}${fmtN(pnlRounded)} USD</span>`;
+  const _pnlCurr = getCurrSym();
+  preview.innerHTML = `<span style="color:${color}">${sign}${fmtN(pnlRounded)} ${_pnlCurr}</span>`;
+  const _pcl = document.getElementById('pnl-currency-label'); if (_pcl) _pcl.textContent = 'P&L (' + _pnlCurr + ')';
 
   // Wpisz do pola P&L
   pnlField.value = pnlRounded;
@@ -4255,7 +4504,7 @@ function pnlManualEdit() {
   if (!isNaN(pnl)) {
     const color = pnl >= 0 ? 'var(--green)' : 'var(--red)';
     const sign = pnl >= 0 ? '+' : '';
-    preview.innerHTML = `<span style="color:${color}">${sign}${fmtN(pnl)} USD ✏️</span>`;
+    preview.innerHTML = `<span style="color:${color}">${sign}${fmtN(pnl)} ${getCurrSym()} ✏️</span>`;
     pnlField.style.borderColor = pnl >= 0 ? 'var(--green)' : 'var(--red)';
   } else {
     preview.textContent = '';
@@ -7470,6 +7719,14 @@ function notifyServerBackup() {
 let _anScreenshots = []; // {id, dataUrl}
 let _anAutosaveTimer = null;
 let _anDraftKey = null;
+let _analysisView = 'list';
+
+function setAnalysisView(view) {
+  _analysisView = view;
+  document.getElementById('an-view-list')?.classList.toggle('active', view === 'list');
+  document.getElementById('an-view-cal')?.classList.toggle('active', view === 'calendar');
+  renderAnalysisList();
+}
 
 // ── Storage ──────────────────────────────────────────────────────────────────
 function getAnalyses() {
@@ -7540,6 +7797,54 @@ function renderAnalysisList() {
 
   // Znajdź powiązane transakcje
   const trades = getTrades(state.currentAccountId);
+
+  // ── Calendar view ──
+  if (_analysisView === 'calendar') {
+    const MONTHS_PL = ['Styczeń','Luty','Marzec','Kwiecień','Maj','Czerwiec','Lipiec','Sierpień','Wrzesień','Październik','Listopad','Grudzień'];
+    const DAYS_PL = ['Nd','Pn','Wt','Śr','Cz','Pt','Sb'];
+    // Group by month
+    const byMonth = {};
+    sorted.forEach(a => {
+      const m = (a.date||'').slice(0,7) || 'unknown';
+      if (!byMonth[m]) byMonth[m] = [];
+      byMonth[m].push(a);
+    });
+    const monthKeys = Object.keys(byMonth).sort((a,b) => b.localeCompare(a));
+    el.innerHTML = monthKeys.map(mk => {
+      const [y, mo] = mk.split('-').map(Number);
+      const monthLabel = mk === 'unknown' ? 'Nieznana data' : MONTHS_PL[mo-1] + ' ' + y;
+      const rows = byMonth[mk].map(a => {
+        const tp = AN_TYPES[a.type] || AN_TYPES.other;
+        const bs = a.bias ? AN_BIAS[a.bias] : null;
+        const d = a.date ? new Date(a.date) : null;
+        const dayStr = d ? String(d.getDate()).padStart(2,'0') + '.' + String(d.getMonth()+1).padStart(2,'0') : '—';
+        const dayOfWeek = d ? DAYS_PL[d.getDay()] : '';
+        const linkedTrade = a.linkedTradeId ? trades.find(t => t.id === a.linkedTradeId) : null;
+        return `<div onclick="openAnalysisDetail('${a.id}')" style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
+          <div style="min-width:52px;text-align:center">
+            <div style="font-family:var(--font-mono);font-size:15px;font-weight:700;color:var(--text)">${dayStr}</div>
+            <div style="font-size:10px;color:var(--text3)">${dayOfWeek}</div>
+          </div>
+          <div style="width:3px;align-self:stretch;border-radius:2px;background:${a.bias==='bullish'?'var(--green)':a.bias==='bearish'?'var(--red)':'var(--border2)'};flex-shrink:0"></div>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.title||'(bez tytułu)'}</div>
+            <div style="display:flex;gap:5px;margin-top:3px;flex-wrap:wrap">
+              <span class="tag" style="font-size:10px">${tp.icon} ${tp.label}</span>
+              ${a.symbol?`<span class="tag" style="font-size:10px;font-family:var(--font-mono)">${a.symbol}</span>`:''}
+              ${a.tf?`<span class="tag" style="font-size:10px">${a.tf}</span>`:''}
+              ${linkedTrade?`<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:var(--blue-dim);color:var(--blue)">🔗 ${linkedTrade.symbol} ${linkedTrade.dir}</span>`:''}
+            </div>
+          </div>
+          ${bs?`<span style="font-size:18px;flex-shrink:0">${bs.icon}</span>`:''}
+        </div>`;
+      }).join('');
+      return `<div style="margin-bottom:20px">
+        <div style="font-family:var(--font-head);font-size:13px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;padding:6px 0 6px;margin-bottom:4px;border-bottom:2px solid var(--accent)">📅 ${monthLabel} <span style="font-size:11px;color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(${byMonth[mk].length})</span></div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden">${rows}</div>
+      </div>`;
+    }).join('');
+    return;
+  }
 
   el.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px">
     ${sorted.map(a => {
@@ -7622,54 +7927,53 @@ function archiveAnalysis(id) {
 
 // Wypełnij dropdown analiz w formularzu transakcji
 function populateLinkedAnalysisSelect(symbol, currentLinkedId) {
-  const sel = document.getElementById('t-linked-analysis');
-  if (!sel) return;
-  const analyses = getAnalyses()
-    .filter(a => !a.archived)
-    // [v1.7] Ukryj analizy już przypisane do innej transakcji
-    .filter(a => !a.linkedTradeId || a.linkedTradeId === currentLinkedId);
-  const matching = analyses.filter(a => !symbol || symbolsMatch(a.symbol, symbol));
-  const others   = analyses.filter(a => symbol && !symbolsMatch(a.symbol, symbol));
-
-  sel.innerHTML = '<option value="">— Brak powiązanej analizy —</option>';
-  if (matching.length) {
-    const grp = document.createElement('optgroup');
-    grp.label = symbol ? symbol + ' — pasujące' : 'Analizy';
-    matching.forEach(a => {
-      const opt = document.createElement('option');
-      opt.value = a.id;
-      opt.textContent = (a.symbol ? '[' + a.symbol + '] ' : '') + a.title + ' · ' + formatDate(a.date).slice(0,10);
-      if (a.id === currentLinkedId) opt.selected = true;
-      grp.appendChild(opt);
-    });
-    sel.appendChild(grp);
-  }
-  if (others.length) {
-    const grp2 = document.createElement('optgroup');
-    grp2.label = 'Pozostałe analizy';
-    others.forEach(a => {
-      const opt = document.createElement('option');
-      opt.value = a.id;
-      opt.textContent = (a.symbol ? '[' + a.symbol + '] ' : '') + a.title + ' · ' + formatDate(a.date).slice(0,10);
-      if (a.id === currentLinkedId) opt.selected = true;
-      grp2.appendChild(opt);
-    });
-    sel.appendChild(grp2);
-  }
-
+  // New: searchable picker — just restore display state
   updateLinkedAnalysisDisplay(currentLinkedId);
+  const si = document.getElementById('t-linked-analysis-search');
+  if (si) { si.value = ''; si.dataset.symbol = symbol || ''; }
 }
 
-function onLinkedAnalysisChange() {
-  const id = document.getElementById('t-linked-analysis')?.value;
-  document.getElementById('t-linked-analysis-id').value = id || '';
+function onLinkedAnalysisChange() {}  // kept for compatibility
+
+function filterLinkedAnalysisList(q) {
+  const dd = document.getElementById('t-linked-analysis-dd');
+  if (!dd) return;
+  const currentLinkedId = document.getElementById('t-linked-analysis-id')?.value || '';
+  const symbol = document.getElementById('t-linked-analysis-search')?.dataset.symbol || document.getElementById('t-symbol')?.value || '';
+  const analyses = getAnalyses().filter(a => !a.archived);
+  const filtered = analyses.filter(a => {
+    if (!q) return true;
+    return [(a.symbol||''), a.title, (a.date||'').slice(0,10)].join(' ').toLowerCase().includes(q.toLowerCase());
+  });
+  const matching = filtered.filter(a => symbol && symbolsMatch(a.symbol, symbol));
+  const others   = filtered.filter(a => !symbol || !symbolsMatch(a.symbol, symbol));
+  const all = [...matching, ...others].slice(0, 12);
+  if (!all.length) { dd.style.display = 'none'; return; }
+  dd.style.display = 'block';
+  dd.innerHTML = all.map(a => {
+    const isMatch = symbol && symbolsMatch(a.symbol, symbol);
+    return `<div onmousedown="selectLinkedAnalysis('${a.id}')" style="padding:9px 12px;cursor:pointer;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;font-size:12px" onmouseover="this.style.background='var(--accent-dim)'" onmouseout="this.style.background=''">
+      ${a.symbol ? `<span class="tag" style="font-size:10px;${isMatch?'color:var(--accent);border-color:var(--accent)':''}">${a.symbol}</span>` : ''}
+      <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.title}</span>
+      <span style="color:var(--text3);font-size:11px;flex-shrink:0">${(a.date||'').slice(0,10)}</span>
+    </div>`;
+  }).join('');
+}
+
+function selectLinkedAnalysis(id) {
+  document.getElementById('t-linked-analysis-id').value = id;
+  const dd = document.getElementById('t-linked-analysis-dd');
+  if (dd) dd.style.display = 'none';
+  const si = document.getElementById('t-linked-analysis-search');
+  if (si) si.value = '';
   updateLinkedAnalysisDisplay(id);
 }
 
 function updateLinkedAnalysisDisplay(id) {
-  const display = document.getElementById('t-linked-analysis-display');
-  const title   = document.getElementById('t-linked-analysis-title');
+  const display  = document.getElementById('t-linked-analysis-display');
+  const title    = document.getElementById('t-linked-analysis-title');
   const clearBtn = document.getElementById('t-linked-clear');
+  const searchEl = document.getElementById('t-linked-analysis-search');
   if (!display) return;
   if (id) {
     const a = getAnalyses().find(x => x.id === id);
@@ -7677,18 +7981,19 @@ function updateLinkedAnalysisDisplay(id) {
       title.textContent = (a.symbol ? '[' + a.symbol + '] ' : '') + a.title;
       display.style.display = 'block';
       clearBtn.style.display = 'inline';
-      document.getElementById('t-linked-analysis').style.display = 'none';
+      if (searchEl) searchEl.style.display = 'none';
       return;
     }
   }
   display.style.display = 'none';
   clearBtn.style.display = 'none';
-  document.getElementById('t-linked-analysis').style.display = 'block';
+  if (searchEl) searchEl.style.display = 'block';
 }
 
 function clearLinkedAnalysis() {
-  document.getElementById('t-linked-analysis').value = '';
   document.getElementById('t-linked-analysis-id').value = '';
+  const si = document.getElementById('t-linked-analysis-search');
+  if (si) { si.value = ''; si.style.display = 'block'; }
   updateLinkedAnalysisDisplay('');
 }
 
@@ -7823,30 +8128,37 @@ function renderAnLinkedTrades(symbol) {
   }).join('') + (trades.length > 8 ? `<span style="font-size:11px;color:var(--text3)"> +${trades.length - 8} więcej</span>` : '');
 }
 
-// [v1.7] Zaznacz/odznacz transakcję — zapis następuje dopiero przy "Zapisz jako Transakcję"
 let _selectedTradeForAnalysis = null;
 
 function assignTradeToAnalysis(tradeId) {
   const currentAnalysisId = document.getElementById('an-id')?.value || '';
-
-  const trades = getTrades(state.currentAccountId);
-  const trade = trades.find(t => t.id === tradeId);
-  if (!trade) return;
-
-  const alreadySelected = _selectedTradeForAnalysis === tradeId
-    || (trade.linkedAnalysisId && trade.linkedAnalysisId === currentAnalysisId);
-
-  if (alreadySelected) {
-    _selectedTradeForAnalysis = null;
-    toast('Zaznaczenie usunięte', 'success');
-  } else {
-    _selectedTradeForAnalysis = tradeId;
-    toast('Transakcja zaznaczona — kliknij "📈 Zapisz jako Transakcję" aby przypisać', 'success');
+  if (!currentAnalysisId) {
+    toast('Zapisz analizę przed powiązaniem transakcji', 'error');
+    return;
   }
 
-  // Odśwież pasek
-  const symbol = document.getElementById('an-symbol')?.value || '';
-  renderAnLinkedTrades(symbol);
+  const trades = getTrades(state.currentAccountId);
+  const idx = trades.findIndex(t => t.id === tradeId);
+  if (idx < 0) return;
+  const t = { ...trades[idx] };
+
+  const isLinked = t.linkedAnalysisId === currentAnalysisId;
+  if (isLinked) {
+    t.linkedAnalysisId = null;
+    trades[idx] = t;
+    saveTrades(state.currentAccountId, trades);
+    _selectedTradeForAnalysis = null;
+    toast('Powiązanie usunięte', 'success');
+  } else {
+    t.linkedAnalysisId = currentAnalysisId;
+    trades[idx] = t;
+    saveTrades(state.currentAccountId, trades);
+    _selectedTradeForAnalysis = tradeId;
+    toast('Transakcja powiązana ✓ — "Zapisz jako Transakcję" skopiuje też treść analizy', 'success');
+  }
+
+  renderAnLinkedTrades(document.getElementById('an-symbol')?.value || '');
+  renderTrades();
 }
 
 // ── Symbol autocomplete (reuse existing symbols) ──────────────────────────────
