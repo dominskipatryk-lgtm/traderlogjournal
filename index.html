@@ -909,6 +909,8 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
         <span>👤</span>
         <span id="topbar-username">—</span>
       </div>
+      <span id="sync-indicator" style="font-size:10px;color:var(--text3);font-family:var(--font-mono);display:none"></span>
+      <button id="sync-refresh-btn" onclick="manualSync()" style="display:none;background:none;border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:11px;color:var(--text2);cursor:pointer" title="Odśwież dane">🔄</button>
       <div class="lang-switch" role="group" aria-label="Wybór języka"><button class="lang-btn active" id="lang-pl" onclick="setLang('pl')" aria-label="Język polski">PL</button><button class="lang-btn" id="lang-en" onclick="setLang('en')" aria-label="English">EN</button></div><button class="btn-sm" onclick="showPage('settings')" data-i18n="nav_settings" aria-label="Ustawienia">⚙️ Ustawienia</button><button class="btn-sm" onclick="doLogout()" data-i18n="logout" aria-label="Wyloguj się">Wyloguj</button>
     </div>
   </header>
@@ -954,7 +956,9 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
           <option value="win">Win</option>
           <option value="loss">Loss</option>
         </select>
-        <div class="draft-indicator" id="draft-indicator-trades" onclick="showPage('drafts')" title="Masz niezapisane wersje robocze">▸ Wersje robocze <span id="draft-count-trades"></span></div><button class="btn-sm btn-accent" onclick="openTradeModalWithDraftCheck()" style="margin-left:auto">+ Nowa transakcja</button>
+        <div class="draft-indicator" id="draft-indicator-trades" onclick="showPage('drafts')" title="Masz niezapisane wersje robocze">▸ Wersje robocze <span id="draft-count-trades"></span></div>
+        <button class="btn-sm" onclick="exportTradesToCSV()" style="margin-left:auto;font-size:12px" title="Eksportuj do CSV">⬇ CSV</button>
+        <button class="btn-sm btn-accent" onclick="openTradeModalWithDraftCheck()">+ Nowa transakcja</button>
       </div>
       <div class="table-wrap" id="trades-table"></div>
     </div>
@@ -2500,6 +2504,9 @@ function loginAs(username, userData) {
   setTimeout(checkRecoveryCodeReminder, 2000);
   // [v1.7] Uruchom nasłuchiwanie sygnałów z MT4
   setTimeout(initMT4Listener, 2000);
+  _lastSyncTime = Date.now();
+  startAutoSync();
+  updateSyncIndicator();
   } catch(e) {
     console.error('loginAs error:', e);
     showAuthError('Błąd logowania: ' + e.message);
@@ -2509,8 +2516,13 @@ function loginAs(username, userData) {
   }
 }
 function doLogout() {
+  stopAutoSync();
+  _lastSyncTime = null;
+  const ind = document.getElementById('sync-indicator');
+  const btn = document.getElementById('sync-refresh-btn');
+  if (ind) ind.style.display = 'none';
+  if (btn) btn.style.display = 'none';
   if (_sb) _sb.auth.signOut().catch(() => {});
-  // Usuń sesję Supabase z localStorage synchronicznie — nie czekamy na async signOut
   Object.keys(localStorage).filter(k => k.startsWith('sb-')).forEach(k => localStorage.removeItem(k));
   state.currentUser = null;
   state.currentAccountId = null;
@@ -9315,7 +9327,11 @@ async function sbSyncDown(userId, userLogin) {
           if (!db[key]) db[key] = [];
           const idx = db[key].findIndex(x => x.id === t.id);
           // Zachowaj istniejące screenshots (Drive URLs) jeśli Supabase nie ma
-          const existingScreenshots = idx >= 0 ? (db[key][idx].screenshots || []) : [];
+          const existing = idx >= 0 ? db[key][idx] : null;
+          const sbUpdatedAt = new Date(t.updated_at).getTime();
+          // Conflict resolution: zachowaj lokalną wersję jeśli jest nowsza
+          if (existing && existing.updatedAt > sbUpdatedAt) continue;
+          const existingScreenshots = existing ? (existing.screenshots || []) : [];
           const sbScreenshots = Array.isArray(t.screenshots) ? t.screenshots : [];
           const trade = {
             id: t.id, symbol: t.symbol, dir: t.direction,
@@ -9325,7 +9341,7 @@ async function sbSyncDown(userId, userLogin) {
             pre: t.pre_analysis, post: t.post_notes,
             date: t.trade_date,
             screenshots: sbScreenshots.length ? sbScreenshots : existingScreenshots,
-            updatedAt: new Date(t.updated_at).getTime()
+            updatedAt: sbUpdatedAt
           };
           if (idx >= 0) db[key][idx] = trade;
           else db[key].push(trade);
@@ -9351,12 +9367,148 @@ async function sbSyncDown(userId, userLogin) {
       saveDB(db);
     }
 
+    // Sync listy użytkowników dla admina
+    const localUsers = getUsers();
+    if (localUsers[loginKey]?.role === 'admin') {
+      try {
+        const { data: { session } } = await _sb.auth.getSession();
+        if (session?.access_token) {
+          const profRes = await fetch(_SB_URL + '/rest/v1/profiles?select=*', {
+            headers: { 'apikey': _SB_ANON, 'Authorization': 'Bearer ' + session.access_token }
+          });
+          if (profRes.ok) {
+            const profiles = await profRes.json();
+            if (Array.isArray(profiles)) {
+              profiles.forEach(p => {
+                if (!localUsers[p.login]) {
+                  localUsers[p.login] = {
+                    pass: '__supabase__', name: p.name || p.login,
+                    email: p.email || '', role: p.role || 'user',
+                    subscription: p.role === 'admin' ? 'admin' : 'active',
+                    supabaseId: p.id, active: p.active,
+                    createdAt: new Date(p.created_at).getTime()
+                  };
+                }
+              });
+              saveUsers(localUsers);
+            }
+          }
+        }
+      } catch(e) { console.warn('Users sync error:', e.message); }
+    }
+
     console.log('✓ Sync z Supabase zakończony');
   } catch(e) {
     console.warn('Sync error:', e.message);
+    throw e;
   }
 }
 
+
+// ═══ AUTO-SYNC + OFFLINE QUEUE + CSV EXPORT ═══════════════════════════════
+
+let _lastSyncTime = null;
+let _autoSyncInterval = null;
+let _offlineQueue = [];
+let _isOnline = navigator.onLine;
+
+window.addEventListener('online',  () => { _isOnline = true;  processOfflineQueue(); updateSyncIndicator(); });
+window.addEventListener('offline', () => { _isOnline = false; updateSyncIndicator(); });
+
+function updateSyncIndicator() {
+  const el = document.getElementById('sync-indicator');
+  const btn = document.getElementById('sync-refresh-btn');
+  if (!el) return;
+  if (!_isOnline) {
+    el.textContent = '● offline';
+    el.style.color = 'var(--red)';
+    el.style.display = 'inline';
+  } else if (_lastSyncTime) {
+    const mins = Math.floor((Date.now() - _lastSyncTime) / 60000);
+    el.textContent = mins < 1 ? 'sync: przed chwilą' : 'sync: ' + mins + ' min temu';
+    el.style.color = 'var(--text3)';
+    el.style.display = 'inline';
+  }
+  if (btn) btn.style.display = state.currentUser ? 'inline-block' : 'none';
+}
+
+async function manualSync() {
+  if (!_sb || !state.currentUser) return;
+  const userId = getUsers()[state.currentUser]?.supabaseId;
+  if (!userId) return;
+  const btn = document.getElementById('sync-refresh-btn');
+  if (btn) { btn.textContent = '⏳'; btn.disabled = true; }
+  try {
+    await sbSyncDown(userId, state.currentUser);
+    _lastSyncTime = Date.now();
+    updateSyncIndicator();
+    renderAll();
+    toast('✓ Dane zaktualizowane', 'success');
+  } catch(e) {
+    toast('Błąd sync: ' + e.message, 'error');
+  } finally {
+    if (btn) { btn.textContent = '🔄'; btn.disabled = false; }
+  }
+}
+
+function startAutoSync() {
+  if (_autoSyncInterval) clearInterval(_autoSyncInterval);
+  _autoSyncInterval = setInterval(async () => {
+    if (!_isOnline || !_sb || !state.currentUser) return;
+    const userId = getUsers()[state.currentUser]?.supabaseId;
+    if (!userId) return;
+    try {
+      await sbSyncDown(userId, state.currentUser);
+      _lastSyncTime = Date.now();
+      updateSyncIndicator();
+      renderAll();
+    } catch(e) { console.warn('Auto-sync error:', e.message); }
+  }, 3 * 60 * 1000); // co 3 minuty
+}
+
+function stopAutoSync() {
+  if (_autoSyncInterval) { clearInterval(_autoSyncInterval); _autoSyncInterval = null; }
+}
+
+// Offline queue — kolejkuje operacje gdy brak internetu
+function queueWrite(fn) {
+  if (_isOnline) { fn(); return; }
+  _offlineQueue.push(fn);
+  toast('📴 Offline — zmiana zostanie zsynchronizowana po powrocie do sieci', 'info');
+}
+
+async function processOfflineQueue() {
+  if (!_offlineQueue.length) return;
+  toast('🔄 Synchronizuję ' + _offlineQueue.length + ' operacji z kolejki...', 'info');
+  const queue = [..._offlineQueue];
+  _offlineQueue = [];
+  for (const fn of queue) { try { await fn(); } catch(e) { _offlineQueue.push(fn); } }
+  if (!_offlineQueue.length) toast('✓ Kolejka offline zsynchronizowana', 'success');
+}
+
+// CSV Export
+function exportTradesToCSV() {
+  const accounts = getAccounts();
+  if (!accounts.length) { toast('Brak kont do eksportu', 'error'); return; }
+  const rows = [['Data','Symbol','Kierunek','Status','Wejście','Wyjście','SL','TP','Wielkość','P&L','Timeframe','Setup','Konto']];
+  accounts.forEach(acc => {
+    getTrades(acc.id).forEach(t => {
+      rows.push([
+        t.date ? new Date(t.date).toLocaleDateString('pl-PL') : '',
+        t.symbol || '', t.dir || '', t.status || '',
+        t.entry || '', t.exit || '', t.sl || '', t.tp || '',
+        t.size || '', t.pnl || '', t.tf || '', t.setup || '', acc.name
+      ]);
+    });
+  });
+  const csv = rows.map(r => r.map(v => '"' + String(v).replace(/"/g,'""') + '"').join(',')).join('\n');
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'transakcje_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click(); URL.revokeObjectURL(url);
+  toast('✓ Eksport CSV gotowy', 'success');
+}
 
 async function sbSyncAccount(acc) {
   if (!_sb || !state.currentUser) return null;
