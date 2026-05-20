@@ -9330,7 +9330,7 @@ async function sbSyncDown(userId, userLogin) {
           const existing = idx >= 0 ? db[key][idx] : null;
           const sbUpdatedAt = new Date(t.updated_at).getTime();
           // Conflict resolution: zachowaj lokalną wersję jeśli jest nowsza
-          if (existing && existing.updatedAt > sbUpdatedAt) continue;
+          if (existing && existing.updatedAt > sbUpdatedAt) return;
           const existingScreenshots = existing ? (existing.screenshots || []) : [];
           const sbScreenshots = Array.isArray(t.screenshots) ? t.screenshots : [];
           const trade = {
