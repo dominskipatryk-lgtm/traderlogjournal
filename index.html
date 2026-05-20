@@ -2588,6 +2588,8 @@ function loginAs(username, userData) {
   setTimeout(checkRecoveryCodeReminder, 2000);
   // [v1.7] Uruchom nasłuchiwanie sygnałów z MT4
   setTimeout(initMT4Listener, 2000);
+  // Auto-połącz Google Drive jeśli użytkownik wcześniej je włączył
+  setTimeout(() => { if (getBackupSettings().googleDrive) connectGoogleDrive(); }, 1500);
   _lastSyncTime = Date.now();
   startAutoSync();
   updateSyncIndicator();
@@ -7207,6 +7209,7 @@ function renderBackupOptions() {
           </button>
           <button class="btn-sm" onclick="backupToGoogleDrive()" style="font-size:12px">📤 Zapisz teraz</button>
           <button class="btn-sm" onclick="restoreFromGoogleDrive()" style="font-size:12px">📥 Przywróć</button>
+          <button class="btn-sm" onclick="openDriveFolder()" style="font-size:12px">📁 Otwórz folder</button>
         </div>
         <div style="font-size:11px;color:var(--text3);margin-top:8px">
           Dane zapisywane jako: <code style="background:var(--bg3);padding:1px 5px;border-radius:3px">traderlogjournal-${state.currentUser}-backup.json</code> na Twoim Drive
@@ -7542,7 +7545,7 @@ function _initGapiTokenClient(cid) {
   _gapiTokenClient = google.accounts.oauth2.initTokenClient({
     client_id: cid,
     scope: GDRIVE_SCOPES,
-    prompt: 'consent',
+    prompt: '',
     callback: (resp) => {
       if (resp.access_token) {
         _gapiAccessToken = resp.access_token;
@@ -7654,6 +7657,13 @@ async function restoreFromGoogleDrive() {
     renderDashboard(); renderTrades(); renderSummary();
     renderAccounts(); refreshTopbarAccount(); updateDraftBadges();
   } catch(e) { toast('Błąd przywracania: ' + e.message, 'error'); }
+}
+
+async function openDriveFolder() {
+  if (!_gapiLoaded || !_gapiAccessToken) { connectGoogleDrive(); return; }
+  const folderId = await getDriveFolderId();
+  if (!folderId) { toast('Nie można odnaleźć folderu na Drive', 'error'); return; }
+  window.open(`https://drive.google.com/drive/folders/${folderId}`, '_blank');
 }
 
 function updateGDriveStatus(msg, cls) {
