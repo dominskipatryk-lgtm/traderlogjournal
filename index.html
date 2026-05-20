@@ -1209,6 +1209,18 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
           <button class="btn-sm btn-accent" onclick="saveProfileSettings()">💾 Zapisz profil</button>
         </div>
 
+        <!-- Sync Supabase -->
+        <div class="settings-section">
+          <div class="settings-section-title">☁️ Synchronizacja danych</div>
+          <p style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.6">
+            Wypchnij wszystkie lokalne konta i transakcje do bazy Supabase.<br>
+            Użyj gdy dane nie są widoczne po zalogowaniu na innym urządzeniu lub przeglądarce.
+          </p>
+          <button class="btn-sm btn-accent" onclick="sbFullSyncUp()" style="font-size:12px">
+            🔄 Synchronizuj wszystko z Supabase
+          </button>
+        </div>
+
         <!-- MT4 Integration -->
         <div class="settings-section">
           <div class="settings-section-title">💾 Zajętość pamięci</div>
@@ -3086,6 +3098,7 @@ function saveAccount() {
   refreshTopbarAccount();
   renderAccounts();
   toast('Konto zapisane', 'success');
+  sbSyncAccount(acc).then(sbId => { if (sbId) { acc.sbId = sbId; saveAccounts(getAccounts().map(a => a.id === id ? acc : a)); } });
 }
 
 function deleteAccount(id) {
@@ -9298,7 +9311,7 @@ async function sbSyncDown(userId, userLogin) {
       const { data: trades } = await _sb.from('trades').select('*').in('account_id', accIds);
       if (trades?.length) {
         trades.forEach(t => {
-          const key = 'trades_' + t.account_id;
+          const key = (loginKey || '') + '_' + t.account_id;
           if (!db[key]) db[key] = [];
           const idx = db[key].findIndex(x => x.id === t.id);
           // Zachowaj istniejące screenshots (Drive URLs) jeśli Supabase nie ma
@@ -9344,6 +9357,54 @@ async function sbSyncDown(userId, userLogin) {
   }
 }
 
+
+async function sbSyncAccount(acc) {
+  if (!_sb || !state.currentUser) return null;
+  const userId = getUsers()[state.currentUser]?.supabaseId;
+  if (!userId) return null;
+  const payload = {
+    user_id: userId,
+    name: acc.name, broker: acc.broker || '',
+    broker_key: acc.brokerKey || '', spread: acc.spread || null,
+    trader_pct: acc.traderPct || null,
+    type: acc.type || 'forex', capital: acc.capital || 0,
+    strategy: acc.strategy || '', color: acc.color || '#00d4a1',
+  };
+  try {
+    if (acc.sbId) {
+      await _sb.from('accounts').update(payload).eq('id', acc.sbId);
+      return acc.sbId;
+    } else {
+      // Sprawdź czy konto już istnieje po lokalnym id
+      const { data: existing } = await _sb.from('accounts').select('id').eq('user_id', userId).eq('name', acc.name).maybeSingle();
+      if (existing) { acc.sbId = existing.id; return existing.id; }
+      const { data } = await _sb.from('accounts').insert(payload).select().single();
+      if (data) { acc.sbId = data.id; return data.id; }
+    }
+  } catch(e) { console.warn('Account sync error:', e); }
+  return null;
+}
+
+async function sbFullSyncUp() {
+  if (!_sb || !state.currentUser) return;
+  const userId = getUsers()[state.currentUser]?.supabaseId;
+  if (!userId) return;
+  toast('⏳ Synchronizuję dane z Supabase...', 'info');
+  const accounts = getAccounts();
+  let synced = 0;
+  for (const acc of accounts) {
+    const sbAccId = await sbSyncAccount(acc);
+    if (!sbAccId) continue;
+    const trades = getTrades(acc.id);
+    for (const trade of trades) {
+      await sbSyncTrade(trade, sbAccId);
+      synced++;
+    }
+  }
+  // Zapisz zaktualizowane sbId z powrotem do localStorage
+  saveAccounts(accounts);
+  toast('✓ Zsynchronizowano ' + synced + ' transakcji z ' + accounts.length + ' kont', 'success');
+}
 
 async function sbSyncTrade(trade, accountId) {
   if (!_sb || !state.currentUser) return;
