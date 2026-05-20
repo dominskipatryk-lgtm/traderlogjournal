@@ -9439,6 +9439,28 @@ async function adminActivateUser(userId) {
     });
     if (res.ok) {
       toast('✓ Użytkownik aktywowany', 'success');
+      // Pobierz profil żeby wysłać email powitalny
+      try {
+        const profRes = await fetch(_SB_URL + '/rest/v1/profiles?id=eq.' + encodeURIComponent(userId) + '&select=email,name,login', {
+          headers: { 'apikey': _SB_ANON, 'Authorization': 'Bearer ' + adminToken }
+        });
+        if (profRes.ok) {
+          const profiles = await profRes.json();
+          const p = profiles?.[0];
+          if (p?.email) {
+            const subject = encodeURIComponent('Twoje konto TraderLogJournal zostało aktywowane');
+            const body = encodeURIComponent(
+              'Witaj ' + (p.name || p.login || '') + ',\n\n' +
+              'Twoje konto w aplikacji TraderLogJournal zostało aktywowane.\n\n' +
+              'Możesz teraz zalogować się na stronie:\n' +
+              'https://traderlogjournal.com\n\n' +
+              'Login: ' + (p.login || '') + '\n\n' +
+              'Pozdrawiam,\nZespół TraderLogJournal'
+            );
+            window.open('mailto:' + p.email + '?subject=' + subject + '&body=' + body, '_blank');
+          }
+        }
+      } catch(mailErr) { console.warn('Welcome email error:', mailErr); }
       renderAdmin();
     } else {
       const errText = await res.text();
