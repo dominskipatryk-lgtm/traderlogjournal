@@ -1512,57 +1512,28 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
             <div id="p-result-rows" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px"></div>
           </div>
         </div>
-        <div class="summary-card">
-          <div class="summary-card-title" style="color:var(--amber)">📊 Kalkulator Ryzyka</div>
-          <div style="display:grid;gap:12px">
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-              <div><label class="form-label-modal" style="font-size:10px">Kapitał konta (USD)</label>
-                <input class="form-input-modal" id="r-capital" type="number" placeholder="10000" style="font-size:13px" oninput="calcRisk()"></div>
-              <div><label class="form-label-modal" style="font-size:10px">Ryzyko na trade (%)</label>
-                <input class="form-input-modal" id="r-pct" type="number" value="1" step="0.1" style="font-size:13px" oninput="calcRisk()"></div>
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-              <div><label class="form-label-modal" style="font-size:10px">Cena wejścia</label>
-                <input class="form-input-modal" id="r-entry" type="number" step="any" placeholder="np. 4545.43" style="font-size:13px" oninput="calcRisk()"></div>
-              <div><label class="form-label-modal" style="font-size:10px">Stop Loss (cena)</label>
-                <input class="form-input-modal" id="r-sl-price" type="number" step="any" placeholder="np. 4503.62" style="font-size:13px" oninput="calcRisk()"></div>
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-              <div><label class="form-label-modal" style="font-size:10px">Stop Loss (punkty)</label>
-                <input class="form-input-modal" id="r-sl" type="number" step="any" placeholder="np. 41.81" style="font-size:13px" oninput="calcRisk()"></div>
-              <div><label class="form-label-modal" style="font-size:10px">Wartość ticka (USD/lot)</label>
-                <input class="form-input-modal" id="r-pipval" type="number" step="any" placeholder="np. 10" style="font-size:13px" oninput="calcRisk()"></div>
-            </div>
-            <button class="btn-sm" onclick="riskFillFromAccount()" style="font-size:11px;width:100%">⬇ Uzupełnij kapitał z aktywnego konta</button>
+        <div class="summary-card" style="grid-column:1/-1">
+          <div class="summary-card-title" style="color:var(--amber)">📊 Kalkulator Ryzyka & R:R</div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">
+            <div><label class="form-label-modal" style="font-size:10px">Kapitał konta (USD)</label>
+              <input class="form-input-modal" id="u-capital" type="number" placeholder="10000" style="font-size:13px" oninput="calcUnifiedRisk()"></div>
+            <div><label class="form-label-modal" style="font-size:10px">Ryzyko na trade (%)</label>
+              <input class="form-input-modal" id="u-pct" type="number" value="1" step="0.1" style="font-size:13px" oninput="calcUnifiedRisk()"></div>
+            <div><label class="form-label-modal" style="font-size:10px">Cena wejścia</label>
+              <input class="form-input-modal" id="u-entry" type="number" step="any" placeholder="np. 4545.43" style="font-size:13px" oninput="calcUnifiedRisk()"></div>
+            <div><label class="form-label-modal" style="font-size:10px">Stop Loss (cena)</label>
+              <input class="form-input-modal" id="u-sl-price" type="number" step="any" placeholder="np. 4503.62" style="font-size:13px" oninput="calcUnifiedRisk()"></div>
+            <div><label class="form-label-modal" style="font-size:10px">Stop Loss (punkty)</label>
+              <input class="form-input-modal" id="u-sl" type="number" step="any" placeholder="np. 41.81" style="font-size:13px" oninput="calcUnifiedRisk()"></div>
+            <div><label class="form-label-modal" style="font-size:10px">Take Profit (cena)</label>
+              <input class="form-input-modal" id="u-tp" type="number" step="any" placeholder="np. 4604.60" style="font-size:13px" oninput="calcUnifiedRisk()"></div>
+            <div><label class="form-label-modal" style="font-size:10px">Wartość ticka (USD/lot)</label>
+              <input class="form-input-modal" id="u-pipval" type="number" step="any" placeholder="np. 10" style="font-size:13px" oninput="calcUnifiedRisk()"></div>
+            <div><label class="form-label-modal" style="font-size:10px">Win Rate (%)</label>
+              <input class="form-input-modal" id="u-wr" type="number" value="50" step="1" style="font-size:13px" oninput="calcUnifiedRisk()"></div>
           </div>
-          <div id="r-result" style="display:none;margin-top:14px;background:var(--bg);border:1px solid var(--border2);border-radius:10px;padding:14px;font-size:13px"></div>
-        </div>
-        <div class="summary-card">
-          <div class="summary-card-title" style="color:var(--blue)">⚖️ Kalkulator R:R i % konta</div>
-          <div style="display:grid;gap:12px">
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-              <div><label class="form-label-modal" style="font-size:10px">Kapitał konta (USD)</label>
-                <input class="form-input-modal" id="rr-capital" type="number" placeholder="10000" style="font-size:13px" oninput="calcRR()"></div>
-              <div><label class="form-label-modal" style="font-size:10px">Wolumen (loty)</label>
-                <input class="form-input-modal" id="rr-size" type="number" step="any" placeholder="0.1" style="font-size:13px" oninput="calcRR()"></div>
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-              <div><label class="form-label-modal" style="font-size:10px">Cena wejścia</label>
-                <input class="form-input-modal" id="rr-entry" type="number" step="any" placeholder="4545.43" style="font-size:13px" oninput="calcRR()"></div>
-              <div><label class="form-label-modal" style="font-size:10px">Stop Loss</label>
-                <input class="form-input-modal" id="rr-sl" type="number" step="any" placeholder="4503.62" style="font-size:13px" oninput="calcRR()"></div>
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-              <div><label class="form-label-modal" style="font-size:10px">Take Profit</label>
-                <input class="form-input-modal" id="rr-tp" type="number" step="any" placeholder="4604.60" style="font-size:13px" oninput="calcRR()"></div>
-              <div><label class="form-label-modal" style="font-size:10px">Wartość ticka (USD/lot)</label>
-                <input class="form-input-modal" id="rr-pipval" type="number" step="any" placeholder="np. 10" style="font-size:13px" oninput="calcRR()"></div>
-            </div>
-            <div><label class="form-label-modal" style="font-size:10px">Twój Win Rate (%)</label>
-              <input class="form-input-modal" id="rr-wr" type="number" value="50" style="font-size:13px" oninput="calcRR()"></div>
-            <button class="btn-sm" onclick="rrFillFromAccount()" style="font-size:11px;width:100%">⬇ Uzupełnij kapitał z aktywnego konta</button>
-          </div>
-          <div id="rr-result" style="display:none;margin-top:14px;background:var(--bg);border:1px solid var(--border2);border-radius:10px;padding:14px;font-size:13px"></div>
+          <button class="btn-sm" onclick="unifiedFillFromAccount()" style="font-size:11px;width:100%;margin-bottom:12px">⬇ Uzupełnij kapitał z aktywnego konta</button>
+          <div id="u-result" style="display:none;background:var(--bg);border:1px solid var(--border2);border-radius:10px;padding:14px;font-size:13px"></div>
         </div>
       </div>
     </div>
@@ -5944,163 +5915,147 @@ function pageRecalc() {
 function row(k,v) { return `<div style="color:var(--text2)">${k}</div><div>${v}</div>`; }
 function fmtN(n) { return new Intl.NumberFormat('pl-PL',{minimumFractionDigits:2,maximumFractionDigits:2}).format(n); }
 
-// ===== RISK CALCULATOR =====
-function riskFillFromAccount() {
+// ===== UNIFIED RISK & R:R CALCULATOR =====
+function unifiedFillFromAccount() {
   const acc = getAccounts().find(a => a.id === state.currentAccountId);
   if (!acc) { toast('Wybierz konto tradingowe', 'error'); return; }
   const trades = getTrades(state.currentAccountId);
   const pnl = trades.filter(t=>t.status==='closed').reduce((s,t)=>s+(t.pnl||0),0);
   const capital = (acc.capital||0) + pnl;
-  document.getElementById('r-capital').value = capital.toFixed(2);
-  document.getElementById('rr-capital').value = capital.toFixed(2);
-  calcRisk(); calcRR();
+  const capEl = document.getElementById('u-capital');
+  if (capEl) capEl.value = capital.toFixed(2);
+  calcUnifiedRisk();
   toast('Kapitał uzupełniony z konta: ' + acc.name, 'success');
 }
 
-function rrFillFromAccount() { riskFillFromAccount(); }
-
-function calcRisk() {
-  const cap    = parseFloat(document.getElementById('r-capital')?.value);
-  const pct    = parseFloat(document.getElementById('r-pct')?.value);
-  const entry  = parseFloat(document.getElementById('r-entry')?.value);
-  const slPrice= parseFloat(document.getElementById('r-sl-price')?.value);
-  let   sl     = parseFloat(document.getElementById('r-sl')?.value);
-  const pv     = parseFloat(document.getElementById('r-pipval')?.value);
-  const res    = document.getElementById('r-result');
+function calcUnifiedRisk() {
+  const cap     = parseFloat(document.getElementById('u-capital')?.value);
+  const pct     = parseFloat(document.getElementById('u-pct')?.value);
+  const entry   = parseFloat(document.getElementById('u-entry')?.value);
+  const slPrice = parseFloat(document.getElementById('u-sl-price')?.value);
+  let   slPts   = parseFloat(document.getElementById('u-sl')?.value);
+  const tp      = parseFloat(document.getElementById('u-tp')?.value);
+  const pv      = parseFloat(document.getElementById('u-pipval')?.value);
+  const wrRaw   = parseFloat(document.getElementById('u-wr')?.value);
+  const wr      = isNaN(wrRaw) ? NaN : wrRaw / 100;
+  const res     = document.getElementById('u-result');
   if (!res) return;
 
-  // Jeśli podano cenę wejścia i SL jako cena — oblicz punkty automatycznie
-  if (!isNaN(entry) && !isNaN(slPrice) && isNaN(sl)) {
-    sl = Math.abs(entry - slPrice);
-    const slEl = document.getElementById('r-sl');
-    if (slEl && !slEl.value) slEl.value = sl.toFixed(2);
+  // Auto-calc SL points from entry vs SL price
+  if (!isNaN(entry) && !isNaN(slPrice) && isNaN(slPts)) {
+    slPts = Math.abs(entry - slPrice);
+    const slEl = document.getElementById('u-sl');
+    if (slEl && !slEl.value) slEl.value = slPts.toFixed(2);
   }
 
-  if (isNaN(cap) || isNaN(pct)) { res.style.display='none'; return; }
+  if (isNaN(cap) || isNaN(pct)) { res.style.display = 'none'; return; }
 
   const riskAmt = cap * pct / 100;
-  res.style.display = 'block';
+  const cs      = parseFloat(document.getElementById('p-contract')?.value) || 100;
 
-  let html = `
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
-      <div style="background:var(--amber-dim);border:1px solid var(--amber);border-radius:8px;padding:10px;text-align:center">
-        <div style="font-size:10px;color:var(--amber);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Kwota ryzyka</div>
-        <div style="font-family:var(--font-mono);font-size:18px;font-weight:700;color:var(--amber)">$${fmtN(riskAmt)}</div>
-        <div style="font-size:11px;color:var(--text3)">${pct}% z $${fmtN(cap)}</div>
-      </div>
-      <div style="background:var(--red-dim);border:1px solid var(--red);border-radius:8px;padding:10px;text-align:center">
-        <div style="font-size:10px;color:var(--red);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Ryzykujesz</div>
-        <div style="font-family:var(--font-mono);font-size:18px;font-weight:700;color:var(--red)">${pct}%</div>
-        <div style="font-size:11px;color:var(--text3)">kapitału konta</div>
-      </div>
-    </div>`;
-
-  if (!isNaN(sl) && !isNaN(pv) && sl > 0 && pv > 0) {
-    const lots = riskAmt / (sl * pv);
-    const cs = parseFloat(document.getElementById('p-contract')?.value) || 100;
-    const units = lots * cs;
-    const slUSD = sl * pv * lots;
-    const slPct = (slUSD / cap * 100).toFixed(2);
-
-    html += `
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
-      <div style="background:var(--accent-dim);border:1px solid var(--accent);border-radius:8px;padding:10px;text-align:center">
-        <div style="font-size:10px;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Maks. wolumen</div>
-        <div style="font-family:var(--font-mono);font-size:18px;font-weight:700;color:var(--accent)">${lots.toFixed(4)}</div>
-        <div style="font-size:11px;color:var(--text3)">lotów</div>
-      </div>
-      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center">
-        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Jednostki TV</div>
-        <div style="font-family:var(--font-mono);font-size:18px;font-weight:700">${units.toFixed(2)}</div>
-        <div style="font-size:11px;color:var(--text3)">kontrakt ${cs}</div>
-      </div>
-    </div>
-    <div style="font-size:12px;color:var(--text2);padding:8px 10px;background:var(--bg3);border-radius:6px">
-      SL ${sl.toFixed(2)} pkt × $${pv}/lot × ${lots.toFixed(4)} lot = 
-      <strong style="color:var(--red)">$${fmtN(slUSD)}</strong> = 
-      <strong style="color:var(--red)">${slPct}% konta</strong>
-    </div>`;
+  // Lot size
+  let lots = null, units = null;
+  if (!isNaN(slPts) && !isNaN(pv) && slPts > 0 && pv > 0) {
+    lots  = riskAmt / (slPts * pv);
+    units = lots * cs;
   }
 
-  res.innerHTML = html;
-}
+  // R:R distances
+  let riskDist = null, rewardDist = null, rr = null, beWR = null;
+  if (!isNaN(entry) && !isNaN(slPrice)) riskDist = Math.abs(entry - slPrice);
+  else if (!isNaN(slPts))              riskDist = slPts;
+  if (!isNaN(entry) && !isNaN(tp) && riskDist) {
+    rewardDist = Math.abs(tp - entry);
+    rr         = rewardDist / riskDist;
+    beWR       = 1 / (1 + rr) * 100;
+  }
 
-// ===== RR CALCULATOR =====
-function calcRR() {
-  const entry  = parseFloat(document.getElementById('rr-entry')?.value);
-  const sl     = parseFloat(document.getElementById('rr-sl')?.value);
-  const tp     = parseFloat(document.getElementById('rr-tp')?.value);
-  const wr     = parseFloat(document.getElementById('rr-wr')?.value) / 100;
-  const cap    = parseFloat(document.getElementById('rr-capital')?.value);
-  const size   = parseFloat(document.getElementById('rr-size')?.value);
-  const pv     = parseFloat(document.getElementById('rr-pipval')?.value);
-  const res    = document.getElementById('rr-result');
-  if (!res) return;
-  if (isNaN(entry) || isNaN(sl)) { res.style.display='none'; return; }
+  // USD values
+  const riskUSD = (lots !== null) ? lots * pv * (riskDist ?? slPts ?? 0) : null;
+  const rewUSD  = (lots !== null && rewardDist) ? lots * pv * rewardDist : null;
+  const riskPct = riskUSD ? (riskUSD / cap * 100).toFixed(2) : null;
+  const rewPct  = rewUSD  ? (rewUSD  / cap * 100).toFixed(2) : null;
 
-  const risk   = Math.abs(entry - sl);
-  const reward = tp ? Math.abs(tp - entry) : null;
-  const rr     = reward ? (reward / risk).toFixed(2) : null;
-  const beWR   = rr ? (1 / (1 + parseFloat(rr)) * 100).toFixed(1) : null;
-  const expectancy = (reward && !isNaN(wr)) ? (wr * reward - (1-wr) * risk).toFixed(2) : null;
-
-  // Kwoty w USD jeśli podano wolumen i pip value
-  const hasUSD  = !isNaN(size) && !isNaN(pv);
-  const riskUSD = hasUSD ? size * pv * risk : null;
-  const rewUSD  = hasUSD && reward ? size * pv * reward : null;
-  const riskPct = (riskUSD && !isNaN(cap)) ? (riskUSD / cap * 100).toFixed(2) : null;
-  const rewPct  = (rewUSD && !isNaN(cap)) ? (rewUSD / cap * 100).toFixed(2) : null;
+  // Expected value
+  let expectancy = null;
+  if (rr !== null && !isNaN(wr)) {
+    expectancy = (wr * rewardDist - (1 - wr) * riskDist).toFixed(2);
+  }
 
   res.style.display = 'block';
+  let html = '';
 
-  let html = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">`;
-
-  // Ryzyko SL
-  html += `<div style="background:var(--red-dim);border:1px solid var(--red);border-radius:8px;padding:10px;text-align:center">
-    <div style="font-size:10px;color:var(--red);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Ryzyko (SL)</div>
-    <div style="font-family:var(--font-mono);font-size:16px;font-weight:700;color:var(--red)">${risk.toFixed(2)} pkt</div>
-    ${riskUSD ? `<div style="font-size:12px;color:var(--red);font-family:var(--font-mono)">$${fmtN(riskUSD)}</div>` : ''}
-    ${riskPct ? `<div style="font-size:11px;color:var(--text3)">${riskPct}% konta</div>` : ''}
+  // Row 1: Risk amount + lots + units + R:R
+  const cols = [1, lots !== null ? 1 : 0, lots !== null ? 1 : 0, rr !== null ? 1 : 0].reduce((a,b)=>a+b, 0) || 1;
+  html += `<div style="display:grid;grid-template-columns:repeat(${cols},1fr);gap:8px;margin-bottom:12px">`;
+  html += `<div style="background:var(--amber-dim);border:1px solid var(--amber);border-radius:8px;padding:10px;text-align:center">
+    <div style="font-size:10px;color:var(--amber);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Kwota ryzyka</div>
+    <div style="font-family:var(--font-mono);font-size:18px;font-weight:700;color:var(--amber)">$${fmtN(riskAmt)}</div>
+    <div style="font-size:11px;color:var(--text3)">${pct}% z $${fmtN(cap)}</div>
   </div>`;
-
-  // Reward TP
-  if (reward) {
-    html += `<div style="background:var(--green-dim);border:1px solid var(--green);border-radius:8px;padding:10px;text-align:center">
-      <div style="font-size:10px;color:var(--green);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Zysk (TP)</div>
-      <div style="font-family:var(--font-mono);font-size:16px;font-weight:700;color:var(--green)">${reward.toFixed(2)} pkt</div>
-      ${rewUSD ? `<div style="font-size:12px;color:var(--green);font-family:var(--font-mono)">$${fmtN(rewUSD)}</div>` : ''}
-      ${rewPct ? `<div style="font-size:11px;color:var(--text3)">${rewPct}% konta</div>` : ''}
+  if (lots !== null) {
+    html += `<div style="background:var(--accent-dim);border:1px solid var(--accent);border-radius:8px;padding:10px;text-align:center">
+      <div style="font-size:10px;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Maks. wolumen</div>
+      <div style="font-family:var(--font-mono);font-size:18px;font-weight:700;color:var(--accent)">${lots.toFixed(4)}</div>
+      <div style="font-size:11px;color:var(--text3)">lotów</div>
+    </div>
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center">
+      <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Jednostki TV</div>
+      <div style="font-family:var(--font-mono);font-size:18px;font-weight:700">${units.toFixed(2)}</div>
+      <div style="font-size:11px;color:var(--text3)">kontrakt ${cs}</div>
     </div>`;
-  } else {
+  }
+  if (rr !== null) {
+    const rrColor = rr >= 2 ? 'var(--accent)' : rr >= 1 ? 'var(--amber)' : 'var(--red)';
     html += `<div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center">
-      <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Zysk (TP)</div>
-      <div style="font-size:12px;color:var(--text3);margin-top:8px">Brak TP</div>
+      <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Risk : Reward</div>
+      <div style="font-family:var(--font-head);font-size:22px;font-weight:800;color:${rrColor}">1 : ${rr.toFixed(2)}</div>
+      <div style="font-size:11px;color:var(--text3)">BE WR: <strong style="color:var(--amber)">${beWR.toFixed(1)}%</strong></div>
     </div>`;
   }
   html += `</div>`;
 
-  // R:R
-  if (rr) {
-    const rrColor = parseFloat(rr) >= 2 ? 'var(--accent)' : parseFloat(rr) >= 1 ? 'var(--amber)' : 'var(--red)';
-    html += `<div style="text-align:center;padding:12px;background:var(--bg3);border-radius:8px;margin-bottom:8px">
-      <div style="font-size:11px;color:var(--text3);margin-bottom:4px">Risk : Reward</div>
-      <div style="font-family:var(--font-head);font-size:28px;font-weight:800;color:${rrColor}">1 : ${rr}</div>
-      ${beWR ? `<div style="font-size:11px;color:var(--text3);margin-top:4px">Break-even win rate: <strong style="color:var(--amber)">${beWR}%</strong></div>` : ''}
-    </div>`;
+  // Row 2: SL / TP detail
+  if (riskDist || rewardDist) {
+    html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">`;
+    if (riskDist) {
+      html += `<div style="background:var(--red-dim);border:1px solid var(--red);border-radius:8px;padding:10px;text-align:center">
+        <div style="font-size:10px;color:var(--red);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Stop Loss</div>
+        <div style="font-family:var(--font-mono);font-size:15px;font-weight:700;color:var(--red)">${riskDist.toFixed(2)} pkt</div>
+        ${riskUSD ? `<div style="font-size:12px;color:var(--red);font-family:var(--font-mono)">$${fmtN(riskUSD)}</div>` : ''}
+        ${riskPct ? `<div style="font-size:11px;color:var(--text3)">${riskPct}% konta</div>` : ''}
+      </div>`;
+    }
+    if (rewardDist) {
+      html += `<div style="background:var(--green-dim);border:1px solid var(--green);border-radius:8px;padding:10px;text-align:center">
+        <div style="font-size:10px;color:var(--green);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Take Profit</div>
+        <div style="font-family:var(--font-mono);font-size:15px;font-weight:700;color:var(--green)">${rewardDist.toFixed(2)} pkt</div>
+        ${rewUSD ? `<div style="font-size:12px;color:var(--green);font-family:var(--font-mono)">$${fmtN(rewUSD)}</div>` : ''}
+        ${rewPct ? `<div style="font-size:11px;color:var(--text3)">${rewPct}% konta</div>` : ''}
+      </div>`;
+    }
+    html += `</div>`;
   }
 
-  // Oczekiwana wartość
-  if (expectancy) {
+  // Expected value
+  if (expectancy !== null) {
     const expColor = parseFloat(expectancy) >= 0 ? 'var(--green)' : 'var(--red)';
+    const expUSD = lots !== null ? lots * pv * Math.abs(parseFloat(expectancy)) : null;
     html += `<div style="font-size:12px;color:var(--text2);padding:8px 10px;background:var(--bg3);border-radius:6px">
-      Oczekiwana wartość przy WR=${(wr*100).toFixed(0)}%: 
+      Oczekiwana wartość przy WR=${(wr*100).toFixed(0)}%:
       <strong style="color:${expColor};font-family:var(--font-mono)">${parseFloat(expectancy)>=0?'+':''}${expectancy} pkt</strong>
-      ${hasUSD ? `= <strong style="color:${expColor};font-family:var(--font-mono)">$${fmtN(size*pv*Math.abs(parseFloat(expectancy)))}</strong>` : ''}
+      ${expUSD ? `= <strong style="color:${expColor};font-family:var(--font-mono)">$${fmtN(expUSD)}</strong>` : ''}
     </div>`;
   }
 
   res.innerHTML = html;
 }
+
+// Backward compat stubs
+function calcRisk() { calcUnifiedRisk(); }
+function calcRR()   { calcUnifiedRisk(); }
+function riskFillFromAccount() { unifiedFillFromAccount(); }
+function rrFillFromAccount()   { unifiedFillFromAccount(); }
 
 // update showPage to include calculator
 const _origShowPage = showPage;
@@ -13564,12 +13519,9 @@ function switchToolsTab(tab) {
       const trades = getTrades(state.currentAccountId);
       const pnl = trades.filter(t=>t.status==='closed').reduce((s,t)=>s+(t.pnl||0),0);
       const capital = (acc.capital||0) + pnl;
-      const rCap = document.getElementById('r-capital');
-      const rrCap = document.getElementById('rr-capital');
-      if (rCap && !rCap.value) rCap.value = capital.toFixed(2);
-      if (rrCap && !rrCap.value) rrCap.value = capital.toFixed(2);
-      if (typeof calcRisk === 'function') calcRisk();
-      if (typeof calcRR === 'function') calcRR();
+      const uCap = document.getElementById('u-capital');
+      if (uCap && !uCap.value) uCap.value = capital.toFixed(2);
+      if (typeof calcUnifiedRisk === 'function') calcUnifiedRisk();
     }
   }
 }
