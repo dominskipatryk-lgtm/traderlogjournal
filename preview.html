@@ -3482,10 +3482,14 @@ function _executeLogout() {
   if (bar) bar.style.display = 'none';
   // Zatrzymaj timer sesji i wyczyść dane
   if (window._sessionTimerId) { clearInterval(window._sessionTimerId); window._sessionTimerId = null; }
+  if (window._sessionWarnToastId) { clearInterval(window._sessionWarnToastId); window._sessionWarnToastId = null; }
   if (state.currentUser) {
     const db = getDB();
     delete db['_appSession_' + state.currentUser];
     saveDB(db);
+    // Wyczyść klucze rutyny — po ponownym zalogowaniu rutyna pokaże się od nowa
+    localStorage.removeItem('_routine_shown_v2_'   + state.currentUser);
+    localStorage.removeItem('_routine_no_show_v2_' + state.currentUser);
   }
   stopAutoSync();
   _lastSyncTime = null;
@@ -11465,8 +11469,8 @@ function showRoutineModal(mode) {
   _routineMode = mode;
   const now = new Date();
   const today = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
-  const lastShown   = localStorage.getItem('_routine_shown_'   + (state.currentUser||''));
-  const noShowToday = localStorage.getItem('_routine_no_show_' + (state.currentUser||''));
+  const lastShown   = localStorage.getItem('_routine_shown_v2_'   + (state.currentUser||''));
+  const noShowToday = localStorage.getItem('_routine_no_show_v2_' + (state.currentUser||''));
 
   // Dla trybu "before": sprawdź czy już pokazano dziś
   if (mode === 'before') {
@@ -11514,7 +11518,7 @@ function showRoutineModal(mode) {
 
   // Zapisz że pokazano dziś (tylko dla before)
   if (mode === 'before') {
-    localStorage.setItem('_routine_shown_' + (state.currentUser||''), today);
+    localStorage.setItem('_routine_shown_v2_' + (state.currentUser||''), today);
   }
 }
 
@@ -11527,7 +11531,7 @@ function closeRoutineModal() {
   if (noShow?.checked) {
     const now = new Date();
     const today = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
-    localStorage.setItem('_routine_no_show_' + (state.currentUser||''), today);
+    localStorage.setItem('_routine_no_show_v2_' + (state.currentUser||''), today);
   }
 
   // Resetuj pendingLogout jeśli zamknięto przez X
@@ -11546,7 +11550,7 @@ function finishRoutineAction() {
   if (noShow?.checked) {
     const now = new Date();
     const today = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
-    localStorage.setItem('_routine_no_show_' + (state.currentUser||''), today);
+    localStorage.setItem('_routine_no_show_v2_' + (state.currentUser||''), today);
   }
 
   if (_routineMode === 'before') {
@@ -13587,14 +13591,14 @@ function calNavSummary(dir) {
 
 function forceShowRoutine() {
   // Usuń blokadę i pokaż
-  localStorage.removeItem('_routine_shown_' + (state.currentUser||''));
-  localStorage.removeItem('_routine_no_show_' + (state.currentUser||''));
+  localStorage.removeItem('_routine_shown_v2_' + (state.currentUser||''));
+  localStorage.removeItem('_routine_no_show_v2_' + (state.currentUser||''));
   showRoutineModal();
 }
 
 function resetRoutineToday() {
-  localStorage.removeItem('_routine_shown_' + (state.currentUser||''));
-  localStorage.removeItem('_routine_no_show_' + (state.currentUser||''));
+  localStorage.removeItem('_routine_shown_v2_' + (state.currentUser||''));
+  localStorage.removeItem('_routine_no_show_v2_' + (state.currentUser||''));
   toast('Blokada zresetowana — Routine pojawi się przy następnym logowaniu', 'success');
 }
 
