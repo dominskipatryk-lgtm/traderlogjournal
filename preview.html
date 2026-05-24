@@ -876,6 +876,28 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 }
 .mood-btn:hover { border-color: var(--accent); background: var(--accent-dim); }
 .mood-btn.selected { border-color: var(--accent); background: var(--accent-dim); transform: scale(1.15); }
+
+/* Journal step system */
+.journal-step { padding: 14px 0; }
+.journal-step-header { display:flex; align-items:flex-start; gap:12px; margin-bottom:14px; }
+.journal-step-num {
+  width:28px; height:28px; border-radius:50%; background:var(--amber);
+  color:#000; font-size:13px; font-weight:800; display:flex; align-items:center;
+  justify-content:center; flex-shrink:0; margin-top:1px;
+}
+.journal-step-title { font-size:14px; font-weight:700; color:var(--text); }
+.journal-step-sub { font-size:11px; color:var(--text3); margin-top:2px; }
+.journal-step-check { margin-left:auto; font-size:18px; flex-shrink:0; }
+.journal-step-body { padding-left:40px; }
+.journal-step-divider { height:1px; background:var(--border); margin:4px 0; }
+.journal-opt-btn {
+  padding: 7px 14px; font-size: 12px; font-weight: 600; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--bg3); color: var(--text2);
+  cursor: pointer; transition: all .15s; white-space: nowrap;
+}
+.journal-opt-btn:hover { border-color: var(--accent); color: var(--accent); }
+.journal-opt-btn.active { border-color: var(--accent); background: var(--accent-dim); color: var(--accent); font-weight:700; }
+.jlabel { font-size:11px; color:var(--text3); text-transform:uppercase; letter-spacing:.5px; display:block; margin-bottom:6px; }
 .note-item {
   padding: 10px 12px; border-radius: 8px; background: var(--bg3); border: 1px solid var(--border);
   cursor: pointer; transition: all .15s; border-left: 3px solid transparent;
@@ -2208,89 +2230,360 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
               </div>
             </div>
 
-            <!-- PRZED SESJĄ -->
+            <!-- PRZED SESJĄ — prowadzona rutyna krokowa -->
             <div class="summary-card" id="journal-card-pre" style="margin-bottom:16px">
-              <div class="summary-card-title" style="color:var(--amber);margin-bottom:14px">🌅 Przed sesją</div>
-              <div style="display:grid;gap:12px">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+                <div class="summary-card-title" style="color:var(--amber);margin-bottom:0">🌅 Rutyna przed sesją</div>
+                <div id="journal-pre-progress-badge" style="font-size:11px;color:var(--text3)"></div>
+              </div>
 
-                <div>
-                  <label style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Nastrój <span id="journal-pre-mood-val" style="color:var(--accent)"></span></label>
-                  <div style="display:flex;gap:6px" id="journal-pre-mood-btns">
-                    <button onclick="setJournalMood('pre',1,this)" class="mood-btn" data-val="1" title="Bardzo zły">😤</button>
-                    <button onclick="setJournalMood('pre',2,this)" class="mood-btn" data-val="2" title="Zły">😕</button>
-                    <button onclick="setJournalMood('pre',3,this)" class="mood-btn" data-val="3" title="Neutralny">😐</button>
-                    <button onclick="setJournalMood('pre',4,this)" class="mood-btn" data-val="4" title="Dobry">😊</button>
-                    <button onclick="setJournalMood('pre',5,this)" class="mood-btn" data-val="5" title="Świetny">😄</button>
+              <!-- Pasek postępu -->
+              <div style="height:4px;background:var(--bg4);border-radius:2px;margin-bottom:20px;overflow:hidden">
+                <div id="journal-pre-progress-bar" style="height:100%;background:var(--amber);border-radius:2px;transition:width .4s;width:0%"></div>
+              </div>
+
+              <!-- KROK 1: Stan fizyczny i psychiczny -->
+              <div class="journal-step" id="jstep-pre-1">
+                <div class="journal-step-header">
+                  <div class="journal-step-num">1</div>
+                  <div>
+                    <div class="journal-step-title">Stan fizyczny i psychiczny</div>
+                    <div class="journal-step-sub">Zanim spojrzysz na wykres — sprawdź siebie</div>
                   </div>
+                  <div id="jstep-pre-1-done" class="journal-step-check" style="display:none">✅</div>
                 </div>
-
-                <div>
-                  <label style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Poziom skupienia: <span id="journal-pre-focus-val" style="color:var(--accent)">5</span>/10</label>
-                  <input type="range" id="journal-pre-focus" min="1" max="10" value="5" oninput="document.getElementById('journal-pre-focus-val').textContent=this.value"
-                    style="width:100%;accent-color:var(--accent)">
-                </div>
-
-                <div>
-                  <label style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Plan sesji / Co obserwujesz?</label>
-                  <textarea id="journal-pre-plan" class="form-input-modal" style="min-height:80px;line-height:1.7"
-                    placeholder="Jakie pary/instrumenty obserwujesz? Jakie poziomy kluczowe? Czego unikasz?"></textarea>
-                </div>
-
-                <div>
-                  <label style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Cel dnia</label>
-                  <input id="journal-pre-goal" class="form-input-modal" placeholder="np. Żaden trade powyżej 1% ryzyka, 0 revenge trades">
-                </div>
-
-                <div style="display:flex;justify-content:flex-end;gap:8px;padding-top:8px;border-top:1px solid var(--border)">
-                  <button onclick="openReminderModal('Plan sesji: ' + formatDatePL(_jSelectedDate), _jSelectedDate, 'journal')" class="btn-sm" style="font-size:11px">🔔 Przypomnij mi</button>
-                  <button onclick="createAnalysisFromJournal()" class="btn-sm btn-accent" style="font-size:11px">📈 Utwórz analizę</button>
+                <div class="journal-step-body">
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+                    <div>
+                      <label class="jlabel">😴 Ile godzin spałem?</label>
+                      <div style="display:flex;gap:6px;flex-wrap:wrap">
+                        <button onclick="setJournalBtn('pre-sleep',this,'4',4)" class="journal-opt-btn">≤4h</button>
+                        <button onclick="setJournalBtn('pre-sleep',this,'5',5)" class="journal-opt-btn">5h</button>
+                        <button onclick="setJournalBtn('pre-sleep',this,'6',6)" class="journal-opt-btn">6h</button>
+                        <button onclick="setJournalBtn('pre-sleep',this,'7',7)" class="journal-opt-btn">7h</button>
+                        <button onclick="setJournalBtn('pre-sleep',this,'8',8)" class="journal-opt-btn">8h+</button>
+                      </div>
+                      <input type="hidden" id="journal-pre-sleep">
+                    </div>
+                    <div>
+                      <label class="jlabel">⚡ Poziom energii</label>
+                      <div style="display:flex;gap:6px;flex-wrap:wrap">
+                        <button onclick="setJournalBtn('pre-energy',this,'low','low')" class="journal-opt-btn">😩 Niski</button>
+                        <button onclick="setJournalBtn('pre-energy',this,'medium','medium')" class="journal-opt-btn">😐 Średni</button>
+                        <button onclick="setJournalBtn('pre-energy',this,'high','high')" class="journal-opt-btn">💪 Wysoki</button>
+                      </div>
+                      <input type="hidden" id="journal-pre-energy">
+                    </div>
+                  </div>
+                  <div style="margin-bottom:12px">
+                    <label class="jlabel">😊 Nastrój przed sesją <span id="journal-pre-mood-val" style="color:var(--accent)"></span></label>
+                    <div style="display:flex;gap:8px" id="journal-pre-mood-btns">
+                      <button onclick="setJournalMood('pre',1,this)" class="mood-btn" data-val="1" title="Bardzo zły">😤</button>
+                      <button onclick="setJournalMood('pre',2,this)" class="mood-btn" data-val="2" title="Zły">😕</button>
+                      <button onclick="setJournalMood('pre',3,this)" class="mood-btn" data-val="3" title="Neutralny">😐</button>
+                      <button onclick="setJournalMood('pre',4,this)" class="mood-btn" data-val="4" title="Dobry">😊</button>
+                      <button onclick="setJournalMood('pre',5,this)" class="mood-btn" data-val="5" title="Świetny">😄</button>
+                    </div>
+                  </div>
+                  <div style="display:flex;gap:12px;align-items:center">
+                    <label class="jlabel" style="margin:0;flex-shrink:0">🏃 Ćwiczyłem / byłem na świeżym powietrzu?</label>
+                    <div style="display:flex;gap:6px">
+                      <button onclick="setJournalBtn('pre-exercise',this,'yes','yes')" class="journal-opt-btn">✅ Tak</button>
+                      <button onclick="setJournalBtn('pre-exercise',this,'no','no')" class="journal-opt-btn">❌ Nie</button>
+                    </div>
+                    <input type="hidden" id="journal-pre-exercise">
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <!-- PO SESJI -->
-            <div class="summary-card" id="journal-card-post">
-              <div class="summary-card-title" style="color:var(--accent);margin-bottom:14px">🌙 Po sesji</div>
-              <div style="display:grid;gap:12px">
+              <div class="journal-step-divider"></div>
 
-                <div>
-                  <label style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Nastrój po sesji <span id="journal-post-mood-val" style="color:var(--accent)"></span></label>
-                  <div style="display:flex;gap:6px" id="journal-post-mood-btns">
-                    <button onclick="setJournalMood('post',1,this)" class="mood-btn" data-val="1" title="Bardzo zły">😤</button>
-                    <button onclick="setJournalMood('post',2,this)" class="mood-btn" data-val="2" title="Zły">😕</button>
-                    <button onclick="setJournalMood('post',3,this)" class="mood-btn" data-val="3" title="Neutralny">😐</button>
-                    <button onclick="setJournalMood('post',4,this)" class="mood-btn" data-val="4" title="Dobry">😊</button>
-                    <button onclick="setJournalMood('post',5,this)" class="mood-btn" data-val="5" title="Świetny">😄</button>
+              <!-- KROK 2: Przygotowanie rynkowe -->
+              <div class="journal-step" id="jstep-pre-2">
+                <div class="journal-step-header">
+                  <div class="journal-step-num">2</div>
+                  <div>
+                    <div class="journal-step-title">Przygotowanie rynkowe</div>
+                    <div class="journal-step-sub">Co mówi rynek — zanim otworzysz pierwszą pozycję</div>
+                  </div>
+                  <div id="jstep-pre-2-done" class="journal-step-check" style="display:none">✅</div>
+                </div>
+                <div class="journal-step-body">
+                  <div style="margin-bottom:12px">
+                    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                      <label class="jlabel" style="margin:0">📅 Sprawdziłem kalendarz ekonomiczny?</label>
+                      <div style="display:flex;gap:6px">
+                        <button onclick="setJournalBtn('pre-calendar',this,'yes','yes')" class="journal-opt-btn">✅ Tak</button>
+                        <button onclick="setJournalBtn('pre-calendar',this,'no','no')" class="journal-opt-btn">❌ Nie</button>
+                      </div>
+                      <input type="hidden" id="journal-pre-calendar">
+                    </div>
+                    <input id="journal-pre-calendar-notes" class="form-input-modal" style="margin-top:8px;font-size:12px" placeholder="Ważne newsy dziś (NFP, CPI, FED…) — wpisz lub zostaw puste">
+                  </div>
+                  <div style="margin-bottom:12px">
+                    <label class="jlabel">📊 Jakie instrumenty/pary obserwuję dziś?</label>
+                    <input id="journal-pre-instruments" class="form-input-modal" placeholder="np. XAUUSD, EURUSD, US30 — tylko co naprawdę śledzę">
+                  </div>
+                  <div style="margin-bottom:12px">
+                    <label class="jlabel">📍 Kluczowe poziomy S/R na dziś</label>
+                    <textarea id="journal-pre-levels" class="form-input-modal" style="min-height:60px;line-height:1.7" placeholder="XAUUSD: wsparcie 2315, opór 2340&#10;EURUSD: retest 1.0850…"></textarea>
+                  </div>
+                  <div>
+                    <label class="jlabel">📈 Bias rynkowy dziś</label>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap">
+                      <button onclick="setJournalBtn('pre-bias',this,'bullish','bullish')" class="journal-opt-btn">🟢 Byczy</button>
+                      <button onclick="setJournalBtn('pre-bias',this,'bearish','bearish')" class="journal-opt-btn">🔴 Niedźwiedzi</button>
+                      <button onclick="setJournalBtn('pre-bias',this,'neutral','neutral')" class="journal-opt-btn">🟡 Neutralny</button>
+                      <button onclick="setJournalBtn('pre-bias',this,'unknown','unknown')" class="journal-opt-btn">❓ Nie wiem jeszcze</button>
+                    </div>
+                    <input type="hidden" id="journal-pre-bias">
                   </div>
                 </div>
+              </div>
 
-                <div>
-                  <label style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Co się działo? (podsumowanie dnia)</label>
-                  <textarea id="journal-post-review" class="form-input-modal" style="min-height:100px;line-height:1.7"
-                    placeholder="Jakie transakcje wziąłeś? Co poszło dobrze? Co poszło źle?"></textarea>
+              <div class="journal-step-divider"></div>
+
+              <!-- KROK 3: Plan i reguły -->
+              <div class="journal-step" id="jstep-pre-3">
+                <div class="journal-step-header">
+                  <div class="journal-step-num">3</div>
+                  <div>
+                    <div class="journal-step-title">Plan i reguły na dziś</div>
+                    <div class="journal-step-sub">Co chcę osiągnąć i czego muszę unikać</div>
+                  </div>
+                  <div id="jstep-pre-3-done" class="journal-step-check" style="display:none">✅</div>
                 </div>
-
-                <div>
-                  <label style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Czego się nauczyłeś / co zmieniasz jutro?</label>
-                  <textarea id="journal-post-learning" class="form-input-modal" style="min-height:70px;line-height:1.7"
-                    placeholder="Wnioski, błędy do naprawienia, co robisz inaczej..."></textarea>
-                </div>
-
-                <div>
-                  <label style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Ocena dnia: <span id="journal-post-rating-val" style="color:var(--accent)">5</span>/10</label>
-                  <input type="range" id="journal-post-rating" min="1" max="10" value="5" oninput="document.getElementById('journal-post-rating-val').textContent=this.value"
-                    style="width:100%;accent-color:var(--accent)">
-                </div>
-
-                <div id="journal-post-logout-bar" style="display:none;padding-top:10px;border-top:1px solid var(--border)">
-                  <div style="display:flex;justify-content:space-between;align-items:center">
-                    <span style="font-size:12px;color:var(--text3)">Sesja zamknięta — zapisz wpis i wyloguj się</span>
-                    <div style="display:flex;gap:8px">
-                      <button onclick="saveJournalEntry();toast('Wpis zapisany ✓','success')" class="btn-sm btn-accent" style="font-size:12px">💾 Zapisz wpis</button>
-                      <button onclick="confirmAndLogout()" style="padding:6px 14px;background:var(--red);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">🚪 Wyloguj się</button>
+                <div class="journal-step-body">
+                  <div style="margin-bottom:12px">
+                    <label class="jlabel">📝 Plan sesji</label>
+                    <textarea id="journal-pre-plan" class="form-input-modal" style="min-height:80px;line-height:1.7"
+                      placeholder="Jaki mam plan na dziś? Kiedy wchodzę, kiedy nie wchodzę? Co muszę zobaczyć żeby wziąć trade?"></textarea>
+                  </div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+                    <div>
+                      <label class="jlabel">🎯 Cel dnia</label>
+                      <input id="journal-pre-goal" class="form-input-modal" placeholder="np. Max 2 transakcje, czekam na pewny setup">
+                    </div>
+                    <div>
+                      <label class="jlabel">🛑 Mój limit strat na dziś</label>
+                      <input id="journal-pre-loss-limit" class="form-input-modal" type="number" placeholder="np. 50 (w walucie konta)">
                     </div>
                   </div>
                 </div>
+              </div>
+
+              <div class="journal-step-divider"></div>
+
+              <!-- KROK 4: Gotowość i intencja -->
+              <div class="journal-step" id="jstep-pre-4">
+                <div class="journal-step-header">
+                  <div class="journal-step-num">4</div>
+                  <div>
+                    <div class="journal-step-title">Gotowość i skupienie</div>
+                    <div class="journal-step-sub">Ostatnia weryfikacja przed sesją</div>
+                  </div>
+                  <div id="jstep-pre-4-done" class="journal-step-check" style="display:none">✅</div>
+                </div>
+                <div class="journal-step-body">
+                  <div style="margin-bottom:12px">
+                    <label class="jlabel">🎯 Poziom skupienia: <span id="journal-pre-focus-val" style="color:var(--accent)">5</span>/10</label>
+                    <input type="range" id="journal-pre-focus" min="1" max="10" value="5"
+                      oninput="document.getElementById('journal-pre-focus-val').textContent=this.value;updateJournalPreProgress()"
+                      style="width:100%;accent-color:var(--accent)">
+                  </div>
+                  <div style="margin-bottom:16px">
+                    <label class="jlabel">✅ Czy jestem gotowy do handlowania dziś?</label>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap">
+                      <button onclick="setJournalReadiness('yes',this)" class="journal-opt-btn" id="jread-yes">💚 Tak, jestem gotowy</button>
+                      <button onclick="setJournalReadiness('maybe',this)" class="journal-opt-btn" id="jread-maybe">🟡 Tak, ale z rezerwacjami</button>
+                      <button onclick="setJournalReadiness('no',this)" class="journal-opt-btn" id="jread-no">🔴 Nie jestem dziś w formie</button>
+                    </div>
+                    <input type="hidden" id="journal-pre-readiness">
+                    <div id="journal-readiness-warning" style="display:none;margin-top:10px;padding:10px 14px;background:rgba(255,80,80,.1);border:1px solid rgba(255,80,80,.3);border-radius:8px;font-size:12px;color:var(--red)">
+                      ⚠️ <strong>Czy na pewno chcesz dziś handlować?</strong> Trader który nie jest w formie traci więcej niż zarabia. Rozważ dzień obserwacji bez pozycji.
+                    </div>
+                  </div>
+                  <div>
+                    <label class="jlabel">💬 Moja intencja na dziś (jedno zdanie)</label>
+                    <input id="journal-pre-intention" class="form-input-modal" placeholder="np. Dziś czekam na pewny setup i nie goduję wykresu">
+                  </div>
+                </div>
+              </div>
+
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
+                <div style="display:flex;gap:8px">
+                  <button onclick="openReminderModal('Plan sesji: ' + formatDatePL(_jSelectedDate), _jSelectedDate, 'journal')" class="btn-sm" style="font-size:11px">🔔 Przypomnij mi</button>
+                  <button onclick="createAnalysisFromJournal()" class="btn-sm" style="font-size:11px">📈 Utwórz analizę</button>
+                </div>
+                <button onclick="saveJournalEntry();toast('Rutyna przed sesją zapisana ✓','success')" class="btn-sm btn-accent" style="font-size:12px">💾 Zapisz rutynę</button>
+              </div>
+            </div>
+
+            <!-- PO SESJI — prowadzona rutyna krokowa -->
+            <div class="summary-card" id="journal-card-post">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+                <div class="summary-card-title" style="color:var(--accent);margin-bottom:0">🌙 Zamknięcie sesji</div>
+                <div id="journal-post-progress-badge" style="font-size:11px;color:var(--text3)"></div>
+              </div>
+
+              <!-- Pasek postępu -->
+              <div style="height:4px;background:var(--bg4);border-radius:2px;margin-bottom:20px;overflow:hidden">
+                <div id="journal-post-progress-bar" style="height:100%;background:var(--accent);border-radius:2px;transition:width .4s;width:0%"></div>
+              </div>
+
+              <!-- KROK 1: Wyniki dnia (auto) -->
+              <div class="journal-step" id="jstep-post-1">
+                <div class="journal-step-header">
+                  <div class="journal-step-num" style="background:var(--accent)">1</div>
+                  <div>
+                    <div class="journal-step-title">Wyniki dnia — co pokazują dane</div>
+                    <div class="journal-step-sub">Automatycznie z Twoich transakcji</div>
+                  </div>
+                </div>
+                <div class="journal-step-body">
+                  <div id="journal-post-day-stats" style="font-size:12px;color:var(--text3)">Brak transakcji dziś</div>
+                </div>
+              </div>
+
+              <div class="journal-step-divider"></div>
+
+              <!-- KROK 2: Czy trzymałem plan? -->
+              <div class="journal-step" id="jstep-post-2">
+                <div class="journal-step-header">
+                  <div class="journal-step-num" style="background:var(--accent)">2</div>
+                  <div>
+                    <div class="journal-step-title">Czy trzymałem plan?</div>
+                    <div class="journal-step-sub">Szczerość jest podstawą nauki</div>
+                  </div>
+                  <div id="jstep-post-2-done" class="journal-step-check" style="display:none">✅</div>
+                </div>
+                <div class="journal-step-body">
+                  <div style="margin-bottom:12px">
+                    <label class="jlabel">🎯 Czy trzymałem swój plan tradingowy?</label>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap">
+                      <button onclick="setJournalBtn('post-plan-followed',this,'yes','yes')" class="journal-opt-btn">✅ Tak, konsekwentnie</button>
+                      <button onclick="setJournalBtn('post-plan-followed',this,'partial','partial')" class="journal-opt-btn">⚠️ Częściowo</button>
+                      <button onclick="setJournalBtn('post-plan-followed',this,'no','no')" class="journal-opt-btn">❌ Nie trzymałem</button>
+                    </div>
+                    <input type="hidden" id="journal-post-plan-followed">
+                  </div>
+                  <div style="margin-bottom:12px">
+                    <label class="jlabel">🛑 Czy przekroczyłem limit strat na dziś?</label>
+                    <div style="display:flex;gap:6px">
+                      <button onclick="setJournalBtn('post-limit-broken',this,'no','no')" class="journal-opt-btn">✅ Nie przekroczyłem</button>
+                      <button onclick="setJournalBtn('post-limit-broken',this,'yes','yes')" class="journal-opt-btn">❌ Tak, przekroczyłem</button>
+                    </div>
+                    <input type="hidden" id="journal-post-limit-broken">
+                  </div>
+                  <div>
+                    <label class="jlabel">⚡ Czy wchodziłem impulsywnie (bez setupu)?</label>
+                    <div style="display:flex;gap:6px">
+                      <button onclick="setJournalBtn('post-impulsive',this,'no','no')" class="journal-opt-btn">✅ Nie</button>
+                      <button onclick="setJournalBtn('post-impulsive',this,'once','once')" class="journal-opt-btn">⚠️ Raz</button>
+                      <button onclick="setJournalBtn('post-impulsive',this,'yes','yes')" class="journal-opt-btn">❌ Tak, kilkukrotnie</button>
+                    </div>
+                    <input type="hidden" id="journal-post-impulsive">
+                  </div>
+                </div>
+              </div>
+
+              <div class="journal-step-divider"></div>
+
+              <!-- KROK 3: Podsumowanie dnia -->
+              <div class="journal-step" id="jstep-post-3">
+                <div class="journal-step-header">
+                  <div class="journal-step-num" style="background:var(--accent)">3</div>
+                  <div>
+                    <div class="journal-step-title">Co się działo?</div>
+                    <div class="journal-step-sub">Napisz więcej niż jeden wiersz — to Twój najważniejszy wpis</div>
+                  </div>
+                  <div id="jstep-post-3-done" class="journal-step-check" style="display:none">✅</div>
+                </div>
+                <div class="journal-step-body">
+                  <div style="margin-bottom:12px">
+                    <label class="jlabel">📖 Podsumowanie dnia — co się wydarzyło?</label>
+                    <textarea id="journal-post-review" class="form-input-modal" style="min-height:100px;line-height:1.7"
+                      placeholder="Co zadziałało? Co nie zadziałało? Jak wyglądały Twoje transakcje? Co czułeś w kluczowych momentach?"></textarea>
+                  </div>
+                  <div style="margin-bottom:12px">
+                    <label class="jlabel">💡 Czego się nauczyłem?</label>
+                    <textarea id="journal-post-learning" class="form-input-modal" style="min-height:70px;line-height:1.7"
+                      placeholder="Konkretna lekcja z dzisiejszego dnia — co widzę teraz czego nie widziałem rano?"></textarea>
+                  </div>
+                  <div>
+                    <label class="jlabel">🔧 Co zmieniam jutro? (konkretna zmiana)</label>
+                    <input id="journal-post-change" class="form-input-modal" placeholder="np. Jutro nie wchodzę przed 10:00, czekam na potwierdzenie na M15">
+                  </div>
+                </div>
+              </div>
+
+              <div class="journal-step-divider"></div>
+
+              <!-- KROK 4: Ocena -->
+              <div class="journal-step" id="jstep-post-4">
+                <div class="journal-step-header">
+                  <div class="journal-step-num" style="background:var(--accent)">4</div>
+                  <div>
+                    <div class="journal-step-title">Ocena dnia</div>
+                    <div class="journal-step-sub">Jak oceniasz siebie — nie rynek</div>
+                  </div>
+                  <div id="jstep-post-4-done" class="journal-step-check" style="display:none">✅</div>
+                </div>
+                <div class="journal-step-body">
+                  <div style="margin-bottom:12px">
+                    <label class="jlabel">😊 Nastrój po sesji <span id="journal-post-mood-val" style="color:var(--accent)"></span></label>
+                    <div style="display:flex;gap:8px" id="journal-post-mood-btns">
+                      <button onclick="setJournalMood('post',1,this)" class="mood-btn" data-val="1" title="Bardzo zły">😤</button>
+                      <button onclick="setJournalMood('post',2,this)" class="mood-btn" data-val="2" title="Zły">😕</button>
+                      <button onclick="setJournalMood('post',3,this)" class="mood-btn" data-val="3" title="Neutralny">😐</button>
+                      <button onclick="setJournalMood('post',4,this)" class="mood-btn" data-val="4" title="Dobry">😊</button>
+                      <button onclick="setJournalMood('post',5,this)" class="mood-btn" data-val="5" title="Świetny">😄</button>
+                    </div>
+                  </div>
+                  <div style="margin-bottom:12px">
+                    <label class="jlabel">🧠 Jakość decyzji dziś: <span id="journal-post-decision-val" style="color:var(--accent)">5</span>/10</label>
+                    <input type="range" id="journal-post-decision" min="1" max="10" value="5"
+                      oninput="document.getElementById('journal-post-decision-val').textContent=this.value;updateJournalPostProgress()"
+                      style="width:100%;accent-color:var(--accent)">
+                  </div>
+                  <div>
+                    <label class="jlabel">⭐ Ocena dnia ogółem: <span id="journal-post-rating-val" style="color:var(--accent)">5</span>/10</label>
+                    <input type="range" id="journal-post-rating" min="1" max="10" value="5"
+                      oninput="document.getElementById('journal-post-rating-val').textContent=this.value;updateJournalPostProgress()"
+                      style="width:100%;accent-color:var(--accent)">
+                  </div>
+                </div>
+              </div>
+
+              <div class="journal-step-divider"></div>
+
+              <!-- KROK 5: Jutro -->
+              <div class="journal-step" id="jstep-post-5">
+                <div class="journal-step-header">
+                  <div class="journal-step-num" style="background:var(--accent)">5</div>
+                  <div>
+                    <div class="journal-step-title">Myśl na jutro</div>
+                    <div class="journal-step-sub">Jedno zdanie które przeczytasz rano</div>
+                  </div>
+                  <div id="jstep-post-5-done" class="journal-step-check" style="display:none">✅</div>
+                </div>
+                <div class="journal-step-body">
+                  <input id="journal-post-tomorrow" class="form-input-modal" placeholder="np. Jutro ufam procesowi — nie wyniku. Czekam na pewny setup.">
+                </div>
+              </div>
+
+              <div id="journal-post-logout-bar" style="display:none;margin-top:16px;padding:12px 14px;background:rgba(255,80,80,.07);border:1px solid rgba(255,80,80,.25);border-radius:10px">
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                  <span style="font-size:12px;color:var(--text3)">Sesja zamknięta — zapisz wpis i wyloguj się</span>
+                  <div style="display:flex;gap:8px">
+                    <button onclick="saveJournalEntry();toast('Wpis zapisany ✓','success')" class="btn-sm btn-accent" style="font-size:12px">💾 Zapisz wpis</button>
+                    <button onclick="confirmAndLogout()" style="padding:6px 14px;background:var(--red);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">🚪 Wyloguj się</button>
+                  </div>
+                </div>
+              </div>
+
+              <div style="display:flex;justify-content:flex-end;margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
+                <button onclick="saveJournalEntry();toast('Zamknięcie sesji zapisane ✓','success')" class="btn-sm btn-accent" style="font-size:12px">💾 Zapisz zamknięcie sesji</button>
               </div>
             </div>
           </div>
@@ -13863,6 +14156,24 @@ function switchJournalTab(tab) {
   });
   if (tab === 'notes') renderNotesList();
   if (tab === 'weekly') renderWeeklyReview();
+  if (tab === 'daily') _hookJournalProgressInputs();
+}
+
+function _hookJournalProgressInputs() {
+  ['journal-pre-plan','journal-pre-goal','journal-pre-intention','journal-pre-instruments','journal-pre-levels'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && !el._progressHooked) {
+      el.addEventListener('input', updateJournalPreProgress);
+      el._progressHooked = true;
+    }
+  });
+  ['journal-post-review','journal-post-learning','journal-post-change','journal-post-tomorrow'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && !el._progressHooked) {
+      el.addEventListener('input', updateJournalPostProgress);
+      el._progressHooked = true;
+    }
+  });
 }
 
 // ---- DAILY JOURNAL ----
@@ -13912,6 +14223,114 @@ function journalSelectToday() {
   renderJournalCal(); loadJournalEntryForm(_jSelectedDate);
 }
 
+function setJournalBtn(fieldId, btn, btnVal, dataVal) {
+  const input = document.getElementById('journal-' + fieldId);
+  if (input) input.value = dataVal;
+  const group = btn.parentElement;
+  group.querySelectorAll('.journal-opt-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  updateJournalPreProgress();
+  updateJournalPostProgress();
+}
+
+function setJournalReadiness(val, btn) {
+  const input = document.getElementById('journal-pre-readiness');
+  if (input) input.value = val;
+  document.querySelectorAll('#jread-yes,#jread-maybe,#jread-no').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const warn = document.getElementById('journal-readiness-warning');
+  if (warn) warn.style.display = val === 'no' ? 'block' : 'none';
+  updateJournalPreProgress();
+}
+
+function _getJournalOptVal(fieldId) {
+  const el = document.getElementById('journal-' + fieldId);
+  return el ? el.value : '';
+}
+
+function updateJournalPreProgress() {
+  // Krok 1: sen + energia + nastrój
+  const s1 = !!(_getJournalOptVal('pre-sleep') && _getJournalOptVal('pre-energy') && getJournalMood('pre'));
+  // Krok 2: bias
+  const s2 = !!(_getJournalOptVal('pre-bias'));
+  // Krok 3: plan
+  const s3 = !!(document.getElementById('journal-pre-plan')?.value?.trim());
+  // Krok 4: readiness + focus
+  const s4 = !!(_getJournalOptVal('pre-readiness'));
+
+  const steps = [s1, s2, s3, s4];
+  const done = steps.filter(Boolean).length;
+
+  ['1','2','3','4'].forEach((n, i) => {
+    const chk = document.getElementById('jstep-pre-' + n + '-done');
+    if (chk) chk.style.display = steps[i] ? 'block' : 'none';
+  });
+
+  const bar = document.getElementById('journal-pre-progress-bar');
+  const badge = document.getElementById('journal-pre-progress-badge');
+  if (bar) bar.style.width = (done / 4 * 100) + '%';
+  if (badge) badge.textContent = done === 4 ? '✅ Rutyna kompletna' : done + '/4 kroków';
+  if (bar && done === 4) bar.style.background = 'var(--accent)';
+  else if (bar) bar.style.background = 'var(--amber)';
+}
+
+function updateJournalPostProgress() {
+  // Krok 2: plan + limit + impulsive
+  const s2 = !!(_getJournalOptVal('post-plan-followed') && _getJournalOptVal('post-limit-broken') && _getJournalOptVal('post-impulsive'));
+  // Krok 3: review + learning + change
+  const s3 = !!(document.getElementById('journal-post-review')?.value?.trim() && document.getElementById('journal-post-learning')?.value?.trim());
+  // Krok 4: mood + rating
+  const s4 = !!(getJournalMood('post'));
+  // Krok 5: tomorrow
+  const s5 = !!(document.getElementById('journal-post-tomorrow')?.value?.trim());
+
+  const steps = [s2, s3, s4, s5];
+  const done = steps.filter(Boolean).length;
+
+  ['2','3','4','5'].forEach((n, i) => {
+    const chk = document.getElementById('jstep-post-' + n + '-done');
+    if (chk) chk.style.display = steps[i] ? 'block' : 'none';
+  });
+
+  const bar = document.getElementById('journal-post-progress-bar');
+  const badge = document.getElementById('journal-post-progress-badge');
+  if (bar) bar.style.width = (done / 4 * 100) + '%';
+  if (badge) badge.textContent = done === 4 ? '✅ Sesja zamknięta' : done + '/4 kroków';
+}
+
+function renderJournalPostDayStats(ds) {
+  const el = document.getElementById('journal-post-day-stats');
+  if (!el) return;
+  const trades = getTrades(state.currentAccountId).filter(t => (t.date||'').startsWith(ds) && t.status === 'closed');
+  if (!trades.length) { el.innerHTML = '<span style="color:var(--text3)">Brak zamkniętych transakcji dziś — dobry dzień na obserwację</span>'; return; }
+  const sym = getCurrSym(state.currentAccountId);
+  const pnl = trades.reduce((s,t)=>s+(t.pnl||0),0);
+  const wins = trades.filter(t=>(t.pnl||0)>0).length;
+  const wr = ((wins/trades.length)*100).toFixed(0);
+  const pnlColor = pnl>=0?'var(--green)':'var(--red)';
+  const emoCounts = {};
+  trades.filter(t=>t.emotionPre).forEach(t=>{ emoCounts[t.emotionPre]=(emoCounts[t.emotionPre]||0)+1; });
+  const topEmo = Object.entries(emoCounts).sort((a,b)=>b[1]-a[1])[0]?.[0]||'—';
+  el.innerHTML = `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+    <div style="text-align:center;padding:10px 6px;background:var(--bg3);border-radius:8px">
+      <div style="font-size:18px;font-weight:800;color:${pnlColor};font-family:var(--font-mono)">${pnl>=0?'+':''}${sym}${Math.abs(pnl).toFixed(2)}</div>
+      <div style="font-size:10px;color:var(--text3);margin-top:3px">P&L</div>
+    </div>
+    <div style="text-align:center;padding:10px 6px;background:var(--bg3);border-radius:8px">
+      <div style="font-size:18px;font-weight:800;font-family:var(--font-mono)">${trades.length}</div>
+      <div style="font-size:10px;color:var(--text3);margin-top:3px">Transakcji</div>
+    </div>
+    <div style="text-align:center;padding:10px 6px;background:var(--bg3);border-radius:8px">
+      <div style="font-size:18px;font-weight:800;color:var(--accent);font-family:var(--font-mono)">${wr}%</div>
+      <div style="font-size:10px;color:var(--text3);margin-top:3px">Win Rate</div>
+    </div>
+    <div style="text-align:center;padding:10px 6px;background:var(--bg3);border-radius:8px">
+      <div style="font-size:16px;font-weight:700">${topEmo}</div>
+      <div style="font-size:10px;color:var(--text3);margin-top:3px">Emocja</div>
+    </div>
+  </div>`;
+}
+
 function loadJournalEntryForm(ds) {
   const label = document.getElementById('journal-entry-date-label');
   const sub   = document.getElementById('journal-entry-date-sub');
@@ -13919,19 +14338,94 @@ function loadJournalEntryForm(ds) {
   if (label) label.textContent = ds === today ? 'Dziś' : formatDatePL(ds);
   if (sub) sub.textContent = ds;
   const entry = getJournalEntry(ds) || {};
-  // Pre
+
+  // PRE — pola podstawowe
   setFieldVal('journal-pre-plan', entry.prePlan||'');
   setFieldVal('journal-pre-goal', entry.preGoal||'');
+  setFieldVal('journal-pre-loss-limit', entry.preLossLimit||'');
+  setFieldVal('journal-pre-intention', entry.preIntention||'');
+  setFieldVal('journal-pre-calendar-notes', entry.preCalendarNotes||'');
+  setFieldVal('journal-pre-instruments', entry.preInstruments||'');
+  setFieldVal('journal-pre-levels', entry.preLevels||'');
+
   const focusEl = document.getElementById('journal-pre-focus');
   if (focusEl) { focusEl.value = entry.preFocus||5; document.getElementById('journal-pre-focus-val').textContent = entry.preFocus||5; }
-  // Post
+
+  // PRE — przyciski opt
+  const _restoreOpt = (fieldSuffix, val) => {
+    const input = document.getElementById('journal-' + fieldSuffix);
+    if (input && val) {
+      input.value = val;
+      const group = input.closest('.journal-step-body');
+      if (group) {
+        group.querySelectorAll('[onclick*="setJournalBtn(\'' + fieldSuffix + '\'"]').forEach(b => {
+          const m = b.getAttribute('onclick').match(/'([^']+)',\s*'([^']+)'\)/);
+          if (m && m[1] === val) b.classList.add('active');
+        });
+      }
+    }
+  };
+  // Restore opt buttons via hidden inputs
+  ['pre-sleep','pre-energy','pre-calendar','pre-bias','pre-exercise'].forEach(f => {
+    const stored = entry[f.replace('-','').replace(/-(.)/g, (_,c)=>c.toUpperCase())] || entry[f] || '';
+    const input = document.getElementById('journal-' + f);
+    if (input && stored) {
+      input.value = stored;
+      document.querySelectorAll('[onclick*="' + f + '"]').forEach(b => {
+        const raw = b.getAttribute('onclick') || '';
+        const m = raw.match(/setJournalBtn\('[^']+',this,'([^']+)'/);
+        if (m && m[1] === stored) b.classList.add('active');
+      });
+    }
+  });
+
+  // Readiness
+  if (entry.preReadiness) {
+    const input = document.getElementById('journal-pre-readiness');
+    if (input) input.value = entry.preReadiness;
+    const btn = document.getElementById('jread-' + entry.preReadiness);
+    if (btn) btn.classList.add('active');
+    if (entry.preReadiness === 'no') {
+      const w = document.getElementById('journal-readiness-warning');
+      if (w) w.style.display = 'block';
+    }
+  }
+
+  // POST — pola podstawowe
   setFieldVal('journal-post-review', entry.postReview||'');
   setFieldVal('journal-post-learning', entry.postLearning||'');
+  setFieldVal('journal-post-change', entry.postChange||'');
+  setFieldVal('journal-post-tomorrow', entry.postTomorrow||'');
+
   const ratingEl = document.getElementById('journal-post-rating');
   if (ratingEl) { ratingEl.value = entry.postRating||5; document.getElementById('journal-post-rating-val').textContent = entry.postRating||5; }
-  // Moody
+  const decisionEl = document.getElementById('journal-post-decision');
+  if (decisionEl) { decisionEl.value = entry.postDecisionRating||5; document.getElementById('journal-post-decision-val').textContent = entry.postDecisionRating||5; }
+
+  // POST — opt buttons
+  ['post-plan-followed','post-limit-broken','post-impulsive'].forEach(f => {
+    const stored = entry[f] || '';
+    const input = document.getElementById('journal-' + f);
+    if (input && stored) {
+      input.value = stored;
+      document.querySelectorAll('[onclick*="' + f + '"]').forEach(b => {
+        const raw = b.getAttribute('onclick') || '';
+        const m = raw.match(/setJournalBtn\('[^']+',this,'([^']+)'/);
+        if (m && m[1] === stored) b.classList.add('active');
+      });
+    }
+  });
+
+  // Nastroje
   setJournalMoodDisplay('pre', entry.preMood||0);
   setJournalMoodDisplay('post', entry.postMood||0);
+
+  // Wyniki dnia
+  renderJournalPostDayStats(ds);
+
+  // Progress
+  updateJournalPreProgress();
+  updateJournalPostProgress();
 }
 
 function setFieldVal(id, val) { const el = document.getElementById(id); if (el) el.value = val; }
@@ -13942,6 +14436,8 @@ function setJournalMood(type, val, btn) {
   const lbl = document.getElementById('journal-'+type+'-mood-val');
   const labels = {1:'Bardzo zły',2:'Zły',3:'Neutralny',4:'Dobry',5:'Świetny'};
   if (lbl) lbl.textContent = '— ' + (labels[val]||'');
+  if (type === 'pre') updateJournalPreProgress();
+  else updateJournalPostProgress();
 }
 
 function setJournalMoodDisplay(type, val) {
@@ -13959,21 +14455,42 @@ function getJournalMood(type) {
 }
 
 function saveJournalEntry() {
+  const g = id => document.getElementById(id)?.value || '';
   const entry = {
-    date:         _jSelectedDate,
-    preMood:      getJournalMood('pre'),
-    preFocus:     parseInt(document.getElementById('journal-pre-focus')?.value)||5,
-    prePlan:      document.getElementById('journal-pre-plan')?.value||'',
-    preGoal:      document.getElementById('journal-pre-goal')?.value||'',
-    postMood:     getJournalMood('post'),
-    postReview:   document.getElementById('journal-post-review')?.value||'',
-    postLearning: document.getElementById('journal-post-learning')?.value||'',
-    postRating:   parseInt(document.getElementById('journal-post-rating')?.value)||5,
-    updatedAt:    Date.now(),
+    date:              _jSelectedDate,
+    // PRE
+    preMood:           getJournalMood('pre'),
+    preSleep:          g('journal-pre-sleep'),
+    preEnergy:         g('journal-pre-energy'),
+    preExercise:       g('journal-pre-exercise'),
+    preCalendar:       g('journal-pre-calendar'),
+    preCalendarNotes:  g('journal-pre-calendar-notes'),
+    preInstruments:    g('journal-pre-instruments'),
+    preLevels:         g('journal-pre-levels'),
+    preBias:           g('journal-pre-bias'),
+    preFocus:          parseInt(g('journal-pre-focus'))||5,
+    prePlan:           g('journal-pre-plan'),
+    preGoal:           g('journal-pre-goal'),
+    preLossLimit:      parseFloat(g('journal-pre-loss-limit'))||null,
+    preReadiness:      g('journal-pre-readiness'),
+    preIntention:      g('journal-pre-intention'),
+    // POST
+    postMood:          getJournalMood('post'),
+    'post-plan-followed': g('journal-post-plan-followed'),
+    'post-limit-broken':  g('journal-post-limit-broken'),
+    'post-impulsive':     g('journal-post-impulsive'),
+    postReview:        g('journal-post-review'),
+    postLearning:      g('journal-post-learning'),
+    postChange:        g('journal-post-change'),
+    postDecisionRating:parseInt(g('journal-post-decision'))||5,
+    postRating:        parseInt(g('journal-post-rating'))||5,
+    postTomorrow:      g('journal-post-tomorrow'),
+    updatedAt:         Date.now(),
   };
   saveJournalEntryData(_jSelectedDate, entry);
   renderJournalCal();
-  toast('Wpis zapisany ✓', 'success');
+  updateJournalPreProgress();
+  updateJournalPostProgress();
 }
 
 function formatDatePL(ds) {

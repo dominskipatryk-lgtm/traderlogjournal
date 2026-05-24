@@ -1,155 +1,150 @@
 # TraderLogJournal — Raport Audytu + Plan Działania
-**Data:** 2026-05-24
+**Aktualizacja:** 2026-05-25
 
 ---
 
-## CZĘŚĆ 1 — BUGI DO NAPRAWY (przed nową wersją)
+## CZĘŚĆ 1 — CO ZOSTAŁO ZROBIONE ✅
 
-### Krytyczne (crash / utrata danych)
+### Bugi naprawione
+| # | Problem | Status |
+|---|---------|--------|
+| 1 | Brakujące HTML w modalu analizy (linked trade widget + `an-levels`) | ✅ |
+| 2 | `saveAnalysis()` nie zapisywał `strategyId/setupId/linkedTradeId` | ✅ |
+| 3 | `openEditAnalysis()` nie przywracał strategii/setupu | ✅ |
+| 4 | Filtr instrumentów w analizie pusty | ✅ |
+| 5 | Pole tekstowe Setup/Strategia — zbędne duplikowanie dropdownów | ✅ usunięte |
+| 6 | Sesja ginęła po odświeżeniu strony | ✅ Supabase refreshSession + 5h timer |
 
-| # | Problem | Efekt |
-|---|---------|-------|
-| 1 | Brak elementów HTML: `an-linked-trade-id`, `an-linked-trade`, `an-linked-trade-display`, `an-linked-clear` w modalu analizy | TypeError crash przy linkowaniu analizy z transakcją |
-| 2 | Brak pola `an-levels` w HTML | Kluczowe poziomy nigdy nie są zapisywane |
-| 3 | `saveAnalysis()` nie zapisuje `strategyId`, `setupId`, `linkedTradeId` | Strategia/setup zawsze puste po ponownym otwarciu analizy |
-| 4 | `openEditAnalysis()` nie przywraca strategii/setupu | Edycja analizy = brak strategii i setupu mimo że były przypisane |
-| 5 | Autosave analizy nie zapisuje `strategyId`/`setupId`/`linkedTradeId` | Draft po crashu nie ma powiązań |
-| 6 | `analysis-filter-instr` nie jest wypełniany unikalnymi symbolami | Filtr instrumentu zawsze pusty |
-
----
-
-## CZĘŚĆ 2 — WIZJA NOWEJ WERSJI
-
-### Czego trader potrzebuje każdego dnia:
-1. **Rano** — zapisać nastrój, plan sesji, co obserwujesz na rynku
-2. **Podczas** — zapisać transakcję (już jest), powiązać z analizą
-3. **Po tradzie** — ankieta post-trade: dlaczego wszedłeś, co czułeś, czy trzymałeś plan
-4. **Wieczorem** — wpis dzienny: co się stało, czego się nauczyłeś
-5. **Po tygodniu** — automatyczna ankieta: podsumowanie, motywacja, błędy tygodnia
-6. **Zawsze** — notatki swobodne (OneNote), strategie, screenshoty setupów
-
----
-
-## CZĘŚĆ 3 — PLAN DZIAŁANIA (FAZY)
-
-### FAZA 1 — Naprawa bugów (1 dzień)
-- [ ] Fix: brakujące HTML w modalu analizy (linked trade widget + `an-levels`)
-- [ ] Fix: `saveAnalysis()` + `openEditAnalysis()` — strategyId, setupId, linkedTradeId
-- [ ] Fix: autosave analizy — brakujące pola
-- [ ] Fix: filtr instrumentów w analizie — populacja unikalnymi symbolami
-
-### FAZA 2 — Full Redesign UI (nowy układ)
-**Cel:** jednolity wygląd, nowoczesny sidebar, spójny design system
-
-Nowa nawigacja (sidebar lewy):
-```
-📊 Dashboard
-📋 Transakcje       ← połączone z kalendarzem
-📔 Dziennik         ← NOWE (wpis dzienny + OneNote + weekly review)
-🔍 Analiza
-🎯 Narzędzia        (kalkulator, strategie, setupy)
-📊 Statystyki       (statystyki + analiza emocjonalna)
-⚙️ Ustawienia
-```
-
-Design system:
-- Ujednolicone karty (jeden styl dla wszystkich sekcji)
-- Spójne empty states
-- Spójne formularze (jeden system label + input)
-- Mobile responsive
-
-### FAZA 3 — Zakładka Dziennik (Nowe)
-
-#### 3a. Wpis Dzienny (Daily Entry)
-Każdy dzień ma:
-- **Rano (Pre-session):** nastrój (emoji skala), plan sesji (textarea), które pary obserwujesz, cel dnia, poziom skupienia 1–10
-- **Wieczorem (Post-session):** co się stało (textarea), czego się nauczyłeś, ocena dnia 1–10
-- **Status:** bez wpisu / rano wypełnione / dzień zamknięty
-
-#### 3b. OneNote-style Notatki
-- Zakładki/sekcje: Strategie, Setupy, Rynek, Przemyślenia, Inne
-- Notatka = tytuł + rich textarea + screenshoty + tagi
-- Wyszukiwarka pełnotekstowa
-- Pinowanie ważnych notatek
-
-#### 3c. Kalendarz (ulepszony)
-- Widok miesiąca z każdym dniem: P&L (kolor), emocja (emoji), liczba transakcji
-- Klik na dzień = panel: wpis dzienny + lista transakcji + notatki z tego dnia
-- Zakładka Transakcje może się przełączyć na widok kalendarza
-
-#### 3d. Weekly Review (Automatyczny)
-Wyzwalany w piątek wieczór lub ręcznie:
-1. Podsumowanie tygodnia (automatyczne: X transakcji, P&L, win rate)
-2. Pytania refleksji: "Co poszło dobrze?", "Co byś zmienił?", "Czy trzymałeś plan?", "Co Cię rozpraszało?"
-3. Ocena emocjonalna tygodnia
-4. Motywacyjne podsumowanie — trader widzi postęp, wysiłek, poprawę
-
-### FAZA 4 — Analiza Emocjonalna (Nowe)
-
-#### 4a. Ankieta post-trade
-Po zamknięciu każdej transakcji (lub ręcznie po otwarciu):
-- Dlaczego wszedłeś? (plan / impuls / FOMO / revenge)
-- Jak się czułeś? (spokojny / podekscytowany / zestresowany / zmęczony)
-- Czy trzymałeś swój plan? (tak / nie / częściowo)
-- Czy zmieniłeś SL/TP podczas trwania? (tak / nie)
-- Ocena jakości decyzji 1–5
-
-#### 4b. Analiza i Wykresy Emocji (w Statystykach)
-- **Emocje vs P&L** — wykres słupkowy: gdy grasz spokojny vs zestresowany — ile zarabiasz
-- **Overtrading Alert** — po X transakcjach w jednej sesji / po X stratach z rzędu — popup STOP
-- **Revenge Trading Detektor** — wejście < 15 min po zamknięciu stratnej transakcji → ostrzeżenie
-- **Heatmapa godzin** — o której godzinie Twoje wyniki są najgorsze (emocje + P&L)
-- **Wykres konsekwencji planu** — jak często trzymasz plan vs jak wpływa to na P&L
-- **Postęp w czasie** — poprawa jakości decyzji miesiąc po miesiącu
-
-#### 4c. Weekly Review Score
-Automatyczny wskaźnik zdrowia psychicznego tradera:
-- Consistency Score — czy trzymasz strategię
-- Discipline Score — czy unikasz impulsów
-- Learning Score — czy wracasz do błędów
-- Trend poprawy — po 4 tygodniach widać progres
-
-### FAZA 5 — Integracja MT4 + Wskaźniki (po dodaniu 2 nowych)
-- All-in-one wskaźnik MQL4 łączący SMC + SR_HVB + nowe 2
-- Sygnały kupna/sprzedaży z MTF
-- Automatyczne wypełnianie ankiety post-trade z danych EA
+### Zbudowane funkcje
+| Funkcja | Status |
+|---------|--------|
+| Redesign UI — nowy sidebar, dark/light mode, design system | ✅ |
+| Rutyna dnia — "Przed sesją" po logowaniu, "Po sesji" przy wylogowaniu | ✅ |
+| Sesja 5h z ostrzeżeniem 1h przed końcem | ✅ |
+| Dziennik — wpis dzienny (rano/wieczór), notatki OneNote, tygodniowy przegląd | ✅ |
+| Tygodniowy przegląd — 8 bloków: KPI, dni, transakcje, analizy, auto-analiza, krytyczne zachowania, refleksja, motywacja | ✅ |
+| Walidacja emocji — wymagane przy zapisie transakcji (pre zawsze, post przy closed) | ✅ |
+| Post-trade terminal — EA zamknięcie → banner 30s → modal z wypełnieniem wniosków | ✅ |
+| Konto bot vs ręczny — toggle w formularzu, boty bez wymogu emocji | ✅ |
+| Analiza w transakcji — pełny opis + screenshots z analizy widoczne w karcie | ✅ |
+| Detektor krytycznych zachowań — FOMO, revenge, overtrading, handel bez dziennika | ✅ |
+| Linkowanie analiza↔transakcja — searchable autocomplete, one-click assign | ✅ |
+| MT4 EA — OPEN/CLOSE/MODIFY, dźwięk, notyfikacje | ✅ |
 
 ---
 
-## CZĘŚĆ 4 — ARCHITEKTURA DANYCH (nowe klucze)
+## CZĘŚĆ 2 — CO ZOSTAŁO DO ZROBIENIA
+
+### FAZA A — Deploy (5 minut)
+- [ ] Skopiować `preview.html` → `index.html` i wdrożyć na produkcję
+
+### FAZA B — Analiza Emocjonalna — wykresy (Zadanie #7)
+- [ ] **Wykres Emocje vs P&L** — słupki poziome: każda emocja → średni P&L + winrate
+- [ ] **Overtrading Alert na żywo** — popup STOP po X transakcjach dziennie lub X stratach z rzędu (konfigurowalny)
+- [ ] **Heatmapa godzin** — siatka 24h × 5 dni, kolor = P&L, emoji = dominująca emocja
+- [ ] **Wykres konsekwencji planu** — % dni "trzymałem plan" vs wyniki finansowe
+- [ ] **Trend jakości decyzji** — miesięczny wykres poprawy / pogorszenia
+
+### FAZA C — Reguły osobiste tradera (NOWE — PRIORYTET)
+- [ ] Trader definiuje własne reguły: "Nie wchodzę po 3 stratach", "Max 2% ryzyko", "Stop o 16:00"
+- [ ] Przy zapisie transakcji: sprawdź czy nie złamał reguły → pytanie potwierdzające
+- [ ] W tygodniowym przeglądzie: ile reguł złamał i które
+- [ ] Badge "❌ Reguła złamana" widoczny na karcie transakcji
+
+### FAZA D — Jakość życia → jakość tradingu (NOWE)
+- [ ] **Sen i energia** w wpisie dziennym: ile spałem, poziom energii, czy ćwiczyłem
+- [ ] **Korelacja sen/energia vs wyniki** w statystykach: "Gdy śpisz <6h Twój winrate spada o X%"
+- [ ] **Rytuał pre-session rozbudowany**: czy sprawdziłem kalendarz ekonomiczny, kluczowe poziomy, limit strat na dziś
+- [ ] Odpowiedź "Nie jestem w dobrej formie" → aplikacja pyta "Czy na pewno chcesz dziś handlować?"
+
+### FAZA E — Biblioteka (Zadanie #8)
+- [ ] Admin uploaduje PDF / MQ4 / screenshoty strategii
+- [ ] Użytkownik przegląda i pobiera materiały
+- [ ] Import wskaźnika MQ4 bezpośrednio z biblioteki
+
+### FAZA F — Profil psychologiczny tradera (NOWE — długoterminowo)
+- [ ] Po 30 dniach danych: automatyczny raport "kim jesteś jako trader"
+- [ ] Trigger patterns: "Wchodzisz po silnym ruchu bez korekty", "FOMO w poniedziałki"
+- [ ] Mocne strony: "Trzymasz SL lepiej niż 80% traderów"
+- [ ] Nad czym pracować: top 3 wzorce do zmiany
+- [ ] Porównanie miesiąc do miesiąca — widoczny progres
+
+### FAZA G — Inteligentne przypomnienia (NOWE)
+- [ ] Poniedziałek rano → "Zacznij tydzień od planu"
+- [ ] Piątek 16:00 → "Czas na weekly review"
+- [ ] Po 3 stratach z rzędu → "Twój winrate po 3 stratach to X% — rozważasz przerwę?"
+- [ ] Brak wpisu dziennego 3 dni → "Dziennik czeka — wróć do rutyny"
+
+### FAZA H — Miesięczny raport (NOWE)
+- [ ] Auto-generowany raport PDF na koniec miesiąca
+- [ ] Wyniki finansowe, najczęstsze emocje, najlepsze setupy
+- [ ] Postęp w dyscyplinie: % dni z dziennikiem, % tygodni z przeglądem
+- [ ] Jedno zdanie motywacyjne oparte na danych
+
+### FAZA I — All-in-one wskaźnik MQL4
+- [ ] Połączyć SMC + SR_HVB + 2 nowe wskaźniki w jeden plik
+- [ ] Sygnały kupna/sprzedaży z MTF
+- [ ] Automatyczne wypełnianie emocji z danych EA (jeśli skonfigurowane)
+
+---
+
+## CZĘŚĆ 3 — WIZJA (dlaczego to ważne)
+
+> Trading to nie tylko transakcje, zyski i straty — to życie codzienne.
+> Każdy trader ma wzorce zachowań, które nim kierują. Część pozytywna, część destruktywna.
+> Ta aplikacja ma pokazać każdemu jego własne wzorce na podstawie danych — nie teorii.
+
+**Trzy filary:**
+1. **Rutyna** — dziennik buduje nawyk, nawyk buduje dyscyplinę
+2. **Psychologia** — dane pokazują co cię napędza i co cię blokuje
+3. **Wiedza** — fundamenty, strategie, notatki jako baza do której wracasz
+
+**Efekt po 90 dniach używania:**
+- Trader wie o której godzinie gra najgorzej
+- Wie jakie emocje go kosztują pieniądze
+- Widzi czy sen i forma fizyczna wpływają na decyzje
+- Ma dowody na to gdzie rośnie i gdzie stoi w miejscu
+
+---
+
+## CZĘŚĆ 4 — ARCHITEKTURA DANYCH
 
 ```
 // Istniejące
-db.accounts[loginKey]
-db.trades[loginKey + '_' + accountId]
-db.analyses_[user]_[accountId]
-db.strategies_[user]
-db.setups_[strategyId]
+db.accounts[loginKey]                        — konta tradingowe
+db.trades[loginKey + '_' + accountId]        — transakcje
+db.analyses_[user]_[accountId]              — analizy rynkowe
+db.strategies_[user]                         — strategie
+db.setups_[strategyId]                       — setupy
 
-// Nowe
-db.journal_[user]_[YYYY-MM-DD]     — wpis dzienny
-db.notes_[user]                    — notatki OneNote
-db.weekly_[user]_[YYYY-WXX]       — weekly review
-db.post_trade_survey_[user]        — ankiety post-trade
+// Zaimplementowane
+db.journal_[user]_[YYYY-MM-DD]              — wpis dzienny
+db.notes_[user]                             — notatki OneNote
+db.weekly_[user]_[YYYY-WXX]                — weekly review
+
+// Do zaimplementowania
+db.rules_[user]                             — reguły osobiste tradera
+db.monthly_[user]_[YYYY-MM]               — miesięczny raport
+db.profile_[user]                           — profil psychologiczny (cache)
 ```
-
-**Uwaga:** Rozważyć przeniesienie analiz na klucz globalny `analyses_[user]` zamiast per konto — trader często analizuje te same pary na różnych kontach.
 
 ---
 
 ## CZĘŚĆ 5 — PRIORYTETY (kolejność pracy)
 
-| Kolejność | Zadanie | Czas szacowany |
-|-----------|---------|----------------|
-| 1 | Naprawa 6 bugów (Faza 1) | ~2h |
-| 2 | Full redesign — sidebar + design system (Faza 2) | ~1 dzień |
-| 3 | Ulepszony kalendarz + połączenie z transakcjami | ~4h |
-| 4 | Zakładka Dziennik: wpis dzienny + notatki | ~6h |
-| 5 | Ankieta post-trade | ~3h |
-| 6 | Weekly Review | ~4h |
-| 7 | Analiza emocjonalna — wykresy i alerty | ~6h |
-| 8 | All-in-one wskaźnik MQL4 | po dodaniu 2 nowych plików |
+| # | Zadanie | Czas | Wartość |
+|---|---------|------|---------|
+| 1 | Deploy preview.html → index.html | 5 min | 🔴 Krytyczne |
+| 2 | Wykres Emocje vs P&L + Overtrading Alert | ~4h | 🔴 Wysoka |
+| 3 | Reguły osobiste tradera | ~3h | 🔴 Wysoka |
+| 4 | Sen/energia w dzienniku + korelacja | ~3h | 🟡 Średnia |
+| 5 | Heatmapa godzin + trend jakości decyzji | ~3h | 🟡 Średnia |
+| 6 | Biblioteka strategii | ~4h | 🟡 Średnia |
+| 7 | Inteligentne przypomnienia | ~2h | 🟡 Średnia |
+| 8 | Profil psychologiczny tradera | ~6h | 🟢 Długoterm. |
+| 9 | Miesięczny raport PDF | ~5h | 🟢 Długoterm. |
+| 10 | All-in-one wskaźnik MQL4 | po nowych plikach | 🟢 Długoterm. |
 
 ---
 
-*Raport: 2026-05-24 | TraderLogJournal*
+*Aktualizacja: 2026-05-25 | TraderLogJournal — 204 commity, ~570KB codebase*
