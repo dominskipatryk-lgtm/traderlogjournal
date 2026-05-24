@@ -862,6 +862,36 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 }
 .skip-link:focus { top: 0; }
 
+/* ======= JOURNAL ======= */
+.mood-btn {
+  background: var(--bg3); border: 1px solid var(--border); border-radius: 8px;
+  padding: 6px 12px; font-size: 20px; cursor: pointer; transition: all .15s;
+}
+.mood-btn:hover { border-color: var(--accent); background: var(--accent-dim); }
+.mood-btn.selected { border-color: var(--accent); background: var(--accent-dim); transform: scale(1.15); }
+.note-item {
+  padding: 10px 12px; border-radius: 8px; background: var(--bg3); border: 1px solid var(--border);
+  cursor: pointer; transition: all .15s; border-left: 3px solid transparent;
+}
+.note-item:hover { border-color: var(--border2); background: var(--bg4); }
+.note-item.active { border-left-color: var(--accent); background: var(--accent-dim); }
+.note-item-title { font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.note-item-meta { font-size: 10px; color: var(--text3); margin-top: 2px; }
+.jcal-day {
+  aspect-ratio: 1; border-radius: 6px; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; cursor: pointer; font-size: 11px;
+  transition: all .15s; background: var(--bg3); border: 1px solid transparent;
+  position: relative;
+}
+.jcal-day:hover { border-color: var(--accent); }
+.jcal-day.today { border-color: var(--accent); color: var(--accent); font-weight: 700; }
+.jcal-day.selected { background: var(--accent-dim); border-color: var(--accent); }
+.jcal-day.has-entry::after { content:''; position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--accent); }
+.jcal-day.full-entry { background: rgba(0,212,161,.1); }
+.jcal-day.other-month { opacity: .3; }
+.weekly-plan-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
+.notes-cat-btn.active { background: var(--accent-dim) !important; color: var(--accent) !important; border-color: var(--accent) !important; }
+
 /* ======= RESPONSYWNOŚĆ MOBILE ======= */
 @media (max-width: 1024px) {
   .sidebar { width: 200px; min-width: 200px; }
@@ -2098,15 +2128,247 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
       </div>
     </div>
 
-    <!-- JOURNAL PAGE (placeholder — pełna implementacja w Task 6) -->
+    <!-- JOURNAL PAGE -->
     <div id="page-journal" class="page">
-      <div class="page-title">📔 Dziennik Tradera</div>
-      <div class="page-subtitle">Wpis dzienny, notatki, tygodniowy przegląd</div>
-      <div style="text-align:center;padding:60px 20px;color:var(--text3)">
-        <div style="font-size:48px;margin-bottom:16px">📔</div>
-        <div style="font-size:16px;font-weight:600;margin-bottom:8px">Dziennik w budowie</div>
-        <div style="font-size:13px">Wkrótce: wpis dzienny, notatki OneNote, tygodniowy przegląd</div>
+      <!-- Zakładki -->
+      <div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:24px">
+        <button class="journal-tab active" id="jtab-daily" onclick="switchJournalTab('daily')"
+          style="padding:10px 20px;background:none;border:none;color:var(--text);font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid var(--accent);margin-bottom:-2px">
+          📅 Wpis Dzienny
+        </button>
+        <button class="journal-tab" id="jtab-notes" onclick="switchJournalTab('notes')"
+          style="padding:10px 20px;background:none;border:none;color:var(--text3);font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px">
+          📝 Notatki
+        </button>
+        <button class="journal-tab" id="jtab-weekly" onclick="switchJournalTab('weekly')"
+          style="padding:10px 20px;background:none;border:none;color:var(--text3);font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px">
+          📋 Tygodniowy Przegląd
+        </button>
       </div>
+
+      <!-- TAB: Wpis Dzienny -->
+      <div id="journal-tab-daily">
+        <div style="display:grid;grid-template-columns:280px 1fr;gap:20px;align-items:start">
+          <!-- Mini-kalendarz -->
+          <div class="summary-card" style="position:sticky;top:70px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+              <button onclick="journalCalNav(-1)" class="btn-sm" style="padding:4px 10px;font-size:12px">‹</button>
+              <div id="jcal-label" style="font-family:var(--font-head);font-size:14px;font-weight:700"></div>
+              <button onclick="journalCalNav(1)" class="btn-sm" style="padding:4px 10px;font-size:12px">›</button>
+            </div>
+            <div id="jcal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;font-size:11px;text-align:center"></div>
+            <div style="margin-top:10px;font-size:10px;color:var(--text3);display:flex;gap:8px;flex-wrap:wrap">
+              <span>🟢 Wpis poranny</span><span>🟡 Częściowy</span><span>✅ Kompletny</span>
+            </div>
+          </div>
+
+          <!-- Formularz wpisu -->
+          <div id="journal-entry-form">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+              <div>
+                <div class="page-title" style="font-size:20px;margin-bottom:2px" id="journal-entry-date-label">Dziś</div>
+                <div style="font-size:12px;color:var(--text3)" id="journal-entry-date-sub"></div>
+              </div>
+              <div style="display:flex;gap:8px">
+                <button class="btn-sm" onclick="journalSelectToday()" style="font-size:11px">Dziś</button>
+                <button class="btn-sm btn-accent" onclick="saveJournalEntry()" style="font-size:12px">💾 Zapisz</button>
+              </div>
+            </div>
+
+            <!-- PRZED SESJĄ -->
+            <div class="summary-card" style="margin-bottom:16px">
+              <div class="summary-card-title" style="color:var(--amber);margin-bottom:14px">🌅 Przed sesją</div>
+              <div style="display:grid;gap:12px">
+
+                <div>
+                  <label style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Nastrój <span id="journal-pre-mood-val" style="color:var(--accent)"></span></label>
+                  <div style="display:flex;gap:6px" id="journal-pre-mood-btns">
+                    <button onclick="setJournalMood('pre',1,this)" class="mood-btn" data-val="1" title="Bardzo zły">😤</button>
+                    <button onclick="setJournalMood('pre',2,this)" class="mood-btn" data-val="2" title="Zły">😕</button>
+                    <button onclick="setJournalMood('pre',3,this)" class="mood-btn" data-val="3" title="Neutralny">😐</button>
+                    <button onclick="setJournalMood('pre',4,this)" class="mood-btn" data-val="4" title="Dobry">😊</button>
+                    <button onclick="setJournalMood('pre',5,this)" class="mood-btn" data-val="5" title="Świetny">😄</button>
+                  </div>
+                </div>
+
+                <div>
+                  <label style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Poziom skupienia: <span id="journal-pre-focus-val" style="color:var(--accent)">5</span>/10</label>
+                  <input type="range" id="journal-pre-focus" min="1" max="10" value="5" oninput="document.getElementById('journal-pre-focus-val').textContent=this.value"
+                    style="width:100%;accent-color:var(--accent)">
+                </div>
+
+                <div>
+                  <label style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Plan sesji / Co obserwujesz?</label>
+                  <textarea id="journal-pre-plan" class="form-input-modal" style="min-height:80px;line-height:1.7"
+                    placeholder="Jakie pary/instrumenty obserwujesz? Jakie poziomy kluczowe? Czego unikasz?"></textarea>
+                </div>
+
+                <div>
+                  <label style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Cel dnia</label>
+                  <input id="journal-pre-goal" class="form-input-modal" placeholder="np. Żaden trade powyżej 1% ryzyka, 0 revenge trades">
+                </div>
+              </div>
+            </div>
+
+            <!-- PO SESJI -->
+            <div class="summary-card">
+              <div class="summary-card-title" style="color:var(--accent);margin-bottom:14px">🌙 Po sesji</div>
+              <div style="display:grid;gap:12px">
+
+                <div>
+                  <label style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Nastrój po sesji <span id="journal-post-mood-val" style="color:var(--accent)"></span></label>
+                  <div style="display:flex;gap:6px" id="journal-post-mood-btns">
+                    <button onclick="setJournalMood('post',1,this)" class="mood-btn" data-val="1" title="Bardzo zły">😤</button>
+                    <button onclick="setJournalMood('post',2,this)" class="mood-btn" data-val="2" title="Zły">😕</button>
+                    <button onclick="setJournalMood('post',3,this)" class="mood-btn" data-val="3" title="Neutralny">😐</button>
+                    <button onclick="setJournalMood('post',4,this)" class="mood-btn" data-val="4" title="Dobry">😊</button>
+                    <button onclick="setJournalMood('post',5,this)" class="mood-btn" data-val="5" title="Świetny">😄</button>
+                  </div>
+                </div>
+
+                <div>
+                  <label style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Co się działo? (podsumowanie dnia)</label>
+                  <textarea id="journal-post-review" class="form-input-modal" style="min-height:100px;line-height:1.7"
+                    placeholder="Jakie transakcje wziąłeś? Co poszło dobrze? Co poszło źle?"></textarea>
+                </div>
+
+                <div>
+                  <label style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Czego się nauczyłeś / co zmieniasz jutro?</label>
+                  <textarea id="journal-post-learning" class="form-input-modal" style="min-height:70px;line-height:1.7"
+                    placeholder="Wnioski, błędy do naprawienia, co robisz inaczej..."></textarea>
+                </div>
+
+                <div>
+                  <label style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Ocena dnia: <span id="journal-post-rating-val" style="color:var(--accent)">5</span>/10</label>
+                  <input type="range" id="journal-post-rating" min="1" max="10" value="5" oninput="document.getElementById('journal-post-rating-val').textContent=this.value"
+                    style="width:100%;accent-color:var(--accent)">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: Notatki -->
+      <div id="journal-tab-notes" style="display:none">
+        <div style="display:grid;grid-template-columns:240px 1fr;gap:20px;align-items:start;min-height:600px">
+          <!-- Sidebar notatek -->
+          <div>
+            <div style="display:flex;gap:6px;margin-bottom:12px">
+              <button class="btn-sm btn-accent" onclick="openNewNote()" style="flex:1;font-size:12px">+ Nowa notatka</button>
+            </div>
+            <input class="form-input-modal" id="notes-search" placeholder="🔍 szukaj notatek..." oninput="renderNotesList()" style="margin-bottom:10px;font-size:12px">
+            <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px" id="notes-category-filters">
+              <button class="notes-cat-btn active" data-cat="" onclick="setNotesCat(this,'')" style="padding:3px 8px;border-radius:6px;font-size:11px;border:1px solid var(--border);background:var(--accent-dim);color:var(--accent);cursor:pointer">Wszystkie</button>
+              <button class="notes-cat-btn" data-cat="strategy" onclick="setNotesCat(this,'strategy')" style="padding:3px 8px;border-radius:6px;font-size:11px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);cursor:pointer">🎯 Strategie</button>
+              <button class="notes-cat-btn" data-cat="setup" onclick="setNotesCat(this,'setup')" style="padding:3px 8px;border-radius:6px;font-size:11px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);cursor:pointer">📐 Setupy</button>
+              <button class="notes-cat-btn" data-cat="market" onclick="setNotesCat(this,'market')" style="padding:3px 8px;border-radius:6px;font-size:11px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);cursor:pointer">📊 Rynek</button>
+              <button class="notes-cat-btn" data-cat="thoughts" onclick="setNotesCat(this,'thoughts')" style="padding:3px 8px;border-radius:6px;font-size:11px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);cursor:pointer">💭 Przemyślenia</button>
+              <button class="notes-cat-btn" data-cat="other" onclick="setNotesCat(this,'other')" style="padding:3px 8px;border-radius:6px;font-size:11px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);cursor:pointer">📁 Inne</button>
+            </div>
+            <div id="notes-list" style="display:flex;flex-direction:column;gap:4px;max-height:600px;overflow-y:auto"></div>
+          </div>
+
+          <!-- Edytor notatki -->
+          <div class="summary-card" id="note-editor" style="min-height:500px">
+            <div id="note-editor-empty" style="text-align:center;padding:60px 20px;color:var(--text3)">
+              <div style="font-size:36px;margin-bottom:10px">📝</div>
+              <div style="font-size:14px;font-weight:600;margin-bottom:6px">Wybierz notatkę lub utwórz nową</div>
+              <div style="font-size:12px">Twoje notatki są przechowywane lokalnie</div>
+            </div>
+            <div id="note-editor-content" style="display:none">
+              <input type="hidden" id="note-id">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+                <input id="note-title" class="form-input-modal" placeholder="Tytuł notatki..." style="flex:1;font-size:15px;font-weight:600">
+                <select id="note-category" class="form-select-modal" style="font-size:12px;width:auto">
+                  <option value="strategy">🎯 Strategie</option>
+                  <option value="setup">📐 Setupy</option>
+                  <option value="market">📊 Rynek</option>
+                  <option value="thoughts">💭 Przemyślenia</option>
+                  <option value="other">📁 Inne</option>
+                </select>
+                <button onclick="toggleNotePin()" id="note-pin-btn" class="btn-sm" title="Przypnij" style="font-size:13px;padding:5px 10px">📌</button>
+                <button onclick="deleteCurrentNote()" class="btn-sm" style="color:var(--red);border-color:var(--red);font-size:12px">🗑</button>
+                <button onclick="saveCurrentNote()" class="btn-sm btn-accent" style="font-size:12px">💾 Zapisz</button>
+              </div>
+              <div style="margin-bottom:8px">
+                <input id="note-tags" class="form-input-modal" placeholder="Tagi: oddziel przecinkiem (np. XAUUSD, SMC, setup)" style="font-size:12px">
+              </div>
+              <textarea id="note-content" class="form-input-modal" style="min-height:340px;line-height:1.8;font-size:14px"
+                placeholder="Pisz swoje notatki... Możesz używać # nagłówków, - list, **pogrubienia**"></textarea>
+              <div style="margin-top:10px">
+                <div style="font-size:11px;color:var(--text3);margin-bottom:6px">Screenshoty</div>
+                <div id="note-screenshots-preview" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
+                <label style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--accent);padding:5px 10px;border:1px dashed var(--accent);border-radius:8px">
+                  📎 Dodaj screenshot
+                  <input type="file" accept="image/*" multiple style="display:none" onchange="noteAddScreenshots(this)">
+                </label>
+              </div>
+              <div style="margin-top:10px;font-size:11px;color:var(--text3)" id="note-saved-at"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: Tygodniowy Przegląd -->
+      <div id="journal-tab-weekly" style="display:none">
+        <div style="max-width:760px">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+            <button onclick="weeklyNav(-1)" class="btn-sm" style="padding:5px 12px">← Poprzedni</button>
+            <div id="weekly-label" style="font-family:var(--font-head);font-size:16px;font-weight:700;flex:1;text-align:center"></div>
+            <button onclick="weeklyNav(1)" class="btn-sm" style="padding:5px 12px">Następny →</button>
+          </div>
+
+          <!-- Auto podsumowanie tygodnia -->
+          <div class="summary-card" style="margin-bottom:16px" id="weekly-auto-summary">
+            <div class="summary-card-title" style="color:var(--accent)">📊 Automatyczne podsumowanie</div>
+            <div id="weekly-stats-content" style="margin-top:12px"></div>
+          </div>
+
+          <!-- Pytania refleksji -->
+          <div class="summary-card">
+            <div class="summary-card-title" style="color:var(--amber);margin-bottom:16px">💭 Refleksja tygodniowa</div>
+            <div style="display:flex;flex-direction:column;gap:16px">
+              <div>
+                <label style="font-size:12px;font-weight:700;color:var(--text);display:block;margin-bottom:6px">✅ Co poszło dobrze w tym tygodniu?</label>
+                <textarea id="weekly-q1" class="form-input-modal" style="min-height:80px;line-height:1.7" placeholder="Twoje sukcesy, dobre decyzje, momenty kiedy trzymałeś plan..."></textarea>
+              </div>
+              <div>
+                <label style="font-size:12px;font-weight:700;color:var(--text);display:block;margin-bottom:6px">❌ Co poszło źle / co byś zmienił?</label>
+                <textarea id="weekly-q2" class="form-input-modal" style="min-height:80px;line-height:1.7" placeholder="Błędy, emocjonalne decyzje, złamane zasady..."></textarea>
+              </div>
+              <div>
+                <label style="font-size:12px;font-weight:700;color:var(--text);display:block;margin-bottom:6px">📌 Główny wniosek na przyszły tydzień</label>
+                <textarea id="weekly-q3" class="form-input-modal" style="min-height:70px;line-height:1.7" placeholder="Jedna konkretna zmiana którą wprowadzasz..."></textarea>
+              </div>
+              <div>
+                <label style="font-size:12px;font-weight:700;color:var(--text);display:block;margin-bottom:6px">🎯 Czy trzymałeś swój plan tradingowy?</label>
+                <div style="display:flex;gap:8px">
+                  <button onclick="setWeeklyPlan('yes',this)" class="weekly-plan-btn btn-sm" style="flex:1">✅ Tak, konsekwentnie</button>
+                  <button onclick="setWeeklyPlan('partial',this)" class="weekly-plan-btn btn-sm" style="flex:1">⚠️ Częściowo</button>
+                  <button onclick="setWeeklyPlan('no',this)" class="weekly-plan-btn btn-sm" style="flex:1;color:var(--red)">❌ Nie trzymałem</button>
+                </div>
+              </div>
+              <div>
+                <label style="font-size:12px;font-weight:700;color:var(--text);display:block;margin-bottom:6px">Ocena tygodnia: <span id="weekly-rating-val" style="color:var(--accent)">5</span>/10</label>
+                <input type="range" id="weekly-rating" min="1" max="10" value="5" oninput="document.getElementById('weekly-rating-val').textContent=this.value" style="width:100%;accent-color:var(--accent)">
+              </div>
+            </div>
+          </div>
+
+          <!-- Motywacyjne podsumowanie -->
+          <div class="summary-card" id="weekly-motivation-card" style="margin-top:16px;background:linear-gradient(135deg,rgba(0,212,161,.08),rgba(79,158,255,.05));border-color:rgba(0,212,161,.2)">
+            <div id="weekly-motivation-content" style="text-align:center;padding:10px"></div>
+          </div>
+
+          <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px">
+            <button class="btn-sm" onclick="saveWeeklyReview()">💾 Zapisz przegląd</button>
+          </div>
+
+          <input type="hidden" id="weekly-plan-val">
+        </div>
+      </div>
+
     </div>
 
     <!-- EMOTIONS PAGE (placeholder — pełna implementacja w Task 7) -->
@@ -12794,6 +13056,452 @@ function resetRoutineToday() {
   localStorage.removeItem('_routine_shown_' + (state.currentUser||''));
   localStorage.removeItem('_routine_no_show_' + (state.currentUser||''));
   toast('Blokada zresetowana — Routine pojawi się przy następnym logowaniu', 'success');
+}
+
+// ===== JOURNAL =====
+
+// --- Data helpers ---
+function getJournalEntry(dateStr) {
+  const db = getDB();
+  return db['journal_' + (state.currentUser||'') + '_' + dateStr] || null;
+}
+function saveJournalEntryData(dateStr, entry) {
+  const db = getDB(); db['journal_' + (state.currentUser||'') + '_' + dateStr] = entry; saveDB(db);
+}
+function getNotes() {
+  const db = getDB();
+  return db['notes_' + (state.currentUser||'')] || [];
+}
+function saveNotes(arr) {
+  const db = getDB(); db['notes_' + (state.currentUser||'')] = arr; saveDB(db);
+}
+function getWeeklyReview(weekKey) {
+  const db = getDB();
+  return db['weekly_' + (state.currentUser||'') + '_' + weekKey] || null;
+}
+function saveWeeklyReviewData(weekKey, data) {
+  const db = getDB(); db['weekly_' + (state.currentUser||'') + '_' + weekKey] = data; saveDB(db);
+}
+function getWeekKey(date) {
+  const d = new Date(date); const jan1 = new Date(d.getFullYear(),0,1);
+  const week = Math.ceil(((d - jan1) / 86400000 + jan1.getDay() + 1) / 7);
+  return d.getFullYear() + '-W' + String(week).padStart(2,'0');
+}
+function getWeekDates(weekKey) {
+  const [y, w] = weekKey.split('-W').map(Number);
+  const jan1 = new Date(y,0,1); const dayOfWeek = jan1.getDay()||7;
+  const firstMonday = new Date(jan1.getTime() - (dayOfWeek-1)*86400000);
+  const monday = new Date(firstMonday.getTime() + (w-1)*7*86400000);
+  const sunday = new Date(monday.getTime() + 6*86400000);
+  return { monday, sunday };
+}
+
+// --- State ---
+let _jSelectedDate = new Date().toISOString().slice(0,10);
+let _jCalYear  = new Date().getFullYear();
+let _jCalMonth = new Date().getMonth();
+let _jCurrentNoteId = null;
+let _noteScreenshots = [];
+let _weeklyKey = getWeekKey(new Date());
+let _weeklyPlanVal = '';
+
+// --- Main render ---
+function renderJournal() {
+  renderJournalCal();
+  loadJournalEntryForm(_jSelectedDate);
+  renderNotesList();
+  renderWeeklyReview();
+}
+
+// --- Tab switching ---
+function switchJournalTab(tab) {
+  ['daily','notes','weekly'].forEach(t => {
+    const el = document.getElementById('journal-tab-' + t);
+    const btn = document.getElementById('jtab-' + t);
+    if (el) el.style.display = t === tab ? (t==='daily'?'grid':'block') : 'none';
+    if (btn) {
+      btn.style.color = t === tab ? 'var(--text)' : 'var(--text3)';
+      btn.style.borderBottomColor = t === tab ? 'var(--accent)' : 'transparent';
+    }
+  });
+  if (tab === 'notes') renderNotesList();
+  if (tab === 'weekly') renderWeeklyReview();
+}
+
+// ---- DAILY JOURNAL ----
+
+function renderJournalCal() {
+  const grid = document.getElementById('jcal-grid'); if (!grid) return;
+  const label = document.getElementById('jcal-label');
+  const monthNames = ['Styczeń','Luty','Marzec','Kwiecień','Maj','Czerwiec','Lipiec','Sierpień','Wrzesień','Październik','Listopad','Grudzień'];
+  if (label) label.textContent = monthNames[_jCalMonth] + ' ' + _jCalYear;
+  const today = new Date().toISOString().slice(0,10);
+  const firstDay = new Date(_jCalYear, _jCalMonth, 1);
+  const lastDay  = new Date(_jCalYear, _jCalMonth+1, 0);
+  const startDow = (firstDay.getDay()+6)%7; // Mon=0
+  let html = ['Pon','Wt','Śr','Czw','Pt','Sob','Nd'].map(d=>`<div style="font-size:9px;color:var(--text3);padding:2px 0;font-weight:700">${d}</div>`).join('');
+  for (let i=0;i<startDow;i++) html += `<div class="jcal-day other-month"></div>`;
+  for (let d=1;d<=lastDay.getDate();d++) {
+    const ds = _jCalYear+'-'+String(_jCalMonth+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    const entry = getJournalEntry(ds);
+    const isFull = entry && entry.postReview;
+    const hasEntry = entry && (entry.prePlan || entry.postReview);
+    const cls = ['jcal-day',
+      ds===today?'today':'', ds===_jSelectedDate?'selected':'',
+      hasEntry?'has-entry':'', isFull?'full-entry':''
+    ].filter(Boolean).join(' ');
+    const emoji = isFull ? (entry.postMood ? ['','😤','😕','😐','😊','😄'][entry.postMood] : '') : '';
+    html += `<div class="${cls}" onclick="selectJournalDate('${ds}')" title="${ds}">${d}${emoji?`<span style="font-size:9px;position:absolute;top:1px;right:2px">${emoji}</span>`:''}`;
+    html += `</div>`;
+  }
+  grid.innerHTML = html;
+}
+
+function journalCalNav(dir) {
+  _jCalMonth += dir;
+  if (_jCalMonth < 0) { _jCalMonth = 11; _jCalYear--; }
+  if (_jCalMonth > 11) { _jCalMonth = 0; _jCalYear++; }
+  renderJournalCal();
+}
+
+function selectJournalDate(ds) {
+  _jSelectedDate = ds; renderJournalCal(); loadJournalEntryForm(ds);
+}
+
+function journalSelectToday() {
+  const today = new Date();
+  _jSelectedDate = today.toISOString().slice(0,10);
+  _jCalYear = today.getFullYear(); _jCalMonth = today.getMonth();
+  renderJournalCal(); loadJournalEntryForm(_jSelectedDate);
+}
+
+function loadJournalEntryForm(ds) {
+  const label = document.getElementById('journal-entry-date-label');
+  const sub   = document.getElementById('journal-entry-date-sub');
+  const today = new Date().toISOString().slice(0,10);
+  if (label) label.textContent = ds === today ? 'Dziś' : formatDatePL(ds);
+  if (sub) sub.textContent = ds;
+  const entry = getJournalEntry(ds) || {};
+  // Pre
+  setFieldVal('journal-pre-plan', entry.prePlan||'');
+  setFieldVal('journal-pre-goal', entry.preGoal||'');
+  const focusEl = document.getElementById('journal-pre-focus');
+  if (focusEl) { focusEl.value = entry.preFocus||5; document.getElementById('journal-pre-focus-val').textContent = entry.preFocus||5; }
+  // Post
+  setFieldVal('journal-post-review', entry.postReview||'');
+  setFieldVal('journal-post-learning', entry.postLearning||'');
+  const ratingEl = document.getElementById('journal-post-rating');
+  if (ratingEl) { ratingEl.value = entry.postRating||5; document.getElementById('journal-post-rating-val').textContent = entry.postRating||5; }
+  // Moody
+  setJournalMoodDisplay('pre', entry.preMood||0);
+  setJournalMoodDisplay('post', entry.postMood||0);
+}
+
+function setFieldVal(id, val) { const el = document.getElementById(id); if (el) el.value = val; }
+
+function setJournalMood(type, val, btn) {
+  document.querySelectorAll('#journal-'+type+'-mood-btns .mood-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+  const lbl = document.getElementById('journal-'+type+'-mood-val');
+  const labels = {1:'Bardzo zły',2:'Zły',3:'Neutralny',4:'Dobry',5:'Świetny'};
+  if (lbl) lbl.textContent = '— ' + (labels[val]||'');
+}
+
+function setJournalMoodDisplay(type, val) {
+  document.querySelectorAll('#journal-'+type+'-mood-btns .mood-btn').forEach(b => {
+    b.classList.toggle('selected', parseInt(b.dataset.val)===val);
+  });
+  const lbl = document.getElementById('journal-'+type+'-mood-val');
+  const labels = {1:'Bardzo zły',2:'Zły',3:'Neutralny',4:'Dobry',5:'Świetny'};
+  if (lbl) lbl.textContent = val ? '— ' + (labels[val]||'') : '';
+}
+
+function getJournalMood(type) {
+  const selected = document.querySelector('#journal-'+type+'-mood-btns .mood-btn.selected');
+  return selected ? parseInt(selected.dataset.val) : 0;
+}
+
+function saveJournalEntry() {
+  const entry = {
+    date:         _jSelectedDate,
+    preMood:      getJournalMood('pre'),
+    preFocus:     parseInt(document.getElementById('journal-pre-focus')?.value)||5,
+    prePlan:      document.getElementById('journal-pre-plan')?.value||'',
+    preGoal:      document.getElementById('journal-pre-goal')?.value||'',
+    postMood:     getJournalMood('post'),
+    postReview:   document.getElementById('journal-post-review')?.value||'',
+    postLearning: document.getElementById('journal-post-learning')?.value||'',
+    postRating:   parseInt(document.getElementById('journal-post-rating')?.value)||5,
+    updatedAt:    Date.now(),
+  };
+  saveJournalEntryData(_jSelectedDate, entry);
+  renderJournalCal();
+  toast('Wpis zapisany ✓', 'success');
+}
+
+function formatDatePL(ds) {
+  if (!ds) return '';
+  const d = new Date(ds+'T00:00:00');
+  const days = ['Niedziela','Poniedziałek','Wtorek','Środa','Czwartek','Piątek','Sobota'];
+  return days[d.getDay()] + ', ' + d.toLocaleDateString('pl-PL', {day:'numeric',month:'long',year:'numeric'});
+}
+
+// ---- NOTES ----
+
+let _notesCat = '';
+
+function setNotesCat(btn, cat) {
+  _notesCat = cat;
+  document.querySelectorAll('.notes-cat-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderNotesList();
+}
+
+function renderNotesList() {
+  const el = document.getElementById('notes-list'); if (!el) return;
+  let notes = getNotes();
+  const q = (document.getElementById('notes-search')?.value||'').toLowerCase();
+  if (_notesCat) notes = notes.filter(n=>n.category===_notesCat);
+  if (q) notes = notes.filter(n=>(n.title+' '+n.content+' '+(n.tags||[]).join(' ')).toLowerCase().includes(q));
+  notes.sort((a,b) => (b.pinned?1:0)-(a.pinned?1:0) || b.updatedAt-a.updatedAt);
+  const CAT_ICONS = {strategy:'🎯',setup:'📐',market:'📊',thoughts:'💭',other:'📁'};
+  if (!notes.length) {
+    el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--text3);font-size:12px">${q?'Brak wyników':'Brak notatek — kliknij + Nowa'}</div>`;
+    return;
+  }
+  el.innerHTML = notes.map(n => `
+    <div class="note-item ${_jCurrentNoteId===n.id?'active':''}" onclick="openNote('${n.id}')">
+      <div class="note-item-title">${n.pinned?'📌 ':''}${CAT_ICONS[n.category]||'📝'} ${escHtml(n.title||'Bez tytułu')}</div>
+      <div class="note-item-meta">${new Date(n.updatedAt).toLocaleDateString('pl-PL')}${n.tags?.length?' · '+n.tags.slice(0,2).join(', '):''}</div>
+    </div>`).join('');
+}
+
+function openNewNote() {
+  _jCurrentNoteId = null; _noteScreenshots = [];
+  document.getElementById('note-id').value = '';
+  document.getElementById('note-title').value = '';
+  document.getElementById('note-content').value = '';
+  document.getElementById('note-tags').value = '';
+  document.getElementById('note-category').value = 'thoughts';
+  document.getElementById('note-pin-btn').textContent = '📌';
+  document.getElementById('note-saved-at').textContent = '';
+  renderNoteScreenshots();
+  document.getElementById('note-editor-empty').style.display = 'none';
+  document.getElementById('note-editor-content').style.display = 'block';
+  setTimeout(() => document.getElementById('note-title')?.focus(), 50);
+}
+
+function openNote(id) {
+  const notes = getNotes(); const n = notes.find(x=>x.id===id); if (!n) return;
+  _jCurrentNoteId = id;
+  _noteScreenshots = (n.screenshots||[]).map(s=>({id:genId(),dataUrl:s}));
+  document.getElementById('note-id').value = n.id;
+  document.getElementById('note-title').value = n.title||'';
+  document.getElementById('note-content').value = n.content||'';
+  document.getElementById('note-tags').value = (n.tags||[]).join(', ');
+  document.getElementById('note-category').value = n.category||'other';
+  document.getElementById('note-pin-btn').textContent = n.pinned ? '📌' : '📌';
+  document.getElementById('note-pin-btn').style.opacity = n.pinned ? '1' : '0.4';
+  document.getElementById('note-saved-at').textContent = 'Ostatnio zapisano: ' + new Date(n.updatedAt).toLocaleString('pl-PL');
+  renderNoteScreenshots();
+  document.getElementById('note-editor-empty').style.display = 'none';
+  document.getElementById('note-editor-content').style.display = 'block';
+  renderNotesList();
+}
+
+function saveCurrentNote() {
+  const title = document.getElementById('note-title')?.value?.trim();
+  if (!title && !document.getElementById('note-content')?.value?.trim()) { toast('Wpisz tytuł lub treść', 'error'); return; }
+  const notes = getNotes();
+  const id = _jCurrentNoteId || genId();
+  const existing = notes.find(n=>n.id===id);
+  const note = {
+    id, title: title||'Bez tytułu',
+    content: document.getElementById('note-content')?.value||'',
+    category: document.getElementById('note-category')?.value||'other',
+    tags: (document.getElementById('note-tags')?.value||'').split(',').map(t=>t.trim()).filter(Boolean),
+    screenshots: _noteScreenshots.map(s=>s.dataUrl),
+    pinned: existing?.pinned||false,
+    createdAt: existing?.createdAt||Date.now(),
+    updatedAt: Date.now(),
+  };
+  if (existing) { const idx=notes.indexOf(existing); notes[idx]=note; } else notes.push(note);
+  saveNotes(notes);
+  _jCurrentNoteId = id;
+  document.getElementById('note-id').value = id;
+  document.getElementById('note-saved-at').textContent = 'Zapisano: ' + new Date().toLocaleString('pl-PL');
+  renderNotesList(); toast('Notatka zapisana ✓', 'success');
+}
+
+function deleteCurrentNote() {
+  if (!_jCurrentNoteId) return;
+  if (!confirm('Usunąć tę notatkę?')) return;
+  saveNotes(getNotes().filter(n=>n.id!==_jCurrentNoteId));
+  _jCurrentNoteId = null;
+  document.getElementById('note-editor-empty').style.display = 'block';
+  document.getElementById('note-editor-content').style.display = 'none';
+  renderNotesList(); toast('Notatka usunięta','success');
+}
+
+function toggleNotePin() {
+  if (!_jCurrentNoteId) return;
+  const notes = getNotes(); const n = notes.find(x=>x.id===_jCurrentNoteId); if (!n) return;
+  n.pinned = !n.pinned; saveNotes(notes);
+  document.getElementById('note-pin-btn').style.opacity = n.pinned ? '1' : '0.4';
+  renderNotesList(); toast(n.pinned ? 'Notatka przypięta 📌' : 'Odpięto', 'success');
+}
+
+function noteAddScreenshots(input) {
+  Array.from(input.files).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      compressImage(e.target.result, 1200, 0.8).then(compressed => {
+        _noteScreenshots.push({id:genId(),dataUrl:compressed}); renderNoteScreenshots();
+      });
+    };
+    reader.readAsDataURL(file);
+  });
+  input.value = '';
+}
+
+function renderNoteScreenshots() {
+  const el = document.getElementById('note-screenshots-preview'); if (!el) return;
+  el.innerHTML = _noteScreenshots.map(s=>`
+    <div style="position:relative;display:inline-block">
+      <img src="${s.dataUrl}" style="width:70px;height:50px;object-fit:cover;border-radius:6px;cursor:pointer;border:1px solid var(--border)" onclick="openLightbox('${s.dataUrl}')">
+      <button onclick="removeNoteScreenshot('${s.id}')" style="position:absolute;top:-4px;right:-4px;background:var(--red);border:none;border-radius:50%;width:16px;height:16px;cursor:pointer;color:#fff;font-size:10px;display:flex;align-items:center;justify-content:center;line-height:1">✕</button>
+    </div>`).join('');
+}
+
+function removeNoteScreenshot(id) {
+  _noteScreenshots = _noteScreenshots.filter(s=>s.id!==id); renderNoteScreenshots();
+}
+
+function escHtml(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ---- WEEKLY REVIEW ----
+
+function renderWeeklyReview() {
+  renderWeeklyLabel();
+  renderWeeklyStats();
+  loadWeeklyForm();
+  renderWeeklyMotivation();
+}
+
+function weeklyNav(dir) {
+  const d = getWeekDates(_weeklyKey);
+  const newDate = new Date(d.monday.getTime() + dir*7*86400000);
+  _weeklyKey = getWeekKey(newDate);
+  renderWeeklyReview();
+}
+
+function renderWeeklyLabel() {
+  const el = document.getElementById('weekly-label'); if (!el) return;
+  const {monday, sunday} = getWeekDates(_weeklyKey);
+  const fmt = d => d.toLocaleDateString('pl-PL',{day:'numeric',month:'short'});
+  el.textContent = `Tydzień ${_weeklyKey.split('-W')[1]} · ${fmt(monday)} – ${fmt(sunday)} ${monday.getFullYear()}`;
+}
+
+function renderWeeklyStats() {
+  const el = document.getElementById('weekly-stats-content'); if (!el) return;
+  const {monday, sunday} = getWeekDates(_weeklyKey);
+  const trades = getTrades(state.currentAccountId).filter(t => {
+    const d = new Date(t.date); return d >= monday && d <= sunday && t.status==='closed';
+  });
+  if (!trades.length) { el.innerHTML = '<div style="color:var(--text3);font-size:13px">Brak zamkniętych transakcji w tym tygodniu</div>'; return; }
+  const wins = trades.filter(t=>(t.pnl||0)>0).length;
+  const totalPnl = trades.reduce((s,t)=>s+(t.pnl||0),0);
+  const winRate = trades.length ? ((wins/trades.length)*100).toFixed(0) : 0;
+  const pnlColor = totalPnl>=0 ? 'var(--green)' : 'var(--red)';
+  const pnlSign = totalPnl>=0 ? '+' : '';
+  const sym = getCurrSym(state.currentAccountId);
+  // Journal days filled
+  const totalDays = 5; let journalDays = 0;
+  for (let i=0;i<7;i++) {
+    const d = new Date(monday.getTime()+i*86400000);
+    const ds = d.toISOString().slice(0,10);
+    if (getJournalEntry(ds)?.prePlan) journalDays++;
+  }
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+      <div style="text-align:center;padding:12px;background:var(--bg3);border-radius:10px;border:1px solid var(--border)">
+        <div style="font-size:22px;font-weight:800;color:${pnlColor};font-family:var(--font-mono)">${pnlSign}${sym}${Math.abs(totalPnl).toFixed(2)}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">P&L tygodnia</div>
+      </div>
+      <div style="text-align:center;padding:12px;background:var(--bg3);border-radius:10px;border:1px solid var(--border)">
+        <div style="font-size:22px;font-weight:800;font-family:var(--font-mono)">${trades.length}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">Transakcji</div>
+      </div>
+      <div style="text-align:center;padding:12px;background:var(--bg3);border-radius:10px;border:1px solid var(--border)">
+        <div style="font-size:22px;font-weight:800;font-family:var(--font-mono);color:var(--accent)">${winRate}%</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">Win Rate</div>
+      </div>
+      <div style="text-align:center;padding:12px;background:var(--bg3);border-radius:10px;border:1px solid var(--border)">
+        <div style="font-size:22px;font-weight:800;font-family:var(--font-mono);color:var(--amber)">${journalDays}/${totalDays}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">Dni z dziennikiem</div>
+      </div>
+    </div>`;
+}
+
+function loadWeeklyForm() {
+  const review = getWeeklyReview(_weeklyKey) || {};
+  setFieldVal('weekly-q1', review.q1||'');
+  setFieldVal('weekly-q2', review.q2||'');
+  setFieldVal('weekly-q3', review.q3||'');
+  const ratingEl = document.getElementById('weekly-rating');
+  if (ratingEl) { ratingEl.value = review.rating||5; document.getElementById('weekly-rating-val').textContent = review.rating||5; }
+  _weeklyPlanVal = review.planVal||'';
+  document.querySelectorAll('.weekly-plan-btn').forEach(b => {
+    b.classList.toggle('active', b.getAttribute('onclick')?.includes("'"+_weeklyPlanVal+"'"));
+  });
+  document.getElementById('weekly-plan-val').value = _weeklyPlanVal;
+}
+
+function setWeeklyPlan(val, btn) {
+  _weeklyPlanVal = val;
+  document.getElementById('weekly-plan-val').value = val;
+  document.querySelectorAll('.weekly-plan-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function saveWeeklyReview() {
+  const data = {
+    weekKey:  _weeklyKey,
+    q1:       document.getElementById('weekly-q1')?.value||'',
+    q2:       document.getElementById('weekly-q2')?.value||'',
+    q3:       document.getElementById('weekly-q3')?.value||'',
+    rating:   parseInt(document.getElementById('weekly-rating')?.value)||5,
+    planVal:  _weeklyPlanVal,
+    savedAt:  Date.now(),
+  };
+  saveWeeklyReviewData(_weeklyKey, data);
+  renderWeeklyMotivation();
+  toast('Przegląd tygodniowy zapisany ✓', 'success');
+}
+
+function renderWeeklyMotivation() {
+  const el = document.getElementById('weekly-motivation-content'); if (!el) return;
+  const review = getWeeklyReview(_weeklyKey);
+  if (!review) { el.innerHTML = '<div style="color:var(--text3);font-size:13px">Zapisz przegląd aby zobaczyć podsumowanie 👆</div>'; return; }
+  const rating = review.rating||5;
+  let msg = '', emoji = '';
+  if (rating >= 8) { emoji='🌟'; msg='Świetny tydzień! Utrzymuj tę konsekwencję — to właśnie buduje profesjonalnego tradera.'; }
+  else if (rating >= 6) { emoji='💪'; msg='Dobry tydzień. Każdy dzień z dziennikiem to cegiełka w budowaniu dyscypliny.'; }
+  else if (rating >= 4) { emoji='📈'; msg='Tydzień z lekcjami. Trader który analizuje błędy rośnie szybciej niż ten który je ignoruje.'; }
+  else { emoji='🔥'; msg='Trudny tydzień — ale fakt że tutaj piszesz znaczy że pracujesz. To się liczy bardziej niż wyniki.'; }
+  // Count consecutive journaling days
+  let streak = 0;
+  for (let i=0;i<30;i++) {
+    const d = new Date(); d.setDate(d.getDate()-i);
+    const ds = d.toISOString().slice(0,10);
+    if (getJournalEntry(ds)?.prePlan) streak++; else break;
+  }
+  el.innerHTML = `
+    <div style="font-size:32px;margin-bottom:8px">${emoji}</div>
+    <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:6px">${msg}</div>
+    ${streak>1?`<div style="font-size:12px;color:var(--accent);margin-top:8px">🔥 Seria: ${streak} dni z wpisem z rzędu!</div>`:''}
+    ${review.planVal==='yes'?'<div style="font-size:12px;color:var(--green);margin-top:6px">✅ Plan trzymany konsekwentnie — doskonale!</div>':''}
+    ${review.planVal==='no'?'<div style="font-size:12px;color:var(--amber);margin-top:6px">⚠️ Plan nie był trzymany — co konkretnie Cię odciągało?</div>':''}`;
 }
 
 // ===== INIT =====
