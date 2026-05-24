@@ -2713,10 +2713,6 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
             <div class="tf-preview" id="tf-tick-preview" style="color:var(--text3)"></div>
           </div>
         </div>
-        <div class="form-group-modal">
-          <label class="form-label-modal" data-i18n="trade_setup">Setup / Strategia</label>
-          <input class="form-input-modal" id="t-setup" placeholder="np. SMC, ICT, Breakout">
-        </div>
         <div class="form-group-modal full">
           <label class="form-label-modal" style="display:flex;align-items:center;justify-content:space-between">
             <span>Powiązana analiza</span>
@@ -4507,7 +4503,6 @@ function openTradeModal() {
   document.getElementById('t-exit').value = '';
   document.getElementById('t-pnl').value = '';
   setTfFromValue('H1');
-  document.getElementById('t-setup').value = '';
   document.getElementById('t-pre').value = '';
   document.getElementById('t-post').value = '';
   setEmotionUI('pre', '');
@@ -4549,7 +4544,6 @@ function openEditModal(id) {
   document.getElementById('t-exit').value = t.exit ?? '';
   document.getElementById('t-pnl').value = t.pnl ?? '';
   setTfFromValue(t.tf || 'H1');
-  document.getElementById('t-setup').value = t.setup || '';
   document.getElementById('t-pre').value = t.pre || '';
   document.getElementById('t-post').value = t.post || '';
   setEmotionUI('pre', t.emotionPre || '');
@@ -4634,7 +4628,7 @@ function saveTrade() {
     exit: parseFloat(document.getElementById('t-exit').value) || null,
     pnl: parseFloat(document.getElementById('t-pnl').value) || null,
     tf: getTfValue(),
-    setup: document.getElementById('t-setup').value,
+    setup: (()=>{ const sid=document.getElementById('trade-setup-select')?.value; const s=getAllSetups().find(x=>x.id===sid); return s?s.name:''; })(),
     pre: document.getElementById('t-pre').value,
     post: document.getElementById('t-post').value,
     emotionPre: document.getElementById('t-emotion-pre')?.value || null,
@@ -6744,7 +6738,7 @@ function collectFormDraft() {
     exit:        document.getElementById('t-exit')?.value || '',
     pnl:         document.getElementById('t-pnl')?.value || '',
     tf:          getTfValue() || 'H1',
-    setup:       document.getElementById('t-setup')?.value || '',
+    setup:       (()=>{ const sid=document.getElementById('trade-setup-select')?.value; const s=getAllSetups().find(x=>x.id===sid); return s?s.name:''; })(),
     pre:         document.getElementById('t-pre')?.value || '',
     post:        document.getElementById('t-post')?.value || '',
     screenshots: state.tempScreenshots.filter(s => s.dataUrl && !s.uploading).map(s => s.dataUrl),
@@ -6755,7 +6749,7 @@ function collectFormDraft() {
 
 // ── Check if form has any real content ──────────────────────────────────────
 function formHasContent() {
-  const fields = ['t-symbol','t-entry','t-size','t-sl','t-tp','t-exit','t-setup','t-pre','t-post'];
+  const fields = ['t-symbol','t-entry','t-size','t-sl','t-tp','t-exit','t-pre','t-post'];
   return fields.some(id => (document.getElementById(id)?.value||'').trim() !== '')
     || state.tempScreenshots.length > 0;
 }
@@ -6868,7 +6862,6 @@ function restoreDraft(id) {
   document.getElementById('t-exit').value      = data.exit   || '';
   document.getElementById('t-pnl').value       = data.pnl    || '';
   setTfFromValue(data.tf || 'H1');
-  document.getElementById('t-setup').value     = data.setup  || '';
   document.getElementById('t-pre').value       = data.pre    || '';
   document.getElementById('t-post').value      = data.post   || '';
   document.getElementById('modal-title').textContent = '↩ Przywrócony szkic: ' + (data.symbol||'bez nazwy');
@@ -6887,7 +6880,7 @@ function restoreDraft(id) {
 // ── Hook all form inputs to auto-save ────────────────────────────────────────
 function hookFormAutoSave() {
   const ids = ['t-symbol','t-date','t-dir','t-status','t-entry','t-size',
-               't-sl','t-tp','t-exit','t-pnl','t-tf','t-setup','t-pre','t-post'];
+               't-sl','t-tp','t-exit','t-pnl','t-tf','t-pre','t-post'];
   ids.forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
@@ -8148,7 +8141,7 @@ function applyLangToStatic() {
     'reg-pass':     lang==='en' ? 'min. 6 chars'           : 'min. 6 znaków',
     'reg-pass2':    lang==='en' ? 'repeat password'        : 'powtórz hasło',
     't-symbol':     lang==='en' ? 'e.g. EURUSD, XAUUSD'   : 'np. EURUSD, XAUUSD, BTC',
-    't-setup':      lang==='en' ? 'e.g. SMC, ICT, Breakout': 'np. SMC, ICT, Breakout',
+
     't-pre':        lang==='en' ? 'Describe your pre-trade analysis...' : 'Opisz swoją analizę przed otwarciem pozycji...',
     't-post':       lang==='en' ? 'What went well? What could be better?' : 'Co poszło dobrze? Co można było zrobić lepiej?',
     'an-title':     lang==='en' ? 'e.g. XAUUSD – H4 support analysis' : 'np. XAUUSD – analiza wsparcia H4',
@@ -9525,7 +9518,7 @@ function saveTradeAsAnalysis() {
   const symbol  = (document.getElementById('t-symbol')?.value||'').trim().toUpperCase();
   const pre     = document.getElementById('t-pre')?.value||'';
   const post    = document.getElementById('t-post')?.value||'';
-  const setup   = document.getElementById('t-setup')?.value||'';
+  const setup   = (()=>{ const sid=document.getElementById('trade-setup-select')?.value; const s=getAllSetups().find(x=>x.id===sid); return s?s.name:''; })();
   const tf      = getTfValue()||'';
   const dir     = document.getElementById('t-dir')?.value||'';
   const entry   = document.getElementById('t-entry')?.value||'';
@@ -10351,8 +10344,7 @@ function aiApplyData() {
     // Timeframe
     if (d.tf) { try { setTfFromValue(d.tf); } catch {} }
 
-    // Setup
-    set('t-setup', d.setup);
+    // Setup — pole tekstowe usunięte; strategia/setup ustawiane przez dropdown powyżej
 
     // Odśwież UI
     try { onTpChange(); } catch {}
