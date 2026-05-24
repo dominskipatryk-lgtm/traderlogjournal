@@ -3277,6 +3277,31 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
   </div>
 </div>
 
+<!-- SESSION WARNING MODAL -->
+<div class="modal-overlay" id="session-warning-modal" role="dialog" aria-modal="true" style="z-index:10002">
+  <div class="modal" style="max-width:440px;padding:0;overflow:hidden">
+    <div style="background:linear-gradient(135deg,#3d1a00 0%,#5c2800 100%);padding:22px 26px 18px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-size:20px;font-weight:800;color:#fff">⏰ Sesja wygasa za 1 godzinę</div>
+          <div style="font-size:12px;color:rgba(255,255,255,.6);margin-top:2px">Twoja sesja zostanie automatycznie zakończona</div>
+        </div>
+        <button onclick="document.getElementById('session-warning-modal').classList.remove('open')" style="background:rgba(255,255,255,.1);border:none;color:white;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px">✕</button>
+      </div>
+    </div>
+    <div style="padding:20px 26px">
+      <div style="font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:16px">
+        Dla Twojego bezpieczeństwa sesja trwa maksymalnie <strong>5 godzin</strong>.<br>
+        Pozostały czas: <span id="session-warn-remaining" style="color:var(--amber);font-weight:700">60 minut</span>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button onclick="document.getElementById('session-warning-modal').classList.remove('open')" class="btn-sm" style="font-size:12px">Rozumiem, kontynuuj</button>
+        <button onclick="document.getElementById('session-warning-modal').classList.remove('open');doLogout()" style="padding:6px 14px;background:var(--red);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">Wyloguj się teraz</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- REMINDER POPUP (floating toast-style) -->
 <div id="reminder-popup" style="display:none;position:fixed;top:70px;right:20px;z-index:20000;background:var(--bg2);border:1px solid var(--accent);border-radius:14px;padding:16px 20px;max-width:320px;box-shadow:0 8px 32px rgba(0,0,0,.4);animation:slideInRight .3s ease">
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
@@ -3393,6 +3418,8 @@ function loginAs(username, userData) {
   _lastSyncTime = Date.now();
   startAutoSync();
   updateSyncIndicator();
+  // Sesja 5h — zapisz start (lub przywróć istniejący) i uruchom timer
+  startAppSession(username);
   } catch(e) {
     console.error('loginAs error:', e);
     showAuthError('Błąd logowania: ' + e.message);
@@ -3453,6 +3480,13 @@ function _executeLogout() {
   _pendingLogout = false;
   const bar = document.getElementById('journal-post-logout-bar');
   if (bar) bar.style.display = 'none';
+  // Zatrzymaj timer sesji i wyczyść dane
+  if (window._sessionTimerId) { clearInterval(window._sessionTimerId); window._sessionTimerId = null; }
+  if (state.currentUser) {
+    const db = getDB();
+    delete db['_appSession_' + state.currentUser];
+    saveDB(db);
+  }
   stopAutoSync();
   _lastSyncTime = null;
   const ind = document.getElementById('sync-indicator');
@@ -14295,6 +14329,64 @@ function createAnalysisFromNote() {
   toast('Formularz analizy wypełniony notatką', 'success');
 }
 
+// ===== SESSION TIMER =====
+const _SESSION_MAX_MS  = 5 * 3600 * 1000;  // 5 godzin
+const _SESSION_WARN_MS = 4 * 3600 * 1000;  // ostrzeżenie po 4h (1h przed końcem)
+
+function startAppSession(username) {
+  const db = getDB();
+  // Jeśli sesja już istnieje (restore po refresh) — użyj oryginalnego czasu
+  if (!db['_appSession_' + username]) {
+    db['_appSession_' + username] = { loginAt: Date.now() };
+    saveDB(db);
+  }
+  if (window._sessionTimerId) clearInterval(window._sessionTimerId);
+  window._sessionWarnShown = false;
+  window._sessionTimerId = setInterval(checkSessionExpiry, 60000);
+  checkSessionExpiry();
+}
+
+function checkSessionExpiry() {
+  if (!state.currentUser) { clearInterval(window._sessionTimerId); return; }
+  const db = getDB();
+  const sess = db['_appSession_' + state.currentUser];
+  if (!sess?.loginAt) return;
+  const elapsed = Date.now() - sess.loginAt;
+  const remaining = _SESSION_MAX_MS - elapsed;
+
+  if (remaining <= 0) {
+    clearInterval(window._sessionTimerId);
+    const warn = document.getElementById('session-warning-modal');
+    if (warn) warn.classList.remove('open');
+    toast('Sesja wygasła po 5 godzinach — wyloguję...', 'error');
+    setTimeout(() => { _pendingLogout = false; _executeLogout(); }, 2500);
+    return;
+  }
+  if (elapsed >= _SESSION_WARN_MS && !window._sessionWarnShown) {
+    window._sessionWarnShown = true;
+    showSessionWarningModal(remaining);
+    // Co 5 minut przypominaj toast
+    window._sessionWarnToastId = setInterval(() => {
+      if (!state.currentUser) { clearInterval(window._sessionWarnToastId); return; }
+      const db2 = getDB();
+      const s2 = db2['_appSession_' + state.currentUser];
+      if (!s2) { clearInterval(window._sessionWarnToastId); return; }
+      const rem2 = _SESSION_MAX_MS - (Date.now() - s2.loginAt);
+      if (rem2 <= 0) { clearInterval(window._sessionWarnToastId); return; }
+      const mins = Math.ceil(rem2 / 60000);
+      toast('⏰ Sesja wygasa za ' + mins + ' min', 'error');
+    }, 5 * 60 * 1000);
+  }
+}
+
+function showSessionWarningModal(remainingMs) {
+  const mins = Math.ceil(remainingMs / 60000);
+  const el = document.getElementById('session-warn-remaining');
+  if (el) el.textContent = mins + ' minut';
+  const modal = document.getElementById('session-warning-modal');
+  if (modal) modal.classList.add('open');
+}
+
 // ===== INIT =====
 async function appInit() {
   if (_appInitRunning) return;
@@ -14352,7 +14444,19 @@ async function appInit() {
   // Sprawdź aktywną sesję Supabase (np. po odświeżeniu strony lub Google OAuth)
   try {
     if (_sb) {
-      const { data: { session } } = await _sb.auth.getSession();
+      // Próba 1: pobierz bieżącą sesję (Supabase v2 auto-odnawia token jeśli wygasł)
+      let session = null;
+      try {
+        const { data } = await _sb.auth.getSession();
+        session = data.session;
+      } catch(e) { console.warn('getSession error:', e.message); }
+      // Próba 2: jeśli brak sesji — wymuś refresh tokena
+      if (!session) {
+        try {
+          const { data } = await _sb.auth.refreshSession();
+          session = data.session;
+        } catch(e) { console.warn('refreshSession error:', e.message); }
+      }
       // [v1.1] SECURITY FIX: usunięto console.log z danymi sesji
       if (session?.user) {
         // Pobierz profil — osobny try/catch, błąd sieci nie powinien wylogować
@@ -14377,6 +14481,18 @@ async function appInit() {
         }
 
         if (profile && (profile.role === 'admin' || profile.active !== false)) {
+          // Sprawdź czy app-sesja nie przekroczyła 5h
+          const _db = getDB();
+          const _appSess = _db['_appSession_' + profile.login];
+          if (_appSess?.loginAt && (Date.now() - _appSess.loginAt) >= _SESSION_MAX_MS) {
+            delete _db['_appSession_' + profile.login];
+            saveDB(_db);
+            if (_sb) _sb.auth.signOut().catch(() => {});
+            // Pokaż ekran logowania z informacją
+            document.getElementById('auth-screen').style.display = 'flex';
+            setTimeout(() => showAuthError('Sesja wygasła po 5 godzinach. Zaloguj się ponownie.'), 100);
+            return;
+          }
           const users = getUsers();
           users[profile.login] = {
             pass: '__supabase__',
