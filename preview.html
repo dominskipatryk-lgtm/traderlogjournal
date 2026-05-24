@@ -2883,6 +2883,26 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
         <label class="form-label-modal">Strategia</label>
         <input class="form-input-modal" id="acc-strategy" placeholder="np. Smart Money Concepts, ICT">
       </div>
+      <!-- Typ gracza: ręczny / bot -->
+      <div class="form-group-modal" style="margin-bottom:16px">
+        <label class="form-label-modal">Kto realizuje transakcje?</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px">
+          <label id="acc-trader-opt" style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:2px solid var(--accent);border-radius:10px;cursor:pointer;background:rgba(0,212,161,.08)">
+            <input type="radio" name="acc-is-bot" id="acc-is-manual" value="manual" checked style="accent-color:var(--accent)">
+            <div>
+              <div style="font-size:13px;font-weight:700">🧑 Ręczny</div>
+              <div style="font-size:10px;color:var(--text3);margin-top:1px">Emocje i wnioski wymagane</div>
+            </div>
+          </label>
+          <label id="acc-bot-opt" style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:2px solid var(--border);border-radius:10px;cursor:pointer">
+            <input type="radio" name="acc-is-bot" id="acc-is-bot" value="bot" style="accent-color:var(--accent)">
+            <div>
+              <div style="font-size:13px;font-weight:700">🤖 Bot / EA</div>
+              <div style="font-size:10px;color:var(--text3);margin-top:1px">Czysta statystyka — bez emocji</div>
+            </div>
+          </label>
+        </div>
+      </div>
       <div class="form-group-modal" style="margin-bottom:16px">
         <label class="form-label-modal" style="display:flex;align-items:center;gap:6px">
           🔌 Numer konta MT4
@@ -3394,6 +3414,11 @@ function saveAccounts(arr) {
   if (!db.accounts) db.accounts = {};
   db.accounts[state.currentUser] = arr;
   saveDB(db);
+}
+function isCurrentAccountBot(accountId) {
+  const id = accountId || state.currentAccountId;
+  const acc = getAccounts().find(a => a.id === id);
+  return !!(acc?.isBot);
 }
 
 function getTrades(accountId) {
@@ -4390,7 +4415,7 @@ function renderAccounts() {
     return `<div class="account-card ${acc.id===state.currentAccountId?'selected':''}" onclick="selectAccount('${acc.id}')">
       <div class="account-card-header">
         <div>
-          <div class="account-name">${acc.name}</div>
+          <div class="account-name">${acc.name}${acc.isBot?'<span style="font-size:10px;background:rgba(255,170,0,.15);color:var(--amber);border:1px solid rgba(255,170,0,.3);border-radius:5px;padding:1px 6px;margin-left:6px;font-weight:600;vertical-align:middle">🤖 Bot</span>':''}</div>
           <div class="account-type">${acc.type} · ${acc.broker||'—'}</div>
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
@@ -4421,6 +4446,15 @@ function selectAccount(id) {
   toast('Przełączono konto', 'success');
 }
 
+function _setAccBotToggle(isBot) {
+  const manualOpt = document.getElementById('acc-trader-opt');
+  const botOpt    = document.getElementById('acc-bot-opt');
+  document.getElementById('acc-is-manual').checked = !isBot;
+  document.getElementById('acc-is-bot').checked    = !!isBot;
+  if (manualOpt) { manualOpt.style.borderColor = !isBot ? 'var(--accent)' : 'var(--border)'; manualOpt.style.background = !isBot ? 'rgba(0,212,161,.08)' : ''; }
+  if (botOpt)    { botOpt.style.borderColor    = isBot  ? 'var(--accent)' : 'var(--border)'; botOpt.style.background    = isBot  ? 'rgba(0,212,161,.08)' : ''; }
+}
+
 function openAccountModal() {
   document.getElementById('acc-id').value = '';
   document.getElementById('acc-name').value = '';
@@ -4431,6 +4465,9 @@ function openAccountModal() {
   document.getElementById('acc-currency').value = 'USD';
   document.getElementById('acc-modal-title').textContent = 'Nowe konto';
   document.querySelectorAll('.color-swatch').forEach((s,i) => s.classList.toggle('selected', i===0));
+  _setAccBotToggle(false);
+  // live border update on change
+  document.querySelectorAll('input[name="acc-is-bot"]').forEach(r => r.onchange = () => _setAccBotToggle(r.value === 'bot'));
   openModal('account-modal');
 }
 
@@ -4447,6 +4484,8 @@ function openEditAccount(id) {
   document.getElementById('acc-currency').value = acc.currency || 'USD';
   document.getElementById('acc-modal-title').textContent = 'Edytuj konto';
   document.querySelectorAll('.color-swatch').forEach(s => s.classList.toggle('selected', s.dataset.color === acc.color));
+  _setAccBotToggle(!!acc.isBot);
+  document.querySelectorAll('input[name="acc-is-bot"]').forEach(r => r.onchange = () => _setAccBotToggle(r.value === 'bot'));
   openModal('account-modal');
 }
 
@@ -4463,6 +4502,7 @@ function saveAccount() {
     currency: document.getElementById('acc-currency').value || 'USD',
     strategy: document.getElementById('acc-strategy').value,
     mt4Login: document.getElementById('acc-mt4-login').value || '',
+    isBot: document.getElementById('acc-is-bot')?.checked || false,
   };
   const accounts = getAccounts();
   const idx = accounts.findIndex(a => a.id === id);
@@ -4661,12 +4701,13 @@ function saveTrade() {
   }
   if (_tpTotalPct > 100) return toast('Suma % zamknięcia na poziomach TP wynosi ' + _tpTotalPct + '% — musi być ≤ 100%', 'error');
 
-  // Walidacja emocji — wymagane przed zapisem
+  // Walidacja emocji — wymagane przed zapisem (pomijana dla kont botowych)
   const _status      = document.getElementById('t-status')?.value || '';
   const _emotionPre  = document.getElementById('t-emotion-pre')?.value || '';
   const _emotionPost = document.getElementById('t-emotion-post')?.value || '';
-  const _preOk  = !!_emotionPre;
-  const _postOk = _status !== 'closed' || !!_emotionPost;
+  const _skipEmoVal  = isCurrentAccountBot();
+  const _preOk  = _skipEmoVal || !!_emotionPre;
+  const _postOk = _skipEmoVal || _status !== 'closed' || !!_emotionPost;
 
   const _prePicker  = document.getElementById('emotion-pre-picker');
   const _postPicker = document.getElementById('emotion-post-picker');
@@ -4750,9 +4791,9 @@ let _detailEditing = false;
 let _detailScreenshots = []; // {id, dataUrl}
 let _detailAllIds = [];
 
-function openDetailModal(id) {
+function openDetailModal(id, startEdit) {
   _detailId = id;
-  _detailEditing = false;
+  _detailEditing = !!startEdit;
   // Build ordered list of trade IDs for prev/next nav
   const trades = getTrades(state.currentAccountId);
   _detailAllIds = [...trades].reverse().map(t => t.id);
@@ -4865,15 +4906,20 @@ function renderDetailModal() {
     ${(() => {
       const la = t.linkedAnalysisId ? getAnalyses().find(a => a.id === t.linkedAnalysisId) : null;
       if (la) {
+        const laScreens = (la.screenshots||[]).filter(Boolean);
+        const laScreensHtml = laScreens.length
+          ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">${laScreens.map(s=>`<img src="${s}" onclick="openLightboxSmart('${s}','')" style="width:80px;height:56px;object-fit:cover;border-radius:6px;cursor:pointer;border:1px solid var(--border2)">`).join('')}</div>` : '';
+        const biasBadge = la.bias ? `<span class="tag" style="font-size:10px;margin-left:6px">${la.bias==='bullish'?'🟢 Byczy':la.bias==='bearish'?'🔴 Niedźwiedzi':'🟡 Neutralny'}</span>` : '';
         return `<div class="dv-card" style="border-color:var(--blue);background:var(--blue-dim)">
           <div class="dv-card-head" style="color:var(--blue);display:flex;justify-content:space-between;align-items:center">
             <span>🔗 Powiązana analiza</span>
             <button onclick="dvUnlinkAnalysis('${t.id}')" style="background:none;border:none;cursor:pointer;font-size:10px;color:var(--red);padding:0" title="Usuń powiązanie">✕ usuń</button>
           </div>
-          <div style="font-weight:700;font-size:13px;margin-bottom:4px">${escHtml(la.title)}</div>
+          <div style="font-weight:700;font-size:13px;margin-bottom:4px">${escHtml(la.title)}${biasBadge}</div>
           ${la.symbol?`<div style="font-size:11px;color:var(--text3);margin-bottom:6px">${la.symbol}${la.tf?' · '+la.tf:''}</div>`:''}
-          ${la.content?`<div style="font-size:12px;color:var(--text2);line-height:1.6;max-height:80px;overflow:hidden">${escHtml(la.content.slice(0,300))}${la.content.length>300?'…':''}</div>`:''}
-          <button onclick="openEditAnalysis('${la.id}')" class="btn-sm" style="margin-top:8px;font-size:11px">📖 Otwórz analizę</button>
+          ${la.content?`<div style="font-size:12px;color:var(--text2);line-height:1.6">${escHtml(la.content)}</div>`:''}
+          ${laScreensHtml}
+          <button onclick="openEditAnalysis('${la.id}')" class="btn-sm" style="margin-top:10px;font-size:11px">📖 Otwórz analizę</button>
         </div>`;
       }
       return `<div class="dv-card" style="border-style:dashed">
@@ -4900,8 +4946,8 @@ function renderDetailModal() {
       <div class="dv-notes">${escHtml(t.post) || '<span style="color:var(--text3);font-style:italic">Brak opisu</span>'}</div>
       <div class="dv-notes-edit"><textarea id="dv-post" placeholder="Co poszło dobrze? Co można było zrobić lepiej?">${t.post||''}</textarea></div>
     </div>
-    <!-- Emocje -->
-    ${(_detailEditing || t.emotionPre || t.emotionPost) ? `<div class="dv-card">
+    <!-- Emocje (ukryte dla kont botowych w trybie edycji — bot nie ma emocji) -->
+    ${(!isCurrentAccountBot() && (_detailEditing || t.emotionPre || t.emotionPost)) ? `<div class="dv-card">
       <div class="dv-card-head">🧠 Stan emocjonalny</div>
       <div class="dv-notes" style="display:${_detailEditing?'none':'block'}">
         ${t.emotionPre ? `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:11px;color:var(--text3);min-width:80px">Przed wejściem</span><span class="tag" style="font-size:12px">${t.emotionPre}</span></div>` : ''}
@@ -5074,11 +5120,26 @@ function detailSaveEdit() {
   const idx = trades.findIndex(t => t.id === _detailId);
   if (idx < 0) return;
   const t = { ...trades[idx] };
+  const _dvStatus   = document.getElementById('dv-status')?.value || t.status || '';
+  const _dvEmosPre  = document.getElementById('dv-emotion-pre')?.value  || '';
+  const _dvEmosPost = document.getElementById('dv-emotion-post')?.value || '';
+  if (!isCurrentAccountBot()) {
+    if (!_dvEmosPre) {
+      toast('Zaznacz emocję PRZED wejściem — wymagane do zapisu', 'error');
+      (document.getElementById('dv-emotion-pre-picker') || document.getElementById('dv-emotion-pre'))?.scrollIntoView({ behavior:'smooth', block:'center' });
+      return;
+    }
+    if (_dvStatus === 'closed' && !_dvEmosPost) {
+      toast('Zaznacz emocję PO zamknięciu — wymagane dla zamkniętej transakcji', 'error');
+      (document.getElementById('dv-emotion-post-picker') || document.getElementById('dv-emotion-post'))?.scrollIntoView({ behavior:'smooth', block:'center' });
+      return;
+    }
+  }
   t.symbol  = (document.getElementById('dv-symbol')?.value || t.symbol).trim().toUpperCase();
   t.dir     = document.getElementById('dv-dir')?.value || t.dir;
   t.date    = document.getElementById('dv-date')?.value || t.date;
   t.tf      = getDvTfValue() || t.tf;
-  t.status  = document.getElementById('dv-status')?.value || t.status;
+  t.status  = _dvStatus;
   t.setup   = document.getElementById('dv-setup')?.value || '';
   t.entry   = parseFloat(document.getElementById('dv-entry')?.value) || null;
   t.exit    = parseFloat(document.getElementById('dv-exit')?.value) || null;
@@ -10812,7 +10873,6 @@ async function modifyMT4Trade(signal) {
 }
 
 async function closeMT4Trade(signal) {
-  // Znajdź transakcję po numerze ticketu i uzupełnij dane zamknięcia
   const db = getDB();
   const accounts = getAccounts();
 
@@ -10830,10 +10890,23 @@ async function closeMT4Trade(signal) {
       saveDB(db);
       renderTrades();
       renderDashboard();
-      toast('MT4: Zamknięto ' + signal.symbol + ' P&L: ' + (signal.profit >= 0 ? '+' : '') + '$' + Math.abs(signal.profit).toFixed(2), 'success');
+
+      const tradeId = trades[tradeIdx].id;
+      if (acc.isBot) {
+        // Konto botowe — prosta notyfikacja, bez wymogu emocji
+        const pnl = signal.profit || 0;
+        const sign = pnl >= 0 ? '+' : '';
+        const color = pnl >= 0 ? 'var(--accent)' : 'var(--red)';
+        toast('🤖 Bot zamknął ' + signal.symbol + ' #' + signal.ticket + '  P&L: ' + sign + '$' + Math.abs(pnl).toFixed(2), pnl >= 0 ? 'success' : 'error');
+      } else {
+        // Konto ręczne — otwórz terminal transakcji od razu w trybie edycji
+        showMT4ClosePrompt(signal, tradeId);
+      }
       return;
     }
   }
+  // Transakcja nie znaleziona — pokaż powiadomienie
+  showMT4CloseNotification(signal, null);
 }
 
 function openTradeFromMT4(signal) {
@@ -10922,21 +10995,66 @@ function showMT4Notification(signal, tradeId) {
   setTimeout(() => { if (div.parentElement) div.remove(); }, 15000);
 }
 
-function showMT4CloseNotification(signal) {
+function showMT4ClosePrompt(signal, tradeId) {
+  // Dla kont ręcznych — banner z wezwaniem do uzupełnienia wniosków i emocji
+  const pnl   = signal.profit || 0;
+  const sign  = pnl >= 0 ? '+' : '';
+  const color = pnl >= 0 ? 'var(--accent)' : 'var(--red)';
+  const div   = document.createElement('div');
+  div.style.cssText = 'position:fixed;top:70px;right:24px;background:var(--bg2);border:2px solid ' + color + ';border-radius:14px;padding:18px 20px;z-index:9999;max-width:340px;box-shadow:0 8px 32px rgba(0,0,0,.6)';
+
+  let _secs = 30;
+  div.innerHTML =
+    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">' +
+      '<div style="width:10px;height:10px;border-radius:50%;background:' + color + '"></div>' +
+      '<div style="font-family:var(--font-head);font-size:14px;font-weight:800;color:' + color + '">Pozycja zamknięta — czas na wnioski!</div>' +
+      '<button onclick="this.closest(\'div[style*=fixed]\').remove()" style="margin-left:auto;background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px">✕</button>' +
+    '</div>' +
+    '<div style="font-size:15px;font-weight:700;margin-bottom:6px">' + signal.symbol + ' #' + signal.ticket + '</div>' +
+    '<div style="font-size:13px;color:var(--text2);line-height:1.9;margin-bottom:10px">' +
+      'Wynik: <strong style="color:' + color + ';font-size:15px">' + sign + '$' + Math.abs(pnl).toFixed(2) + '</strong>' +
+    '</div>' +
+    '<div style="font-size:11px;color:var(--amber);margin-bottom:12px;line-height:1.5">Uzupełnij emocje i wnioski po transakcji — bez tego dane w statystykach będą niepełne.</div>' +
+    '<button id="mt4-close-prompt-btn" class="btn-sm btn-accent" onclick="openDetailModal(\'' + tradeId + '\',true);this.closest(\'div[style*=fixed]\').remove()" style="width:100%;font-size:13px;padding:10px;font-weight:700">✍️ Uzupełnij wnioski i emocje</button>' +
+    '<div style="text-align:center;font-size:10px;color:var(--text3);margin-top:8px">Zamknie się za <span id="mt4-close-counter">' + _secs + '</span>s &nbsp;·&nbsp; <button onclick="this.closest(\'div[style*=fixed]\').remove()" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:10px;text-decoration:underline">pomiń teraz</button></div>';
+
+  document.body.appendChild(div);
+
+  const interval = setInterval(() => {
+    _secs--;
+    const el = div.querySelector('#mt4-close-counter');
+    if (el) el.textContent = _secs;
+    if (_secs <= 0) { clearInterval(interval); if (div.parentElement) div.remove(); }
+  }, 1000);
+}
+
+function showMT4CloseNotification(signal, tradeId) {
   const pnl   = signal.profit || 0;
   const color = pnl >= 0 ? 'var(--accent)' : 'var(--red)';
   const sign  = pnl >= 0 ? '+' : '';
   const div   = document.createElement('div');
   div.style.cssText = 'position:fixed;top:70px;right:24px;background:var(--bg2);border:1px solid ' + color + ';border-radius:12px;padding:16px 20px;z-index:9999;max-width:320px;box-shadow:0 8px 32px rgba(0,0,0,.5)';
-  div.innerHTML = '<div style="font-family:var(--font-head);font-size:13px;font-weight:700;color:' + color + ';margin-bottom:8px">MT4 — Zamknięta pozycja</div>' +
+  const emotionBtn = tradeId
+    ? '<button class="btn-sm btn-accent" onclick="openDetailModal(\'' + tradeId + '\',true);this.closest(\'div[style*=fixed]\').remove()" style="font-size:11px;flex:1">🧠 Uzupełnij emocje</button>'
+    : '';
+  div.innerHTML =
+    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">' +
+      '<div style="width:8px;height:8px;border-radius:50%;background:' + color + '"></div>' +
+      '<div style="font-family:var(--font-head);font-size:13px;font-weight:700;color:' + color + '">MT4 — Zamknięta pozycja</div>' +
+      '<button onclick="this.parentElement.parentElement.remove()" style="margin-left:auto;background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px">✕</button>' +
+    '</div>' +
     '<div style="font-size:14px;font-weight:700;margin-bottom:4px">' + signal.symbol + ' #' + signal.ticket + '</div>' +
-    '<div style="font-size:12px;color:var(--text2);line-height:1.8">' +
-    'Close: <strong>' + signal.close_price + '</strong><br>' +
-    'P&L: <strong style="color:' + color + '">' + sign + '$' + Math.abs(pnl).toFixed(2) + '</strong></div>' +
-    '<div style="display:flex;gap:8px;margin-top:10px">' +
-    '<button class="btn-sm btn-accent" onclick="this.parentElement.parentElement.remove()" style="font-size:11px">OK</button></div>';
+    '<div style="font-size:12px;color:var(--text2);line-height:1.8;margin-bottom:10px">' +
+      'Close: <strong>' + signal.close_price + '</strong><br>' +
+      'P&L: <strong style="color:' + color + '">' + sign + '$' + Math.abs(pnl).toFixed(2) + '</strong>' +
+    '</div>' +
+    '<div style="font-size:11px;color:var(--amber);margin-bottom:10px">Uzupełnij emocje i powiąż analizę z transakcją</div>' +
+    '<div style="display:flex;gap:8px">' +
+      emotionBtn +
+      '<button class="btn-sm" onclick="this.closest(\'div[style*=fixed]\').remove()" style="font-size:11px">Później</button>' +
+    '</div>';
   document.body.appendChild(div);
-  setTimeout(() => div.remove(), 10000);
+  setTimeout(() => { if (div.parentElement) div.remove(); }, 20000);
 }
 
 
