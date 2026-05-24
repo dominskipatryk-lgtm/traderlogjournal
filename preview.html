@@ -731,6 +731,13 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 .draft-indicator.visible { display:flex; }
 .draft-dot { width:7px; height:7px; border-radius:50%; background:var(--amber); flex-shrink:0; animation:pulse-amber 1.4s infinite; }
 @keyframes pulse-amber { 0%,100%{opacity:1} 50%{opacity:.4} }
+@keyframes slideInRight { from{opacity:0;transform:translateX(30px)} to{opacity:1;transform:translateX(0)} }
+.reminder-time-btn.active { background:var(--accent-dim)!important;color:var(--accent)!important;border-color:var(--accent)!important; }
+.stats-tab-btn { padding:10px 20px;background:none;border:none;color:var(--text3);font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color .15s; }
+.stats-tab-btn.active { color:var(--text);border-bottom-color:var(--accent); }
+.stats-tab-btn:hover:not(.active) { color:var(--text2); }
+.stats-period-btn { padding:4px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text2);font-size:12px;cursor:pointer;transition:background .15s; }
+.stats-period-btn.active { background:var(--accent-dim)!important;color:var(--accent)!important;border-color:var(--accent)!important; }
 .drafts-list { display:flex; flex-direction:column; gap:8px; }
 .draft-card {
   background:var(--bg3); border:1px solid var(--border2); border-radius:10px;
@@ -1166,7 +1173,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 
       <div class="sidebar-section-label">Statystyki</div>
       <button class="nav-btn" onclick="showPage('summary')" data-i18n="nav_summary">
-        <span class="nav-icon">📈</span><span class="nav-label">Podsumowanie</span>
+        <span class="nav-icon">📊</span><span class="nav-label">Statystyki</span>
       </button>
       <button class="nav-btn" onclick="showPage('emotions')" id="nav-emotions">
         <span class="nav-icon">🧠</span><span class="nav-label">Emocje & Psychologia</span>
@@ -1235,6 +1242,11 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
     <div class="topstrip">
       <button class="sidebar-toggle" onclick="toggleSidebar()" aria-label="Menu">☰</button>
       <div class="topstrip-title" id="topstrip-title">Dashboard</div>
+      <!-- Bell / Reminders -->
+      <button id="reminder-bell-btn" onclick="openReminderList()" style="position:relative;background:none;border:none;cursor:pointer;padding:6px 8px;color:var(--text2);font-size:18px;border-radius:8px;display:flex;align-items:center;transition:background .15s" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'" title="Przypomnienia">
+        🔔
+        <span id="reminder-bell-count" style="display:none;position:absolute;top:2px;right:2px;background:var(--red);color:#fff;border-radius:50%;width:16px;height:16px;font-size:9px;font-weight:700;align-items:center;justify-content:center;line-height:1"></span>
+      </button>
       <!-- MT4 Live Terminal -->
       <div id="mt4-terminal" style="display:none;align-items:center;gap:6px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:4px 10px;cursor:pointer;position:relative" onclick="toggleMT4Terminal()">
         <div style="width:7px;height:7px;border-radius:50%;background:var(--accent);animation:pulse-amber 1.4s infinite;flex-shrink:0" id="mt4-dot"></div>
@@ -1343,57 +1355,78 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
       <div class="table-wrap" id="trades-table"></div>
     </div>
 
-    <!-- SUMMARY -->
+    <!-- STATYSTYKI -->
     <div id="page-summary" class="page">
-      <!-- KALENDARZ TRANSAKCJI -->
-      <div style="margin-bottom:28px">
+      <!-- Tab bar -->
+      <div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:0;flex-wrap:wrap;align-items:center">
+        <button class="stats-tab-btn active" id="stab-overview" onclick="switchStatsTab('overview')">📈 Przegląd</button>
+        <button class="stats-tab-btn" id="stab-calendar" onclick="switchStatsTab('calendar')">📅 Kalendarz</button>
+        <button class="stats-tab-btn" id="stab-strategies" onclick="switchStatsTab('strategies')">🎯 Strategie</button>
+        <button class="btn-sm" onclick="exportSummaryPDF()" title="PDF" style="font-size:12px;margin-left:auto;margin-right:4px;align-self:center">🖨 PDF</button>
+      </div>
 
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-        <div>
-          <div class="page-title" data-i18n="cal_title">Kalendarz Transakcji</div>
-          <div class="page-subtitle" id="s-cal-subtitle">Kliknij w dzień aby zobaczyć transakcje</div>
+      <!-- TAB: Przegląd -->
+      <div id="stats-tab-overview" style="padding-top:20px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:18px;flex-wrap:wrap">
+          <span style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;flex-shrink:0">Okres:</span>
+          <button class="stats-period-btn active" id="sp-all"   onclick="setStatsPeriod('all',this)">Wszystko</button>
+          <button class="stats-period-btn" id="sp-year"  onclick="setStatsPeriod('year',this)">Ten rok</button>
+          <button class="stats-period-btn" id="sp-month" onclick="setStatsPeriod('month',this)">Ten miesiąc</button>
+          <button class="stats-period-btn" id="sp-week"  onclick="setStatsPeriod('week',this)">Ten tydzień</button>
+          <button class="stats-period-btn" id="sp-today" onclick="setStatsPeriod('today',this)">Dziś</button>
         </div>
-        <div style="display:flex;align-items:center;gap:10px">
+        <div class="page-subtitle" id="summary-subtitle" style="margin-bottom:16px"></div>
+        <div id="summary-content"></div>
+      </div>
+
+      <!-- TAB: Kalendarz -->
+      <div id="stats-tab-calendar" style="display:none;padding-top:20px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-wrap:wrap;gap:10px">
+          <div>
+            <div class="page-title" style="font-size:20px;margin-bottom:2px">Kalendarz Transakcji</div>
+            <div class="page-subtitle" id="s-cal-subtitle">Kliknij w dzień aby zobaczyć transakcje</div>
+          </div>
           <select class="filter-select" id="s-cal-view-mode" onchange="renderCalendarSummary()" style="font-size:13px">
             <option value="month">Widok miesięczny</option>
             <option value="year">Widok roczny</option>
           </select>
         </div>
-      </div>
-      <!-- Nav row -->
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-        <button class="btn-sm" id="s-cal-prev" onclick="calNavSummary(-1)">← Poprzedni</button>
-        <div id="s-cal-period-label" style="font-family:var(--font-head);font-size:20px;font-weight:700;letter-spacing:-0.5px"></div>
-        <button class="btn-sm" id="s-cal-next" onclick="calNavSummary(1)">Następny →</button>
-      </div>
-      <!-- Legend -->
-      <div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap" id="s-cal-legend">
-        <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)"><div style="width:10px;height:10px;border-radius:50%;background:var(--green)"></div>Win</div>
-        <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)"><div style="width:10px;height:10px;border-radius:50%;background:var(--red)"></div>Loss</div>
-        <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)"><div style="width:10px;height:10px;border-radius:50%;background:var(--amber)"></div>Otwarta</div>
-        <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)"><div style="width:10px;height:10px;border-radius:50%;background:var(--border2)"></div>Brak transakcji</div>
-        <div id="s-cal-monthly-stats" style="margin-left:auto;font-size:12px;color:var(--text2)"></div>
-      </div>
-      <!-- Calendar grid -->
-      <div id="s-cal-grid"></div>
-      <!-- Day detail panel -->
-      <div id="s-cal-day-panel" style="display:none;margin-top:20px">
-        <div class="table-wrap">
-          <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
-            <div id="s-cal-day-title" style="font-family:var(--font-head);font-size:16px;font-weight:700"></div>
-            <button onclick="document.getElementById('s-cal-day-panel').style.display='none'" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px">✕</button>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+          <button class="btn-sm" id="s-cal-prev" onclick="calNavSummary(-1)">← Poprzedni</button>
+          <div id="s-cal-period-label" style="font-family:var(--font-head);font-size:20px;font-weight:700;letter-spacing:-0.5px"></div>
+          <button class="btn-sm" id="s-cal-next" onclick="calNavSummary(1)">Następny →</button>
+        </div>
+        <div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap" id="s-cal-legend">
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)"><div style="width:10px;height:10px;border-radius:50%;background:var(--green)"></div>Win</div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)"><div style="width:10px;height:10px;border-radius:50%;background:var(--red)"></div>Loss</div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)"><div style="width:10px;height:10px;border-radius:50%;background:var(--amber)"></div>Otwarta</div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)"><div style="width:10px;height:10px;border-radius:50%;background:var(--border2)"></div>Brak transakcji</div>
+          <div id="s-cal-monthly-stats" style="margin-left:auto;font-size:12px;color:var(--text2)"></div>
+        </div>
+        <div id="s-cal-grid"></div>
+        <div id="s-cal-day-panel" style="display:none;margin-top:20px">
+          <div class="table-wrap">
+            <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+              <div id="s-cal-day-title" style="font-family:var(--font-head);font-size:16px;font-weight:700"></div>
+              <button onclick="document.getElementById('s-cal-day-panel').style.display='none'" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px">✕</button>
+            </div>
+            <div id="s-cal-day-trades"></div>
           </div>
-          <div id="s-cal-day-trades"></div>
         </div>
       </div>
+
+      <!-- TAB: Strategie -->
+      <div id="stats-tab-strategies" style="display:none;padding-top:20px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:18px;flex-wrap:wrap">
+          <span style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;flex-shrink:0">Okres:</span>
+          <button class="stats-period-btn active" id="ssp-all"   onclick="setStatsPeriod('all',this)">Wszystko</button>
+          <button class="stats-period-btn" id="ssp-year"  onclick="setStatsPeriod('year',this)">Ten rok</button>
+          <button class="stats-period-btn" id="ssp-month" onclick="setStatsPeriod('month',this)">Ten miesiąc</button>
+          <button class="stats-period-btn" id="ssp-week"  onclick="setStatsPeriod('week',this)">Ten tydzień</button>
+          <button class="stats-period-btn" id="ssp-today" onclick="setStatsPeriod('today',this)">Dziś</button>
+        </div>
+        <div id="stats-strategies-content"></div>
       </div>
-      <!-- PODSUMOWANIE -->
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-        <div class="page-title" style="margin-bottom:0">Podsumowanie konta</div>
-        <button class="btn-sm" onclick="exportSummaryPDF()" title="Eksportuj raport do PDF" style="font-size:12px;flex-shrink:0">🖨 Drukuj / PDF</button>
-      </div>
-      <div class="page-subtitle" id="summary-subtitle">Szczegółowe statystyki</div>
-      <div id="summary-content"></div>
     </div>
 
     <!-- ACCOUNTS -->
@@ -2176,7 +2209,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
             </div>
 
             <!-- PRZED SESJĄ -->
-            <div class="summary-card" style="margin-bottom:16px">
+            <div class="summary-card" id="journal-card-pre" style="margin-bottom:16px">
               <div class="summary-card-title" style="color:var(--amber);margin-bottom:14px">🌅 Przed sesją</div>
               <div style="display:grid;gap:12px">
 
@@ -2207,11 +2240,16 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
                   <label style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Cel dnia</label>
                   <input id="journal-pre-goal" class="form-input-modal" placeholder="np. Żaden trade powyżej 1% ryzyka, 0 revenge trades">
                 </div>
+
+                <div style="display:flex;justify-content:flex-end;gap:8px;padding-top:8px;border-top:1px solid var(--border)">
+                  <button onclick="openReminderModal('Plan sesji: ' + formatDatePL(_jSelectedDate), _jSelectedDate, 'journal')" class="btn-sm" style="font-size:11px">🔔 Przypomnij mi</button>
+                  <button onclick="createAnalysisFromJournal()" class="btn-sm btn-accent" style="font-size:11px">📈 Utwórz analizę</button>
+                </div>
               </div>
             </div>
 
             <!-- PO SESJI -->
-            <div class="summary-card">
+            <div class="summary-card" id="journal-card-post">
               <div class="summary-card-title" style="color:var(--accent);margin-bottom:14px">🌙 Po sesji</div>
               <div style="display:grid;gap:12px">
 
@@ -2242,6 +2280,16 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
                   <label style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Ocena dnia: <span id="journal-post-rating-val" style="color:var(--accent)">5</span>/10</label>
                   <input type="range" id="journal-post-rating" min="1" max="10" value="5" oninput="document.getElementById('journal-post-rating-val').textContent=this.value"
                     style="width:100%;accent-color:var(--accent)">
+                </div>
+
+                <div id="journal-post-logout-bar" style="display:none;padding-top:10px;border-top:1px solid var(--border)">
+                  <div style="display:flex;justify-content:space-between;align-items:center">
+                    <span style="font-size:12px;color:var(--text3)">Sesja zamknięta — zapisz wpis i wyloguj się</span>
+                    <div style="display:flex;gap:8px">
+                      <button onclick="saveJournalEntry();toast('Wpis zapisany ✓','success')" class="btn-sm btn-accent" style="font-size:12px">💾 Zapisz wpis</button>
+                      <button onclick="confirmAndLogout()" style="padding:6px 14px;background:var(--red);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">🚪 Wyloguj się</button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -2289,6 +2337,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
                 </select>
                 <button onclick="toggleNotePin()" id="note-pin-btn" class="btn-sm" title="Przypnij" style="font-size:13px;padding:5px 10px">📌</button>
                 <button onclick="deleteCurrentNote()" class="btn-sm" style="color:var(--red);border-color:var(--red);font-size:12px">🗑</button>
+                <button onclick="createAnalysisFromNote()" class="btn-sm" style="font-size:11px;border-color:var(--accent);color:var(--accent)" title="Przekształć notatkę w analizę">📈 Analiza</button>
                 <button onclick="saveCurrentNote()" class="btn-sm btn-accent" style="font-size:12px">💾 Zapisz</button>
               </div>
               <div style="margin-bottom:8px">
@@ -2374,12 +2423,8 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
     <!-- EMOTIONS PAGE (placeholder — pełna implementacja w Task 7) -->
     <div id="page-emotions" class="page">
       <div class="page-title">🧠 Emocje & Psychologia</div>
-      <div class="page-subtitle">Analiza emocjonalna, overtrading alert, wykresy</div>
-      <div style="text-align:center;padding:60px 20px;color:var(--text3)">
-        <div style="font-size:48px;margin-bottom:16px">🧠</div>
-        <div style="font-size:16px;font-weight:600;margin-bottom:8px">Analiza emocjonalna w budowie</div>
-        <div style="font-size:13px">Wkrótce: ankieta po tradzie, wykres emocji vs P&L, overtrading detektor</div>
-      </div>
+      <div class="page-subtitle" id="emotions-subtitle">Analiza emocjonalna — emocje vs. P&L</div>
+      <div id="emotions-content"></div>
     </div>
 
     <!-- LIBRARY PAGE (placeholder — pełna implementacja w Task 8) -->
@@ -3060,9 +3105,9 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
           </div>
         </div>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0">
+        <div id="routine-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:0">
           <!-- BEFORE SESSION -->
-          <div style="padding:20px 24px;border-right:1px solid var(--border)">
+          <div id="routine-before-col" style="padding:20px 24px;border-right:1px solid var(--border)">
             <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:14px">⬛ Before Session</div>
 
             <div class="routine-item" onclick="toggleRoutine(this)">
@@ -3107,7 +3152,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
           </div>
 
           <!-- AFTER SESSION -->
-          <div style="padding:20px 24px">
+          <div id="routine-after-col" style="padding:20px 24px">
             <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--amber);margin-bottom:14px">⬛ After Session</div>
 
             <div class="routine-item" onclick="toggleRoutine(this)">
@@ -3160,11 +3205,95 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
               <input type="checkbox" id="routine-no-show-today" style="cursor:pointer">
               Nie pokazuj dziś
             </label>
-            <button onclick="closeRoutineModal()" class="btn-sm btn-accent">Zaczynam! 🚀</button>
+            <button id="routine-action-btn" onclick="finishRoutineAction()" class="btn-sm btn-accent">Zaczynam! 🚀</button>
           </div>
         </div>
       </div>
     </div>
+
+<!-- REMINDER SET MODAL -->
+<div class="modal-overlay" id="reminder-modal" role="dialog" aria-modal="true" aria-label="Ustaw przypomnienie">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header">
+      <div class="modal-title">🔔 Ustaw przypomnienie</div>
+      <button class="modal-close" onclick="closeModal('reminder-modal')">✕</button>
+    </div>
+    <div style="padding:4px 0 16px">
+      <div id="reminder-modal-label" style="font-size:13px;color:var(--text2);margin-bottom:14px;padding:10px 12px;background:var(--bg3);border-radius:8px;border:1px solid var(--border);line-height:1.5"></div>
+      <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Kiedy przypomnieć?</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px">
+        <button class="btn-sm reminder-time-btn" onclick="setReminderTime(this, 15*60*1000)">⚡ Za 15 min</button>
+        <button class="btn-sm reminder-time-btn" onclick="setReminderTime(this, 60*60*1000)">⏰ Za 1 godzinę</button>
+        <button class="btn-sm reminder-time-btn" onclick="setReminderTime(this, 4*60*60*1000)">🕓 Za 4 godziny</button>
+        <button class="btn-sm reminder-time-btn" onclick="setReminderTimeToday(this, 20, 0)">🌙 Dziś 20:00</button>
+        <button class="btn-sm reminder-time-btn" onclick="setReminderTimeTomorrow(this, 8, 0)">☀️ Jutro 8:00</button>
+        <button class="btn-sm reminder-time-btn" onclick="setReminderTimeTomorrow(this, 9, 0)">🌅 Jutro 9:00</button>
+      </div>
+      <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Własna data i czas</div>
+      <input type="datetime-local" id="reminder-custom-datetime" class="form-input-modal" style="font-size:13px" oninput="onReminderCustomTime(this)">
+      <input type="hidden" id="reminder-modal-time">
+      <input type="hidden" id="reminder-modal-linked-id">
+      <input type="hidden" id="reminder-modal-linked-page">
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:8px">
+      <button class="btn-sm" onclick="closeModal('reminder-modal')">Anuluj</button>
+      <button class="btn-sm btn-accent" onclick="confirmAddReminder()">🔔 Ustaw przypomnienie</button>
+    </div>
+  </div>
+</div>
+
+<!-- REMINDER LIST MODAL -->
+<div class="modal-overlay" id="reminder-list-modal" role="dialog" aria-modal="true" aria-label="Przypomnienia">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-header">
+      <div class="modal-title">🔔 Przypomnienia</div>
+      <button class="modal-close" onclick="closeModal('reminder-list-modal')">✕</button>
+    </div>
+    <div id="reminder-list-content" style="max-height:420px;overflow-y:auto;padding:4px 0"></div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">
+      <button class="btn-sm" onclick="closeModal('reminder-list-modal')">Zamknij</button>
+    </div>
+  </div>
+</div>
+
+<!-- DAILY BRIEFING MODAL -->
+<div class="modal-overlay" id="daily-briefing-modal" role="dialog" aria-modal="true" aria-label="Dzienny briefing" style="z-index:10001">
+  <div class="modal" style="max-width:560px;padding:0;overflow:hidden">
+    <div style="background:linear-gradient(135deg,#0a1628 0%,#0e2040 100%);padding:22px 26px 18px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-family:var(--font-head);font-size:20px;font-weight:800;color:white">Dobry dzień, <span id="briefing-user-name" style="color:var(--accent)"></span>! 👋</div>
+          <div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:3px" id="briefing-date-label"></div>
+        </div>
+        <button onclick="closeDailyBriefing()" style="background:rgba(255,255,255,.1);border:none;color:white;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px">✕</button>
+      </div>
+    </div>
+    <div id="briefing-content" style="padding:20px 24px;max-height:460px;overflow-y:auto"></div>
+    <div style="padding:14px 24px;background:var(--bg);border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">
+      <button class="btn-sm" onclick="showPage('journal');closeDailyBriefing()">📔 Dziennik</button>
+      <button class="btn-sm" onclick="showPage('analysis');closeDailyBriefing()">📈 Nowa analiza</button>
+      <button class="btn-sm btn-accent" onclick="closeDailyBriefing()">Zaczynam! 🚀</button>
+    </div>
+  </div>
+</div>
+
+<!-- REMINDER POPUP (floating toast-style) -->
+<div id="reminder-popup" style="display:none;position:fixed;top:70px;right:20px;z-index:20000;background:var(--bg2);border:1px solid var(--accent);border-radius:14px;padding:16px 20px;max-width:320px;box-shadow:0 8px 32px rgba(0,0,0,.4);animation:slideInRight .3s ease">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+    <div style="font-size:22px">🔔</div>
+    <div>
+      <div style="font-size:13px;font-weight:700;color:var(--text)">Przypomnienie</div>
+      <div style="font-size:11px;color:var(--text3)">Teraz</div>
+    </div>
+    <button onclick="dismissReminderPopup()" style="margin-left:auto;background:none;border:none;cursor:pointer;color:var(--text3);font-size:16px;line-height:1">✕</button>
+  </div>
+  <div id="reminder-popup-text" style="font-size:13px;color:var(--text2);margin-bottom:12px;line-height:1.5"></div>
+  <div style="display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap">
+    <button class="btn-sm" onclick="snoozeReminder(10)">⏰ Odłóż 10 min</button>
+    <button id="reminder-popup-goto" class="btn-sm btn-accent" style="display:none">Przejdź →</button>
+    <button class="btn-sm" style="border-color:var(--green);color:var(--green)" onclick="doneReminderPopup()">✅ Gotowe</button>
+  </div>
+</div>
 
 
 <script>
@@ -3253,6 +3382,10 @@ function loginAs(username, userData) {
   setTimeout(checkRecoveryCodeReminder, 2000);
   // [v1.7] Uruchom nasłuchiwanie sygnałów z MT4
   setTimeout(initMT4Listener, 2000);
+  // Dzienny briefing + przypomnienia
+  setTimeout(showDailyBriefing, 1500);
+  setTimeout(updateReminderBell, 500);
+  setInterval(checkReminders, 60000);
   // Auto-połącz Google Drive jeśli użytkownik wcześniej je włączył
   setTimeout(() => { if (getBackupSettings().googleDrive) connectGoogleDrive(); }, 1500);
   // Synchronizuj zmiany offline jeśli są
@@ -3306,7 +3439,20 @@ function closeSidebar() {
 
 function doLogout() {
   closeUserMenu();
+  // Pokaż rutynę "Po sesji" przed wylogowaniem
+  _pendingLogout = true;
+  showRoutineModal('after');
+}
+
+function confirmAndLogout() {
   if (!confirm('Wylogować się?')) return;
+  _executeLogout();
+}
+
+function _executeLogout() {
+  _pendingLogout = false;
+  const bar = document.getElementById('journal-post-logout-bar');
+  if (bar) bar.style.display = 'none';
   stopAutoSync();
   _lastSyncTime = null;
   const ind = document.getElementById('sync-indicator');
@@ -3328,6 +3474,7 @@ function doLogout() {
 function showPage(page) {
   // Zamknij wszystkie otwarte modale przy zmianie zakładki
   document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+  checkReminders();
   // Jawnie ukryj sub-taby narzędzi gdy opuszczasz stronę tools
   if (page !== 'tools') {
     ['calculator','strategies','brokers'].forEach(t => {
@@ -3348,7 +3495,7 @@ function showPage(page) {
   });
   if (page === 'dashboard') renderDashboard();
   if (page === 'trades') renderTrades();
-  if (page === 'summary') { renderSummary(); setTimeout(renderCalendarSummary, 100); }
+  if (page === 'summary') { if(_statsTab==='calendar') setTimeout(renderCalendarSummary,50); else if(_statsTab==='strategies') setTimeout(renderStatsStrategies,50); else renderSummary(); }
   if (page === 'accounts') renderAccounts();
   if (page === 'drafts') renderDraftsPage();
   if (page === 'analysis') renderAnalysisList();
@@ -3362,7 +3509,7 @@ function showPage(page) {
   // Aktualizuj tytuł w topstrip
   const PAGE_TITLES = {
     dashboard:'Dashboard', trades:'Transakcje', journal:'Dziennik', analysis:'Analiza',
-    summary:'Podsumowanie', emotions:'Emocje & Psychologia', library:'Biblioteka',
+    summary:'Statystyki', emotions:'Emocje & Psychologia', library:'Biblioteka',
     tools:'Narzędzia', accounts:'Konta', drafts:'Szkice', settings:'Ustawienia',
     admin:'Admin', calendar:'Kalendarz'
   };
@@ -3525,15 +3672,286 @@ function buildTradesTable(trades) {
     </tbody></table>`;
 }
 
+// ===== STATYSTYKI — tabs + period =====
+let _statsTab    = 'overview';
+let _statsPeriod = 'all';
+
+function switchStatsTab(tab) {
+  _statsTab = tab;
+  ['overview','calendar','strategies'].forEach(t => {
+    const el  = document.getElementById('stats-tab-' + t);
+    const btn = document.getElementById('stab-' + t);
+    if (el)  el.style.display  = t === tab ? 'block' : 'none';
+    if (btn) btn.classList.toggle('active', t === tab);
+  });
+  if (tab === 'overview')   renderSummary();
+  if (tab === 'calendar')   renderCalendarSummary();
+  if (tab === 'strategies') renderStatsStrategies();
+}
+
+function setStatsPeriod(period, btn) {
+  _statsPeriod = period;
+  // Sync both period bars (overview + strategies have independent buttons)
+  ['sp-','ssp-'].forEach(pfx => {
+    ['all','year','month','week','today'].forEach(p => {
+      const el = document.getElementById(pfx + p);
+      if (el) el.classList.toggle('active', p === period);
+    });
+  });
+  if (_statsTab === 'overview')   renderSummary();
+  if (_statsTab === 'strategies') renderStatsStrategies();
+}
+
+function getStatsTrades() {
+  if (!state.currentAccountId) return [];
+  const all = getTrades(state.currentAccountId).filter(t => t.status === 'closed' && t.pnl != null);
+  if (_statsPeriod === 'all') return all;
+  const now = new Date();
+  const todayStr = now.toISOString().slice(0,10);
+  if (_statsPeriod === 'today') return all.filter(t => (t.date||'').slice(0,10) === todayStr);
+  if (_statsPeriod === 'week') {
+    const mon = new Date(now); mon.setDate(now.getDate() - ((now.getDay()||7) - 1)); mon.setHours(0,0,0,0);
+    const sun = new Date(mon); sun.setDate(mon.getDate() + 6); sun.setHours(23,59,59,999);
+    return all.filter(t => { const d = new Date(t.date); return d >= mon && d <= sun; });
+  }
+  if (_statsPeriod === 'month') {
+    const y = now.getFullYear(), m = now.getMonth();
+    return all.filter(t => { const d = new Date(t.date); return d.getFullYear()===y && d.getMonth()===m; });
+  }
+  if (_statsPeriod === 'year') {
+    return all.filter(t => new Date(t.date).getFullYear() === now.getFullYear());
+  }
+  return all;
+}
+
+function renderStatsStrategies() {
+  const el = document.getElementById('stats-strategies-content');
+  if (!el) return;
+  if (!state.currentAccountId) { el.innerHTML = emptyState('🎯','Brak konta',''); return; }
+  const acc    = getAccounts().find(a => a.id === state.currentAccountId);
+  const closed = getStatsTrades();
+  const curr   = getCurrSym(acc?.id);
+  const fmt    = v => parseFloat(v).toFixed(2);
+
+  if (!closed.length) {
+    const periods = {all:'',year:' w tym roku',month:' w tym miesiącu',week:' w tym tygodniu',today:' dziś'};
+    el.innerHTML = emptyState('🎯','Brak danych','Brak zamkniętych transakcji' + (periods[_statsPeriod]||''));
+    return;
+  }
+
+  // By symbol
+  const bySymbol = {};
+  closed.forEach(t => {
+    if (!bySymbol[t.symbol]) bySymbol[t.symbol]={pnl:0,count:0,wins:0,rrSum:0,rrCount:0};
+    bySymbol[t.symbol].pnl+=t.pnl; bySymbol[t.symbol].count++;
+    if(t.pnl>0) bySymbol[t.symbol].wins++;
+    if(t.entry&&t.sl&&t.tp){const r=Math.abs(t.entry-t.sl),w=Math.abs(t.tp-t.entry);if(r>0){bySymbol[t.symbol].rrSum+=w/r;bySymbol[t.symbol].rrCount++;}}
+  });
+  // By setup
+  const bySetup = {};
+  closed.forEach(t => {
+    const s=t.setup||'Brak'; if(!bySetup[s])bySetup[s]={pnl:0,count:0,wins:0,rrSum:0,rrCount:0};
+    bySetup[s].pnl+=t.pnl; bySetup[s].count++; if(t.pnl>0)bySetup[s].wins++;
+    if(t.entry&&t.sl&&t.tp){const r=Math.abs(t.entry-t.sl),w=Math.abs(t.tp-t.entry);if(r>0){bySetup[s].rrSum+=w/r;bySetup[s].rrCount++;}}
+  });
+  // By TF
+  const byTf = {};
+  closed.forEach(t => { const tf=t.tf||'—'; if(!byTf[tf])byTf[tf]={pnl:0,count:0,wins:0}; byTf[tf].pnl+=t.pnl; byTf[tf].count++; if(t.pnl>0)byTf[tf].wins++; });
+  // By DOW
+  const byDow={0:{n:'Ndz',pnl:0,c:0,w:0},1:{n:'Pon',pnl:0,c:0,w:0},2:{n:'Wt',pnl:0,c:0,w:0},3:{n:'Śr',pnl:0,c:0,w:0},4:{n:'Czw',pnl:0,c:0,w:0},5:{n:'Pt',pnl:0,c:0,w:0},6:{n:'Sob',pnl:0,c:0,w:0}};
+  closed.forEach(t => { if(!t.date)return; const d=new Date(t.date).getDay(); byDow[d].pnl+=t.pnl||0; byDow[d].c++; if(t.pnl>0)byDow[d].w++; });
+  // By hour
+  const byHour = {};
+  closed.forEach(t => { if(!t.date)return; const h=new Date(t.date).getHours(); if(!byHour[h])byHour[h]={pnl:0,c:0,w:0}; byHour[h].pnl+=t.pnl||0; byHour[h].c++; if(t.pnl>0)byHour[h].w++; });
+  // By session
+  const bySess={Asian:{pnl:0,c:0,w:0},London:{pnl:0,c:0,w:0},NY:{pnl:0,c:0,w:0}};
+  closed.forEach(t=>{if(!t.date)return;const h=new Date(t.date).getUTCHours();if(h>=0&&h<8){bySess.Asian.pnl+=t.pnl||0;bySess.Asian.c++;if(t.pnl>0)bySess.Asian.w++;}if(h>=7&&h<16){bySess.London.pnl+=t.pnl||0;bySess.London.c++;if(t.pnl>0)bySess.London.w++;}if(h>=13&&h<22){bySess.NY.pnl+=t.pnl||0;bySess.NY.c++;if(t.pnl>0)bySess.NY.w++;}});
+
+  const dowActive=Object.values(byDow).filter(d=>d.c>0);
+  const bestDow =dowActive.length?dowActive.reduce((b,d)=>d.pnl>b.pnl?d:b):null;
+  const worstDow=dowActive.length?dowActive.reduce((b,d)=>d.pnl<b.pnl?d:b):null;
+  const hourEntries=Object.entries(byHour).filter(([,d])=>d.c>=2);
+  const bestHour =hourEntries.length?hourEntries.reduce((b,e)=>e[1].pnl>b[1].pnl?e:b):null;
+  const worstHour=hourEntries.length?hourEntries.reduce((b,e)=>e[1].pnl<b[1].pnl?e:b):null;
+  const symRows=Object.entries(bySymbol).sort((a,b)=>b[1].pnl-a[1].pnl).slice(0,10);
+
+  // R:R per-trade table
+  const rrRows = [...closed].reverse().map(t => {
+    const risk=(t.entry&&t.sl)?Math.abs(t.entry-t.sl):null;
+    const rew=(t.entry&&t.tp)?Math.abs(t.tp-t.entry):null;
+    const rr=(risk&&rew&&risk>0)?(rew/risk).toFixed(2):null;
+    const rc=!rr?'var(--text3)':parseFloat(rr)>=2?'var(--accent)':parseFloat(rr)>=1?'var(--amber)':'var(--red)';
+    return `<tr style="border-bottom:1px solid rgba(255,255,255,.03);cursor:pointer" onclick="openDetailModal('${t.id}')">
+      <td style="padding:5px 8px;color:var(--text3);font-size:11px;font-family:var(--font-mono)">${formatDate(t.date).slice(0,10)}</td>
+      <td style="padding:5px 8px;font-family:var(--font-mono);font-weight:600">${t.symbol}</td>
+      <td style="padding:5px 8px;text-align:center"><span class="badge badge-${t.dir.toLowerCase()}" style="font-size:10px;padding:2px 6px">${t.dir}</span></td>
+      <td style="padding:5px 8px;text-align:center;color:var(--text2)">${t.tf||'&#8212;'}</td>
+      <td style="padding:5px 8px;text-align:center"><span class="tag" style="font-size:10px">${t.setup||'&#8212;'}</span></td>
+      <td style="padding:5px 8px;text-align:center;font-family:var(--font-mono);color:var(--red)">${risk!=null?risk.toFixed(2):'&#8212;'}</td>
+      <td style="padding:5px 8px;text-align:center;font-family:var(--font-mono);color:var(--green)">${rew!=null?rew.toFixed(2):'&#8212;'}</td>
+      <td style="padding:5px 8px;text-align:center;font-family:var(--font-mono);font-weight:700;color:${rc}">${rr!=null?'1:'+rr:'&#8212;'}</td>
+      <td style="padding:5px 8px;text-align:right" class="${t.pnl>0?'pnl-pos':t.pnl<0?'pnl-neg':''}">${t.pnl!=null?(t.pnl>0?'+':'')+fmt(t.pnl):'&#8212;'}</td>
+    </tr>`;
+  }).join('');
+
+  el.innerHTML = `
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px">
+    <div class="summary-card"><div class="summary-card-title">📊 Wg instrumentu</div>
+      <table style="width:100%;font-size:12px;border-collapse:collapse"><thead><tr style="color:var(--text3);font-size:10px"><th style="text-align:left;padding:3px 0">Symbol</th><th style="text-align:center">WR%</th><th style="text-align:center">R:R</th><th style="text-align:right">P&L</th></tr></thead>
+      <tbody>${symRows.map(([sym,d])=>{const wr=Math.round(d.wins/d.count*100),rr=d.rrCount?(d.rrSum/d.rrCount).toFixed(1):'&#8212;';return `<tr><td style="padding:5px 0"><span class="mono" style="font-weight:600">${sym}</span></td><td style="text-align:center;color:${wr>=50?'var(--accent)':'var(--red)'}">${wr}%</td><td style="text-align:center;font-family:var(--font-mono);font-size:11px;color:var(--amber)">${rr!=='&#8212;'?'1:'+rr:'&#8212;'}</td><td style="text-align:right" class="${d.pnl>=0?'pnl-pos':'pnl-neg'}">${d.pnl>=0?'+':''}${fmt(d.pnl)}</td></tr>`;}).join('')}
+      </tbody></table>
+    </div>
+    <div class="summary-card"><div class="summary-card-title">🎯 Wg setupu</div>
+      <table style="width:100%;font-size:12px;border-collapse:collapse"><thead><tr style="color:var(--text3);font-size:10px"><th style="text-align:left;padding:3px 0">Setup</th><th style="text-align:center">WR%</th><th style="text-align:center">R:R</th><th style="text-align:right">P&L</th></tr></thead>
+      <tbody>${Object.entries(bySetup).sort((a,b)=>b[1].pnl-a[1].pnl).map(([s,d])=>{const wr=Math.round(d.wins/d.count*100),rr=d.rrCount?(d.rrSum/d.rrCount).toFixed(1):'&#8212;';return `<tr><td style="padding:5px 0"><span class="tag" style="font-size:10px">${s}</span></td><td style="text-align:center;color:${wr>=50?'var(--accent)':'var(--red)'}">${wr}%</td><td style="text-align:center;font-family:var(--font-mono);font-size:11px;color:var(--amber)">${rr!=='&#8212;'?'1:'+rr:'&#8212;'}</td><td style="text-align:right" class="${d.pnl>=0?'pnl-pos':'pnl-neg'}">${d.pnl>=0?'+':''}${fmt(d.pnl)}</td></tr>`;}).join('')}
+      </tbody></table>
+    </div>
+    <div class="summary-card"><div class="summary-card-title">⏱ Wg timeframe</div>
+      <table style="width:100%;font-size:12px;border-collapse:collapse"><thead><tr style="color:var(--text3);font-size:10px"><th style="text-align:left;padding:3px 0">TF</th><th style="text-align:center">Trd</th><th style="text-align:center">WR%</th><th style="text-align:right">P&L</th></tr></thead>
+      <tbody>${Object.entries(byTf).sort((a,b)=>b[1].count-a[1].count).map(([tf,d])=>{const wr=Math.round(d.wins/d.count*100);return `<tr><td style="padding:5px 0"><span class="tag" style="font-size:11px">${tf}</span></td><td style="text-align:center;color:var(--text2)">${d.count}</td><td style="text-align:center;color:${wr>=50?'var(--accent)':'var(--red)'}">${wr}%</td><td style="text-align:right" class="${d.pnl>=0?'pnl-pos':'pnl-neg'}">${d.pnl>=0?'+':''}${fmt(d.pnl)}</td></tr>`;}).join('')}
+      </tbody></table>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px">
+    <div class="summary-card"><div class="summary-card-title">📅 Wg dnia tygodnia</div>
+      ${bestDow?`<div style="font-size:11px;color:var(--text3);margin-bottom:8px">Najlepszy: <strong style="color:var(--green)">${bestDow.n} (+${fmt(bestDow.pnl)})</strong> · Najgorszy: <strong style="color:var(--red)">${worstDow.n} (${fmt(worstDow.pnl)})</strong></div>`:''}
+      <table style="width:100%;font-size:12px;border-collapse:collapse">
+        <thead><tr style="color:var(--text3);font-size:10px"><th style="text-align:left;padding:3px 0">Dzień</th><th style="text-align:center">Trd</th><th style="text-align:center">WR%</th><th style="text-align:right">P&L</th></tr></thead>
+        <tbody>${Object.values(byDow).filter(d=>d.c>0).map(d=>{const wr=Math.round(d.w/d.c*100);return `<tr><td style="padding:4px 0;color:var(--text2)">${d.n}</td><td style="text-align:center;color:var(--text3)">${d.c}</td><td style="text-align:center;color:${wr>=50?'var(--accent)':'var(--red)'}">${wr}%</td><td style="text-align:right" class="${d.pnl>=0?'pnl-pos':'pnl-neg'}">${d.pnl>=0?'+':''}${fmt(d.pnl)}</td></tr>`;}).join('')}
+        </tbody>
+      </table>
+    </div>
+    <div class="summary-card"><div class="summary-card-title">🕐 Wg godziny wejścia</div>
+      ${bestHour?`<div style="font-size:11px;color:var(--text3);margin-bottom:8px">Najlepsza: <strong style="color:var(--green)">${bestHour[0]}:00 (+${fmt(bestHour[1].pnl)})</strong> · Najgorsza: <strong style="color:var(--red)">${worstHour[0]}:00 (${fmt(worstHour[1].pnl)})</strong></div>`:'<div style="font-size:12px;color:var(--text3)">Min. 2 transakcje na godzinę</div>'}
+      <table style="width:100%;font-size:12px;border-collapse:collapse">
+        <thead><tr style="color:var(--text3);font-size:10px"><th style="text-align:left;padding:3px 0">Godz.</th><th style="text-align:center">Trd</th><th style="text-align:center">WR%</th><th style="text-align:right">P&L</th></tr></thead>
+        <tbody>${Object.entries(byHour).sort((a,b)=>parseInt(a[0])-parseInt(b[0])).map(([h,d])=>{const wr=Math.round(d.w/d.c*100);return `<tr><td style="padding:4px 0;color:var(--text2);font-family:var(--font-mono)">${h}:00</td><td style="text-align:center;color:var(--text3)">${d.c}</td><td style="text-align:center;color:${wr>=50?'var(--accent)':'var(--red)'}">${wr}%</td><td style="text-align:right" class="${d.pnl>=0?'pnl-pos':'pnl-neg'}">${d.pnl>=0?'+':''}${fmt(d.pnl)}</td></tr>`;}).join('')}
+        </tbody>
+      </table>
+    </div>
+    <div class="summary-card"><div class="summary-card-title">🌍 Wg sesji rynkowej</div>
+      ${['Asian','London','NY'].map(s=>{const d=bySess[s];if(!d.c)return '';const wr=Math.round(d.w/d.c*100);return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04)"><div><div style="font-size:13px;font-weight:600">${s}</div><div style="font-size:10px;color:var(--text3)">${d.c} trans. · ${wr}% WR</div></div><div class="${d.pnl>=0?'pnl-pos':'pnl-neg'}" style="font-family:var(--font-mono);font-size:13px">${d.pnl>=0?'+':''}${fmt(d.pnl)}</div></div>`;}).join('')}
+    </div>
+  </div>
+  <div class="summary-card"><div class="summary-card-title">📋 R:R każdej transakcji (${closed.length})</div>
+    <div style="overflow-x:auto"><table style="width:100%;font-size:12px;border-collapse:collapse">
+      <thead><tr style="color:var(--text3);font-size:10px;border-bottom:1px solid var(--border)">
+        <th style="text-align:left;padding:5px 8px">Data</th><th style="text-align:left;padding:5px 8px">Symbol</th>
+        <th style="text-align:center;padding:5px 8px">Dir</th><th style="text-align:center;padding:5px 8px">TF</th>
+        <th style="text-align:center;padding:5px 8px">Setup</th><th style="text-align:center;padding:5px 8px">Ryzyko</th>
+        <th style="text-align:center;padding:5px 8px">Reward</th><th style="text-align:center;padding:5px 8px">R:R</th>
+        <th style="text-align:right;padding:5px 8px">P&L</th>
+      </tr></thead>
+      <tbody>${rrRows}</tbody>
+    </table></div>
+  </div>`;
+}
+
+function renderEmotions() {
+  const el = document.getElementById('emotions-content');
+  if (!el) return;
+  if (!state.currentAccountId) { el.innerHTML = emptyState('🧠','Brak konta',''); return; }
+  const acc    = getAccounts().find(a => a.id === state.currentAccountId);
+  const closed = getTrades(state.currentAccountId).filter(t => t.status==='closed' && t.pnl!=null);
+  const curr   = getCurrSym(acc?.id);
+  const fmt    = v => parseFloat(v).toFixed(2);
+  const sub    = document.getElementById('emotions-subtitle');
+  if (sub) sub.textContent = (acc ? acc.name + ' · ' : '') + closed.length + ' zamkniętych transakcji';
+
+  const emoTrades = closed.filter(t => t.emotionPre || t.emotionPost);
+  if (!emoTrades.length && closed.length > 0) {
+    el.innerHTML = `
+      <div style="text-align:center;padding:40px 20px">
+        <div style="font-size:48px;margin-bottom:12px">🧠</div>
+        <div style="font-size:16px;font-weight:600;margin-bottom:8px">Brak danych emocjonalnych</div>
+        <div style="font-size:13px;color:var(--text3);max-width:400px;margin:0 auto;line-height:1.7">Zacznij dodawać emocje do transakcji (pole "Emocja przed wejściem" i "Emocja po zamknięciu" w formularzu transakcji)</div>
+        <button class="btn-sm btn-accent" onclick="openTradeModalWithDraftCheck()" style="margin-top:16px">+ Dodaj transakcję z emocjami</button>
+      </div>`;
+    return;
+  }
+  if (!closed.length) { el.innerHTML = emptyState('🧠','Brak transakcji','Dodaj transakcje aby zobaczyć analizę emocjonalną'); return; }
+
+  // Separate pre/post
+  const byEmoPre = {}, byEmoPost = {};
+  closed.filter(t=>t.emotionPre).forEach(t  => { const e=t.emotionPre;  if(!byEmoPre[e]) byEmoPre[e]={c:0,pnl:0,w:0};  byEmoPre[e].c++;  byEmoPre[e].pnl+=t.pnl||0; if(t.pnl>0)byEmoPre[e].w++;  });
+  closed.filter(t=>t.emotionPost).forEach(t => { const e=t.emotionPost; if(!byEmoPost[e])byEmoPost[e]={c:0,pnl:0,w:0}; byEmoPost[e].c++; byEmoPost[e].pnl+=t.pnl||0; if(t.pnl>0)byEmoPost[e].w++; });
+
+  const emoTable = data => {
+    if (!Object.keys(data).length) return `<div style="font-size:12px;color:var(--text3);padding:12px 0">Brak danych — uzupełnij emocje w transakcjach</div>`;
+    return `<table style="width:100%;font-size:12px;border-collapse:collapse">
+      <thead><tr style="color:var(--text3);font-size:10px;border-bottom:1px solid var(--border)"><th style="text-align:left;padding:6px 0">Emocja</th><th style="text-align:center">Trd</th><th style="text-align:center">WR%</th><th style="text-align:right">Śr. P&L</th><th style="text-align:right">Suma P&L</th></tr></thead>
+      <tbody>${Object.entries(data).sort((a,b)=>b[1].pnl-a[1].pnl).map(([e,d])=>{
+        const wr=Math.round(d.w/d.c*100), avg=d.pnl/d.c;
+        return `<tr style="border-bottom:1px solid rgba(255,255,255,.04)">
+          <td style="padding:7px 0;font-size:14px">${e}</td>
+          <td style="text-align:center;color:var(--text3)">${d.c}</td>
+          <td style="text-align:center"><span style="color:${wr>=50?'var(--accent)':'var(--red)'};font-weight:600">${wr}%</span></td>
+          <td style="text-align:right;font-family:var(--font-mono)" class="${avg>=0?'pnl-pos':'pnl-neg'}">${avg>=0?'+':''}${fmt(avg)}</td>
+          <td style="text-align:right;font-family:var(--font-mono)" class="${d.pnl>=0?'pnl-pos':'pnl-neg'}">${d.pnl>=0?'+':''}${fmt(d.pnl)}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>`;
+  };
+
+  // Coverage stats
+  const withEmo = emoTrades.length;
+  const coverage = Math.round(withEmo/closed.length*100);
+
+  // Best/worst emotion
+  const allEmoData = {...byEmoPre};
+  Object.entries(byEmoPost).forEach(([k,v]) => { if(!allEmoData[k])allEmoData[k]={c:0,pnl:0,w:0}; allEmoData[k].c+=v.c; allEmoData[k].pnl+=v.pnl; allEmoData[k].w+=v.w; });
+  const emoEntries = Object.entries(allEmoData);
+  const bestEmo  = emoEntries.length ? emoEntries.reduce((b,e)=>e[1].pnl>b[1].pnl?e:b) : null;
+  const worstEmo = emoEntries.length ? emoEntries.reduce((b,e)=>e[1].pnl<b[1].pnl?e:b) : null;
+
+  el.innerHTML = `
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">
+    <div class="summary-card" style="text-align:center">
+      <div style="font-size:28px;font-weight:800;font-family:var(--font-mono);color:var(--accent)">${withEmo}</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:4px">Transakcji z emocjami</div>
+      <div style="font-size:12px;color:var(--text2);margin-top:2px">${coverage}% pokrycia</div>
+    </div>
+    <div class="summary-card" style="text-align:center">
+      <div style="font-size:22px;margin-bottom:4px">${bestEmo ? bestEmo[0] : '—'}</div>
+      <div style="font-size:11px;color:var(--green);font-weight:600">Najlepsza emocja</div>
+      ${bestEmo ? `<div style="font-size:12px;color:var(--text2);margin-top:2px">Suma: <span class="pnl-pos">+${fmt(bestEmo[1].pnl)}</span></div>` : ''}
+    </div>
+    <div class="summary-card" style="text-align:center">
+      <div style="font-size:22px;margin-bottom:4px">${worstEmo ? worstEmo[0] : '—'}</div>
+      <div style="font-size:11px;color:var(--red);font-weight:600">Najgorsza emocja</div>
+      ${worstEmo ? `<div style="font-size:12px;color:var(--text2);margin-top:2px">Suma: <span class="pnl-neg">${fmt(worstEmo[1].pnl)}</span></div>` : ''}
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+    <div class="summary-card">
+      <div class="summary-card-title" style="color:var(--amber)">😌 Przed wejściem w transakcję</div>
+      ${emoTable(byEmoPre)}
+    </div>
+    <div class="summary-card">
+      <div class="summary-card-title" style="color:var(--accent)">😊 Po zamknięciu transakcji</div>
+      ${emoTable(byEmoPost)}
+    </div>
+  </div>
+  <div class="summary-card" style="background:linear-gradient(135deg,rgba(0,212,161,.06),rgba(79,158,255,.04));border-color:rgba(0,212,161,.2)">
+    <div class="summary-card-title" style="color:var(--accent)">🚀 Nadchodzi w następnej wersji</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">
+      <div style="font-size:12px;color:var(--text2);padding:10px;background:var(--bg3);border-radius:8px;border:1px solid var(--border)">📊 <strong>Wykres emocje vs P&L</strong><br><span style="color:var(--text3)">Słupkowy interaktywny</span></div>
+      <div style="font-size:12px;color:var(--text2);padding:10px;background:var(--bg3);border-radius:8px;border:1px solid var(--border)">⚠️ <strong>Overtrading Alert</strong><br><span style="color:var(--text3)">Po X transakcjach w sesji</span></div>
+      <div style="font-size:12px;color:var(--text2);padding:10px;background:var(--bg3);border-radius:8px;border:1px solid var(--border)">😡 <strong>Revenge Trading Detector</strong><br><span style="color:var(--text3)">Wejście &lt;15 min po stracie</span></div>
+      <div style="font-size:12px;color:var(--text2);padding:10px;background:var(--bg3);border-radius:8px;border:1px solid var(--border)">📈 <strong>Postęp jakości decyzji</strong><br><span style="color:var(--text3)">Miesiąc po miesiącu</span></div>
+    </div>
+  </div>`;
+}
+
 // ===== SUMMARY =====
 function renderSummary() {
   if (!state.currentAccountId) { document.getElementById('summary-content').innerHTML = emptyState('📊','Brak konta',''); return; }
   const accounts = getAccounts();
   const acc = accounts.find(a => a.id === state.currentAccountId);
-  const trades = getTrades(state.currentAccountId);
-  const closed = trades.filter(t => t.status === 'closed' && t.pnl != null);
-  document.getElementById('summary-subtitle').textContent = acc ? acc.name + ' · ' + acc.broker : '';
-  if (!closed.length) { document.getElementById('summary-content').innerHTML = emptyState('📊','Brak danych','Zamknij transakcje aby zobaczyć statystyki'); return; }
+  const closed = getStatsTrades();
+  const periodLabels = {all:'Wszystkie okresy',year:'Ten rok',month:'Ten miesiąc',week:'Ten tydzień',today:'Dziś'};
+  document.getElementById('summary-subtitle').textContent = (acc ? acc.name + ' · ' + (acc.broker||'') : '') + ' — ' + (periodLabels[_statsPeriod]||'');
+  if (!closed.length) { document.getElementById('summary-content').innerHTML = emptyState('📊','Brak danych','Brak zamkniętych transakcji dla wybranego okresu'); return; }
 
   const curr = getCurrSym(acc?.id);
   const startCapital = acc ? (acc.capital||0) : 0;
@@ -11005,15 +11423,45 @@ async function submitPasswordReset() {
 }
 
 
-function showRoutineModal() {
+let _routineMode = 'before';
+let _pendingLogout = false;
+
+function showRoutineModal(mode) {
+  mode = mode || 'before';
+  _routineMode = mode;
   const now = new Date();
   const today = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
   const lastShown   = localStorage.getItem('_routine_shown_'   + (state.currentUser||''));
   const noShowToday = localStorage.getItem('_routine_no_show_' + (state.currentUser||''));
 
-  // [v1.6] FIX: oba klucze używają tego samego formatu daty YYYY-MM-DD
-  if (noShowToday === today) return;
-  if (lastShown   === today) return;
+  // Dla trybu "before": sprawdź czy już pokazano dziś
+  if (mode === 'before') {
+    if (noShowToday === today) return;
+    if (lastShown   === today) return;
+  }
+
+  // Pokaż/ukryj kolumny zależnie od trybu
+  const beforeCol = document.getElementById('routine-before-col');
+  const afterCol  = document.getElementById('routine-after-col');
+  const grid      = document.getElementById('routine-grid');
+  if (beforeCol) beforeCol.style.display = mode === 'before' ? '' : 'none';
+  if (afterCol)  afterCol.style.display  = mode === 'after'  ? '' : 'none';
+  if (grid)      grid.style.gridTemplateColumns = '1fr';
+
+  // Zaktualizuj przycisk akcji
+  const actionBtn = document.getElementById('routine-action-btn');
+  if (actionBtn) {
+    if (mode === 'before') {
+      actionBtn.textContent = 'Zaczynam! 🚀';
+      actionBtn.style.background = '';
+      actionBtn.style.borderColor = '';
+    } else {
+      actionBtn.textContent = 'Koniec sesji ✓';
+      actionBtn.style.background = 'var(--amber)';
+      actionBtn.style.borderColor = 'var(--amber)';
+      actionBtn.style.color = '#000';
+    }
+  }
 
   // Ustaw datę w nagłówku
   const dateEl = document.getElementById('routine-date');
@@ -11030,8 +11478,10 @@ function showRoutineModal() {
   if (!modal) { console.warn('routine-modal nie znaleziony w DOM'); return; }
   modal.classList.add('open');
 
-  // Zapisz że pokazano dziś
-  localStorage.setItem('_routine_shown_' + (state.currentUser||''), today);
+  // Zapisz że pokazano dziś (tylko dla before)
+  if (mode === 'before') {
+    localStorage.setItem('_routine_shown_' + (state.currentUser||''), today);
+  }
 }
 
 
@@ -11039,12 +11489,63 @@ function closeRoutineModal() {
   const modal = document.getElementById('routine-modal');
   if (modal) modal.classList.remove('open');
 
-  // [v1.6] FIX: zapisuj w tym samym formacie YYYY-MM-DD co sprawdzamy
   const noShow = document.getElementById('routine-no-show-today');
   if (noShow?.checked) {
     const now = new Date();
     const today = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
     localStorage.setItem('_routine_no_show_' + (state.currentUser||''), today);
+  }
+
+  // Resetuj pendingLogout jeśli zamknięto przez X
+  if (_pendingLogout) {
+    _pendingLogout = false;
+    const bar = document.getElementById('journal-post-logout-bar');
+    if (bar) bar.style.display = 'none';
+  }
+}
+
+function finishRoutineAction() {
+  const modal = document.getElementById('routine-modal');
+  if (modal) modal.classList.remove('open');
+
+  const noShow = document.getElementById('routine-no-show-today');
+  if (noShow?.checked) {
+    const now = new Date();
+    const today = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
+    localStorage.setItem('_routine_no_show_' + (state.currentUser||''), today);
+  }
+
+  if (_routineMode === 'before') {
+    // Nawiguj do dziennika → sekcja "Przed sesją"
+    showPage('journal');
+    setTimeout(() => {
+      switchJournalTab('daily');
+      setTimeout(() => {
+        const card = document.getElementById('journal-card-pre');
+        if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // Fokus na pierwszym polu
+        const planInput = document.getElementById('journal-pre-plan');
+        if (planInput) setTimeout(() => planInput.focus(), 300);
+      }, 150);
+    }, 100);
+  } else if (_routineMode === 'after') {
+    // Nawiguj do dziennika → sekcja "Po sesji" + pokaż przycisk wylogowania
+    showPage('journal');
+    setTimeout(() => {
+      switchJournalTab('daily');
+      setTimeout(() => {
+        const card = document.getElementById('journal-card-post');
+        if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // Pokaż pasek wylogowania jeśli oczekujemy logout
+        if (_pendingLogout) {
+          const bar = document.getElementById('journal-post-logout-bar');
+          if (bar) bar.style.display = '';
+        }
+        // Fokus na pierwszym polu
+        const reviewInput = document.getElementById('journal-post-review');
+        if (reviewInput) setTimeout(() => reviewInput.focus(), 300);
+      }, 150);
+    }, 100);
   }
 }
 
@@ -11056,8 +11557,13 @@ function toggleRoutine(el) {
 
 
 function updateRoutineProgress() {
-  const total = document.querySelectorAll('.routine-item').length;
-  const done  = document.querySelectorAll('.routine-item.done').length;
+  const selector = _routineMode === 'before'
+    ? '#routine-before-col .routine-item'
+    : _routineMode === 'after'
+      ? '#routine-after-col .routine-item'
+      : '.routine-item';
+  const total = document.querySelectorAll(selector).length;
+  const done  = document.querySelectorAll(selector + '.done').length;
   const el = document.getElementById('routine-progress');
   if (el) {
     el.textContent = done + '/' + total + ' ukończonych';
@@ -13502,6 +14008,291 @@ function renderWeeklyMotivation() {
     ${streak>1?`<div style="font-size:12px;color:var(--accent);margin-top:8px">🔥 Seria: ${streak} dni z wpisem z rzędu!</div>`:''}
     ${review.planVal==='yes'?'<div style="font-size:12px;color:var(--green);margin-top:6px">✅ Plan trzymany konsekwentnie — doskonale!</div>':''}
     ${review.planVal==='no'?'<div style="font-size:12px;color:var(--amber);margin-top:6px">⚠️ Plan nie był trzymany — co konkretnie Cię odciągało?</div>':''}`;
+}
+
+// ===== REMINDERS =====
+function getReminders() {
+  const db = getDB();
+  return db['reminders_' + (state.currentUser||'')] || [];
+}
+function saveReminders(arr) {
+  const db = getDB();
+  db['reminders_' + (state.currentUser||'')] = arr;
+  saveDB(db);
+}
+
+let _currentReminderPopupId = null;
+
+function openReminderModal(title, linkedId, linkedPage) {
+  document.getElementById('reminder-modal-label').textContent = title || 'Nowe przypomnienie';
+  document.getElementById('reminder-modal-linked-id').value = linkedId || '';
+  document.getElementById('reminder-modal-linked-page').value = linkedPage || '';
+  document.getElementById('reminder-modal-time').value = '';
+  document.getElementById('reminder-custom-datetime').value = '';
+  document.querySelectorAll('.reminder-time-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('reminder-modal').classList.add('open');
+}
+
+function setReminderTime(btn, deltaMs) {
+  document.getElementById('reminder-modal-time').value = Date.now() + deltaMs;
+  document.querySelectorAll('.reminder-time-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function setReminderTimeToday(btn, h, m) {
+  const d = new Date(); d.setHours(h, m, 0, 0);
+  if (d.getTime() < Date.now()) d.setDate(d.getDate() + 1);
+  document.getElementById('reminder-modal-time').value = d.getTime();
+  document.querySelectorAll('.reminder-time-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function setReminderTimeTomorrow(btn, h, m) {
+  const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(h, m, 0, 0);
+  document.getElementById('reminder-modal-time').value = d.getTime();
+  document.querySelectorAll('.reminder-time-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function onReminderCustomTime(input) {
+  if (!input.value) return;
+  document.getElementById('reminder-modal-time').value = new Date(input.value).getTime();
+  document.querySelectorAll('.reminder-time-btn').forEach(b => b.classList.remove('active'));
+}
+
+function confirmAddReminder() {
+  const remindAt = parseInt(document.getElementById('reminder-modal-time').value);
+  if (!remindAt || isNaN(remindAt)) { toast('Wybierz czas przypomnienia', 'error'); return; }
+  const title     = document.getElementById('reminder-modal-label').textContent || 'Przypomnienie';
+  const linkedId  = document.getElementById('reminder-modal-linked-id').value || '';
+  const linkedPage = document.getElementById('reminder-modal-linked-page').value || '';
+  const reminders = getReminders();
+  reminders.push({ id: genId(), title, linkedId, linkedPage, remindAt, createdAt: Date.now(), done: false });
+  saveReminders(reminders);
+  updateReminderBell();
+  closeModal('reminder-modal');
+  toast('Przypomnienie ustawione ✓', 'success');
+}
+
+function updateReminderBell() {
+  const active = getReminders().filter(r => !r.done && r.remindAt > Date.now()).length;
+  const badge = document.getElementById('reminder-bell-count');
+  const btn   = document.getElementById('reminder-bell-btn');
+  if (badge) {
+    badge.textContent = active > 9 ? '9+' : active;
+    badge.style.display = active > 0 ? 'flex' : 'none';
+  }
+  if (btn) btn.style.color = active > 0 ? 'var(--amber)' : 'var(--text2)';
+}
+
+function checkReminders() {
+  if (!state.currentUser) return;
+  const due = getReminders().filter(r => !r.done && r.remindAt <= Date.now());
+  if (due.length > 0 && !_currentReminderPopupId) showReminderPopup(due[0]);
+  updateReminderBell();
+}
+
+function showReminderPopup(reminder) {
+  _currentReminderPopupId = reminder.id;
+  document.getElementById('reminder-popup-text').textContent = reminder.title;
+  const gotoBtn = document.getElementById('reminder-popup-goto');
+  if (reminder.linkedPage) {
+    gotoBtn.style.display = 'inline-flex';
+    gotoBtn.onclick = () => { showPage(reminder.linkedPage); dismissReminderPopup(); };
+  } else {
+    gotoBtn.style.display = 'none';
+  }
+  document.getElementById('reminder-popup').style.display = 'block';
+}
+
+function dismissReminderPopup() {
+  document.getElementById('reminder-popup').style.display = 'none';
+  _currentReminderPopupId = null;
+}
+
+function doneReminderPopup() {
+  if (!_currentReminderPopupId) return;
+  const reminders = getReminders();
+  const r = reminders.find(x => x.id === _currentReminderPopupId);
+  if (r) { r.done = true; saveReminders(reminders); }
+  dismissReminderPopup();
+  updateReminderBell();
+}
+
+function snoozeReminder(minutes) {
+  if (!_currentReminderPopupId) return;
+  const reminders = getReminders();
+  const r = reminders.find(x => x.id === _currentReminderPopupId);
+  if (r) { r.remindAt = Date.now() + minutes * 60 * 1000; saveReminders(reminders); }
+  dismissReminderPopup();
+  updateReminderBell();
+  toast('Przypomnę za ' + minutes + ' min', 'success');
+}
+
+function openReminderList() {
+  const reminders = getReminders();
+  const el = document.getElementById('reminder-list-content');
+  if (!el) return;
+  if (!reminders.length) {
+    el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text3);font-size:13px">Brak przypomnień<br><br><button class="btn-sm btn-accent" onclick="closeModal(\'reminder-list-modal\');openReminderModal(\'Nowe przypomnienie\',\'\',\'\')">+ Nowe przypomnienie</button></div>';
+  } else {
+    const now    = Date.now();
+    const active = reminders.filter(r => !r.done).sort((a,b) => a.remindAt - b.remindAt);
+    const done   = reminders.filter(r => r.done).sort((a,b) => b.remindAt - a.remindAt).slice(0,5);
+    const fmtTime = ts => new Date(ts).toLocaleString('pl-PL', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+    el.innerHTML =
+      `<div style="display:flex;justify-content:space-between;align-items:center;padding:0 4px 10px">
+        <span style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">Aktywne (${active.length})</span>
+        <button class="btn-sm" onclick="closeModal('reminder-list-modal');openReminderModal('Nowe przypomnienie','','')" style="font-size:11px">+ Nowe</button>
+      </div>` +
+      active.map(r => {
+        const overdue = r.remindAt < now;
+        return `<div style="display:flex;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px solid var(--border)">
+          <div style="font-size:18px">${overdue ? '🔴' : '🔔'}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(r.title)}</div>
+            <div style="font-size:11px;color:${overdue ? 'var(--red)' : 'var(--text3)'}">${overdue ? '⚠️ Minęło · ' : ''}${fmtTime(r.remindAt)}</div>
+          </div>
+          <div style="display:flex;gap:4px;flex-shrink:0">
+            ${r.linkedPage ? `<button class="btn-sm" onclick="showPage('${r.linkedPage}');closeModal('reminder-list-modal')" style="font-size:10px;padding:3px 7px" title="Przejdź">→</button>` : ''}
+            <button class="btn-sm" onclick="doneReminder('${r.id}')" style="font-size:10px;padding:3px 7px;border-color:var(--green);color:var(--green)" title="Ukończ">✓</button>
+          </div>
+        </div>`;
+      }).join('') +
+      (done.length ? `<div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;padding:12px 4px 6px">Ukończone</div>` +
+        done.map(r => `<div style="display:flex;align-items:center;gap:10px;padding:6px 4px;opacity:.5">
+          <div style="font-size:16px">✅</div>
+          <div style="flex:1;font-size:12px;text-decoration:line-through;color:var(--text3)">${escHtml(r.title)}</div>
+          <div style="font-size:11px;color:var(--text3)">${fmtTime(r.remindAt)}</div>
+        </div>`).join('') : '');
+  }
+  document.getElementById('reminder-list-modal').classList.add('open');
+}
+
+function doneReminder(id) {
+  const reminders = getReminders();
+  const r = reminders.find(x => x.id === id);
+  if (r) { r.done = true; saveReminders(reminders); }
+  updateReminderBell();
+  openReminderList();
+}
+
+// ===== DAILY BRIEFING =====
+let _dailyBriefingShown = false;
+
+function showDailyBriefing() {
+  if (_dailyBriefingShown) return;
+  const today = new Date().toISOString().slice(0,10);
+  const key   = 'briefing_' + (state.currentUser||'') + '_' + today;
+  if (localStorage.getItem(key)) return;
+  _dailyBriefingShown = true;
+
+  const modal = document.getElementById('daily-briefing-modal');
+  if (!modal) return;
+
+  const users = getUsers();
+  const u = users[state.currentUser||''];
+  const el = document.getElementById('briefing-user-name');
+  if (el) el.textContent = u?.name || state.currentUser || 'Trader';
+  const dl = document.getElementById('briefing-date-label');
+  if (dl) dl.textContent = formatDatePL(today);
+
+  const content = document.getElementById('briefing-content');
+  let html = '';
+
+  // Active reminders due today/overdue
+  const todayEnd = new Date(today + 'T23:59:59').getTime();
+  const dueToday = getReminders().filter(r => !r.done && r.remindAt <= todayEnd);
+  if (dueToday.length > 0) {
+    html += `<div style="background:rgba(255,163,47,.1);border:1px solid rgba(255,163,47,.3);border-radius:10px;padding:12px 14px;margin-bottom:14px">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--amber);margin-bottom:8px">🔔 Przypomnienia (${dueToday.length})</div>
+      ${dueToday.map(r => `<div style="font-size:13px;color:var(--text);padding:3px 0">• ${escHtml(r.title)}</div>`).join('')}
+    </div>`;
+  }
+
+  // Yesterday's incomplete journal
+  const yd = new Date(); yd.setDate(yd.getDate()-1);
+  const ydStr = yd.toISOString().slice(0,10);
+  const ydEntry = getJournalEntry(ydStr);
+  if (ydEntry?.prePlan && !ydEntry?.postReview) {
+    html += `<div style="background:rgba(79,158,255,.08);border:1px solid rgba(79,158,255,.25);border-radius:10px;padding:12px 14px;margin-bottom:14px">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#4f9eff;margin-bottom:6px">📔 Wczorajszy dziennik niekompletny</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:8px">Nie wypełniłeś wieczornego podsumowania za ${formatDatePL(ydStr)}.</div>
+      <button class="btn-sm" onclick="selectJournalDate('${ydStr}');showPage('journal');closeDailyBriefing()" style="font-size:11px">Uzupełnij →</button>
+    </div>`;
+  }
+
+  // Today's pre-session plan
+  const todayEntry = getJournalEntry(today);
+  if (!todayEntry?.prePlan) {
+    html += `<div style="background:rgba(0,212,161,.06);border:1px solid rgba(0,212,161,.2);border-radius:10px;padding:12px 14px;margin-bottom:14px">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--accent);margin-bottom:6px">🌅 Brak planu na dziś</div>
+      <div style="font-size:13px;color:var(--text2)">Zacznij dzień od wypełnienia planu sesji w dzienniku.</div>
+    </div>`;
+  } else {
+    html += `<div style="background:rgba(0,212,161,.06);border:1px solid rgba(0,212,161,.2);border-radius:10px;padding:12px 14px;margin-bottom:14px">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--accent);margin-bottom:6px">✅ Plan na dziś gotowy</div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.6">${escHtml(todayEntry.prePlan.slice(0,220))}${todayEntry.prePlan.length > 220 ? '…' : ''}</div>
+    </div>`;
+  }
+
+  // Streak
+  let streak = 0;
+  for (let i = 0; i < 30; i++) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    if (getJournalEntry(d.toISOString().slice(0,10))?.prePlan) streak++; else break;
+  }
+  if (streak > 1) {
+    html += `<div style="text-align:center;padding:10px 0;font-size:14px;color:var(--accent)">🔥 Seria: ${streak} dni z wpisem z rzędu!</div>`;
+  }
+
+  content.innerHTML = html || '<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px">Gotowy na nowy dzień tradingowy?</div>';
+  modal.classList.add('open');
+  localStorage.setItem(key, '1');
+}
+
+function closeDailyBriefing() {
+  document.getElementById('daily-briefing-modal')?.classList.remove('open');
+}
+
+// ===== JOURNAL → ANALYSIS BRIDGE =====
+function createAnalysisFromJournal() {
+  const prePlan  = document.getElementById('journal-pre-plan')?.value?.trim();
+  const preGoal  = document.getElementById('journal-pre-goal')?.value?.trim();
+  const content  = [prePlan, preGoal ? 'Cel: ' + preGoal : ''].filter(Boolean).join('\n\n');
+  if (!content) { toast('Wypełnij plan sesji przed utworzeniem analizy', 'error'); return; }
+  showPage('analysis');
+  setTimeout(() => {
+    openNewAnalysis();
+    setTimeout(() => {
+      const titleEl = document.getElementById('an-title');
+      const descEl  = document.getElementById('an-desc');
+      const dateEl  = document.getElementById('an-date');
+      if (titleEl) titleEl.value = 'Plan sesji · ' + _jSelectedDate;
+      if (descEl)  descEl.value  = content;
+      if (dateEl)  dateEl.value  = _jSelectedDate;
+      anAutosave();
+    }, 120);
+  }, 200);
+  toast('Formularz analizy wypełniony planem sesji', 'success');
+}
+
+function createAnalysisFromNote() {
+  const title   = document.getElementById('note-title')?.value?.trim();
+  const content = document.getElementById('note-content')?.value?.trim();
+  if (!title && !content) { toast('Notatka jest pusta', 'error'); return; }
+  showPage('analysis');
+  setTimeout(() => {
+    openNewAnalysis();
+    setTimeout(() => {
+      const titleEl = document.getElementById('an-title');
+      const descEl  = document.getElementById('an-desc');
+      if (titleEl) titleEl.value = title || 'Analiza z notatki';
+      if (descEl)  descEl.value  = content || '';
+      anAutosave();
+    }, 120);
+  }, 200);
+  toast('Formularz analizy wypełniony notatką', 'success');
 }
 
 // ===== INIT =====
