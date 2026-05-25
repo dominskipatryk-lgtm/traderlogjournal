@@ -222,6 +222,58 @@
   li { font-size: 13px; color: var(--text2); margin-bottom: 5px; }
   li strong { color: var(--text); }
 
+  /* ── PRINT BUTTON ── */
+  .print-bar {
+    position: fixed; bottom: 24px; right: 24px; z-index: 200;
+    display: flex; gap: 8px;
+  }
+  .print-btn {
+    background: var(--accent); color: #000; border: none;
+    border-radius: 8px; padding: 10px 18px; font-size: 13px; font-weight: 700;
+    cursor: pointer; box-shadow: 0 4px 16px rgba(0,212,161,.35);
+    transition: all .15s;
+  }
+  .print-btn:hover { background: var(--accent2); transform: translateY(-1px); }
+
+  /* ── PRINT CSS ── */
+  @media print {
+    body { background: #fff !important; color: #111 !important; font-size: 11pt; }
+    .topbar, .print-bar, .toc { display: none !important; }
+    .container { max-width: 100%; padding: 0; }
+    .hero { border: none; padding: 16px 0 24px; }
+    .hero h1 { font-size: 22pt; color: #111; }
+    .hero h1 span { color: #007a5a; }
+    .hero p { color: #444; }
+    .hero-badge { background: #e6f7f2; color: #007a5a; border-color: #b2dfd4; }
+    .section { margin-bottom: 28px; page-break-inside: avoid; }
+    .section-header { border-color: #ccc; }
+    .section-icon { background: #e6f7f2; }
+    .section-num { color: #888; }
+    .section-title { color: #111; }
+    .card { background: #f9f9f9; border-color: #ddd; page-break-inside: avoid; }
+    .card-title { color: #111; }
+    .card-desc { color: #444; }
+    .tip { background: #e6f7f2; border-color: #b2dfd4; border-left-color: #007a5a; }
+    .tip strong { color: #007a5a; }
+    .warn { background: #fdf6e3; border-color: #f0d060; border-left-color: #d4a000; }
+    .warn strong { color: #d4a000; }
+    th { background: #f0f0f0; color: #333; }
+    td { color: #444; border-color: #e0e0e0; }
+    td:first-child { color: #111; }
+    .badge-green { background: #e6f7f2; color: #007a5a; }
+    .badge-amber { background: #fdf6e3; color: #d4a000; }
+    .badge-red   { background: #fdecea; color: #c0392b; }
+    .step-num { border-color: #007a5a; color: #007a5a; background: #e6f7f2; }
+    .step:not(:last-child)::before { background: #ccc; }
+    .step-title { color: #111; }
+    .step-desc { color: #444; }
+    p, li { color: #444; }
+    h3 { color: #111; }
+    a { color: #007a5a !important; }
+    .footer { color: #888; border-color: #ddd; }
+    [data-lang="en"] { display: none !important; }
+  }
+
   /* ── FOOTER ── */
   .footer {
     text-align: center; padding: 32px;
@@ -1029,6 +1081,11 @@
 <div class="footer">
   <div data-lang="pl">© 2026 TraderLogJournal · <a href="index.html">Wróć do aplikacji</a> · <a href="privacy.html">Polityka prywatności</a> · <a href="terms.html">Warunki</a></div>
   <div data-lang="en" style="display:none">© 2026 TraderLogJournal · <a href="index.html">Back to app</a> · <a href="privacy.html">Privacy policy</a> · <a href="terms.html">Terms</a></div>
+</div>
+
+<!-- PRINT BUTTON -->
+<div class="print-bar">
+  <button class="print-btn" onclick="window.print()">📄 Pobierz PDF</button>
 </div>
 
 <script>
