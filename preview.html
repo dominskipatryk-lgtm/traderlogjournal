@@ -1391,6 +1391,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
         <button class="stats-tab-btn active" id="stab-overview" onclick="switchStatsTab('overview')">📈 Przegląd</button>
         <button class="stats-tab-btn" id="stab-calendar" onclick="switchStatsTab('calendar')">📅 Kalendarz</button>
         <button class="stats-tab-btn" id="stab-strategies" onclick="switchStatsTab('strategies')">🎯 Strategie</button>
+        <button class="stats-tab-btn" id="stab-profile" onclick="switchStatsTab('profile')">🧠 Profil</button>
         <button class="btn-sm" onclick="exportSummaryPDF()" title="PDF" style="font-size:12px;margin-left:auto;margin-right:4px;align-self:center">🖨 PDF</button>
       </div>
 
@@ -1455,6 +1456,11 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
           <button class="stats-period-btn" id="ssp-today" onclick="setStatsPeriod('today',this)">Dziś</button>
         </div>
         <div id="stats-strategies-content"></div>
+      </div>
+
+      <!-- TAB: Profil psychologiczny -->
+      <div id="stats-tab-profile" style="display:none;padding-top:20px">
+        <div id="stats-profile-content"></div>
       </div>
     </div>
 
@@ -4437,7 +4443,7 @@ let _statsPeriod = 'all';
 
 function switchStatsTab(tab) {
   _statsTab = tab;
-  ['overview','calendar','strategies'].forEach(t => {
+  ['overview','calendar','strategies','profile'].forEach(t => {
     const el  = document.getElementById('stats-tab-' + t);
     const btn = document.getElementById('stab-' + t);
     if (el)  el.style.display  = t === tab ? 'block' : 'none';
@@ -4446,6 +4452,7 @@ function switchStatsTab(tab) {
   if (tab === 'overview')   renderSummary();
   if (tab === 'calendar')   renderCalendarSummary();
   if (tab === 'strategies') renderStatsStrategies();
+  if (tab === 'profile')    renderTradingProfile();
 }
 
 function setStatsPeriod(period, btn) {
@@ -4603,6 +4610,193 @@ function renderStatsStrategies() {
       </tr></thead>
       <tbody>${rrRows}</tbody>
     </table></div>
+  </div>`;
+}
+
+// ===== TRADING PROFILE =====
+
+function renderTradingProfile() {
+  const el = document.getElementById('stats-profile-content');
+  if (!el) return;
+  if (!state.currentAccountId) { el.innerHTML = emptyState('🧠','Brak konta',''); return; }
+
+  const allTrades = getTrades(state.currentAccountId).filter(t => t.status === 'closed' && t.pnl != null);
+  const MIN_TRADES = 20;
+
+  if (allTrades.length < MIN_TRADES) {
+    el.innerHTML = `<div style="text-align:center;padding:60px 20px">
+      <div style="font-size:48px;margin-bottom:16px">🧠</div>
+      <div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:8px">Profil psychologiczny tradera</div>
+      <div style="font-size:13px;color:var(--text3);line-height:1.7;max-width:360px;margin:0 auto">
+        Potrzebujesz min. <strong style="color:var(--accent)">${MIN_TRADES} zamkniętych transakcji</strong> z wypełnionymi emocjami<br>
+        aby wygenerować Twój profil.<br><br>
+        Masz teraz: <strong>${allTrades.length}</strong> transakcji.
+      </div>
+    </div>`;
+    return;
+  }
+
+  const closed = allTrades;
+  const totalWR  = Math.round(closed.filter(t=>t.pnl>0).length / closed.length * 100);
+  const totalPnl = closed.reduce((s,t)=>s+(t.pnl||0),0);
+  const avgPnl   = totalPnl / closed.length;
+
+  // Emotion breakdown
+  const emoStats = {};
+  closed.forEach(t => {
+    const e = t.emotionPre;
+    if (!e) return;
+    if (!emoStats[e]) emoStats[e] = { count:0, wins:0, pnl:0 };
+    emoStats[e].count++;
+    if (t.pnl > 0) emoStats[e].wins++;
+    emoStats[e].pnl += t.pnl;
+  });
+  const dominantEmo = Object.entries(emoStats).sort((a,b)=>b[1].count-a[1].count)[0];
+  const bestEmo     = Object.entries(emoStats).filter(([,v])=>v.count>=3).sort((a,b)=>(b[1].wins/b[1].count)-(a[1].wins/a[1].count))[0];
+  const worstEmo    = Object.entries(emoStats).filter(([,v])=>v.count>=3).sort((a,b)=>(a[1].wins/a[1].count)-(b[1].wins/b[1].count))[0];
+
+  // Discipline score — rules adherence
+  const rules = getRules ? getRules() : [];
+  const rulesWithBreaks = closed.filter(t => t.rulesBroken && t.rulesBroken.length > 0).length;
+  const disciplineScore = rules.length > 0
+    ? Math.max(0, Math.round((1 - rulesWithBreaks / closed.length) * 100))
+    : null;
+
+  // Day-of-week best
+  const byDow = {};
+  closed.forEach(t => {
+    if (!t.date) return;
+    const d = new Date(t.date).getDay();
+    if (!byDow[d]) byDow[d] = { pnl:0, c:0, w:0 };
+    byDow[d].pnl += t.pnl; byDow[d].c++; if (t.pnl>0) byDow[d].w++;
+  });
+  const dowNames = ['Ndz','Pon','Wt','Śr','Czw','Pt','Sob'];
+  const dowActive = Object.entries(byDow).filter(([,v])=>v.c>=2);
+  const bestDow = dowActive.length ? dowActive.reduce((b,e)=>e[1].pnl>b[1].pnl?e:b) : null;
+  const worstDow = dowActive.length ? dowActive.reduce((b,e)=>e[1].pnl<b[1].pnl?e:b) : null;
+
+  // Revenge trading pattern: loss followed by bigger size
+  let revengeCount = 0;
+  for (let i = 1; i < closed.length; i++) {
+    if (closed[i-1].pnl < 0 && closed[i].size > (closed[i-1].size||0) * 1.2) revengeCount++;
+  }
+  const revengePct = Math.round(revengeCount / closed.length * 100);
+
+  // FOMO — entry without pre-analysis
+  const fomoCount = closed.filter(t => !t.pre || t.pre.length < 10).length;
+  const fomoPct = Math.round(fomoCount / closed.length * 100);
+
+  // Archetype
+  let archetype = '📊 Analityk';
+  if (totalWR >= 60 && avgPnl > 0) archetype = '🎯 Precyzyjny Snajper';
+  else if (totalWR < 45 && avgPnl > 0) archetype = '💎 Risk Manager';
+  else if (totalWR >= 55 && revengePct > 15) archetype = '🔥 Agresywny Trader';
+  else if (fomoPct > 30) archetype = '😰 FOMO Trader';
+  else if (totalWR < 50 && avgPnl < 0) archetype = '📚 Uczeń';
+
+  // Trigger patterns
+  const patterns = [];
+  if (worstEmo && worstEmo[1].count >= 3) {
+    const wr = Math.round(worstEmo[1].wins/worstEmo[1].count*100);
+    patterns.push({ icon:'⚠️', text: `Wchodzisz z emocją <strong>${worstEmo[0]}</strong> → WR zaledwie ${wr}%` });
+  }
+  if (revengePct > 10) patterns.push({ icon:'🔴', text: `Revenge trading: po stracie zwiększasz wolumen w ${revengePct}% przypadków` });
+  if (fomoPct > 25)    patterns.push({ icon:'😰', text: `FOMO: ${fomoPct}% transakcji bez analizy przed wejściem` });
+  if (bestDow && worstDow && bestDow[0] !== worstDow[0]) {
+    patterns.push({ icon:'📅', text: `Najgorzej traderujesz w <strong>${dowNames[worstDow[0]]}</strong> (P&L: ${worstDow[1].pnl.toFixed(2)}) — rozważ dzień przerwy` });
+  }
+  if (!patterns.length) patterns.push({ icon:'✅', text: 'Brak wykrytych destrukcyjnych wzorców — dobra robota!' });
+
+  // Strengths
+  const strengths = [];
+  if (totalWR >= 55) strengths.push('Win rate powyżej 55% — dobra selekcja wejść');
+  if (bestEmo)       strengths.push(`Emocja <strong>${bestEmo[0]}</strong> → WR ${Math.round(bestEmo[1].wins/bestEmo[1].count*100)}% (Twój najlepszy stan)`);
+  if (bestDow)       strengths.push(`Najlepszy dzień: <strong>${dowNames[bestDow[0]]}</strong> (P&L: +${bestDow[1].pnl.toFixed(2)})`);
+  if (disciplineScore !== null && disciplineScore >= 80) strengths.push(`Dyscyplina ${disciplineScore}% — reguły są przestrzegane`);
+
+  // Scores (0-100)
+  const scoreWR      = Math.min(100, Math.round(totalWR * 1.4));
+  const scoreRisk    = disciplineScore !== null ? disciplineScore : 50;
+  const scoreEmo     = bestEmo ? Math.min(100, Math.round(bestEmo[1].wins/bestEmo[1].count*100 * 1.2)) : 50;
+  const scoreDiscipl = Math.max(0, 100 - revengePct * 2 - fomoPct);
+
+  function scoreBar(score, label) {
+    const c = score >= 70 ? 'var(--accent)' : score >= 45 ? 'var(--amber)' : 'var(--red)';
+    return `<div style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px">
+        <span style="color:var(--text2)">${label}</span>
+        <span style="font-weight:700;color:${c}">${score}/100</span>
+      </div>
+      <div style="height:6px;background:var(--bg3);border-radius:3px">
+        <div style="width:${score}%;height:100%;background:${c};border-radius:3px;transition:width .5s"></div>
+      </div>
+    </div>`;
+  }
+
+  el.innerHTML = `
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+
+    <!-- Archetype card -->
+    <div class="summary-card" style="grid-column:1/-1;background:linear-gradient(135deg,rgba(0,212,161,.08),rgba(79,158,255,.05));border-color:rgba(0,212,161,.2)">
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+        <div style="font-size:48px">${archetype.split(' ')[0]}</div>
+        <div style="flex:1">
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--accent);margin-bottom:4px">Twój archetyp tradera</div>
+          <div style="font-size:22px;font-weight:800;font-family:var(--font-head)">${archetype.slice(2)}</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:4px">${closed.length} transakcji · WR ${totalWR}% · śr. P&L: ${avgPnl.toFixed(2)}</div>
+        </div>
+        ${dominantEmo ? `<div style="text-align:center;padding:10px 16px;background:var(--bg3);border-radius:10px;min-width:80px">
+          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Dominująca<br>emocja</div>
+          <div style="font-size:15px;font-weight:700;color:var(--text)">${dominantEmo[0]}</div>
+          <div style="font-size:10px;color:var(--text3)">${dominantEmo[1].count}×</div>
+        </div>` : ''}
+      </div>
+    </div>
+
+    <!-- Scores -->
+    <div class="summary-card">
+      <div class="summary-card-title">📊 Wyniki</div>
+      ${scoreBar(scoreWR, '🎯 Win rate')}
+      ${scoreBar(scoreEmo, '😌 Kontrola emocji')}
+      ${scoreBar(scoreDiscipl, '📏 Dyscyplina')}
+      ${scoreBar(scoreRisk, '⚖️ Zarządzanie ryzykiem')}
+    </div>
+
+    <!-- Trigger patterns -->
+    <div class="summary-card">
+      <div class="summary-card-title">⚠️ Wzorce do zmiany</div>
+      ${patterns.map(p=>`<div style="display:flex;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px;line-height:1.5">
+        <span style="font-size:16px;flex-shrink:0">${p.icon}</span>
+        <span style="color:var(--text2)">${p.text}</span>
+      </div>`).join('')}
+    </div>
+
+    <!-- Strengths -->
+    <div class="summary-card">
+      <div class="summary-card-title">✅ Mocne strony</div>
+      ${strengths.length ? strengths.map(s=>`<div style="display:flex;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px;line-height:1.5">
+        <span style="color:var(--accent);flex-shrink:0">✓</span>
+        <span style="color:var(--text2)">${s}</span>
+      </div>`).join('') : '<div style="color:var(--text3);font-size:12px">Zbyt mało danych — wróć po więcej transakcjach</div>'}
+    </div>
+
+    <!-- Emotion breakdown -->
+    ${Object.keys(emoStats).length ? `<div class="summary-card">
+      <div class="summary-card-title">🧘 Emocje → wyniki</div>
+      ${Object.entries(emoStats).sort((a,b)=>b[1].count-a[1].count).map(([emo,d])=>{
+        const wr=Math.round(d.wins/d.count*100);
+        const c=wr>=55?'var(--accent)':wr>=40?'var(--amber)':'var(--red)';
+        return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
+          <span style="font-size:12px;flex:1;color:var(--text2)">${emo}</span>
+          <span style="font-size:10px;color:var(--text3)">${d.count}×</span>
+          <div style="width:80px;height:5px;background:var(--bg3);border-radius:2px">
+            <div style="width:${wr}%;height:100%;background:${c};border-radius:2px"></div>
+          </div>
+          <span style="font-size:11px;font-weight:700;color:${c};width:32px;text-align:right">${wr}%</span>
+        </div>`;
+      }).join('')}
+    </div>` : ''}
+
   </div>`;
 }
 
