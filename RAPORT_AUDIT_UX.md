@@ -3,6 +3,10 @@
 
 ---
 
+**Aktualizacja 2026-05-25:** Poprawki 1-9 wdrożone w commit `07e9252`.
+
+---
+
 ## KRYTYCZNE (psują funkcjonalność)
 
 ### 1. Biblioteka: localStorage nie udźwignie plików PDF
@@ -86,15 +90,17 @@ Użytkownik może wpisać "Nie traduj podczas News" — ale `checkRulesBeforeSav
 
 ## PRIORYTET NAPRAW
 
-| # | Problem | Priorytet | Czas naprawy |
-|---|---------|-----------|--------------|
-| 1 | Heatmapa godzin zawsze pusta (zły format daty) | 🔴 KRYTYCZNY | ~2h |
-| 2 | Overtrading alert po zapisie zamiast przed | 🔴 WYSOKI | ~30 min |
-| 3 | Biblioteka base64 → limit localStorage | 🔴 WYSOKI (architektura) | ~4h |
-| 4 | Reguła max-risk nie działa | 🟡 ŚREDNI | ~1h |
-| 5 | Reguły: confirm() → własny modal | 🟡 ŚREDNI | ~1h |
-| 6 | Tłumaczenia EN — strony emocje/reguły/biblioteka | 🟡 ŚREDNI | ~3h |
-| 7 | Korelacja snu — komunikat gdy za mało danych | 🟢 NISKI | ~30 min |
-| 8 | Demo data + overtrading test | 🟢 NISKI | ~30 min |
-| 9 | Custom rules — checkbox "blokada vs reminder" | 🟢 NISKI | ~1h |
-| 10 | Deploy preview → index | 🔴 NATYCHMIAST | 5 min |
+| # | Problem | Priorytet | Status |
+|---|---------|-----------|--------|
+| 1 | Heatmapa godzin — check czy data ma czas | 🔴 KRYTYCZNY | ✅ `07e9252` |
+| 2 | Overtrading alert po zapisie zamiast przed | 🔴 WYSOKI | ✅ `07e9252` |
+| 3 | Biblioteka base64 → limit localStorage | 🔴 WYSOKI (architektura) | ✅ `07e9252` limit 400KB + błąd |
+| 4 | Reguła max-risk nie działa | 🟡 ŚREDNI | ✅ `07e9252` |
+| 5 | Custom rules — oznaczone "(tylko przypomnienie)" | 🟡 ŚREDNI | ✅ `07e9252` |
+| 6 | Filtry EN — tłumaczenie selektów | 🟡 ŚREDNI | ✅ `07e9252` |
+| 7 | Korelacja snu — komunikat gdy za mało danych | 🟢 NISKI | ✅ `07e9252` |
+| 8 | Demo data — używa dzisiejszej daty | 🟢 NISKI | ✅ `07e9252` |
+| 9 | confirm() → własne modale | 🟢 NISKI | ⏳ do zrobienia |
+| 10 | Deploy preview → index | 🔴 NATYCHMIAST | ⏳ czeka na decyzję |
+| 11 | Biblioteka Supabase Storage | 🔴 Architektura | ⏳ Sprint 2 |
+| 12 | EN tłumaczenia stron emocje/reguły/biblioteka | 🟡 ŚREDNI | ⏳ Sprint 2 |
