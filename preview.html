@@ -2193,6 +2193,12 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
               <div id="an-linked-trades" style="font-size:12px;color:var(--text3)">Brak powiązanych transakcji</div>
             </div>
 
+            <!-- ROW 12: Moje reguły -->
+            <div class="form-group-modal full" id="analysis-rules-section" style="display:none">
+              <label class="form-label-modal">📏 Moje reguły — sprawdź przed analizą</label>
+              <div id="analysis-rules-checklist" style="display:flex;flex-direction:column;gap:5px"></div>
+            </div>
+
           </div>
         </div>
         <div class="modal-footer">
@@ -3305,6 +3311,13 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
           </div>
           <div class="screenshots-preview" id="screenshots-preview"></div>
         </div>
+
+        <!-- Moje reguły — przed zapisem transakcji -->
+        <div id="trade-rules-section" style="display:none;padding:12px 0 4px">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:8px">📏 Moje reguły — sprawdź przed zapisem</div>
+          <div id="trade-rules-checklist" style="display:flex;flex-direction:column;gap:5px"></div>
+        </div>
+
       </div>
     </div>
     <div class="modal-footer">
@@ -3734,6 +3747,15 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
               </div>
             </div>
           </div>
+        </div>
+
+        <!-- Moje reguły osobiste -->
+        <div id="routine-rules-section" style="display:none;padding:0 24px 16px;border-top:1px solid var(--border)">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin:14px 0 10px">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--text3)">📏 Moje Reguły</div>
+            <button onclick="showPage('tools');showToolsTab('rules');closeRoutineModal()" style="background:none;border:none;color:var(--text3);font-size:11px;cursor:pointer;padding:2px 6px;border-radius:4px;border:1px solid var(--border)">✏️ Edytuj</button>
+          </div>
+          <div id="routine-rules-list" style="display:flex;flex-direction:column;gap:4px"></div>
         </div>
 
         <!-- Footer -->
@@ -5853,6 +5875,7 @@ function openTradeModal() {
     document.getElementById('trade-checklist-score').textContent='';
     populateLinkedAnalysisSelect('', '');
   }, 50);
+  renderModalRulesChecklist('trade');
   openModal('trade-modal');
   applyTfModeUI();
   hookFormAutoSave();
@@ -5899,6 +5922,7 @@ function openEditModal(id) {
     const lf = document.getElementById('t-linked-analysis-id');
     if (lf) lf.value = t.linkedAnalysisId || '';
   }, 50);
+  renderModalRulesChecklist('trade');
   openModal('trade-modal');
   applyTfModeUI();
   hookFormAutoSave();
@@ -11724,6 +11748,7 @@ function openNewAnalysis() {
   populateLinkedTradeSelect('', '');
   anSetAutosaveDot('idle');
   setTimeout(() => { populateStrategySelects(); document.getElementById('an-checklist-score').textContent=''; }, 50);
+  renderModalRulesChecklist('analysis');
   openModal('analysis-modal');
 }
 
@@ -11768,6 +11793,7 @@ function openEditAnalysis(id) {
     }
     document.getElementById('an-checklist-score').textContent = '';
   }, 50);
+  renderModalRulesChecklist('analysis');
   openModal('analysis-modal');
 }
 
@@ -13804,6 +13830,7 @@ function showRoutineModal(mode) {
   document.querySelectorAll('.routine-item').forEach(el => el.classList.remove('done'));
   const noShowCb = document.getElementById('routine-no-show-today');
   if (noShowCb) noShowCb.checked = false;
+  renderRoutineRules();
   updateRoutineProgress();
 
   // Pokaż modal
@@ -15395,7 +15422,7 @@ function addRule() {
     'max-risk': 'Maks. ryzyko %', 'max-losses': 'Stop po X stratach',
     'stop-hour': 'Stop o godzinie', 'max-daily': 'Maks. transakcji/dzień', 'custom': 'Własna zasada'
   };
-  const rule = { id: genId(), type, value, label: typeLabels[type]||type, createdAt: Date.now() };
+  const rule = { id: genId(), type, value, label: typeLabels[type]||type, enabled: true, createdAt: Date.now() };
   const rules = getRules();
   rules.push(rule);
   saveRules(rules);
@@ -15422,18 +15449,60 @@ function renderRules() {
     const typeIcons = {'max-risk':'💰','max-losses':'🛑','stop-hour':'🕐','max-daily':'📊','custom':'📝'};
     const icon = typeIcons[r.type] || '📝';
     const isCustom = r.type === 'custom';
+    const enabled = r.enabled !== false;
     const descEl = document.createElement('span');
     descEl.textContent = r.value;
     const desc = descEl.textContent;
-    return `<div class="summary-card" style="margin-bottom:8px;display:flex;align-items:center;gap:12px;padding:10px 14px">
+    return `<div class="summary-card" style="margin-bottom:8px;display:flex;align-items:center;gap:12px;padding:10px 14px;opacity:${enabled ? 1 : 0.45}">
       <span style="font-size:20px">${icon}</span>
       <div style="flex:1;min-width:0">
-        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px">${r.label}${isCustom ? `<span style="margin-left:6px;color:var(--amber);font-size:10px;text-transform:none;letter-spacing:0">${t('rules_reminder_label')}</span>` : ''}</div>
-        <div style="font-size:13px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${desc}">${desc}</div>
+        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px">${r.label}${isCustom ? `<span style="margin-left:6px;color:var(--amber);font-size:10px;text-transform:none;letter-spacing:0">${t('rules_reminder_label')}</span>` : ''}
+          <span style="margin-left:8px;font-size:10px;padding:1px 6px;border-radius:10px;font-weight:700;${enabled ? 'background:rgba(0,255,163,.15);color:var(--accent)' : 'background:var(--bg4);color:var(--text3)'}">${enabled ? 'Aktywna' : 'Nieaktywna'}</span>
+        </div>
+        <div style="font-size:13px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${enabled ? '' : 'text-decoration:line-through'}" title="${desc}">${desc}</div>
       </div>
+      <button onclick="toggleRuleEnabled('${r.id}')" title="${enabled ? 'Dezaktywuj' : 'Aktywuj'}" style="background:${enabled ? 'rgba(0,255,163,.12)' : 'var(--bg4)'};border:1px solid ${enabled ? 'var(--accent)' : 'var(--border)'};color:${enabled ? 'var(--accent)' : 'var(--text3)'};border-radius:5px;padding:3px 8px;font-size:11px;cursor:pointer;flex-shrink:0">${enabled ? '✓ Aktywna' : '○ Włącz'}</button>
       <button class="icon-btn del" onclick="deleteRule('${r.id}')" title="${t('delete')}" style="flex-shrink:0">🗑</button>
     </div>`;
   }).join('');
+}
+function toggleRuleEnabled(id) {
+  const rules = getRules().map(r => r.id === id ? {...r, enabled: r.enabled === false ? true : false} : r);
+  saveRules(rules);
+  renderRules();
+  renderModalRulesChecklist('trade');
+  renderModalRulesChecklist('analysis');
+  renderRoutineRules();
+}
+function renderModalRulesChecklist(prefix) {
+  const section = document.getElementById(prefix + '-rules-section');
+  const list    = document.getElementById(prefix + '-rules-checklist');
+  if (!section || !list) return;
+  const rules = (getRules() || []).filter(r => r.enabled !== false);
+  if (!rules.length) { section.style.display = 'none'; return; }
+  section.style.display = '';
+  const typeIcons = {'max-risk':'💰','max-losses':'🛑','stop-hour':'🕐','max-daily':'📊','custom':'📝'};
+  list.innerHTML = rules.map(r => `<label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;padding:6px 10px;background:var(--bg3);border-radius:6px;border:1px solid var(--border)">
+    <input type="checkbox" id="rule-chk-${prefix}-${r.id}" style="width:14px;height:14px;accent-color:var(--accent);cursor:pointer">
+    <span>${typeIcons[r.type]||'📝'} <strong>${r.label}:</strong> ${r.value}</span>
+  </label>`).join('');
+}
+function renderRoutineRules() {
+  const section = document.getElementById('routine-rules-section');
+  const list    = document.getElementById('routine-rules-list');
+  if (!section || !list) return;
+  const rules = (getRules() || []).filter(r => r.enabled !== false);
+  if (!rules.length) { section.style.display = 'none'; return; }
+  section.style.display = '';
+  const typeIcons = {'max-risk':'💰','max-losses':'🛑','stop-hour':'🕐','max-daily':'📊','custom':'📝'};
+  list.innerHTML = rules.map(r => `<div class="routine-item" onclick="toggleRoutine(this)" style="margin-bottom:2px">
+    <div class="routine-icon" style="font-size:16px">${typeIcons[r.type]||'📝'}</div>
+    <div>
+      <div class="routine-title">${r.label}</div>
+      <div class="routine-sub">${r.value}</div>
+    </div>
+  </div>`).join('');
+  updateRoutineProgress();
 }
 function checkRulesBeforeSave() {
   const rules = getRules();
