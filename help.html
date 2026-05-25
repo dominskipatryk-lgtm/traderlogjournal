@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TraderLogJournal — Instrukcja obsługi</title>
+<style>
+  :root {
+    --bg:      #0d1117;
+    --bg2:     #161b22;
+    --bg3:     #1c2128;
+    --bg4:     #21262d;
+    --border:  #30363d;
+    --border2: #21262d;
+    --text:    #c9d1d9;
+    --text2:   #8b949e;
+    --text3:   #6e7681;
+    --accent:  #00d4a1;
+    --accent2: #00b388;
+    --amber:   #e3b341;
+    --red:     #ff4757;
+    --blue:    #58a6ff;
+    --radius:  8px;
+    --radius-lg: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+  }
+
+  /* ── TOP BAR ── */
+  .topbar {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 32px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .topbar-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+  .topbar-logo-text { font-size: 18px; font-weight: 700; }
+  .topbar-logo-text span { color: var(--accent); }
+  .topbar-logo-sub { font-size: 12px; color: var(--text3); }
+  .lang-toggle {
+    display: flex; gap: 6px;
+  }
+  .lang-btn {
+    padding: 5px 14px; border-radius: 20px; border: 1px solid var(--border);
+    background: none; color: var(--text2); cursor: pointer; font-size: 13px;
+    transition: all .15s;
+  }
+  .lang-btn.active {
+    background: var(--accent); border-color: var(--accent); color: #000; font-weight: 600;
+  }
+
+  /* ── LAYOUT ── */
+  .container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    text-align: center;
+    padding: 48px 0 56px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 48px;
+  }
+  .hero-badge {
+    display: inline-block;
+    background: rgba(0,212,161,.12);
+    color: var(--accent);
+    border: 1px solid rgba(0,212,161,.3);
+    border-radius: 20px;
+    padding: 4px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+  .hero h1 { font-size: 36px; font-weight: 800; margin-bottom: 14px; }
+  .hero h1 span { color: var(--accent); }
+  .hero p { font-size: 16px; color: var(--text2); max-width: 560px; margin: 0 auto; }
+
+  /* ── TOC ── */
+  .toc {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px 28px;
+    margin-bottom: 48px;
+  }
+  .toc-title {
+    font-size: 12px; font-weight: 700; color: var(--accent);
+    text-transform: uppercase; letter-spacing: .8px; margin-bottom: 16px;
+  }
+  .toc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 6px 16px;
+  }
+  .toc a {
+    color: var(--text2); text-decoration: none; font-size: 13px;
+    display: flex; align-items: center; gap: 7px; padding: 4px 0;
+    transition: color .15s;
+  }
+  .toc a:hover { color: var(--accent); }
+  .toc-num { color: var(--text3); font-size: 11px; min-width: 18px; }
+
+  /* ── SECTION ── */
+  .section { margin-bottom: 56px; scroll-margin-top: 80px; }
+  .section-header {
+    display: flex; align-items: center; gap: 14px;
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 14px; margin-bottom: 28px;
+  }
+  .section-icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    background: rgba(0,212,161,.12);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+  }
+  .section-num { font-size: 12px; color: var(--text3); font-weight: 600; }
+  .section-title { font-size: 22px; font-weight: 700; }
+
+  /* ── CARDS ── */
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; margin-bottom: 20px; }
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 18px 20px;
+  }
+  .card-icon { font-size: 22px; margin-bottom: 10px; }
+  .card-title { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+  .card-desc { font-size: 13px; color: var(--text2); line-height: 1.55; }
+
+  /* ── STEPS ── */
+  .steps { display: flex; flex-direction: column; gap: 0; }
+  .step {
+    display: flex; gap: 20px;
+    padding: 0 0 24px 0;
+    position: relative;
+  }
+  .step:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    left: 17px; top: 36px; bottom: 0;
+    width: 2px; background: var(--border);
+  }
+  .step-num {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: rgba(0,212,161,.15); border: 2px solid var(--accent);
+    color: var(--accent); font-weight: 700; font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; z-index: 1;
+  }
+  .step-body { flex: 1; padding-top: 6px; }
+  .step-title { font-size: 14px; font-weight: 700; margin-bottom: 5px; }
+  .step-desc { font-size: 13px; color: var(--text2); }
+
+  /* ── TIPS ── */
+  .tip {
+    background: rgba(0,212,161,.07);
+    border: 1px solid rgba(0,212,161,.25);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--text2);
+    margin: 16px 0;
+  }
+  .tip strong { color: var(--accent); }
+  .warn {
+    background: rgba(227,179,65,.07);
+    border: 1px solid rgba(227,179,65,.25);
+    border-left: 3px solid var(--amber);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--text2);
+    margin: 16px 0;
+  }
+  .warn strong { color: var(--amber); }
+
+  /* ── TABLE ── */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 16px 0; }
+  th {
+    background: var(--bg3); color: var(--text2);
+    text-align: left; padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px; text-transform: uppercase; letter-spacing: .5px;
+  }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--border2); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  td:first-child { font-weight: 600; color: var(--text); white-space: nowrap; }
+  td:nth-child(2) { color: var(--text2); }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 4px;
+    font-size: 11px; font-weight: 600;
+  }
+  .badge-green { background: rgba(0,212,161,.15); color: var(--accent); }
+  .badge-amber { background: rgba(227,179,65,.15); color: var(--amber); }
+  .badge-red   { background: rgba(255,71,87,.15);  color: var(--red); }
+
+  /* ── KBD ── */
+  kbd {
+    display: inline-block;
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 4px; padding: 1px 7px; font-size: 12px;
+    font-family: monospace; color: var(--text);
+  }
+
+  /* ── PARA TEXT ── */
+  p { font-size: 14px; color: var(--text2); margin-bottom: 12px; }
+  h3 { font-size: 15px; font-weight: 700; color: var(--text); margin: 20px 0 10px; }
+  ul { padding-left: 20px; margin-bottom: 12px; }
+  li { font-size: 13px; color: var(--text2); margin-bottom: 5px; }
+  li strong { color: var(--text); }
+
+  /* ── FOOTER ── */
+  .footer {
+    text-align: center; padding: 32px;
+    border-top: 1px solid var(--border);
+    color: var(--text3); font-size: 12px;
+  }
+  .footer a { color: var(--accent); text-decoration: none; }
+
+  /* ── i18n hiding ── */
+  [data-lang] { display: none; }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <a href="index.html" class="topbar-logo">
+    <div class="topbar-logo-text"><span>TraderLog</span>Journal</div>
+    <div class="topbar-logo-sub" data-i18n="help_sub">Instrukcja obsługi</div>
+  </a>
+  <div class="lang-toggle">
+    <button class="lang-btn active" onclick="setLang('pl')">PL</button>
+    <button class="lang-btn" onclick="setLang('en')">EN</button>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-badge" data-lang="pl">Dokumentacja</div>
+    <div class="hero-badge" data-lang="en" style="display:none">Documentation</div>
+
+    <h1 data-lang="pl">Jak korzystać z <span>TraderLogJournal</span></h1>
+    <h1 data-lang="en" style="display:none">How to use <span>TraderLogJournal</span></h1>
+
+    <p data-lang="pl">Kompletny przewodnik po aplikacji — od pierwszego logowania, przez dodawanie transakcji, aż po analizę wyników i psychologiczny profil tradera.</p>
+    <p data-lang="en" style="display:none">Complete app guide — from first login, adding trades, to performance analysis and your trader psychological profile.</p>
+  </div>
+
+  <!-- TOC -->
+  <div class="toc">
+    <div class="toc-title" data-lang="pl">Spis treści</div>
+    <div class="toc-title" data-lang="en" style="display:none">Table of contents</div>
+    <div class="toc-grid">
+      <a href="#s1"><span class="toc-num">01</span> <span data-lang="pl">Pierwsze kroki</span><span data-lang="en" style="display:none">Getting started</span></a>
+      <a href="#s2"><span class="toc-num">02</span> <span data-lang="pl">Dashboard</span><span data-lang="en" style="display:none">Dashboard</span></a>
+      <a href="#s3"><span class="toc-num">03</span> <span data-lang="pl">Transakcje</span><span data-lang="en" style="display:none">Trades</span></a>
+      <a href="#s4"><span class="toc-num">04</span> <span data-lang="pl">Analizy rynkowe</span><span data-lang="en" style="display:none">Market analyses</span></a>
+      <a href="#s5"><span class="toc-num">05</span> <span data-lang="pl">Dziennik</span><span data-lang="en" style="display:none">Journal</span></a>
+      <a href="#s6"><span class="toc-num">06</span> <span data-lang="pl">Statystyki</span><span data-lang="en" style="display:none">Statistics</span></a>
+      <a href="#s7"><span class="toc-num">07</span> <span data-lang="pl">Biblioteka</span><span data-lang="en" style="display:none">Library</span></a>
+      <a href="#s8"><span class="toc-num">08</span> <span data-lang="pl">Narzędzia</span><span data-lang="en" style="display:none">Tools</span></a>
+      <a href="#s9"><span class="toc-num">09</span> <span data-lang="pl">Integracja MT4</span><span data-lang="en" style="display:none">MT4 Integration</span></a>
+      <a href="#s10"><span class="toc-num">10</span> <span data-lang="pl">Ustawienia</span><span data-lang="en" style="display:none">Settings</span></a>
+      <a href="#s11"><span class="toc-num">11</span> <span data-lang="pl">Przypomnienia</span><span data-lang="en" style="display:none">Reminders</span></a>
+      <a href="#s12"><span class="toc-num">12</span> <span data-lang="pl">Wskazówki</span><span data-lang="en" style="display:none">Tips &amp; tricks</span></a>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- 01 PIERWSZE KROKI -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <div class="section" id="s1">
+    <div class="section-header">
+      <div class="section-icon">🚀</div>
+      <div>
+        <div class="section-num">01</div>
+        <div class="section-title" data-lang="pl">Pierwsze kroki</div>
+        <div class="section-title" data-lang="en" style="display:none">Getting started</div>
+      </div>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-title" data-lang="pl">Otrzymaj zaproszenie</div>
+          <div class="step-title" data-lang="en" style="display:none">Receive an invitation</div>
+          <div class="step-desc" data-lang="pl">Aplikacja działa tylko na zaproszenie. Administrator wysyła Ci link aktywacyjny na e-mail.</div>
+          <div class="step-desc" data-lang="en" style="display:none">The app is invite-only. The administrator sends you an activation link by e-mail.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-title" data-lang="pl">Zaloguj się przez Google lub e-mail</div>
+          <div class="step-title" data-lang="en" style="display:none">Log in with Google or e-mail</div>
+          <div class="step-desc" data-lang="pl">Na ekranie logowania wybierz <strong>Zaloguj przez Google</strong> lub wpisz swój e-mail i hasło. Google jest szybszy i nie wymaga zapamiętywania hasła.</div>
+          <div class="step-desc" data-lang="en" style="display:none">On the login screen choose <strong>Sign in with Google</strong> or enter your e-mail and password. Google is faster and requires no password to remember.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <div class="step-title" data-lang="pl">Utwórz pierwsze konto tradingowe</div>
+          <div class="step-title" data-lang="en" style="display:none">Create your first trading account</div>
+          <div class="step-desc" data-lang="pl">Po zalogowaniu kliknij <strong>+ Nowe konto</strong> w górnym pasku. Wpisz nazwę (np. „IC Markets Real"), wybierz walutę i wstaw saldo startowe.</div>
+          <div class="step-desc" data-lang="en" style="display:none">After login click <strong>+ New account</strong> in the top bar. Enter a name (e.g. "IC Markets Real"), choose currency, and set starting balance.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <div class="step-title" data-lang="pl">Gotowe — możesz dodać pierwszą transakcję</div>
+          <div class="step-title" data-lang="en" style="display:none">Done — add your first trade</div>
+          <div class="step-desc" data-lang="pl">Przycisk <strong>+ Dodaj transakcję</strong> jest dostępny w prawym górnym rogu przez całą aplikację.</div>
+          <div class="step-desc" data-lang="en" style="display:none">The <strong>+ Add trade</strong> button is available in the top-right corner throughout the app.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tip" data-lang="pl"><strong>Wskazówka:</strong> Możesz mieć wiele kont tradingowych (real, demo, różnych brokerów) i przełączać się między nimi w górnym dropdownie.</div>
+    <div class="tip" data-lang="en" style="display:none"><strong>Tip:</strong> You can have multiple trading accounts (real, demo, different brokers) and switch between them in the top dropdown.</div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- 02 DASHBOARD -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <div class="section" id="s2">
+    <div class="section-header">
+      <div class="section-icon">📊</div>
+      <div>
+        <div class="section-num">02</div>
+        <div class="section-title" data-lang="pl">Dashboard</div>
+        <div class="section-title" data-lang="en" style="display:none">Dashboard</div>
+      </div>
+    </div>
+
+    <p data-lang="pl">Dashboard to ekran startowy po zalogowaniu. Zawiera przegląd kluczowych wskaźników dla aktywnego konta.</p>
+    <p data-lang="en" style="display:none">The dashboard is your home screen after login. It shows key metrics for your active account.</p>
+
+    <div class="cards">
+      <div class="card">
+        <div class="card-icon">💰</div>
+        <div class="card-title" data-lang="pl">Balans i Equity</div>
+        <div class="card-title" data-lang="en" style="display:none">Balance &amp; Equity</div>
+        <div class="card-desc" data-lang="pl">Aktualny stan konta, całkowity P&L, liczba zamkniętych transakcji.</div>
+        <div class="card-desc" data-lang="en" style="display:none">Current account balance, total P&L, number of closed trades.</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">📈</div>
+        <div class="card-title" data-lang="pl">Wykres P&L</div>
+        <div class="card-title" data-lang="en" style="display:none">P&L Chart</div>
+        <div class="card-desc" data-lang="pl">Krzywa kapitału po transakcjach — widać wzrosty i obsunięcia w czasie.</div>
+        <div class="card-desc" data-lang="en" style="display:none">Equity curve across trades — shows growth and drawdowns over time.</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🎯</div>
+        <div class="card-title" data-lang="pl">Win Rate i R:R</div>
+        <div class="card-title" data-lang="en" style="display:none">Win Rate &amp; R:R</div>
+        <div class="card-desc" data-lang="pl">Skuteczność transakcji (%) oraz średni stosunek zysku do ryzyka.</div>
+        <div class="card-desc" data-lang="en" style="display:none">Trade win rate (%) and average reward-to-risk ratio.</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">📅</div>
+        <div class="card-title" data-lang="pl">Heatmapa tygodnia</div>
+        <div class="card-title" data-lang="en" style="display:none">Weekly heatmap</div>
+        <div class="card-desc" data-lang="pl">Wyniki P&L według dnia tygodnia i godziny dnia — znajdź swoje best i worst session.</div>
+        <div class="card-desc" data-lang="en" style="display:none">P&L results by day of week and time of day — find your best and worst sessions.</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">⚡</div>
+        <div class="card-title" data-lang="pl">Alert overtradingu</div>
+        <div class="card-title" data-lang="en" style="display:none">Overtrading alert</div>
+        <div class="card-desc" data-lang="pl">Aplikacja ostrzega gdy przekraczasz dzienny limit transakcji lub masz serię strat z rzędu.</div>
+        <div class="card-desc" data-lang="en" style="display:none">App warns you when you exceed your daily trade limit or have a consecutive losing streak.</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">📰</div>
+        <div class="card-title" data-lang="pl">Ticker TradingView</div>
+        <div class="card-title" data-lang="en" style="display:none">TradingView ticker</div>
+        <div class="card-desc" data-lang="pl">Pasek z cenami rynkowymi w czasie rzeczywistym na górze ekranu.</div>
+        <div class="card-desc" data-lang="en" style="display:none">Real-time market price ticker at the top of the screen.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- 03 TRANSAKCJE -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <div class="section" id="s3">
+    <div class="section-header">
+      <div class="section-icon">💹</div>
+      <div>
+        <div class="section-num">03</div>
+        <div class="section-title" data-lang="pl">Transakcje</div>
+        <div class="section-title" data-lang="en" style="display:none">Trades</div>
+      </div>
+    </div>
+
+    <h3 data-lang="pl">Dodawanie transakcji</h3>
+    <h3 data-lang="en" style="display:none">Adding a trade</h3>
+    <p data-lang="pl">Kliknij <strong>+ Dodaj transakcję</strong> (przycisk widoczny na każdej stronie). W formularzu uzupełnij:</p>
+    <p data-lang="en" style="display:none">Click <strong>+ Add trade</strong> (visible on every page). Fill in the form:</p>
+
+    <table>
+      <thead><tr>
+        <th data-lang="pl">Pole</th><th data-lang="pl">Opis</th><th data-lang="pl">Wymagane</th>
+        <th data-lang="en" style="display:none">Field</th><th data-lang="en" style="display:none">Description</th><th data-lang="en" style="display:none">Required</th>
+      </tr></thead>
+      <tbody>
+        <tr>
+          <td data-lang="pl">Instrument</td><td data-lang="pl">Symbol (np. EURUSD, XAUUSD, US30)</td><td><span class="badge badge-red" data-lang="pl">Tak</span><span class="badge badge-red" data-lang="en" style="display:none">Yes</span></td>
+          <td data-lang="en" style="display:none">Instrument</td><td data-lang="en" style="display:none">Symbol (e.g. EURUSD, XAUUSD, US30)</td>
+        </tr>
+        <tr>
+          <td data-lang="pl">Kierunek</td><td data-lang="pl">BUY lub SELL</td><td><span class="badge badge-red" data-lang="pl">Tak</span><span class="badge badge-red" data-lang="en" style="display:none">Yes</span></td>
+          <td data-lang="en" style="display:none">Direction</td><td data-lang="en" style="display:none">BUY or SELL</td>
+        </tr>
+        <tr>
+          <td data-lang="pl">Data i godzina</td><td data-lang="pl">Kiedy otwarto transakcję</td><td><span class="badge badge-red" data-lang="pl">Tak</span><span class="badge badge-red" data-lang="en" style="display:none">Yes</span></td>
+          <td data-lang="en" style="display:none">Date &amp; time</td><td data-lang="en" style="display:none">When the trade was opened</td>
+        </tr>
+        <tr>
+          <td data-lang="pl">P&L</td><td data-lang="pl">Wynik transakcji w walucie konta</td><td><span class="badge badge-red" data-lang="pl">Tak</span><span class="badge badge-red" data-lang="en" style="display:none">Yes</span></td>
+          <td data-lang="en" style="display:none">P&L</td><td data-lang="en" style="display:none">Trade result in account currency</td>
+        </tr>
+        <tr>
+          <td data-lang="pl">Emocje pre/post</td><td data-lang="pl">Jak się czułeś przed i po transakcji</td><td><span class="badge badge-amber" data-lang="pl">Opcjonalne</span><span class="badge badge-amber" data-lang="en" style="display:none">Optional</span></td>
+          <td data-lang="en" style="display:none">Emotions pre/post</td><td data-lang="en" style="display:none">How you felt before and after the trade</td>
+        </tr>
+        <tr>
+          <td data-lang="pl">Notatka</td><td data-lang="pl">Twój komentarz do transakcji</td><td><span class="badge badge-amber" data-lang="pl">Opcjonalne</span><span class="badge badge-amber" data-lang="en" style="display:none">Optional</span></td>
+          <td data-lang="en" style="display:none">Note</td><td data-lang="en" style="display:none">Your comment on the trade</td>
+        </tr>
+        <tr>
+          <td data-lang="pl">Screenshot</td><td data-lang="pl">Zdjęcie wykresu z MT4/TradingView</td><td><span class="badge badge-amber" data-lang="pl">Opcjonalne</span><span class="badge badge-amber" data-lang="en" style="display:none">Optional</span></td>
+          <td data-lang="en" style="display:none">Screenshot</td><td data-lang="en" style="display:none">Chart screenshot from MT4/TradingView</td>
+        </tr>
+        <tr>
+          <td data-lang="pl">Powiązana analiza</td><td data-lang="pl">Przypisz analizę z biblioteki analiz</td><td><span class="badge badge-amber" data-lang="pl">Opcjonalne</span><span class="badge badge-amber" data-lang="en" style="display:none">Optional</span></td>
+          <td data-lang="en" style="display:none">Linked analysis</td><td data-lang="en" style="display:none">Link an analysis from your analysis library</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="tip" data-lang="pl"><strong>Moje reguły:</strong> Jeśli masz zdefiniowane reguły tradingowe (Narzędzia → Reguły), formularz pokaże checklistę — zaznacz które reguły sprawdziłeś przed wejściem.</div>
+    <div class="tip" data-lang="en" style="display:none"><strong>My rules:</strong> If you have trading rules defined (Tools → Rules), the form shows a checklist — tick which rules you checked before entering.</div>
+
+    <h3 data-lang="pl">Lista transakcji</h3>
+    <h3 data-lang="en" style="display:none">Trade list</h3>
+    <p data-lang="pl">Tabela pokazuje maksymalnie 13 wierszy naraz — resztę przeglądaj scrollując. Możesz filtrować transakcje po instrumencie, kierunku i zakresie dat. Kliknij wiersz aby edytować lub usunąć transakcję.</p>
+    <p data-lang="en" style="display:none">The table shows up to 13 rows at once — scroll to see the rest. Filter trades by instrument, direction and date range. Click a row to edit or delete the trade.</p>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- 04 ANALIZY -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <div class="section" id="s4">
+    <div class="section-header">
+      <div class="section-icon">🔍</div>
+      <div>
+        <div class="section-num">04</div>
+        <div class="section-title" data-lang="pl">Analizy rynkowe</div>
+        <div class="section-title" data-lang="en" style="display:none">Market analyses</div>
+      </div>
+    </div>
+
+    <p data-lang="pl">Sekcja Analiz pozwala dokumentować Twoje obserwacje rynku — zanim lub po wejściu w transakcję. Analizy możesz przeglądać w widoku listy lub kalendarza.</p>
+    <p data-lang="en" style="display:none">The Analyses section lets you document your market observations — before or after entering a trade. Browse analyses in list or calendar view.</p>
+
+    <div class="cards">
+      <div class="card">
+        <div class="card-icon">📝</div>
+        <div class="card-title" data-lang="pl">Nowa analiza</div>
+        <div class="card-title" data-lang="en" style="display:none">New analysis</div>
+        <div class="card-desc" data-lang="pl">Instrument, timeframe, kierunek trendu, poziomy S/R, screenshot wykresu, notatki. Możesz przypisać strategię i setup.</div>
+        <div class="card-desc" data-lang="en" style="display:none">Instrument, timeframe, trend direction, S/R levels, chart screenshot, notes. You can assign a strategy and setup.</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔗</div>
+        <div class="card-title" data-lang="pl">Linkowanie analiza ↔ transakcja</div>
+        <div class="card-title" data-lang="en" style="display:none">Linking analysis ↔ trade</div>
+        <div class="card-desc" data-lang="pl">Każdą analizę możesz powiązać z konkretną transakcją i odwrotnie — zobaczysz czy Twoja analiza pokryła się z wynikiem.</div>
+        <div class="card-desc" data-lang="en" style="display:none">Link any analysis to a specific trade and vice versa — see whether your analysis matched the outcome.</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔔</div>
+        <div class="card-title" data-lang="pl">Dzwonek przypomnienia</div>
+        <div class="card-title" data-lang="en" style="display:none">Analysis reminder</div>
+        <div class="card-desc" data-lang="pl">Kliknij 🔔 na karcie analizy aby ustawić przypomnienie — aplikacja powiadomi Cię o wybranej godzinie.</div>
+        <div class="card-desc" data-lang="en" style="display:none">Click 🔔 on any analysis card to set a reminder — the app will notify you at the chosen time.</div>
+      </div>
+    </div>
+
+    <div class="tip" data-lang="pl"><strong>Dobra praktyka:</strong> Twórz analizę <em>przed</em> wejściem w transakcję — zapisuj swój plan. Po zamknięciu pozycji wróć i oceń czy plan był trafny.</div>
+    <div class="tip" data-lang="en" style="display:none"><strong>Best practice:</strong> Create an analysis <em>before</em> entering a trade — write your plan. After closing the position, come back and assess whether the plan was accurate.</div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- 05 DZIENNIK -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <div class="section" id="s5">
+    <div class="section-header">
+      <div class="section-icon">📓</div>
+      <div>
+        <div class="section-num">05</div>
+        <div class="section-title" data-lang="pl">Dziennik</div>
+        <div class="section-title" data-lang="en" style="display:none">Journal</div>
+      </div>
+    </div>
+
+    <p data-lang="pl">Dziennik to codzienne notatki z pracy tradera. Masz tu do dyspozycji trzy narzędzia:</p>
+    <p data-lang="en" style="display:none">The Journal is your daily trader's notebook. You have three tools here:</p>
+
+    <div class="cards">
+      <div class="card">
+        <div class="card-icon">📅</div>
+        <div class="card-title" data-lang="pl">Wpis dzienny</div>
+        <div class="card-title" data-lang="en" style="display:none">Daily entry</div>
+        <div class="card-desc" data-lang="pl">Notatka na każdy dzień: nastrój (emoji), komentarz tekstowy. Wpisy widoczne w kalendarzu miesiąca.</div>
+        <div class="card-desc" data-lang="en" style="display:none">Note for each day: mood (emoji), text comment. Entries visible in the monthly calendar.</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🗒️</div>
+        <div class="card-title" data-lang="pl">Notatki swobodne</div>
+        <div class="card-title" data-lang="en" style="display:none">Free notes</div>
+        <div class="card-desc" data-lang="pl">Notatnik bez daty — przemyślenia, cytaty, obserwacje rynkowe, które chcesz zachować.</div>
+        <div class="card-desc" data-lang="en" style="display:none">Dateless notepad — thoughts, quotes, market observations you want to keep.</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🌅</div>
+        <div class="card-title" data-lang="pl">Rutyna dnia</div>
+        <div class="card-title" data-lang="en" style="display:none">Daily routine</div>
+        <div class="card-desc" data-lang="pl">Checklist 5 kroków tradera: plan poranny, przegląd rynku, plan trade, koniec dnia, refleksja. Pokazuje też Twoje aktywne reguły tradingowe.</div>
+        <div class="card-desc" data-lang="en" style="display:none">5-step trader checklist: morning plan, market review, trade plan, end of day, reflection. Also shows your active trading rules.</div>
+      </div>
+    </div>
+
+    <h3 data-lang="pl">Weekly Review</h3>
+    <h3 data-lang="en" style="display:none">Weekly Review</h3>
+    <p data-lang="pl">Co tydzień warto wypełnić Weekly Review — jedno pytanie: co poszło dobrze, co źle, co poprawić. Te notatki trafiają do raportu miesięcznego.</p>
+    <p data-lang="en" style="display:none">Each week fill in the Weekly Review — one question: what went well, what went wrong, what to improve. These notes appear in the monthly report.</p>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- 06 STATYSTYKI -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <div class="section" id="s6">
+    <div class="section-header">
+      <div class="section-icon">📉</div>
+      <div>
+        <div class="section-num">06</div>
+        <div class="section-title" data-lang="pl">Statystyki</div>
+        <div class="section-title" data-lang="en" style="display:none">Statistics</div>
+      </div>
+    </div>
+
+    <p data-lang="pl">Statystyki mają trzy zakładki:</p>
+    <p data-lang="en" style="display:none">Statistics has three tabs:</p>
+
+    <table>
+      <thead><tr>
+        <th data-lang="pl">Zakładka</th><th data-lang="pl">Co zawiera</th>
+        <th data-lang="en" style="display:none">Tab</th><th data-lang="en" style="display:none">Contents</th>
+      </tr></thead>
+      <tbody>
+        <tr>
+          <td>Summary</td>
+          <td data-lang="pl">P&L łącznie i per miesiąc, Win Rate, Profit Factor, Max Drawdown, najlepszy/najgorszy dzień, top instrumenty. Przycisk eksportu raportu PDF.</td>
+          <td data-lang="en" style="display:none">Total and per-month P&L, Win Rate, Profit Factor, Max Drawdown, best/worst day, top instruments. PDF report export button.</td>
+        </tr>
+        <tr>
+          <td data-lang="pl">Emocje</td>
+          <td data-lang="pl">Win rate według emocji przed i po transakcji, heatmapa emocji, tygodniowe review emocjonalne.</td>
+          <td data-lang="en" style="display:none">Emotions</td><td data-lang="en" style="display:none">Win rate by pre- and post-trade emotion, emotion heatmap, weekly emotional review.</td>
+        </tr>
+        <tr>
+          <td data-lang="pl">Profil Tradera</td>
+          <td data-lang="pl">Dostępny po min. 20 transakcjach. Kim jesteś jako trader — dominujące emocje, wzorce błędów, score dyscypliny i zarządzania ryzykiem, postęp tygodniowy.</td>
+          <td data-lang="en" style="display:none">Trader Profile</td><td data-lang="en" style="display:none">Available after min. 20 trades. Who you are as a trader — dominant emotions, error patterns, discipline and risk management score, weekly progress.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="tip" data-lang="pl"><strong>Raport miesięczny:</strong> W zakładce Summary znajdziesz przycisk <strong>📄 Eksportuj raport</strong> — generuje widok do wydruku z P&L, wynikami emocji i weekly reviews.</div>
+    <div class="tip" data-lang="en" style="display:none"><strong>Monthly report:</strong> In the Summary tab find the <strong>📄 Export report</strong> button — generates a print view with P&L, emotion results and weekly reviews.</div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- 07 BIBLIOTEKA -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <div class="section" id="s7">
+    <div class="section-header">
+      <div class="section-icon">📚</div>
+      <div>
+        <div class="section-num">07</div>
+        <div class="section-title" data-lang="pl">Biblioteka</div>
+        <div class="section-title" data-lang="en" style="display:none">Library</div>
+      </div>
+    </div>
+
+    <p data-lang="pl">Biblioteka to Twoje centrum materiałów edukacyjnych — książki, kursy, artykuły, linki do YouTube. Pliki przechowywane są w chmurze (Supabase Storage).</p>
+    <p data-lang="en" style="display:none">The library is your educational resource center — books, courses, articles, YouTube links. Files are stored in the cloud (Supabase Storage).</p>
+
+    <div class="cards">
+      <div class="card">
+        <div class="card-icon">⬆️</div>
+        <div class="card-title" data-lang="pl">Dodawanie materiałów</div>
+        <div class="card-title" data-lang="en" style="display:none">Adding materials</div>
+        <div class="card-desc" data-lang="pl">Kliknij <strong>+ Dodaj materiał</strong>. Możesz przesłać plik (PDF, zdjęcie, dokument — max 50 MB) lub wkleić link URL (YouTube, artykuł).</div>
+        <div class="card-desc" data-lang="en" style="display:none">Click <strong>+ Add material</strong>. You can upload a file (PDF, image, document — max 50 MB) or paste a URL (YouTube, article).</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔎</div>
+        <div class="card-title" data-lang="pl">Filtrowanie</div>
+        <div class="card-title" data-lang="en" style="display:none">Filtering</div>
+        <div class="card-desc" data-lang="pl">Filtruj po typie: Wszystkie / PDF / Video / Artykuł. Wyszukiwarka tekstowa po tytule.</div>
+        <div class="card-desc" data-lang="en" style="display:none">Filter by type: All / PDF / Video / Article. Text search by title.</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">📥</div>
+        <div class="card-title" data-lang="pl">Pobieranie i otwieranie</div>
+        <div class="card-title" data-lang="en" style="display:none">Downloading &amp; opening</div>
+        <div class="card-desc" data-lang="pl">Przycisk <strong>Pobierz</strong> generuje tymczasowy link (ważny 1h). Przycisk <strong>Otwórz</strong> otwiera plik w nowej karcie.</div>
+        <div class="card-desc" data-lang="en" style="display:none">The <strong>Download</strong> button generates a temporary link (valid 1h). The <strong>Open</strong> button opens the file in a new tab.</div>
+      </div>
+    </div>
+
+    <div class="warn" data-lang="pl"><strong>Uwaga:</strong> Każdy zalogowany użytkownik może przeglądać bibliotekę. Dodawanie i usuwanie plików jest dostępne tylko dla administratora.</div>
+    <div class="warn" data-lang="en" style="display:none"><strong>Note:</strong> All logged-in users can browse the library. Adding and deleting files is admin-only.</div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- 08 NARZĘDZIA -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <div class="section" id="s8">
+    <div class="section-header">
+      <div class="section-icon">🔧</div>
+      <div>
+        <div class="section-num">08</div>
+        <div class="section-title" data-lang="pl">Narzędzia</div>
+        <div class="section-title" data-lang="en" style="display:none">Tools</div>
+      </div>
+    </div>
+
+    <h3 data-lang="pl">🔢 Kalkulator pozycji</h3>
+    <h3 data-lang="en" style="display:none">🔢 Position calculator</h3>
+    <p data-lang="pl">Szybki kalkulator na podstawie Stop Loss w pipach:</p>
+    <p data-lang="en" style="display:none">Quick calculator based on Stop Loss in pips:</p>
+    <ul>
+      <li data-lang="pl"><strong>Ryzyko %</strong> — procent kapitału który ryzykujesz (np. 1%)</li>
+      <li data-lang="pl"><strong>SL pipy</strong> — odległość Stop Loss od wejścia w pipach</li>
+      <li data-lang="pl"><strong>R:R</strong> — współczynnik zysk/ryzyko (np. 2 = TP = 2× SL)</li>
+      <li data-lang="pl"><strong>Instrument</strong> — wybierz preset (Forex, Gold, Indices, Crypto) lub wpisz własną wartość pipa</li>
+      <li data-lang="en" style="display:none"><strong>Risk %</strong> — percentage of capital you risk (e.g. 1%)</li>
+      <li data-lang="en" style="display:none"><strong>SL pips</strong> — Stop Loss distance from entry in pips</li>
+      <li data-lang="en" style="display:none"><strong>R:R</strong> — reward-to-risk ratio (e.g. 2 = TP = 2× SL)</li>
+      <li data-lang="en" style="display:none"><strong>Instrument</strong> — choose preset (Forex, Gold, Indices, Crypto) or enter custom pip value</li>
+    </ul>
+    <p data-lang="pl">Wyniki: <strong>Lot</strong>, <strong>Ryzyko $</strong>, <strong>TP pipy</strong>, <strong>Potencjał $</strong>, Break Even, Trailing Stop.</p>
+    <p data-lang="en" style="display:none">Results: <strong>Lot size</strong>, <strong>Risk $</strong>, <strong>TP pips</strong>, <strong>Potential $</strong>, Break Even, Trailing Stop.</p>
+    <div class="tip" data-lang="pl"><strong>Tip:</strong> Kliknij <strong>⬇ Uzupełnij kapitał z aktywnego konta</strong> — kalkulator automatycznie pobierze saldo z Twojego konta.</div>
+    <div class="tip" data-lang="en" style="display:none"><strong>Tip:</strong> Click <strong>⬇ Fill balance from active account</strong> — the calculator automatically pulls your account balance.</div>
+
+    <h3 data-lang="pl">🎯 Strategie i Setupy</h3>
+    <h3 data-lang="en" style="display:none">🎯 Strategies &amp; Setups</h3>
+    <p data-lang="pl">Zdefiniuj swoje strategie i konkretne setupy wejścia. Będą dostępne jako opcje przy tworzeniu analiz i transakcji — ułatwiają kategoryzację i późniejszą analizę wyników per strategia.</p>
+    <p data-lang="en" style="display:none">Define your strategies and specific entry setups. They are available as options when creating analyses and trades — making it easy to categorise and later analyse results per strategy.</p>
+
+    <h3 data-lang="pl">💱 Kalkulator kosztów transakcji</h3>
+    <h3 data-lang="en" style="display:none">💱 Transaction cost calculator</h3>
+    <p data-lang="pl">Oblicz rzeczywisty koszt transakcji u różnych brokerów (prowizja + spread). Porównaj brokerów lub wpisz własne stawki.</p>
+    <p data-lang="en" style="display:none">Calculate the real cost of a trade with different brokers (commission + spread). Compare brokers or enter custom rates.</p>
+
+    <h3 data-lang="pl">📏 Moje reguły tradingowe</h3>
+    <h3 data-lang="en" style="display:none">📏 My trading rules</h3>
+    <p data-lang="pl">Dodaj swoje zasady tradingowe (np. „Nie wchodzę po 3 stratach", „Max ryzyko 2%"). Reguły możesz włączać/wyłączać. Aktywne reguły pojawiają się jako checklist w formularzach transakcji, analiz i rutyny dnia.</p>
+    <p data-lang="en" style="display:none">Add your personal trading rules (e.g. "No trading after 3 losses", "Max risk 2%"). Rules can be toggled on/off. Active rules appear as a checklist in trade, analysis and daily routine forms.</p>
+
+    <table>
+      <thead><tr>
+        <th data-lang="pl">Typ reguły</th><th data-lang="pl">Jak działa</th>
+        <th data-lang="en" style="display:none">Rule type</th><th data-lang="en" style="display:none">How it works</th>
+      </tr></thead>
+      <tbody>
+        <tr>
+          <td data-lang="pl">Maks. ryzyko na trade (%)</td><td data-lang="pl">Ostrzega gdy P&L przekracza ustawiony próg ryzyka</td>
+          <td data-lang="en" style="display:none">Max risk per trade (%)</td><td data-lang="en" style="display:none">Warns when P&L exceeds the set risk threshold</td>
+        </tr>
+        <tr>
+          <td data-lang="pl">Nie wchodzę po X stratach</td><td data-lang="pl">Alert gdy masz serię strat z rzędu</td>
+          <td data-lang="en" style="display:none">No trading after X losses</td><td data-lang="en" style="display:none">Alert when you have a consecutive losing streak</td>
+        </tr>
+        <tr>
+          <td data-lang="pl">Stop trading o godzinie</td><td data-lang="pl">Przypomnienie o limicie godzinowym</td>
+          <td data-lang="en" style="display:none">Stop trading at hour</td><td data-lang="en" style="display:none">Reminder about the hourly limit</td>
+        </tr>
+        <tr>
+          <td data-lang="pl">Maks. transakcji dziennie</td><td data-lang="pl">Ostrzeżenie przy zapisie gdy przekraczasz limit</td>
+          <td data-lang="en" style="display:none">Max daily trades</td><td data-lang="en" style="display:none">Warning on save when you exceed the limit</td>
+        </tr>
+        <tr>
+          <td data-lang="pl">Inne (własna zasada)</td><td data-lang="pl">Dowolny tekst — wyświetlany jako checkbox do ręcznego zaznaczenia</td>
+          <td data-lang="en" style="display:none">Custom rule</td><td data-lang="en" style="display:none">Any text — displayed as a checkbox to manually tick</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- 09 MT4 -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <div class="section" id="s9">
+    <div class="section-header">
+      <div class="section-icon">⚙️</div>
+      <div>
+        <div class="section-num">09</div>
+        <div class="section-title" data-lang="pl">Integracja z MetaTrader 4</div>
+        <div class="section-title" data-lang="en" style="display:none">MetaTrader 4 Integration</div>
+      </div>
+    </div>
+
+    <p data-lang="pl">Expert Advisor (EA) automatycznie wysyła sygnały z MT4 do dziennika — bez ręcznego przepisywania transakcji.</p>
+    <p data-lang="en" style="display:none">The Expert Advisor (EA) automatically sends signals from MT4 to the journal — no manual trade copying needed.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-title" data-lang="pl">Pobierz EA</div>
+          <div class="step-title" data-lang="en" style="display:none">Download the EA</div>
+          <div class="step-desc" data-lang="pl">W Ustawieniach → Integracja z MT4 znajdziesz przycisk <strong>Pobierz EA</strong>. Plik <code>TraderLogJournal_EA.mq4</code> wgraj do folderu <code>MQL4/Experts</code> w MT4.</div>
+          <div class="step-desc" data-lang="en" style="display:none">In Settings → MT4 Integration find the <strong>Download EA</strong> button. Copy <code>TraderLogJournal_EA.mq4</code> to the <code>MQL4/Experts</code> folder in MT4.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-title" data-lang="pl">Skopiuj User ID</div>
+          <div class="step-title" data-lang="en" style="display:none">Copy your User ID</div>
+          <div class="step-desc" data-lang="pl">W Ustawieniach → Integracja z MT4 kliknij <strong>Kopiuj User ID</strong>. Ten identyfikator wklej w parametrach EA (pole <code>UserId</code>).</div>
+          <div class="step-desc" data-lang="en" style="display:none">In Settings → MT4 Integration click <strong>Copy User ID</strong>. Paste this identifier into the EA parameters (<code>UserId</code> field).</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <div class="step-title" data-lang="pl">Włącz WebRequest w MT4</div>
+          <div class="step-title" data-lang="en" style="display:none">Enable WebRequest in MT4</div>
+          <div class="step-desc" data-lang="pl">W MT4: <strong>Narzędzia → Opcje → Expert Advisors</strong> → zaznacz „Zezwalaj na WebRequest dla wymienionych URL" i dodaj: <code>https://ygrkcynyduuflzvbkkvo.supabase.co</code></div>
+          <div class="step-desc" data-lang="en" style="display:none">In MT4: <strong>Tools → Options → Expert Advisors</strong> → check "Allow WebRequest for listed URL" and add: <code>https://ygrkcynyduuflzvbkkvo.supabase.co</code></div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <div class="step-title" data-lang="pl">Uruchom EA na wykresie</div>
+          <div class="step-title" data-lang="en" style="display:none">Attach EA to a chart</div>
+          <div class="step-desc" data-lang="pl">Przeciągnij EA na dowolny wykres. Na ekranie pojawi się panel TraderLogJournal — zielony status „Aktywny" oznacza poprawne połączenie.</div>
+          <div class="step-desc" data-lang="en" style="display:none">Drag the EA onto any chart. The TraderLogJournal panel appears on screen — green "Active" status means the connection is working.</div>
+        </div>
+      </div>
+    </div>
+
+    <h3 data-lang="pl">Parametry EA</h3>
+    <h3 data-lang="en" style="display:none">EA Parameters</h3>
+    <table>
+      <thead><tr>
+        <th data-lang="pl">Parametr</th><th data-lang="pl">Domyślnie</th><th data-lang="pl">Opis</th>
+        <th data-lang="en" style="display:none">Parameter</th><th data-lang="en" style="display:none">Default</th><th data-lang="en" style="display:none">Description</th>
+      </tr></thead>
+      <tbody>
+        <tr>
+          <td>UserId</td><td>—</td>
+          <td data-lang="pl">Twój unikalny identyfikator (z Ustawień)</td>
+          <td data-lang="en" style="display:none">Your unique identifier (from Settings)</td>
+        </tr>
+        <tr>
+          <td>SendOnOpen</td><td>true</td>
+          <td data-lang="pl">Wysyłaj sygnał przy otwarciu pozycji</td>
+          <td data-lang="en" style="display:none">Send signal on position open</td>
+        </tr>
+        <tr>
+          <td>SendOnClose</td><td>true</td>
+          <td data-lang="pl">Wysyłaj sygnał przy zamknięciu pozycji</td>
+          <td data-lang="en" style="display:none">Send signal on position close</td>
+        </tr>
+        <tr>
+          <td>SendOnModify</td><td>true</td>
+          <td data-lang="pl">Wysyłaj sygnał przy modyfikacji SL/TP</td>
+          <td data-lang="en" style="display:none">Send signal on SL/TP modification</td>
+        </tr>
+        <tr>
+          <td>Sync_History_Days</td><td>30</td>
+          <td data-lang="pl">Przy starcie EA — wczytaj historię zamkniętych transakcji z ostatnich N dni (0 = wyłączone)</td>
+          <td data-lang="en" style="display:none">On EA start — load closed trade history from the last N days (0 = disabled)</td>
+        </tr>
+        <tr>
+          <td>CheckEvery</td><td>2</td>
+          <td data-lang="pl">Częstotliwość sprawdzania zmian (sekundy)</td>
+          <td data-lang="en" style="display:none">How often to check for changes (seconds)</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="warn" data-lang="pl"><strong>Ważne:</strong> Sygnały z EA trafiają do kolejki — musisz je zatwierdzić w aplikacji (Ustawienia → Integracja MT4 → Oczekujące sygnały), aby stały się pełnoprawnymi transakcjami w dzienniku.</div>
+    <div class="warn" data-lang="en" style="display:none"><strong>Important:</strong> EA signals go into a queue — you need to approve them in the app (Settings → MT4 Integration → Pending signals) for them to become full trades in your journal.</div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- 10 USTAWIENIA -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <div class="section" id="s10">
+    <div class="section-header">
+      <div class="section-icon">⚙️</div>
+      <div>
+        <div class="section-num">10</div>
+        <div class="section-title" data-lang="pl">Ustawienia</div>
+        <div class="section-title" data-lang="en" style="display:none">Settings</div>
+      </div>
+    </div>
+
+    <table>
+      <thead><tr>
+        <th data-lang="pl">Sekcja</th><th data-lang="pl">Co możesz zrobić</th>
+        <th data-lang="en" style="display:none">Section</th><th data-lang="en" style="display:none">What you can do</th>
+      </tr></thead>
+      <tbody>
+        <tr>
+          <td data-lang="pl">👤 Profil</td><td data-lang="pl">Zmień hasło, wyświetlana nazwa</td>
+          <td data-lang="en" style="display:none">👤 Profile</td><td data-lang="en" style="display:none">Change password, display name</td>
+        </tr>
+        <tr>
+          <td data-lang="pl">🔄 Synchronizacja</td><td data-lang="pl">Synchronizuj dane z chmurą (Supabase), eksport/import JSON, Google Drive backup</td>
+          <td data-lang="en" style="display:none">🔄 Sync</td><td data-lang="en" style="display:none">Sync data with cloud (Supabase), export/import JSON, Google Drive backup</td>
+        </tr>
+        <tr>
+          <td data-lang="pl">🌐 Język</td><td data-lang="pl">Przełącz interfejs na Polski lub English</td>
+          <td data-lang="en" style="display:none">🌐 Language</td><td data-lang="en" style="display:none">Switch interface to Polish or English</td>
+        </tr>
+        <tr>
+          <td data-lang="pl">🔔 Przypomnienia</td><td data-lang="pl">Włącz powiadomienia przeglądarki, zarządzaj harmonogramem przypomnień</td>
+          <td data-lang="en" style="display:none">🔔 Reminders</td><td data-lang="en" style="display:none">Enable browser notifications, manage reminder schedule</td>
+        </tr>
+        <tr>
+          <td data-lang="pl">🔧 Integracja MT4</td><td data-lang="pl">Kopiuj User ID, pobierz EA, przeglądaj oczekujące sygnały</td>
+          <td data-lang="en" style="display:none">🔧 MT4 Integration</td><td data-lang="en" style="display:none">Copy User ID, download EA, view pending signals</td>
+        </tr>
+        <tr>
+          <td data-lang="pl">🎨 Wygląd</td><td data-lang="pl">Tryb ciemny / jasny</td>
+          <td data-lang="en" style="display:none">🎨 Appearance</td><td data-lang="en" style="display:none">Dark / light mode</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3 data-lang="pl">Backup i eksport danych</h3>
+    <h3 data-lang="en" style="display:none">Backup and data export</h3>
+    <p data-lang="pl">W sekcji Synchronizacja możesz w każdej chwili pobrać swoje dane jako plik JSON (pełny backup lokalny) lub zsynchronizować z Google Drive. Dane zawsze należą do Ciebie.</p>
+    <p data-lang="en" style="display:none">In the Sync section you can download your data as a JSON file (full local backup) or sync with Google Drive at any time. Your data always belongs to you.</p>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- 11 PRZYPOMNIENIA -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <div class="section" id="s11">
+    <div class="section-header">
+      <div class="section-icon">🔔</div>
+      <div>
+        <div class="section-num">11</div>
+        <div class="section-title" data-lang="pl">Przypomnienia</div>
+        <div class="section-title" data-lang="en" style="display:none">Reminders</div>
+      </div>
+    </div>
+
+    <p data-lang="pl">Aplikacja może wysyłać powiadomienia przeglądarki żeby wyrobić w sobie rutynę tradera. Aby je włączyć: <strong>Ustawienia → Przypomnienia → Włącz powiadomienia</strong>.</p>
+    <p data-lang="en" style="display:none">The app can send browser notifications to help you build a trader routine. To enable: <strong>Settings → Reminders → Enable notifications</strong>.</p>
+
+    <table>
+      <thead><tr>
+        <th data-lang="pl">Kiedy</th><th data-lang="pl">Treść</th>
+        <th data-lang="en" style="display:none">When</th><th data-lang="en" style="display:none">Content</th>
+      </tr></thead>
+      <tbody>
+        <tr>
+          <td data-lang="pl">Poniedziałek 8:00</td><td data-lang="pl">Zacznij tydzień od planu — otwórz Rutynę dnia</td>
+          <td data-lang="en" style="display:none">Monday 8:00</td><td data-lang="en" style="display:none">Start the week with a plan — open Daily Routine</td>
+        </tr>
+        <tr>
+          <td data-lang="pl">Piątek 16:30</td><td data-lang="pl">Czas na weekly review — jak minął tydzień?</td>
+          <td data-lang="en" style="display:none">Friday 16:30</td><td data-lang="en" style="display:none">Time for weekly review — how was your week?</td>
+        </tr>
+        <tr>
+          <td data-lang="pl">Codziennie 20:00</td><td data-lang="pl">Uzupełnij dziennik z dzisiaj (jeśli brak wpisu)</td>
+          <td data-lang="en" style="display:none">Daily 20:00</td><td data-lang="en" style="display:none">Fill in today's journal (if no entry yet)</td>
+        </tr>
+        <tr>
+          <td data-lang="pl">Po 3 dniach bez logowania</td><td data-lang="pl">Dziennik czeka — wróć do rutyny</td>
+          <td data-lang="en" style="display:none">After 3 days without login</td><td data-lang="en" style="display:none">Journal is waiting — get back to routine</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p data-lang="pl">Możesz też dodać <strong>własne przypomnienia</strong> — wybierz datę, godzinę i opcjonalnie wpisz notatkę. Kliknij 🔔 na karcie analizy aby ustawić przypomnienie powiązane z konkretną analizą.</p>
+    <p data-lang="en" style="display:none">You can also add <strong>custom reminders</strong> — choose date, time and optionally add a note. Click 🔔 on an analysis card to set a reminder linked to that specific analysis.</p>
+
+    <div class="warn" data-lang="pl"><strong>Uwaga:</strong> Powiadomienia działają tylko gdy karta przeglądarki z aplikacją jest otwarta. Nie wymagają osobnego serwera.</div>
+    <div class="warn" data-lang="en" style="display:none"><strong>Note:</strong> Notifications only work while the browser tab with the app is open. No separate server required.</div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- 12 WSKAZÓWKI -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <div class="section" id="s12">
+    <div class="section-header">
+      <div class="section-icon">💡</div>
+      <div>
+        <div class="section-num">12</div>
+        <div class="section-title" data-lang="pl">Wskazówki i najlepsze praktyki</div>
+        <div class="section-title" data-lang="en" style="display:none">Tips &amp; best practices</div>
+      </div>
+    </div>
+
+    <div class="cards">
+      <div class="card">
+        <div class="card-icon">📸</div>
+        <div class="card-title" data-lang="pl">Zawsze dodawaj screenshot</div>
+        <div class="card-title" data-lang="en" style="display:none">Always add a screenshot</div>
+        <div class="card-desc" data-lang="pl">Screenshot wykresu z zaznaczonym wejściem, SL i TP to najlepsza dokumentacja — za miesiąc zrozumiesz dlaczego weszłeś.</div>
+        <div class="card-desc" data-lang="en" style="display:none">A chart screenshot with entry, SL and TP marked is the best documentation — in a month you'll understand why you entered.</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">😤</div>
+        <div class="card-title" data-lang="pl">Zapisuj emocje szczerze</div>
+        <div class="card-title" data-lang="en" style="display:none">Record emotions honestly</div>
+        <div class="card-desc" data-lang="pl">Dane o emocjach są wartościowe tylko gdy są prawdziwe. Po kilku tygodniach zobaczysz wyraźnie z jakimi emocjami tracisz a z jakimi zarabiasz.</div>
+        <div class="card-desc" data-lang="en" style="display:none">Emotion data is valuable only when it's honest. After a few weeks you'll clearly see which emotions cause you to lose and which to win.</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">📏</div>
+        <div class="card-title" data-lang="pl">Skonfiguruj reguły PRZED sezonem</div>
+        <div class="card-title" data-lang="en" style="display:none">Set up rules BEFORE trading</div>
+        <div class="card-desc" data-lang="pl">Wpisz swoje zasady gdy jesteś spokojny — nie gdy trwa sesja. Reguły powinny wynikać z Twoich danych historycznych.</div>
+        <div class="card-desc" data-lang="en" style="display:none">Enter your rules when you're calm — not during a session. Rules should come from your historical data.</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔄</div>
+        <div class="card-title" data-lang="pl">Synchronizuj regularnie</div>
+        <div class="card-title" data-lang="en" style="display:none">Sync regularly</div>
+        <div class="card-desc" data-lang="pl">Kliknij przycisk Synchronizuj w Ustawieniach po każdej sesji tradingowej — dane lokalnie + w chmurze = bezpieczeństwo.</div>
+        <div class="card-desc" data-lang="en" style="display:none">Click the Sync button in Settings after each trading session — data locally + in the cloud = safety.</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">📆</div>
+        <div class="card-title" data-lang="pl">Weekly Review co piątek</div>
+        <div class="card-title" data-lang="en" style="display:none">Weekly Review every Friday</div>
+        <div class="card-desc" data-lang="pl">5 minut refleksji tygodniowej = najszybszy sposób na poprawę. Trafia do raportu miesięcznego i profilu psychologicznego.</div>
+        <div class="card-desc" data-lang="en" style="display:none">5 minutes of weekly reflection = the fastest way to improve. Goes into the monthly report and psychological profile.</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔃</div>
+        <div class="card-title" data-lang="pl">Hard refresh po aktualizacji</div>
+        <div class="card-title" data-lang="en" style="display:none">Hard refresh after updates</div>
+        <div class="card-desc" data-lang="pl">Po wdrożeniu nowej wersji aplikacji zrób <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>R</kbd> (lub wyczyść cache) aby zobaczyć najnowszą wersję.</div>
+        <div class="card-desc" data-lang="en" style="display:none">After a new app version is deployed, do <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>R</kbd> (or clear cache) to see the latest version.</div>
+      </div>
+    </div>
+
+    <h3 data-lang="pl">Często zadawane pytania</h3>
+    <h3 data-lang="en" style="display:none">Frequently asked questions</h3>
+
+    <table>
+      <thead><tr>
+        <th data-lang="pl">Pytanie</th><th data-lang="pl">Odpowiedź</th>
+        <th data-lang="en" style="display:none">Question</th><th data-lang="en" style="display:none">Answer</th>
+      </tr></thead>
+      <tbody>
+        <tr>
+          <td data-lang="pl">Czy moje dane są bezpieczne?</td>
+          <td data-lang="pl">Tak. Dane przechowywane są lokalnie w przeglądarce oraz w Supabase (PostgreSQL) — widzi je tylko zalogowany użytkownik.</td>
+          <td data-lang="en" style="display:none">Is my data safe?</td>
+          <td data-lang="en" style="display:none">Yes. Data is stored locally in the browser and in Supabase (PostgreSQL) — only the logged-in user can see it.</td>
+        </tr>
+        <tr>
+          <td data-lang="pl">Mogę używać na telefonie?</td>
+          <td data-lang="pl">Tak — aplikacja jest PWA i działa jak natywna aplikacja na Android/iOS. Możesz ją dodać do ekranu głównego.</td>
+          <td data-lang="en" style="display:none">Can I use it on mobile?</td>
+          <td data-lang="en" style="display:none">Yes — the app is a PWA and works like a native app on Android/iOS. You can add it to your home screen.</td>
+        </tr>
+        <tr>
+          <td data-lang="pl">Czy działa offline?</td>
+          <td data-lang="pl">Częściowo — Service Worker cachuje zasoby aplikacji. Możesz przeglądać dane offline, ale synchronizacja i upload wymagają internetu.</td>
+          <td data-lang="en" style="display:none">Does it work offline?</td>
+          <td data-lang="en" style="display:none">Partially — Service Worker caches app assets. You can browse data offline, but sync and upload require internet.</td>
+        </tr>
+        <tr>
+          <td data-lang="pl">Jak zgłosić błąd lub pomysł?</td>
+          <td data-lang="pl">Użyj zakładki <strong>Pomysły</strong> w aplikacji — możesz opisać problem lub sugestię, administrator zobaczy zgłoszenie.</td>
+          <td data-lang="en" style="display:none">How do I report a bug or idea?</td>
+          <td data-lang="en" style="display:none">Use the <strong>Ideas</strong> tab in the app — describe the issue or suggestion, the admin will see the report.</td>
+        </tr>
+        <tr>
+          <td data-lang="pl">Znikły moje dane po odświeżeniu</td>
+          <td data-lang="pl">Kliknij <strong>Synchronizuj</strong> w Ustawieniach — dane zostaną pobrane ponownie z chmury.</td>
+          <td data-lang="en" style="display:none">My data disappeared after refresh</td>
+          <td data-lang="en" style="display:none">Click <strong>Sync</strong> in Settings — data will be re-downloaded from the cloud.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div><!-- /container -->
+
+<div class="footer">
+  <div data-lang="pl">© 2026 TraderLogJournal · <a href="index.html">Wróć do aplikacji</a> · <a href="privacy.html">Polityka prywatności</a> · <a href="terms.html">Warunki</a></div>
+  <div data-lang="en" style="display:none">© 2026 TraderLogJournal · <a href="index.html">Back to app</a> · <a href="privacy.html">Privacy policy</a> · <a href="terms.html">Terms</a></div>
+</div>
+
+<script>
+  var _lang = 'pl';
+
+  function setLang(lang) {
+    _lang = lang;
+    document.querySelectorAll('[data-lang]').forEach(function(el) {
+      el.style.display = (el.getAttribute('data-lang') === lang) ? '' : 'none';
+    });
+    document.querySelectorAll('.lang-btn').forEach(function(btn) {
+      btn.classList.toggle('active', btn.textContent.trim().toLowerCase() === lang);
+    });
+    document.documentElement.lang = lang;
+    localStorage.setItem('tlj_help_lang', lang);
+  }
+
+  // Restore saved language
+  var saved = localStorage.getItem('tlj_help_lang');
+  if (saved === 'en') setLang('en');
+  else setLang('pl');
+
+  // Smooth scroll for TOC links
+  document.querySelectorAll('.toc a').forEach(function(a) {
+    a.addEventListener('click', function(e) {
+      e.preventDefault();
+      var target = document.querySelector(a.getAttribute('href'));
+      if (target) target.scrollIntoView({ behavior: 'smooth' });
+    });
+  });
+</script>
+</body>
+</html>
