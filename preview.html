@@ -4693,7 +4693,7 @@ function renderTradingProfile() {
   const worstEmo    = Object.entries(emoStats).filter(([,v])=>v.count>=3).sort((a,b)=>(a[1].wins/a[1].count)-(b[1].wins/b[1].count))[0];
 
   // Discipline score — rules adherence
-  const rules = getRules ? getRules() : [];
+  const rules = getRules() || [];
   const rulesWithBreaks = closed.filter(t => t.rulesBroken && t.rulesBroken.length > 0).length;
   const disciplineScore = rules.length > 0
     ? Math.max(0, Math.round((1 - rulesWithBreaks / closed.length) * 100))
@@ -5890,7 +5890,7 @@ function saveTrade() {
     const pct   = parseFloat(document.getElementById('t-tp' + i + '-pct')?.value);
     if (price && !isNaN(price) && !isNaN(pct) && pct > 0) _tpTotalPct += pct;
   }
-  if (_tpTotalPct > 100) return toast('Suma % zamknięcia na poziomach TP wynosi ' + _tpTotalPct + '% — musi być ≤ 100%', 'error');
+  if (_tpTotalPct > 100) return toast(t('err_tp_sum_over100').replace('{pct}', _tpTotalPct), 'error');
 
   // Walidacja emocji — wymagane przed zapisem (pomijana dla kont botowych)
   const _status      = document.getElementById('t-status')?.value || '';
@@ -9260,6 +9260,7 @@ const T = {
     library_filter_article:'Artykuł',
     library_url_hint:      'Lub wklej URL (YouTube, artykuł)',
     library_download:      'Pobierz',
+    library_open:          'Otwórz',
     // Journal page
     journal_title:         '📔 Rutyna dnia',
     journal_routine_title: 'Rutyna dzienna',
@@ -9426,6 +9427,7 @@ const T = {
     err_delete_admin:        'Błąd usuwania ({code})',
     err_no_perms:            'Brak uprawnień',
     err_balance_missing:     'Wpisz stan konta u brokera',
+    err_tp_sum_over100:      'Suma % zamknięcia na poziomach TP wynosi {pct}% — musi być ≤ 100%',
     toast_analysis_archived: 'Analiza zarchiwizowana',
     toast_analysis_restored: 'Analiza przywrócona',
     toast_withdrawal_saved:  '✓ Operacja zapisana: {type} {amount} USD',
@@ -9748,6 +9750,7 @@ const T = {
     library_filter_article:'Article',
     library_url_hint:      'Or paste a URL (YouTube, article link)',
     library_download:      'Download',
+    library_open:          'Open',
     // Journal page
     journal_title:         '📔 Daily Routine',
     journal_routine_title: 'Daily Routine',
@@ -9914,6 +9917,7 @@ const T = {
     err_delete_admin:        'Delete error ({code})',
     err_no_perms:            'No permissions',
     err_balance_missing:     'Enter the broker account balance',
+    err_tp_sum_over100:      'TP close % sum is {pct}% — must be ≤ 100%',
     toast_analysis_archived: 'Analysis archived',
     toast_analysis_restored: 'Analysis restored',
     toast_withdrawal_saved:  '✓ Operation saved: {type} {amount} USD',
@@ -17558,6 +17562,7 @@ function filterLibrary(type) {
       </div>
       ${safeDesc ? `<div style="font-size:12px;color:var(--text2);line-height:1.5">${safeDesc}</div>` : ''}
       <div style="display:flex;gap:8px;margin-top:auto">
+        ${(f.storagePath || f.url) ? `<button class="btn-sm" onclick="openLibraryFile('${f.id}')" style="font-size:12px">👁 ${t('library_open')}</button>` : ''}
         <button class="btn-sm btn-accent" onclick="downloadLibraryFile('${f.id}')" style="flex:1;font-size:12px">⬇ ${t('library_download')}</button>
         ${adminMode ? `<button class="btn-sm" onclick="deleteLibraryFile('${f.id}')" style="color:var(--red);border-color:var(--red);font-size:12px">🗑</button>` : ''}
       </div>
@@ -17603,6 +17608,7 @@ async function addLibraryFile() {
   if (fileInput && fileInput.files.length) {
     const f = fileInput.files[0];
     if (f.size > _LIB_MAX_BYTES) return toast(t('err_library_size'), 'error');
+    if (!_sb) return toast(t('err_login_first'), 'error');
     if (addBtn) addBtn.disabled = true;
     if (statusEl) statusEl.textContent = 'Wysyłanie...';
     const ext = f.name.split('.').pop();
@@ -17635,6 +17641,7 @@ function deleteLibraryFile(id) {
   showConfirm(t('confirm_delete_library'), async () => {
     const f = getLibraryFiles().find(x => x.id === id);
     if (f?.storagePath) {
+      if (!_sb) { toast(t('err_login_first'), 'error'); return; }
       await _sb.storage.from('library').remove([f.storagePath]);
     }
     saveLibraryFiles(getLibraryFiles().filter(x => x.id !== id));
@@ -17643,10 +17650,26 @@ function deleteLibraryFile(id) {
   });
 }
 
+async function openLibraryFile(id) {
+  const f = getLibraryFiles().find(f => f.id === id);
+  if (!f) return toast(t('err_library_no_src'), 'error');
+  if (f.storagePath) {
+    if (!_sb) return toast(t('err_login_first'), 'error');
+    const { data, error } = await _sb.storage.from('library').createSignedUrl(f.storagePath, 3600);
+    if (error) { toast(t('err_library_download'), 'error'); return; }
+    window.open(data.signedUrl, '_blank');
+  } else if (f.url) {
+    window.open(f.url, '_blank');
+  } else {
+    toast(t('err_library_no_src'), 'error');
+  }
+}
+
 async function downloadLibraryFile(id) {
   const f = getLibraryFiles().find(f => f.id === id);
-  if (!f) return toast('Nie znaleziono pliku', 'error');
+  if (!f) return toast(t('err_library_no_src'), 'error');
   if (f.storagePath) {
+    if (!_sb) return toast(t('err_login_first'), 'error');
     const { data, error } = await _sb.storage.from('library').createSignedUrl(f.storagePath, 3600);
     if (error) { toast(t('err_library_download'), 'error'); return; }
     window.open(data.signedUrl, '_blank');
