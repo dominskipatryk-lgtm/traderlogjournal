@@ -4,6 +4,7 @@
 ---
 
 **Aktualizacja 2026-05-25:** Poprawki 1-9 wdrożone w commit `07e9252`.
+**Aktualizacja 2026-05-25:** confirm() → własny modal wdrożony w commit `bbf5c66`.
 
 ---
 
@@ -100,7 +101,7 @@ Użytkownik może wpisać "Nie traduj podczas News" — ale `checkRulesBeforeSav
 | 6 | Filtry EN — tłumaczenie selektów | 🟡 ŚREDNI | ✅ `07e9252` |
 | 7 | Korelacja snu — komunikat gdy za mało danych | 🟢 NISKI | ✅ `07e9252` |
 | 8 | Demo data — używa dzisiejszej daty | 🟢 NISKI | ✅ `07e9252` |
-| 9 | confirm() → własne modale | 🟢 NISKI | ⏳ do zrobienia |
+| 9 | confirm() → własne modale | 🟢 NISKI | ✅ `bbf5c66` |
 | 10 | Deploy preview → index | 🔴 NATYCHMIAST | ⏳ czeka na decyzję |
 | 11 | Biblioteka Supabase Storage | 🔴 Architektura | ⏳ Sprint 2 |
 | 12 | EN tłumaczenia stron emocje/reguły/biblioteka | 🟡 ŚREDNI | ⏳ Sprint 2 |
