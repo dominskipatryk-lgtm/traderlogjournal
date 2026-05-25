@@ -1187,7 +1187,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
         <span class="nav-icon">📋</span><span class="nav-label">Transakcje</span>
       </button>
       <button class="nav-btn" onclick="showPage('journal')" id="nav-journal">
-        <span class="nav-icon">📔</span><span class="nav-label">Dziennik</span>
+        <span class="nav-icon">📔</span><span class="nav-label">Rutyna dnia</span>
       </button>
       <button class="nav-btn" onclick="showPage('analysis')" data-i18n="nav_analysis">
         <span class="nav-icon">🔍</span><span class="nav-label">Analiza</span>
@@ -3602,7 +3602,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
     </div>
     <div id="briefing-content" style="padding:20px 24px;max-height:460px;overflow-y:auto"></div>
     <div style="padding:14px 24px;background:var(--bg);border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">
-      <button class="btn-sm" onclick="showPage('journal');closeDailyBriefing()">📔 Dziennik</button>
+      <button class="btn-sm" onclick="showPage('journal');closeDailyBriefing()">📔 Rutyna dnia</button>
       <button class="btn-sm" onclick="showPage('analysis');closeDailyBriefing()">📈 Nowa analiza</button>
       <button class="btn-sm btn-accent" onclick="closeDailyBriefing()">Zaczynam! 🚀</button>
     </div>
@@ -4097,7 +4097,7 @@ function showPage(page) {
   if (page === 'library') { if(typeof renderLibrary==='function') renderLibrary(); }
   // Aktualizuj tytuł w topstrip
   const PAGE_TITLES = {
-    dashboard:'Dashboard', trades:'Transakcje', journal:'Dziennik', analysis:'Analiza',
+    dashboard:'Dashboard', trades:'Transakcje', journal:'Rutyna dnia', analysis:'Analiza',
     summary:'Statystyki', emotions:'Emocje & Psychologia', library:'Biblioteka',
     tools:'Narzędzia', accounts:'Konta', drafts:'Szkice', settings:'Ustawienia',
     admin:'Admin', calendar:'Kalendarz'
