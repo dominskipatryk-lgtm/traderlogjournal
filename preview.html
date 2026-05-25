@@ -8737,7 +8737,10 @@ function applyLangToStatic() {
     const key = el.getAttribute('data-i18n');
     const val = t(key);
     if (!val || val === key) return;
-    // Preserve icons/badges inside element
+    // Nav buttons: update only .nav-label, leave .nav-icon intact
+    const navLabel = el.querySelector('.nav-label');
+    if (navLabel) { navLabel.textContent = val; return; }
+    // Other elements: preserve badges then replace text
     const badge = el.querySelector('.admin-badge, #nav-draft-badge');
     el.textContent = val;
     if (badge) el.appendChild(badge);
