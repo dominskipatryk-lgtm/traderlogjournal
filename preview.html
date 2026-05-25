@@ -1702,7 +1702,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
           <button class="btn-sm" onclick="cleanOldScreenshots()" style="font-size:11px;margin-right:8px">
             🗜 Usuń screenshoty starsze niż 30 dni
           </button>
-          <button class="btn-sm" onclick="if(confirm('Usunąć WSZYSTKIE screenshoty?\\nDane transakcji pozostaną.'))cleanAllScreenshots()" style="font-size:11px;margin-right:8px;color:var(--red);border-color:var(--red)">
+          <button class="btn-sm" onclick="showConfirm('Usunąć WSZYSTKIE screenshoty?\nDane transakcji pozostaną.', cleanAllScreenshots)" style="font-size:11px;margin-right:8px;color:var(--red);border-color:var(--red)">
             🗑 Usuń WSZYSTKIE screenshoty
           </button>
           <button class="btn-sm btn-accent" onclick="backupToGoogleDrive&&backupToGoogleDrive()" style="font-size:11px">
@@ -2882,6 +2882,17 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
   </div><!-- /app-main -->
 </div><!-- /app -->
 
+<!-- CONFIRM MODAL -->
+<div class="modal-overlay" id="confirm-modal" role="dialog" aria-modal="true" aria-label="Potwierdzenie">
+  <div class="modal" style="max-width:440px">
+    <div id="confirm-modal-msg" style="white-space:pre-wrap;line-height:1.6;font-size:14px;padding:8px 0 24px"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn-sm" id="confirm-modal-no">Anuluj</button>
+      <button class="btn-sm btn-accent" id="confirm-modal-yes">Potwierdź</button>
+    </div>
+  </div>
+</div>
+
 <!-- TRADE MODAL -->
 <div class="modal-overlay" id="trade-modal" role="dialog" aria-modal="true" aria-label="Transakcja">
   <div class="modal">
@@ -3898,8 +3909,7 @@ function doLogout() {
 }
 
 function confirmAndLogout() {
-  if (!confirm('Wylogować się?')) return;
-  _executeLogout();
+  showConfirm('Wylogować się?', _executeLogout);
 }
 
 function _executeLogout() {
@@ -3935,7 +3945,7 @@ function _executeLogout() {
 function seedDemoData() {
   const user = state.currentUser;
   if (!user) { toast('Zaloguj się najpierw', 'error'); return; }
-  if (!confirm('Wygenerować 60 dni danych demo?\n\nZostaną dodane:\n• Konto "📊 Demo — 60 dni"\n• ~150 transakcji\n• Wpisy dziennika\n• Analizy rynkowe\n• Weekly reviews\n\nTwoje prawdziwe konta NIE zostaną zmienione.')) return;
+  showConfirm('Wygenerować 60 dni danych demo?\n\nZostaną dodane:\n• Konto "📊 Demo — 60 dni"\n• ~150 transakcji\n• Wpisy dziennika\n• Analizy rynkowe\n• Weekly reviews\n\nTwoje prawdziwe konta NIE zostaną zmienione.', () => {
 
   const DEMO_ID = 'demo-seed-001';
 
@@ -4128,24 +4138,26 @@ function seedDemoData() {
   renderDashboard(); renderTrades(); renderSummary();
   toast(`✅ Dane demo wygenerowane — ${trades.length} transakcji, ${analyses.length} analiz, ${Object.keys(journalMap).length} wpisów dziennika`, 'success');
   showPage('dashboard');
+  }); // end showConfirm
 }
 
 function clearDemoData() {
   const DEMO_ID = 'demo-seed-001';
   const user = state.currentUser;
   if (!user) return;
-  if (!confirm('Usunąć konto demo i wszystkie jego dane?')) return;
-  const db = getDB();
-  if (db.accounts) db.accounts[user] = (db.accounts[user]||[]).filter(a => a.id !== DEMO_ID);
-  if (db.trades) delete db.trades[user+'_'+DEMO_ID];
-  delete db['analyses_'+user+'_'+DEMO_ID];
-  saveDB(db);
-  if (state.currentAccountId === DEMO_ID) {
-    const remaining = getAccounts();
-    state.currentAccountId = remaining[0]?.id || null;
-  }
-  renderDashboard(); renderTrades();
-  toast('Konto demo usunięte', 'success');
+  showConfirm('Usunąć konto demo i wszystkie jego dane?', () => {
+    const db = getDB();
+    if (db.accounts) db.accounts[user] = (db.accounts[user]||[]).filter(a => a.id !== DEMO_ID);
+    if (db.trades) delete db.trades[user+'_'+DEMO_ID];
+    delete db['analyses_'+user+'_'+DEMO_ID];
+    saveDB(db);
+    if (state.currentAccountId === DEMO_ID) {
+      const remaining = getAccounts();
+      state.currentAccountId = remaining[0]?.id || null;
+    }
+    renderDashboard(); renderTrades();
+    toast('Konto demo usunięte', 'success');
+  });
 }
 
 // ===== NAVIGATION =====
@@ -5379,13 +5391,14 @@ function saveAccount() {
 }
 
 function deleteAccount(id) {
-  if (!confirm('Usunąć konto i WSZYSTKIE jego transakcje?')) return;
-  const accounts = getAccounts().filter(a => a.id !== id);
-  saveAccounts(accounts);
-  if (state.currentAccountId === id) state.currentAccountId = accounts[0]?.id || null;
-  refreshTopbarAccount();
-  renderAccounts();
-  toast('Konto usunięte', 'success');
+  showConfirm('Usunąć konto i WSZYSTKIE jego transakcje?', () => {
+    const accounts = getAccounts().filter(a => a.id !== id);
+    saveAccounts(accounts);
+    if (state.currentAccountId === id) state.currentAccountId = accounts[0]?.id || null;
+    refreshTopbarAccount();
+    renderAccounts();
+    toast('Konto usunięte', 'success');
+  });
 }
 
 function selectColor(el) {
@@ -5543,14 +5556,10 @@ function autoStatusOnExit() {
 }
 
 function saveTrade() {
-  // Reguły osobiste tradera
   const _rulesCheck = checkRulesBeforeSave();
-  if (_rulesCheck.broken) {
-    const msg = '⚠️ Łamiesz regułę:\n' + _rulesCheck.messages.join('\n') + '\n\nCzy na pewno chcesz zapisać?';
-    if (!confirm(msg)) return;
-  }
 
-  // Overtrading check PRZED zapisem (blokuje zanim transakcja trafi do bazy)
+  // Pre-compute overtrading warnings
+  let _otDailyMsg = null, _otStreakMsg = null;
   if (state.currentUser && state.currentAccountId) {
     const _otDb = getDB();
     const _otLims = _otDb['ot-limits_'+state.currentUser] || {maxDaily:5, maxLosses:3};
@@ -5559,20 +5568,20 @@ function saveTrade() {
     const _isNewTrade = !document.getElementById('trade-id')?.value;
     if (_isNewTrade) {
       const _otTodayCount = _otTrades.filter(t => (t.date||'').slice(0,10) === _otToday).length;
-      if (_otTodayCount + 1 > _otLims.maxDaily) {
-        if (!confirm('⚠️ Przekroczysz dzienny limit ' + _otLims.maxDaily + ' transakcji!\n(Masz już ' + _otTodayCount + ')\n\nCzy mimo to zapisać?')) return;
-      }
+      if (_otTodayCount + 1 > _otLims.maxDaily)
+        _otDailyMsg = '⚠️ Przekroczysz dzienny limit ' + _otLims.maxDaily + ' transakcji!\n(Masz już ' + _otTodayCount + ')\n\nCzy mimo to zapisać?';
       const _otSorted = [..._otTrades].sort((a,b)=>new Date(a.date)-new Date(b.date));
       let _otStreak = 0;
       for (let i = _otSorted.length-1; i >= 0; i--) {
         if (_otSorted[i].pnl !== null && _otSorted[i].pnl < 0) _otStreak++;
         else break;
       }
-      if (_otStreak >= _otLims.maxLosses) {
-        if (!confirm('⚠️ Masz ' + _otStreak + ' strat z rzędu!\nLimit: ' + _otLims.maxLosses + '\n\nCzy na pewno chcesz wejść?')) return;
-      }
+      if (_otStreak >= _otLims.maxLosses)
+        _otStreakMsg = '⚠️ Masz ' + _otStreak + ' strat z rzędu!\nLimit: ' + _otLims.maxLosses + '\n\nCzy na pewno chcesz wejść?';
     }
   }
+
+  function _doSave() {
   const symbol = document.getElementById('t-symbol').value.trim().toUpperCase();
   if (!symbol) return toast('Podaj instrument', 'error');
   saveSymbol(symbol);
@@ -5665,16 +5674,32 @@ function saveTrade() {
   renderTrades();
   renderSummary();
   toast('Transakcja zapisana ✓', 'success');
+  } // end _doSave
+
+  function _afterDailyCheck() {
+    if (_otStreakMsg) { showConfirm(_otStreakMsg, _doSave); return; }
+    _doSave();
+  }
+  function _afterRulesCheck() {
+    if (_otDailyMsg) { showConfirm(_otDailyMsg, _afterDailyCheck); return; }
+    _afterDailyCheck();
+  }
+  if (_rulesCheck.broken) {
+    showConfirm('⚠️ Łamiesz regułę:\n' + _rulesCheck.messages.join('\n') + '\n\nCzy na pewno chcesz zapisać?', _afterRulesCheck);
+    return;
+  }
+  _afterRulesCheck();
 }
 
 function deleteTrade(id) {
-  if (!confirm('Usunąć tę transakcję?')) return;
-  const trades = getTrades(state.currentAccountId).filter(t => t.id !== id);
-  saveTrades(state.currentAccountId, trades);
-  renderDashboard();
-  renderTrades();
-  renderSummary();
-  toast('Transakcja usunięta', 'success');
+  showConfirm('Usunąć tę transakcję?', () => {
+    const trades = getTrades(state.currentAccountId).filter(t => t.id !== id);
+    saveTrades(state.currentAccountId, trades);
+    renderDashboard();
+    renderTrades();
+    renderSummary();
+    toast('Transakcja usunięta', 'success');
+  });
 }
 
 // ===== DETAIL MODAL (full view + inline edit) =====
@@ -5966,15 +5991,16 @@ function selectDvLinkedAnalysis(analysisId) {
   toast('Analiza powiązana ✓', 'success');
 }
 function dvUnlinkAnalysis(tradeId) {
-  if (!confirm('Usunąć powiązanie z analizą?')) return;
-  const trades = getTrades(state.currentAccountId);
-  const idx = trades.findIndex(t => t.id === tradeId);
-  if (idx < 0) return;
-  trades[idx] = { ...trades[idx], linkedAnalysisId: null, updatedAt: Date.now() };
-  saveTrades(state.currentAccountId, trades);
-  renderDetailModal();
-  renderTrades();
-  toast('Powiązanie usunięte', 'success');
+  showConfirm('Usunąć powiązanie z analizą?', () => {
+    const trades = getTrades(state.currentAccountId);
+    const idx = trades.findIndex(t => t.id === tradeId);
+    if (idx < 0) return;
+    trades[idx] = { ...trades[idx], linkedAnalysisId: null, updatedAt: Date.now() };
+    saveTrades(state.currentAccountId, trades);
+    renderDetailModal();
+    renderTrades();
+    toast('Powiązanie usunięte', 'success');
+  });
 }
 
 // ── toggle edit mode ──
@@ -6069,14 +6095,15 @@ function detailSaveEdit() {
 
 // ── delete from detail ──
 function detailDeleteCurrent() {
-  if (!confirm('Usunąć tę transakcję?')) return;
-  const trades = getTrades(state.currentAccountId).filter(t => t.id !== _detailId);
-  saveTrades(state.currentAccountId, trades);
-  closeModal('detail-modal');
-  renderDashboard();
-  renderTrades();
-  renderSummary();
-  toast('Transakcja usunięta', 'success');
+  showConfirm('Usunąć tę transakcję?', () => {
+    const trades = getTrades(state.currentAccountId).filter(t => t.id !== _detailId);
+    saveTrades(state.currentAccountId, trades);
+    closeModal('detail-modal');
+    renderDashboard();
+    renderTrades();
+    renderSummary();
+    toast('Transakcja usunięta', 'success');
+  });
 }
 
 // ── screenshots in detail ──
@@ -6355,6 +6382,16 @@ function closeLightbox() { document.getElementById('lightbox').classList.remove(
 
 // ===== MODAL UTILS =====
 function openModal(id) { document.getElementById(id).classList.add('open'); }
+function showConfirm(msg, onYes, onNo) {
+  const overlay = document.getElementById('confirm-modal');
+  document.getElementById('confirm-modal-msg').textContent = msg;
+  const yesBtn = document.getElementById('confirm-modal-yes');
+  const noBtn  = document.getElementById('confirm-modal-no');
+  function _close() { overlay.classList.remove('open'); }
+  yesBtn.onclick = () => { _close(); onYes && onYes(); };
+  noBtn.onclick  = () => { _close(); onNo  && onNo();  };
+  overlay.classList.add('open');
+}
 let _discardingDraft = false;
 function closeModal(id) {
   // [v1.7] Jeśli zamykamy modal transakcji — zapisz szkic automatycznie
@@ -6824,10 +6861,11 @@ function saveSymbol(sym) {
   saveUserSymbolsStore(arr);
 }
 function clearAllSymbols() {
-  if (!confirm('Usunąć wszystkie zapisane instrumenty?')) return;
-  localStorage.removeItem('traderlog_symbols_' + (state.currentUser||''));
-  closeSymbolDropdown();
-  toast('Lista wyczyszczona', 'success');
+  showConfirm('Usunąć wszystkie zapisane instrumenty?', () => {
+    localStorage.removeItem('traderlog_symbols_' + (state.currentUser||''));
+    closeSymbolDropdown();
+    toast('Lista wyczyszczona', 'success');
+  });
 }
 function deleteSymbol(sym, e) {
   e.stopPropagation();
@@ -7090,9 +7128,7 @@ function cleanOldScreenshots() {
       cleanAllScreenshots();
     }
   } else {
-    if (confirm('Brak screenhotów starszych niż 30 dni.\n\nCzy usunąć WSZYSTKIE screenshoty?\n(Dane transakcji pozostaną)')) {
-      cleanAllScreenshots();
-    }
+    showConfirm('Brak screenhotów starszych niż 30 dni.\n\nCzy usunąć WSZYSTKIE screenshoty?\n(Dane transakcji pozostaną)', cleanAllScreenshots);
   }
 }
 
@@ -7332,41 +7368,43 @@ function adminResetPass(login) {
 
 async function adminDeleteUser(userId, login) {
   if (!isAdmin()) { toast('Brak uprawnień', 'error'); return; }
-  if (!confirm('Usunąć użytkownika ' + login + '? Tej operacji nie można cofnąć.')) return;
-  try {
-    const { data: { session } } = await _sb.auth.getSession();
-    const adminToken = session?.access_token;
-    if (!adminToken) { toast('Brak sesji — zaloguj się ponownie', 'error'); return; }
-    const res = await fetch(_SB_URL + '/rest/v1/profiles?id=eq.' + encodeURIComponent(userId), {
-      method: 'DELETE',
-      headers: {
-        'apikey': _SB_ANON,
-        'Authorization': 'Bearer ' + adminToken
+  showConfirm('Usunąć użytkownika ' + login + '? Tej operacji nie można cofnąć.', async () => {
+    try {
+      const { data: { session } } = await _sb.auth.getSession();
+      const adminToken = session?.access_token;
+      if (!adminToken) { toast('Brak sesji — zaloguj się ponownie', 'error'); return; }
+      const res = await fetch(_SB_URL + '/rest/v1/profiles?id=eq.' + encodeURIComponent(userId), {
+        method: 'DELETE',
+        headers: {
+          'apikey': _SB_ANON,
+          'Authorization': 'Bearer ' + adminToken
+        }
+      });
+      if (!res.ok) {
+        const errText = await res.text();
+        console.warn('Delete error:', res.status, errText);
+        toast('Błąd usuwania (' + res.status + ')', 'error');
+        return;
       }
-    });
-    if (!res.ok) {
-      const errText = await res.text();
-      console.warn('Delete error:', res.status, errText);
-      toast('Błąd usuwania (' + res.status + ')', 'error');
-      return;
-    }
-    toast('Użytkownik usunięty ✓', 'success');
-    renderAdmin();
-  } catch(e) { toast('Błąd: ' + e.message, 'error'); }
+      toast('Użytkownik usunięty ✓', 'success');
+      renderAdmin();
+    } catch(e) { toast('Błąd: ' + e.message, 'error'); }
+  });
 }
 
 function adminNukeAll() {
-  if (!confirm('UWAGA! Usunąć WSZYSTKIE dane wszystkich użytkowników?\nTego nie można cofnąć!')) return;
-  if (!confirm('Jesteś PEWIEN? Stracisz wszystkie transakcje, konta i ustawienia!')) return;
-  const users = getUsers();
-  // Keep only admin
-  const adminUser = state.currentUser;
-  const myData = users[adminUser];
-  const emptyDB = { users: { [adminUser]: myData }, accounts: {}, trades: {} };
-  saveDB(emptyDB);
-  _dbCache = emptyDB;
-  toast('Baza wyczyszczona', 'success');
-  renderAdmin();
+  showConfirm('UWAGA! Usunąć WSZYSTKIE dane wszystkich użytkowników?\nTego nie można cofnąć!', () => {
+    showConfirm('Jesteś PEWIEN? Stracisz wszystkie transakcje, konta i ustawienia!', () => {
+      const users = getUsers();
+      const adminUser = state.currentUser;
+      const myData = users[adminUser];
+      const emptyDB = { users: { [adminUser]: myData }, accounts: {}, trades: {} };
+      saveDB(emptyDB);
+      _dbCache = emptyDB;
+      toast('Baza wyczyszczona', 'success');
+      renderAdmin();
+    });
+  });
 }
 
 async function adminExport() {
@@ -7386,31 +7424,32 @@ async function adminExport() {
 }
 
 async function adminImport() {
-  if (!confirm('Importuj dane? Obecne dane zostaną ZASTĄPIONE importem!')) return;
-  let json = null;
-  if (IS_ELECTRON) {
-    json = await window.electronAPI.importData();
-  } else {
-    json = await new Promise(res => {
-      const inp = document.createElement('input');
-      inp.type = 'file'; inp.accept = '.json';
-      inp.onchange = e => { const f = e.target.files[0]; if (!f) { res(null); return; }
-        const r = new FileReader(); r.onload = ev => res(ev.target.result); r.readAsText(f); };
-      inp.click();
-    });
-  }
-  if (!json) return;
-  try {
-    const data = JSON.parse(json);
-    saveDB(data);
-    _dbCache = data;
-    toast('Import zakończony ✓', 'success');
-    setTimeout(() => {
-      renderDashboard(); renderTrades(); renderSummary();
-      renderAccounts(); refreshTopbarAccount(); updateDraftBadges();
-      updateAdminNav(); renderAdmin();
-    }, 400);
-  } catch { toast('Błąd importu – nieprawidłowy plik', 'error'); }
+  showConfirm('Importuj dane? Obecne dane zostaną ZASTĄPIONE importem!', async () => {
+    let json = null;
+    if (IS_ELECTRON) {
+      json = await window.electronAPI.importData();
+    } else {
+      json = await new Promise(res => {
+        const inp = document.createElement('input');
+        inp.type = 'file'; inp.accept = '.json';
+        inp.onchange = e => { const f = e.target.files[0]; if (!f) { res(null); return; }
+          const r = new FileReader(); r.onload = ev => res(ev.target.result); r.readAsText(f); };
+        inp.click();
+      });
+    }
+    if (!json) return;
+    try {
+      const data = JSON.parse(json);
+      saveDB(data);
+      _dbCache = data;
+      toast('Import zakończony ✓', 'success');
+      setTimeout(() => {
+        renderDashboard(); renderTrades(); renderSummary();
+        renderAccounts(); refreshTopbarAccount(); updateDraftBadges();
+        updateAdminNav(); renderAdmin();
+      }, 400);
+    } catch { toast('Błąd importu – nieprawidłowy plik', 'error'); }
+  });
 }
 
 
@@ -7847,19 +7886,11 @@ function openTradeModalWithDraftCheck() {
 
 function showDraftRestorePrompt(meta) {
   const ago = timeAgo(meta.savedAt);
-  const choice = confirm(
-    `Znaleziono niezapisaną wersję roboczą:\n\n` +
-    `Instrument: ${meta.symbol}  |  ${meta.dir}  |  ${meta.tf}\n` +
-    `Zapisana: ${ago}\n\n` +
-    `Kliknij OK aby przywrócić szkic, Anuluj aby zacząć od nowa.`
+  showConfirm(
+    `Znaleziono niezapisaną wersję roboczą:\n\nInstrument: ${meta.symbol}  |  ${meta.dir}  |  ${meta.tf}\nZapisana: ${ago}\n\nKliknij Potwierdź aby przywrócić szkic, Anuluj aby zacząć od nowa.`,
+    () => restoreDraft(meta.id),
+    () => { _draftKey = meta.id; openTradeModal(); hookFormAutoSave(); }
   );
-  if (choice) {
-    restoreDraft(meta.id);
-  } else {
-    _draftKey = meta.id; // keep key so we overwrite it
-    openTradeModal();
-    hookFormAutoSave();
-  }
 }
 
 function restoreDraft(id) {
@@ -7921,11 +7952,12 @@ function clearCurrentDraft() {
 // ── Discard draft and close ───────────────────────────────────────────────────
 function discardDraftAndClose() {
   if (!formHasContent()) { closeModal('trade-modal'); return; }
-  if (!confirm('Odrzucić wersję roboczą? Dane zostaną utracone.')) return;
-  clearCurrentDraft();
-  _discardingDraft = true; // [v1.7] nie zapisuj szkicu przy zamknięciu
-  closeModal('trade-modal');
-  toast('Szkic odrzucony', 'success');
+  showConfirm('Odrzucić wersję roboczą? Dane zostaną utracone.', () => {
+    clearCurrentDraft();
+    _discardingDraft = true;
+    closeModal('trade-modal');
+    toast('Szkic odrzucony', 'success');
+  });
 }
 
 // ── Drafts page ───────────────────────────────────────────────────────────────
@@ -7981,19 +8013,21 @@ function openTradeModalFromDrafts() {
   hookFormAutoSave();
 }
 function deleteSingleDraft(id) {
-  if (!confirm('Usunąć ten szkic?')) return;
-  deleteDraftData(id);
-  updateDraftBadges();
-  renderDraftsPage();
-  toast('Szkic usunięty', 'success');
+  showConfirm('Usunąć ten szkic?', () => {
+    deleteDraftData(id);
+    updateDraftBadges();
+    renderDraftsPage();
+    toast('Szkic usunięty', 'success');
+  });
 }
 function clearAllDrafts() {
-  if (!confirm('Usunąć wszystkie wersje robocze?')) return;
-  const idx = getDraftIndex();
-  idx.forEach(d => deleteDraftData(d.id));
-  updateDraftBadges();
-  renderDraftsPage();
-  toast('Wszystkie szkice usunięte', 'success');
+  showConfirm('Usunąć wszystkie wersje robocze?', () => {
+    const idx = getDraftIndex();
+    idx.forEach(d => deleteDraftData(d.id));
+    updateDraftBadges();
+    renderDraftsPage();
+    toast('Wszystkie szkice usunięte', 'success');
+  });
 }
 
 // ── Badge / indicator updates ─────────────────────────────────────────────────
@@ -9618,26 +9652,27 @@ function manualBackupExport() {
 }
 
 function manualBackupImport() {
-  if (!confirm('Importuj dane? Obecne dane zostaną ZASTĄPIONE!')) return;
-  const inp = document.createElement('input');
-  inp.type = 'file'; inp.accept = '.json';
-  inp.onchange = e => {
-    const f = e.target.files[0]; if (!f) return;
-    const r = new FileReader();
-    r.onload = ev => {
-      try {
-        const data = JSON.parse(ev.target.result);
-        saveDB(data); _dbCache = data;
-        toast('Import zakończony ✓', 'success');
-        setTimeout(() => {
-          renderDashboard(); renderTrades(); renderSummary();
-          renderAccounts(); refreshTopbarAccount(); updateDraftBadges();
-        }, 400);
-      } catch { toast('Błąd importu — nieprawidłowy plik', 'error'); }
+  showConfirm('Importuj dane? Obecne dane zostaną ZASTĄPIONE!', () => {
+    const inp = document.createElement('input');
+    inp.type = 'file'; inp.accept = '.json';
+    inp.onchange = e => {
+      const f = e.target.files[0]; if (!f) return;
+      const r = new FileReader();
+      r.onload = ev => {
+        try {
+          const data = JSON.parse(ev.target.result);
+          saveDB(data); _dbCache = data;
+          toast('Import zakończony ✓', 'success');
+          setTimeout(() => {
+            renderDashboard(); renderTrades(); renderSummary();
+            renderAccounts(); refreshTopbarAccount(); updateDraftBadges();
+          }, 400);
+        } catch { toast('Błąd importu — nieprawidłowy plik', 'error'); }
+      };
+      r.readAsText(f);
     };
-    r.readAsText(f);
-  };
-  inp.click();
+    inp.click();
+  });
 }
 
 // ── Export CSV ────────────────────────────────────────────────────────────────
@@ -9945,27 +9980,28 @@ async function backupToGoogleDrive() {
 
 async function restoreFromGoogleDrive() {
   if (!_gapiLoaded) { connectGoogleDrive(); return; }
-  if (!confirm('Przywrócić dane z Google Drive? Obecne dane zostaną zastąpione!')) return;
-  try {
-    const fname = `traderlogjournal-${state.currentUser}-backup.json`;
-    const token = _gapiAccessToken;
-    const searchResp = await driveRequest(`https://www.googleapis.com/drive/v3/files?q=name='${fname}'&spaces=drive`, {
-      headers: { Authorization: 'Bearer ' + token }
-    });
-    if (!searchResp) return;
-    const searchData = await searchResp.json();
-    const fileId = searchData.files?.[0]?.id;
-    if (!fileId) { toast('Nie znaleziono backupu na Drive', 'error'); return; }
-    const fileResp = await driveRequest(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
-      headers: { Authorization: 'Bearer ' + token }
-    });
-    if (!fileResp) return;
-    const data = await fileResp.json();
-    saveDB(data); _dbCache = data;
-    toast('Przywrócono z Google Drive ✓', 'success');
-    renderDashboard(); renderTrades(); renderSummary();
-    renderAccounts(); refreshTopbarAccount(); updateDraftBadges();
-  } catch(e) { toast('Błąd przywracania: ' + e.message, 'error'); }
+  showConfirm('Przywrócić dane z Google Drive? Obecne dane zostaną zastąpione!', async () => {
+    try {
+      const fname = `traderlogjournal-${state.currentUser}-backup.json`;
+      const token = _gapiAccessToken;
+      const searchResp = await driveRequest(`https://www.googleapis.com/drive/v3/files?q=name='${fname}'&spaces=drive`, {
+        headers: { Authorization: 'Bearer ' + token }
+      });
+      if (!searchResp) return;
+      const searchData = await searchResp.json();
+      const fileId = searchData.files?.[0]?.id;
+      if (!fileId) { toast('Nie znaleziono backupu na Drive', 'error'); return; }
+      const fileResp = await driveRequest(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+        headers: { Authorization: 'Bearer ' + token }
+      });
+      if (!fileResp) return;
+      const data = await fileResp.json();
+      saveDB(data); _dbCache = data;
+      toast('Przywrócono z Google Drive ✓', 'success');
+      renderDashboard(); renderTrades(); renderSummary();
+      renderAccounts(); refreshTopbarAccount(); updateDraftBadges();
+    } catch(e) { toast('Błąd przywracania: ' + e.message, 'error'); }
+  });
 }
 
 async function openDriveFolder() {
@@ -10845,15 +10881,15 @@ function saveAnalysis() {
 }
 
 function deleteAnalysis(id) {
-  if (!confirm('Usunąć tę analizę?')) return;
-  saveAnalyses(getAnalyses().filter(a => a.id !== id));
-  renderAnalysisList();
-  toast('Analiza usunięta', 'success');
+  showConfirm('Usunąć tę analizę?', () => {
+    saveAnalyses(getAnalyses().filter(a => a.id !== id));
+    renderAnalysisList();
+    toast('Analiza usunięta', 'success');
+  });
 }
 
 function discardAnalysis() {
-  if (!confirm('Odrzucić tę analizę?')) return;
-  closeModal('analysis-modal');
+  showConfirm('Odrzucić tę analizę?', () => closeModal('analysis-modal'));
 }
 
 function saveAnalysisAsTrade() {
@@ -13600,12 +13636,13 @@ function saveStrategy() {
 
 
 function deleteStrategy(id) {
-  if (!confirm('Usunąć strategię?')) return;
-  const strategies = getStrategies().filter(s => s.id !== id);
-  saveStrategies(strategies);
-  renderStrategyList();
-  renderToolsStrategies();
-  toast('Strategia usunięta', 'success');
+  showConfirm('Usunąć strategię?', () => {
+    const strategies = getStrategies().filter(s => s.id !== id);
+    saveStrategies(strategies);
+    renderStrategyList();
+    renderToolsStrategies();
+    toast('Strategia usunięta', 'success');
+  });
 }
 
 
@@ -13935,11 +13972,12 @@ function saveSetup() {
 
 
 function deleteSetup(id) {
-  if (!confirm('Usunąć setup?')) return;
-  const strategyId = getAllSetups().find(s => s.id === id)?.strategyId;
-  saveAllSetups(getAllSetups().filter(s => s.id !== id));
-  if (strategyId) renderSetupList(strategyId);
-  toast('Setup usunięty', 'success');
+  showConfirm('Usunąć setup?', () => {
+    const strategyId = getAllSetups().find(s => s.id === id)?.strategyId;
+    saveAllSetups(getAllSetups().filter(s => s.id !== id));
+    if (strategyId) renderSetupList(strategyId);
+    toast('Setup usunięty', 'success');
+  });
 }
 
 
@@ -14219,10 +14257,11 @@ function addRule() {
   toast('Reguła dodana ✓', 'success');
 }
 function deleteRule(id) {
-  if (!confirm('Usunąć tę regułę?')) return;
-  saveRules(getRules().filter(r => r.id !== id));
-  renderRules();
-  toast('Reguła usunięta', 'success');
+  showConfirm('Usunąć tę regułę?', () => {
+    saveRules(getRules().filter(r => r.id !== id));
+    renderRules();
+    toast('Reguła usunięta', 'success');
+  });
 }
 function renderRules() {
   const el = document.getElementById('rules-list-container');
@@ -15347,12 +15386,13 @@ function saveCurrentNote() {
 
 function deleteCurrentNote() {
   if (!_jCurrentNoteId) return;
-  if (!confirm('Usunąć tę notatkę?')) return;
-  saveNotes(getNotes().filter(n=>n.id!==_jCurrentNoteId));
-  _jCurrentNoteId = null;
-  document.getElementById('note-editor-empty').style.display = 'block';
-  document.getElementById('note-editor-content').style.display = 'none';
-  renderNotesList(); toast('Notatka usunięta','success');
+  showConfirm('Usunąć tę notatkę?', () => {
+    saveNotes(getNotes().filter(n=>n.id!==_jCurrentNoteId));
+    _jCurrentNoteId = null;
+    document.getElementById('note-editor-empty').style.display = 'block';
+    document.getElementById('note-editor-content').style.display = 'none';
+    renderNotesList(); toast('Notatka usunięta','success');
+  });
 }
 
 function toggleNotePin() {
@@ -16475,10 +16515,11 @@ function addLibraryFile() {
 }
 
 function deleteLibraryFile(id) {
-  if (!confirm('Usunąć ten materiał z biblioteki?')) return;
-  saveLibraryFiles(getLibraryFiles().filter(f => f.id !== id));
-  filterLibrary(_libFilter);
-  toast('Materiał usunięty', 'success');
+  showConfirm('Usunąć ten materiał z biblioteki?', () => {
+    saveLibraryFiles(getLibraryFiles().filter(f => f.id !== id));
+    filterLibrary(_libFilter);
+    toast('Materiał usunięty', 'success');
+  });
 }
 
 function downloadLibraryFile(id) {
