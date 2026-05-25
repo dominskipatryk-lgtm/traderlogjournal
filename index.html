@@ -267,7 +267,7 @@ body.light-mode tr:nth-child(even) { background: rgba(0,0,0,.02); }
   border: none; font-family: var(--font-head); letter-spacing: .1px;
   width: 100%; text-align: left;
 }
-.nav-btn .nav-icon { font-size: 15px; width: 20px; text-align: center; flex-shrink: 0; }
+.nav-btn .nav-icon { font-size: 18px; width: 24px; text-align: center; flex-shrink: 0; line-height: 1; }
 .nav-btn .nav-label { flex: 1; }
 .nav-btn:hover { background: var(--bg3); color: var(--text); }
 .nav-btn.active { background: var(--accent-dim); color: var(--accent); font-weight: 600; }
@@ -8737,7 +8737,10 @@ function applyLangToStatic() {
     const key = el.getAttribute('data-i18n');
     const val = t(key);
     if (!val || val === key) return;
-    // Preserve icons/badges inside element
+    // Nav buttons: update only .nav-label, leave .nav-icon intact
+    const navLabel = el.querySelector('.nav-label');
+    if (navLabel) { navLabel.textContent = val; return; }
+    // Other elements: preserve badges then replace text
     const badge = el.querySelector('.admin-badge, #nav-draft-badge');
     el.textContent = val;
     if (badge) el.appendChild(badge);
