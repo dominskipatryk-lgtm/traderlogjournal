@@ -6050,12 +6050,12 @@ function detailSaveEdit() {
   const _dvEmosPost = document.getElementById('dv-emotion-post')?.value || '';
   if (!isCurrentAccountBot()) {
     if (!_dvEmosPre) {
-      toast('Zaznacz emocję PRZED wejściem — wymagane do zapisu', 'error');
+      toast(t('err_emotion_pre'), 'error');
       (document.getElementById('dv-emotion-pre-picker') || document.getElementById('dv-emotion-pre'))?.scrollIntoView({ behavior:'smooth', block:'center' });
       return;
     }
     if (_dvStatus === 'closed' && !_dvEmosPost) {
-      toast('Zaznacz emocję PO zamknięciu — wymagane dla zamkniętej transakcji', 'error');
+      toast(t('err_emotion_post'), 'error');
       (document.getElementById('dv-emotion-post-picker') || document.getElementById('dv-emotion-post'))?.scrollIntoView({ behavior:'smooth', block:'center' });
       return;
     }
@@ -8485,7 +8485,7 @@ function saveProfileSettings() {
   saveUsers(users);
   // Update topbar display name
   document.getElementById('topbar-username').textContent = u.name;
-  toast('Profil zapisany ✓', 'success');
+  toast(t('toast_profile_saved'), 'success');
 }
 
 function savePasswordSettings() {
@@ -9095,6 +9095,9 @@ const T = {
     err_size_nan:            'Rozmiar pozycji musi być liczbą',
     err_drive_upload:        'Błąd wgrywania na Drive',
     err_drive_required:      'Połącz z Google Drive aby dodać screenshoty ☁️',
+    err_emotion_pre:         'Zaznacz emocję PRZED wejściem — wymagane do zapisu',
+    err_emotion_post:        'Zaznacz emocję PO zamknięciu — wymagane dla zamkniętej transakcji',
+    toast_profile_saved:     'Profil zapisany ✓',
     // Confirm dialogs
     confirm_logout:          'Wylogować się?',
     confirm_delete_trade:    'Usunąć tę transakcję?',
@@ -9528,6 +9531,9 @@ const T = {
     err_size_nan:            'Position size must be a number',
     err_drive_upload:        'Drive upload error',
     err_drive_required:      'Connect Google Drive to add screenshots ☁️',
+    err_emotion_pre:         'Select emotion BEFORE entry — required to save',
+    err_emotion_post:        'Select emotion AFTER close — required for closed trade',
+    toast_profile_saved:     'Profile saved ✓',
     // Confirm dialogs
     confirm_logout:          'Sign out?',
     confirm_delete_trade:    'Delete this trade?',
