@@ -4877,8 +4877,16 @@ function renderSummary() {
     if (calDays>=30 && equity>0) {
       const tradingDays = Math.max(1,calDays*(252/365));
       const rawCagr = (Math.pow(equity/startCapital,252/tradingDays)-1)*100;
-      cagr = Math.max(-999.99,Math.min(9999.99,rawCagr));
-      cagrNote = Math.round(calDays)+' dni';
+      if (rawCagr > 999.99) {
+        cagr = null;
+        cagrNote = '> 999% (za krótki okres)';
+      } else if (rawCagr < -99.99) {
+        cagr = null;
+        cagrNote = '< -99% (za krótki okres)';
+      } else {
+        cagr = rawCagr;
+        cagrNote = Math.round(calDays)+' dni';
+      }
     } else if (calDays>0&&calDays<30) { cagrNote='za krótki okres (<30 dni)'; }
   }
 
