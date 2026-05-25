@@ -5343,7 +5343,7 @@ function openAccountModal() {
   document.getElementById('acc-strategy').value = '';
   document.getElementById('acc-mt4-login').value = '';
   document.getElementById('acc-currency').value = 'USD';
-  document.getElementById('acc-modal-title').textContent = 'Nowe konto';
+  document.getElementById('acc-modal-title').textContent = t('modal_new_account');
   document.querySelectorAll('.color-swatch').forEach((s,i) => s.classList.toggle('selected', i===0));
   _setAccBotToggle(false);
   // live border update on change
@@ -5362,7 +5362,7 @@ function openEditAccount(id) {
   document.getElementById('acc-type').value = acc.type || 'Forex';
   document.getElementById('acc-mt4-login').value = acc.mt4Login || '';
   document.getElementById('acc-currency').value = acc.currency || 'USD';
-  document.getElementById('acc-modal-title').textContent = 'Edytuj konto';
+  document.getElementById('acc-modal-title').textContent = t('modal_edit_account');
   document.querySelectorAll('.color-swatch').forEach(s => s.classList.toggle('selected', s.dataset.color === acc.color));
   _setAccBotToggle(!!acc.isBot);
   document.querySelectorAll('input[name="acc-is-bot"]').forEach(r => r.onchange = () => _setAccBotToggle(r.value === 'bot'));
@@ -5475,7 +5475,7 @@ function openTradeModal() {
   setEmotionUI('pre', '');
   setEmotionUI('post', '');
   const _pclNew = document.getElementById('pnl-currency-label'); if (_pclNew) _pclNew.textContent = 'P&L (' + getCurrSym() + ')';
-  document.getElementById('modal-title').textContent = 'Nowa transakcja';
+  document.getElementById('modal-title').textContent = t('trade_new_title');
   _pnlManual = false;
   const _pp = document.getElementById('pnl-preview'); if(_pp) { _pp.textContent=''; }
   const _pf = document.getElementById('t-pnl'); if(_pf) _pf.style.borderColor='';
@@ -5516,7 +5516,7 @@ function openEditModal(id) {
   setEmotionUI('pre', t.emotionPre || '');
   setEmotionUI('post', t.emotionPost || '');
   const _pclEdit = document.getElementById('pnl-currency-label'); if (_pclEdit) _pclEdit.textContent = 'P&L (' + getCurrSym() + ')';
-  document.getElementById('modal-title').textContent = 'Edytuj: ' + t.symbol;
+  document.getElementById('modal-title').textContent = t('trade_edit_title') + ': ' + t.symbol;
   _draftKey = 'edit_' + id;
   _pnlManual = false;
   const _pp2 = document.getElementById('pnl-preview'); if(_pp2) { _pp2.textContent=''; }
@@ -7315,7 +7315,7 @@ async function renderAdmin() {
 }
 
 function openAddUserModal() {
-  document.getElementById('add-user-modal-title').textContent = 'Dodaj użytkownika';
+  document.getElementById('add-user-modal-title').textContent = t('adm_add_user').replace('+ ','');
   document.getElementById('au-original-login').value = '';
   document.getElementById('au-login').value = '';
   document.getElementById('au-name').value = '';
@@ -7865,11 +7865,11 @@ function setAutosaveDot(state) {
   if (!dot) return;
   dot.className = 'autosave-dot ' + state;
   if (state === 'saved') {
-    label.textContent = 'Szkic zapisany';
+    label.textContent = t('draft_saved_label');
     time.textContent  = 'przed chwilą';
     dot.style.background = 'var(--accent)';
   } else if (state === 'saving') {
-    label.textContent = 'Zapisuję szkic…';
+    label.textContent = t('draft_saving_label');
     time.textContent  = '';
   } else {
     label.textContent = 'auto-zapis wersji roboczej';
@@ -8145,7 +8145,7 @@ async function doLogin() {
       });
       const profiles = await res.json();
       if (!profiles?.length || !profiles[0].email) {
-        if (btn) { btn.textContent = 'Zaloguj się'; btn.disabled = false; }
+        if (btn) { btn.textContent = t('auth_login_btn'); btn.disabled = false; }
         return showAuthError('Nie znaleziono użytkownika');
       }
       email = profiles[0].email;
@@ -8153,7 +8153,7 @@ async function doLogin() {
 
     // Zaloguj przez Supabase
     const { data, error } = await _sb.auth.signInWithPassword({ email, password: pass });
-    if (btn) { btn.textContent = 'Zaloguj się'; btn.disabled = false; }
+    if (btn) { btn.textContent = t('auth_login_btn'); btn.disabled = false; }
     if (error) {
       if (error.message?.toLowerCase().includes('email not confirmed')) {
         return showAuthError('Potwierdź adres e-mail — sprawdź skrzynkę pocztową (też folder SPAM).');
@@ -8194,13 +8194,13 @@ async function doLogin() {
           users['patryk'] = { pass: '__supabase__', name: 'Patryk', email: _ADMIN_EMAIL, role: 'admin', subscription: 'admin', supabaseId: data.user.id, createdAt: Date.now() };
           saveUsers(users);
           await sbSyncDown(data.user.id, 'patryk');
-          if (btn) { btn.textContent = 'Zaloguj się'; btn.disabled = false; }
+          if (btn) { btn.textContent = t('auth_login_btn'); btn.disabled = false; }
           loginAs('patryk', users['patryk']);
           return;
         }
       }
       await _sb.auth.signOut();
-      if (btn) { btn.textContent = 'Zaloguj się'; btn.disabled = false; }
+      if (btn) { btn.textContent = t('auth_login_btn'); btn.disabled = false; }
       return showAuthError('Profil nie istnieje. Skontaktuj się z administratorem.');
     }
 
@@ -8226,7 +8226,7 @@ async function doLogin() {
     loginAs(profile.login, users[profile.login]);
 
   } catch(e) {
-    if (btn) { btn.textContent = 'Zaloguj się'; btn.disabled = false; }
+    if (btn) { btn.textContent = t('auth_login_btn'); btn.disabled = false; }
     showAuthError('Błąd logowania: ' + e.message);
   }
 }
@@ -8247,7 +8247,7 @@ async function doRegister() {
   const btn = document.querySelector('#register-form .btn-primary');
   if (btn) { btn.textContent = '⏳ Tworzę konto...'; btn.disabled = true; }
 
-  const done = (err) => { if (btn) { btn.textContent = 'Utwórz konto'; btn.disabled = false; } if (err) showAuthError(err); };
+  const done = (err) => { if (btn) { btn.textContent = t('auth_reg_btn'); btn.disabled = false; } if (err) showAuthError(err); };
 
   try {
     // Inicjalizuj Supabase jeśli nie jest
@@ -9098,6 +9098,10 @@ const T = {
     err_emotion_pre:         'Zaznacz emocję PRZED wejściem — wymagane do zapisu',
     err_emotion_post:        'Zaznacz emocję PO zamknięciu — wymagane dla zamkniętej transakcji',
     toast_profile_saved:     'Profil zapisany ✓',
+    modal_new_account:       'Nowe konto',
+    modal_edit_account:      'Edytuj konto',
+    draft_saved_label:       'Szkic zapisany',
+    draft_saving_label:      'Zapisuję szkic…',
     toast_library_added:     'Materiał dodany do biblioteki ✓',
     toast_library_deleted:   'Materiał usunięty',
     err_library_title:       'Podaj tytuł materiału',
@@ -9542,6 +9546,10 @@ const T = {
     err_emotion_pre:         'Select emotion BEFORE entry — required to save',
     err_emotion_post:        'Select emotion AFTER close — required for closed trade',
     toast_profile_saved:     'Profile saved ✓',
+    modal_new_account:       'New account',
+    modal_edit_account:      'Edit account',
+    draft_saved_label:       'Draft saved',
+    draft_saving_label:      'Saving draft…',
     toast_library_added:     'Material added to library ✓',
     toast_library_deleted:   'Material deleted',
     err_library_title:       'Enter material title',
