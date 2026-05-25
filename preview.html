@@ -6026,29 +6026,29 @@ function openTradeModal() {
 
 function openEditModal(id) {
   const trades = getTrades(state.currentAccountId);
-  const t = trades.find(x => x.id === id);
-  if (!t) return;
+  const tr = trades.find(x => x.id === id);
+  if (!tr) return;
   state.editTradeId = id;
-  state.tempScreenshots = (t.screenshots || []).map(s => ({id: genId(), dataUrl: s}));
-  document.getElementById('trade-id').value = t.id;
-  document.getElementById('t-symbol').value = t.symbol || '';
-  document.getElementById('t-date').value = t.date ? t.date.slice(0,16) : '';
-  document.getElementById('t-dir').value = t.dir || 'LONG';
-  document.getElementById('t-status').value = t.status || 'open';
-  document.getElementById('t-entry').value = t.entry ?? '';
-  document.getElementById('t-size').value = t.size ?? '';
-  document.getElementById('t-sl').value = t.sl ?? '';
-  document.getElementById('t-tp').value = t.tp ?? '';
-  setTpData(t.tps || t.tp || null);
-  document.getElementById('t-exit').value = t.exit ?? '';
-  document.getElementById('t-pnl').value = t.pnl ?? '';
-  setTfFromValue(t.tf || 'H1');
-  document.getElementById('t-pre').value = t.pre || '';
-  document.getElementById('t-post').value = t.post || '';
-  setEmotionUI('pre', t.emotionPre || '');
-  setEmotionUI('post', t.emotionPost || '');
+  state.tempScreenshots = (tr.screenshots || []).map(s => ({id: genId(), dataUrl: s}));
+  document.getElementById('trade-id').value = tr.id;
+  document.getElementById('t-symbol').value = tr.symbol || '';
+  document.getElementById('t-date').value = tr.date ? tr.date.slice(0,16) : '';
+  document.getElementById('t-dir').value = tr.dir || 'LONG';
+  document.getElementById('t-status').value = tr.status || 'open';
+  document.getElementById('t-entry').value = tr.entry ?? '';
+  document.getElementById('t-size').value = tr.size ?? '';
+  document.getElementById('t-sl').value = tr.sl ?? '';
+  document.getElementById('t-tp').value = tr.tp ?? '';
+  setTpData(tr.tps || tr.tp || null);
+  document.getElementById('t-exit').value = tr.exit ?? '';
+  document.getElementById('t-pnl').value = tr.pnl ?? '';
+  setTfFromValue(tr.tf || 'H1');
+  document.getElementById('t-pre').value = tr.pre || '';
+  document.getElementById('t-post').value = tr.post || '';
+  setEmotionUI('pre', tr.emotionPre || '');
+  setEmotionUI('post', tr.emotionPost || '');
   const _pclEdit = document.getElementById('pnl-currency-label'); if (_pclEdit) _pclEdit.textContent = 'P&L (' + getCurrSym() + ')';
-  document.getElementById('modal-title').textContent = t('trade_edit_title') + ': ' + t.symbol;
+  document.getElementById('modal-title').textContent = t('trade_edit_title') + ': ' + tr.symbol;
   _draftKey = 'edit_' + id;
   _pnlManual = false;
   const _pp2 = document.getElementById('pnl-preview'); if(_pp2) { _pp2.textContent=''; }
@@ -6059,11 +6059,9 @@ function openEditModal(id) {
   setTimeout(() => {
     populateStrategySelects();
     document.getElementById('trade-checklist-score').textContent='';
-    // [v1.7] FIX: zawsze resetuj pole — jeśli brak powiązania wyczyść stare
-    populateLinkedAnalysisSelect(t.symbol || '', t.linkedAnalysisId || '');
-    // Wyczyść hidden field jeśli brak powiązania
+    populateLinkedAnalysisSelect(tr.symbol || '', tr.linkedAnalysisId || '');
     const lf = document.getElementById('t-linked-analysis-id');
-    if (lf) lf.value = t.linkedAnalysisId || '';
+    if (lf) lf.value = tr.linkedAnalysisId || '';
   }, 50);
   renderModalRulesChecklist('trade');
   openModal('trade-modal');
