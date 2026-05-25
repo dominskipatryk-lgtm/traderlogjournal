@@ -1474,6 +1474,10 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
           style="padding:10px 20px;background:none;border:none;color:var(--text3);font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px">
           💱 Kalkulator prowizji
         </button>
+        <button class="tools-tab" onclick="switchToolsTab('rules')" id="ttab-rules"
+          style="padding:10px 20px;background:none;border:none;color:var(--text3);font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px">
+          📏 Reguły
+        </button>
       </div>
 
       <!-- TAB: Kalkulator pozycji -->
@@ -1616,6 +1620,40 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
             <div class="summary-card-title">Wynik kalkulacji</div>
             <div id="bc-result" style="margin-top:12px;color:var(--text3);font-size:13px;text-align:center;padding:20px">
               Wybierz brokera i wpisz dane...
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: Reguły osobiste tradera -->
+      <div id="tools-tab-rules" style="display:none">
+        <div class="page-title">📏 Moje reguły tradingowe</div>
+        <div class="page-subtitle">Zdefiniuj zasady — aplikacja sprawdzi czy je łamiesz przy zapisie transakcji</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:960px;margin-top:20px">
+          <div class="summary-card">
+            <div class="summary-card-title" style="color:var(--accent)">➕ Dodaj nową regułę</div>
+            <div style="display:flex;flex-direction:column;gap:10px;margin-top:12px">
+              <div>
+                <label class="form-label-modal" style="font-size:11px">Typ reguły</label>
+                <select class="form-select-modal" id="rule-type" onchange="updateRuleValueHint()">
+                  <option value="max-risk">Maks. ryzyko na trade (%)</option>
+                  <option value="max-losses">Nie wchodzę po X stratach</option>
+                  <option value="stop-hour">Stop trading o godzinie</option>
+                  <option value="max-daily">Maks. transakcji dziennie</option>
+                  <option value="custom">Inne (własna zasada)</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label-modal" id="rule-value-label" style="font-size:11px">Wartość / opis</label>
+                <input class="form-input-modal" id="rule-value" placeholder="np. 2 (dla %) lub opis zasady" style="font-size:13px">
+              </div>
+              <button class="btn-sm btn-accent" onclick="addRule()" style="width:100%">+ Dodaj regułę</button>
+            </div>
+          </div>
+          <div>
+            <div class="summary-card-title" style="color:var(--amber);margin-bottom:12px">✅ Aktywne reguły</div>
+            <div id="rules-list-container">
+              <div style="color:var(--text3);font-size:13px;text-align:center;padding:20px">Brak reguł — dodaj pierwszą</div>
             </div>
           </div>
         </div>
@@ -2739,12 +2777,62 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 
     <!-- LIBRARY PAGE (placeholder — pełna implementacja w Task 8) -->
     <div id="page-library" class="page">
-      <div class="page-title">📚 Biblioteka</div>
-      <div class="page-subtitle">Strategie i wskaźniki od admina — przeglądaj i pobieraj</div>
-      <div style="text-align:center;padding:60px 20px;color:var(--text3)">
-        <div style="font-size:48px;margin-bottom:16px">📚</div>
-        <div style="font-size:16px;font-weight:600;margin-bottom:8px">Biblioteka w budowie</div>
-        <div style="font-size:13px">Wkrótce: gotowe strategie i wskaźniki do pobrania i importu</div>
+      <div class="page-title">📚 Biblioteka strategii</div>
+      <div class="page-subtitle">Materiały od admina — strategie, wskaźniki i screenshoty do pobrania</div>
+
+      <!-- Admin: sekcja dodawania -->
+      <div id="library-admin-section" style="display:none;margin-bottom:24px">
+        <div class="summary-card" style="border-color:var(--accent)">
+          <div class="summary-card-title" style="color:var(--accent)">➕ Dodaj materiał do biblioteki</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px">
+            <div>
+              <label class="form-label-modal" style="font-size:11px">Tytuł</label>
+              <input class="form-input-modal" id="lib-title" placeholder="np. Strategia ICT Orderblock" style="font-size:13px">
+            </div>
+            <div>
+              <label class="form-label-modal" style="font-size:11px">Typ materiału</label>
+              <select class="form-select-modal" id="lib-type" style="font-size:13px">
+                <option value="PDF">PDF</option>
+                <option value="MQ4">MQ4 / Expert Advisor</option>
+                <option value="Screenshot">Screenshot</option>
+                <option value="Inne">Inne</option>
+              </select>
+            </div>
+            <div style="grid-column:1/-1">
+              <label class="form-label-modal" style="font-size:11px">Opis</label>
+              <textarea class="form-input-modal" id="lib-desc" rows="2" placeholder="Krótki opis materiału..." style="font-size:13px;resize:vertical"></textarea>
+            </div>
+            <div>
+              <label class="form-label-modal" style="font-size:11px">Plik (PDF, MQ4, MQ5, PNG, JPG)</label>
+              <input type="file" id="lib-file" accept=".pdf,.mq4,.mq5,.png,.jpg,.jpeg" class="form-input-modal" style="font-size:12px;padding:6px" onchange="libPreviewFile()">
+              <div id="lib-file-info" style="font-size:11px;color:var(--text3);margin-top:4px"></div>
+            </div>
+            <div>
+              <label class="form-label-modal" style="font-size:11px">Lub URL do pliku</label>
+              <input class="form-input-modal" id="lib-url" placeholder="https://..." style="font-size:13px">
+            </div>
+          </div>
+          <div style="margin-top:14px;display:flex;gap:10px">
+            <button class="btn-sm btn-accent" onclick="addLibraryFile()" id="lib-add-btn" style="min-width:140px">+ Dodaj do biblioteki</button>
+            <span id="lib-upload-status" style="font-size:12px;color:var(--text3);align-self:center"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pasek filtrów -->
+      <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">
+        <button class="btn-sm btn-accent" id="lib-filter-all" onclick="filterLibrary('all')" style="font-size:12px">Wszystkie</button>
+        <button class="btn-sm" id="lib-filter-PDF" onclick="filterLibrary('PDF')" style="font-size:12px">PDF</button>
+        <button class="btn-sm" id="lib-filter-MQ4" onclick="filterLibrary('MQ4')" style="font-size:12px">MQ4</button>
+        <button class="btn-sm" id="lib-filter-Screenshot" onclick="filterLibrary('Screenshot')" style="font-size:12px">Screenshoty</button>
+      </div>
+
+      <!-- Lista plików -->
+      <div id="library-files-container">
+        <div style="text-align:center;padding:60px 20px;color:var(--text3)">
+          <div style="font-size:48px;margin-bottom:16px">📚</div>
+          <div style="font-size:16px;font-weight:600;margin-bottom:8px">Ładowanie...</div>
+        </div>
       </div>
     </div>
 
@@ -4250,7 +4338,7 @@ function buildTradesTable(trades) {
         <span class="tag">${t.setup || '—'}</span>
         ${linkedAnalysis ? `<span onclick="event.stopPropagation();openEditAnalysis('${linkedAnalysis.id}')" title="${linkedAnalysis.title}" style="display:inline-flex;align-items:center;gap:3px;font-size:10px;padding:2px 6px;border-radius:4px;background:var(--blue-dim);color:var(--blue);cursor:pointer;margin-left:4px">🔗 Analiza</span>` : ''}
       </td>
-      <td><span class="badge badge-${t.status}">${t.status === 'open' ? 'Otwarta' : 'Zamknięta'}</span></td>
+      <td><span class="badge badge-${t.status}">${t.status === 'open' ? 'Otwarta' : 'Zamknięta'}</span>${t.rulesBroken && t.rulesBroken.length ? `<span style="display:inline-block;margin-left:4px;font-size:10px;padding:1px 5px;border-radius:4px;background:rgba(255,79,107,.15);color:var(--red);border:1px solid rgba(255,79,107,.3)" title="${t.rulesBroken.join(', ')}">❌ Reguła złamana</span>` : ''}</td>
       <td><div class="action-btns" onclick="event.stopPropagation()">
         <button class="icon-btn" onclick="openDetailModal('${t.id}')" title="Szczegóły">👁</button>
         <button class="icon-btn" onclick="openEditModal('${t.id}')" title="Edytuj">✏️</button>
@@ -4521,15 +4609,196 @@ function renderEmotions() {
       ${emoTable(byEmoPost)}
     </div>
   </div>
-  <div class="summary-card" style="background:linear-gradient(135deg,rgba(0,212,161,.06),rgba(79,158,255,.04));border-color:rgba(0,212,161,.2)">
-    <div class="summary-card-title" style="color:var(--accent)">🚀 Nadchodzi w następnej wersji</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">
-      <div style="font-size:12px;color:var(--text2);padding:10px;background:var(--bg3);border-radius:8px;border:1px solid var(--border)">📊 <strong>Wykres emocje vs P&L</strong><br><span style="color:var(--text3)">Słupkowy interaktywny</span></div>
-      <div style="font-size:12px;color:var(--text2);padding:10px;background:var(--bg3);border-radius:8px;border:1px solid var(--border)">⚠️ <strong>Overtrading Alert</strong><br><span style="color:var(--text3)">Po X transakcjach w sesji</span></div>
-      <div style="font-size:12px;color:var(--text2);padding:10px;background:var(--bg3);border-radius:8px;border:1px solid var(--border)">😡 <strong>Revenge Trading Detector</strong><br><span style="color:var(--text3)">Wejście &lt;15 min po stracie</span></div>
-      <div style="font-size:12px;color:var(--text2);padding:10px;background:var(--bg3);border-radius:8px;border:1px solid var(--border)">📈 <strong>Postęp jakości decyzji</strong><br><span style="color:var(--text3)">Miesiąc po miesiącu</span></div>
-    </div>
-  </div>`;
+  ${(()=>{
+    // --- Wykres Emocje vs P&L (horizontal bars) ---
+    const preEntries = Object.entries(byEmoPre);
+    if (!preEntries.length) return '';
+    const maxAbsAvg = Math.max(...preEntries.map(([,d])=>Math.abs(d.pnl/d.c)), 0.001);
+    const bars = preEntries.sort((a,b)=>b[1].pnl/b[1].c - a[1].pnl/a[1].c).map(([e,d])=>{
+      const avg = d.pnl/d.c;
+      const wr = Math.round(d.w/d.c*100);
+      const barW = Math.round(Math.abs(avg)/maxAbsAvg*100);
+      const color = avg >= 0 ? 'var(--green)' : 'var(--red)';
+      return `<div style="margin-bottom:10px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
+          <span style="font-size:16px;width:24px">${e}</span>
+          <div style="flex:1;height:14px;background:var(--bg3);border-radius:4px;overflow:hidden">
+            <div style="width:${barW}%;height:100%;background:${color};border-radius:4px;transition:width .3s"></div>
+          </div>
+          <span style="font-family:var(--font-mono);font-size:12px;width:60px;text-align:right;color:${color}">${avg>=0?'+':''}${fmt(avg)}</span>
+          <span style="font-size:11px;color:var(--text3);width:40px;text-align:right">${wr}%</span>
+          <span style="font-size:10px;color:var(--text3);width:22px;text-align:right">${d.c}x</span>
+        </div>
+      </div>`;
+    }).join('');
+    return `<div class="summary-card" style="margin-top:16px">
+      <div class="summary-card-title" style="color:var(--amber)">📊 Emocje pre vs Avg P&L</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:12px">Pasek = proporcja do najwyższego avg P&L · WR% · liczba transakcji</div>
+      ${bars}
+    </div>`;
+  })()}
+
+  ${(()=>{
+    // --- Heatmapa godzin handlu ---
+    const days = ['Pn','Wt','Śr','Cz','Pt'];
+    const hours = [7,8,9,10,11,12,13,14,15,16,17,18];
+    const grid = {};
+    days.forEach(d => { grid[d]={}; hours.forEach(h => { grid[d][h]={pnl:0,c:0}; }); });
+    const dowMap = {1:'Pn',2:'Wt',3:'Śr',4:'Cz',5:'Pt'};
+    closed.forEach(t => {
+      if (!t.date) return;
+      const dt = new Date(t.date);
+      const dow = dowMap[dt.getDay()];
+      const h = dt.getHours();
+      if (!dow || h < 7 || h > 18) return;
+      const hk = hours.includes(h) ? h : null;
+      if (!hk) return;
+      grid[dow][hk].c++;
+      grid[dow][hk].pnl += t.pnl||0;
+    });
+    const allPnls = days.flatMap(d=>hours.map(h=>grid[d][h].pnl)).filter(v=>v!==0);
+    const maxAbs = allPnls.length ? Math.max(...allPnls.map(Math.abs), 0.001) : 1;
+    const cellStyle = (pnl, c) => {
+      if (!c) return 'background:var(--bg3);color:var(--text3)';
+      const intensity = Math.min(Math.abs(pnl)/maxAbs, 1);
+      const alpha = 0.15 + intensity*0.55;
+      return pnl > 0
+        ? `background:rgba(0,212,161,${alpha.toFixed(2)});color:#fff`
+        : `background:rgba(255,79,107,${alpha.toFixed(2)});color:#fff`;
+    };
+    const headerCells = hours.map(h=>`<div style="text-align:center;font-size:10px;color:var(--text3);padding:2px">${h}h</div>`).join('');
+    const bodyRows = days.map(d=>{
+      const cells = hours.map(h=>{
+        const {pnl,c} = grid[d][h];
+        const cs = cellStyle(pnl,c);
+        const label = c ? c : '';
+        return `<div style="${cs};border-radius:4px;padding:4px 2px;text-align:center;font-size:11px;font-weight:600;min-height:28px;display:flex;align-items:center;justify-content:center" title="${c?('P&L: '+(pnl>=0?'+':'')+fmt(pnl)+', '+c+' trans.'):'brak'}">${label}</div>`;
+      }).join('');
+      return `<div style="display:contents"><div style="font-size:11px;color:var(--text2);display:flex;align-items:center;font-weight:600">${d}</div>${cells}</div>`;
+    }).join('');
+    return `<div class="summary-card" style="margin-top:16px">
+      <div class="summary-card-title" style="color:var(--blue)">⏰ Kiedy grasz najlepiej?</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:10px">Zielony = zysk · Czerwony = strata · Liczba = transakcji</div>
+      <div style="display:grid;grid-template-columns:32px repeat(${hours.length},1fr);gap:3px">
+        <div></div>${headerCells}
+        ${bodyRows}
+      </div>
+    </div>`;
+  })()}
+
+  ${(()=>{
+    // --- Konsekwencja planu ---
+    const tradeDates = [...new Set(closed.map(t=>(t.date||'').slice(0,10)).filter(Boolean))];
+    const withPlan=[], withoutPlan=[];
+    tradeDates.forEach(ds => {
+      const entry = getJournalEntry(ds);
+      if (!entry) return;
+      const pf = entry['post-plan-followed'];
+      const dayPnl = closed.filter(t=>(t.date||'').slice(0,10)===ds).reduce((s,t)=>s+(t.pnl||0),0);
+      const dayW = closed.filter(t=>(t.date||'').slice(0,10)===ds && t.pnl>0).length;
+      const dayC = closed.filter(t=>(t.date||'').slice(0,10)===ds).length;
+      if (pf==='yes'||pf==='mostly') withPlan.push({pnl:dayPnl,w:dayW,c:dayC});
+      else if (pf==='no'||pf==='partially') withoutPlan.push({pnl:dayPnl,w:dayW,c:dayC});
+    });
+    const totalDaysWithData = withPlan.length + withoutPlan.length;
+    if (!totalDaysWithData) return '';
+    const avgPlan    = withPlan.length    ? withPlan.reduce((s,d)=>s+d.pnl,0)/withPlan.length : null;
+    const avgNoPlan  = withoutPlan.length ? withoutPlan.reduce((s,d)=>s+d.pnl,0)/withoutPlan.length : null;
+    const disciplinePct = Math.round(withPlan.length/totalDaysWithData*100);
+    const cardStyle = (val) => val===null ? '' : val>=0 ? 'border-color:var(--green)' : 'border-color:var(--red)';
+    return `<div class="summary-card" style="margin-top:16px">
+      <div class="summary-card-title" style="color:var(--accent)">🎯 Konsekwencja planu</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px">
+        <div class="summary-card" style="${cardStyle(avgPlan)};text-align:center">
+          <div style="font-size:11px;color:var(--green);font-weight:600;margin-bottom:6px">Gdy trzymałem plan</div>
+          <div style="font-size:22px;font-weight:800;font-family:var(--font-mono);color:${avgPlan!==null&&avgPlan>=0?'var(--green)':'var(--red)'}">${avgPlan!==null?(avgPlan>=0?'+':'')+fmt(avgPlan):'—'}</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:4px">${withPlan.length} dni</div>
+        </div>
+        <div class="summary-card" style="${cardStyle(avgNoPlan)};text-align:center">
+          <div style="font-size:11px;color:var(--red);font-weight:600;margin-bottom:6px">Gdy nie trzymałem planu</div>
+          <div style="font-size:22px;font-weight:800;font-family:var(--font-mono);color:${avgNoPlan!==null&&avgNoPlan>=0?'var(--green)':'var(--red)'}">${avgNoPlan!==null?(avgNoPlan>=0?'+':'')+fmt(avgNoPlan):'—'}</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:4px">${withoutPlan.length} dni</div>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--text2);margin-top:10px;text-align:center"><strong style="color:${disciplinePct>=70?'var(--accent)':disciplinePct>=50?'var(--amber)':'var(--red)'}">${disciplinePct}%</strong> dni z planem = dyscyplina</div>
+    </div>`;
+  })()}
+
+  ${(()=>{
+    // --- Overtrading Alert konfiguracja ---
+    const db2 = getDB();
+    const lims = db2['ot-limits_'+(state.currentUser||'')] || {maxDaily:5, maxLosses:3};
+    return `<div class="summary-card" style="margin-top:16px">
+      <div class="summary-card-title" style="color:var(--red)">⚠️ Overtrading Alert — konfiguracja</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:12px">Ustaw limity — aplikacja wyświetli ostrzeżenie po przekroczeniu</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+        <div>
+          <label class="form-label-modal" style="font-size:11px">Maks. transakcji dziennie</label>
+          <input class="form-input-modal" id="ot-max-daily" type="number" min="1" max="100" value="${lims.maxDaily}" style="font-size:13px">
+        </div>
+        <div>
+          <label class="form-label-modal" style="font-size:11px">Maks. strat z rzędu</label>
+          <input class="form-input-modal" id="ot-max-losses" type="number" min="1" max="50" value="${lims.maxLosses}" style="font-size:13px">
+        </div>
+      </div>
+      <button class="btn-sm btn-accent" onclick="saveOtLimits()" style="width:100%">💾 Zapisz limity</button>
+    </div>`;
+  })()}`;
+}
+
+function saveOtLimits() {
+  const maxDaily  = parseInt(document.getElementById('ot-max-daily')?.value) || 5;
+  const maxLosses = parseInt(document.getElementById('ot-max-losses')?.value) || 3;
+  const db = getDB();
+  db['ot-limits_'+(state.currentUser||'')] = {maxDaily, maxLosses};
+  saveDB(db);
+  toast('Limity overtrading zapisane ✓', 'success');
+}
+
+function checkOvertradingAlert(accountId) {
+  if (!state.currentUser) return;
+  const db = getDB();
+  const lims = db['ot-limits_'+state.currentUser] || {maxDaily:5, maxLosses:3};
+  const today = new Date().toISOString().slice(0,10);
+  const trades = getTrades(accountId);
+  const todayTrades = trades.filter(t => (t.date||'').slice(0,10) === today);
+  if (todayTrades.length >= lims.maxDaily) {
+    showOvertradingPopup('Przekroczyłeś dzienny limit ' + lims.maxDaily + ' transakcji!');
+    return;
+  }
+  const sorted = [...trades].sort((a,b)=>new Date(a.date)-new Date(b.date));
+  let streak = 0;
+  for (let i = sorted.length-1; i >= 0; i--) {
+    if (sorted[i].pnl !== null && sorted[i].pnl < 0) streak++;
+    else break;
+  }
+  if (streak >= lims.maxLosses) {
+    showOvertradingPopup('UWAGA: ' + streak + ' straty z rzędu!');
+  }
+}
+
+function showOvertradingPopup(msg) {
+  const existing = document.getElementById('ot-popup');
+  if (existing) existing.remove();
+  const el = document.createElement('div');
+  el.id = 'ot-popup';
+  el.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:99999;background:#1a0408;border:2px solid var(--red);border-radius:16px;padding:32px 40px;text-align:center;max-width:380px;width:90vw;box-shadow:0 0 60px rgba(255,79,107,.4)';
+  const msgEl = document.createElement('div');
+  msgEl.style.cssText = 'font-size:15px;color:var(--text);margin-bottom:20px;line-height:1.5';
+  msgEl.textContent = msg;
+  const stopEl = document.createElement('div');
+  stopEl.textContent = '⚠️ STOP';
+  stopEl.style.cssText = 'font-size:48px;margin-bottom:12px';
+  const btn = document.createElement('button');
+  btn.className = 'btn-sm';
+  btn.style.cssText = 'background:var(--red);color:#fff;border-color:var(--red);width:100%;font-size:14px;padding:10px';
+  btn.textContent = 'Rozumiem';
+  btn.onclick = () => el.remove();
+  el.appendChild(stopEl);
+  el.appendChild(msgEl);
+  el.appendChild(btn);
+  document.body.appendChild(el);
+  setTimeout(() => { if (el.parentNode) el.remove(); }, 8000);
 }
 
 // ===== SUMMARY =====
@@ -4884,6 +5153,81 @@ function renderSummary() {
         </table>
       </div>
     </div>`;
+  })()}
+
+  ${(()=>{
+    // FAZA D — Korelacja sen/energia vs wyniki
+    const tradeDays = [...new Set(closed.map(t=>(t.date||'').slice(0,10)).filter(Boolean))];
+    const dayData = [];
+    tradeDays.forEach(ds => {
+      const entry = getJournalEntry(ds);
+      if (!entry) return;
+      const dayTrades = closed.filter(t=>(t.date||'').slice(0,10)===ds);
+      if (!dayTrades.length) return;
+      const dayPnl = dayTrades.reduce((s,t)=>s+(t.pnl||0),0);
+      const dayW = dayTrades.filter(t=>t.pnl>0).length;
+      const sleep = parseFloat(entry.preSleep);
+      const energy = parseFloat(entry.preEnergy);
+      dayData.push({ ds, dayPnl, dayW, dayC: dayTrades.length, sleep: isNaN(sleep)?null:sleep, energy: isNaN(energy)?null:energy });
+    });
+    if (dayData.length < 5) return '';
+
+    // Sen grouping
+    const sleepGroups = {'< 6h': [], '6-7h': [], '7h+': []};
+    dayData.filter(d=>d.sleep!==null).forEach(d => {
+      if (d.sleep < 6) sleepGroups['< 6h'].push(d);
+      else if (d.sleep < 7) sleepGroups['6-7h'].push(d);
+      else sleepGroups['7h+'].push(d);
+    });
+    // Energy grouping
+    const energyGroups = {'1-2 (niska)': [], '3 (średnia)': [], '4-5 (wysoka)': []};
+    dayData.filter(d=>d.energy!==null).forEach(d => {
+      if (d.energy <= 2) energyGroups['1-2 (niska)'].push(d);
+      else if (d.energy === 3) energyGroups['3 (średnia)'].push(d);
+      else energyGroups['4-5 (wysoka)'].push(d);
+    });
+
+    const groupCard = (label, days, bestAvg, worstAvg) => {
+      if (!days.length) return `<div class="summary-card" style="text-align:center;opacity:.4"><div style="font-size:13px;font-weight:600;margin-bottom:4px">${label}</div><div style="font-size:11px;color:var(--text3)">brak danych</div></div>`;
+      const avgPnl = days.reduce((s,d)=>s+d.dayPnl,0)/days.length;
+      const wr = Math.round(days.reduce((s,d)=>s+d.dayW,0)/days.reduce((s,d)=>s+d.dayC,0)*100);
+      const isBest = Math.abs(avgPnl - bestAvg) < 0.001;
+      const isWorst = Math.abs(avgPnl - worstAvg) < 0.001;
+      const borderColor = isBest ? 'var(--green)' : isWorst ? 'var(--red)' : 'var(--border)';
+      const labelColor = isBest ? 'var(--green)' : isWorst ? 'var(--red)' : 'var(--text2)';
+      return `<div class="summary-card" style="text-align:center;border-color:${borderColor}">
+        <div style="font-size:12px;font-weight:600;color:${labelColor};margin-bottom:6px">${label}${isBest?' 🏆':isWorst?' 💤':''}</div>
+        <div style="font-size:22px;font-weight:800;font-family:var(--font-mono);color:${avgPnl>=0?'var(--green)':'var(--red)'}">${avgPnl>=0?'+':''}${fmt(avgPnl)}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">avg P&L · WR ${wr}% · ${days.length} dni</div>
+      </div>`;
+    };
+
+    const sleepAvgs = Object.values(sleepGroups).filter(g=>g.length).map(g=>g.reduce((s,d)=>s+d.dayPnl,0)/g.length);
+    const bestSleep = sleepAvgs.length ? Math.max(...sleepAvgs) : 0;
+    const worstSleep = sleepAvgs.length ? Math.min(...sleepAvgs) : 0;
+    const energyAvgs = Object.values(energyGroups).filter(g=>g.length).map(g=>g.reduce((s,d)=>s+d.dayPnl,0)/g.length);
+    const bestEnergy = energyAvgs.length ? Math.max(...energyAvgs) : 0;
+    const worstEnergy = energyAvgs.length ? Math.min(...energyAvgs) : 0;
+
+    const hasSleepData = Object.values(sleepGroups).some(g=>g.length);
+    const hasEnergyData = Object.values(energyGroups).some(g=>g.length);
+
+    return `<div style="margin-top:16px">
+      ${hasSleepData ? `<div class="summary-card" style="margin-bottom:16px">
+        <div class="summary-card-title">😴 Sen vs Wyniki (avg P&L dzienny)</div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:12px">Dane z ${dayData.filter(d=>d.sleep!==null).length} dni z wpisem dziennika i transakcjami</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+          ${Object.entries(sleepGroups).map(([k,g])=>groupCard(k,g,bestSleep,worstSleep)).join('')}
+        </div>
+      </div>` : ''}
+      ${hasEnergyData ? `<div class="summary-card">
+        <div class="summary-card-title">⚡ Energia vs Wyniki (avg P&L dzienny)</div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:12px">Dane z ${dayData.filter(d=>d.energy!==null).length} dni z wpisem dziennika i transakcjami</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+          ${Object.entries(energyGroups).map(([k,g])=>groupCard(k,g,bestEnergy,worstEnergy)).join('')}
+        </div>
+      </div>` : ''}
+    </div>`;
   })()}`;
 }
 
@@ -5166,6 +5510,12 @@ function autoStatusOnExit() {
 }
 
 function saveTrade() {
+  // Reguły osobiste tradera
+  const _rulesCheck = checkRulesBeforeSave();
+  if (_rulesCheck.broken) {
+    const msg = 'Łamiesz regułę:\n' + _rulesCheck.messages.join('\n') + '\n\nCzy na pewno chcesz zapisać?';
+    if (!confirm(msg)) return;
+  }
   const symbol = document.getElementById('t-symbol').value.trim().toUpperCase();
   if (!symbol) return toast('Podaj instrument', 'error');
   saveSymbol(symbol);
@@ -5244,6 +5594,7 @@ function saveTrade() {
     screenshots: state.tempScreenshots.filter(s => s.dataUrl && !s.uploading).map(s => s.dataUrl),
     mt4Ticket: (() => { const v = parseInt(document.getElementById('t-mt4-ticket')?.value); return Number.isFinite(v) ? v : null; })(),
     linkedAnalysisId: document.getElementById('t-linked-analysis-id')?.value || null,
+    rulesBroken: _rulesCheck.broken ? _rulesCheck.messages : [],
     updatedAt: Date.now(),
   };
   const trades = getTrades(state.currentAccountId);
@@ -5257,6 +5608,8 @@ function saveTrade() {
   renderTrades();
   renderSummary();
   toast('Transakcja zapisana ✓', 'success');
+  // Overtrading check
+  checkOvertradingAlert(state.currentAccountId);
 }
 
 function deleteTrade(id) {
@@ -5657,6 +6010,8 @@ function detailSaveEdit() {
   renderTrades();
   renderSummary();
   toast('Transakcja zapisana ✓', 'success');
+  // Overtrading check
+  checkOvertradingAlert(state.currentAccountId);
 }
 
 // ── delete from detail ──
@@ -13724,8 +14079,117 @@ function openChecklistFromForm(prefix) {
 }
 
 
+// ===== REGUŁY TRADERA =====
+function getRules() {
+  const db = getDB();
+  return db['rules_'+(state.currentUser||'')] || [];
+}
+function saveRules(arr) {
+  const db = getDB();
+  db['rules_'+(state.currentUser||'')] = arr;
+  saveDB(db);
+}
+function updateRuleValueHint() {
+  const type = document.getElementById('rule-type')?.value;
+  const label = document.getElementById('rule-value-label');
+  const inp = document.getElementById('rule-value');
+  if (!label || !inp) return;
+  const hints = {
+    'max-risk': ['Maks. ryzyko %', '2', '% kapitału'],
+    'max-losses': ['Po ilu stratach stop', '3', 'liczba strat z rzędu'],
+    'stop-hour': ['Godzina stopu (24h)', '17', 'np. 17 = po 17:00'],
+    'max-daily': ['Maks. transakcji/dzień', '5', 'liczba'],
+    'custom': ['Opis zasady', 'np. Nie traduj podczas NEWS', 'własny opis'],
+  };
+  const h = hints[type] || hints['custom'];
+  label.textContent = h[0];
+  inp.placeholder = h[1];
+  inp.title = h[2];
+}
+function addRule() {
+  const type = document.getElementById('rule-type')?.value || 'custom';
+  const value = document.getElementById('rule-value')?.value?.trim() || '';
+  if (!value) return toast('Podaj wartość reguły', 'error');
+  const typeLabels = {
+    'max-risk': 'Maks. ryzyko %', 'max-losses': 'Stop po X stratach',
+    'stop-hour': 'Stop o godzinie', 'max-daily': 'Maks. transakcji/dzień', 'custom': 'Własna zasada'
+  };
+  const rule = { id: genId(), type, value, label: typeLabels[type]||type, createdAt: Date.now() };
+  const rules = getRules();
+  rules.push(rule);
+  saveRules(rules);
+  if (document.getElementById('rule-value')) document.getElementById('rule-value').value = '';
+  renderRules();
+  toast('Reguła dodana ✓', 'success');
+}
+function deleteRule(id) {
+  if (!confirm('Usunąć tę regułę?')) return;
+  saveRules(getRules().filter(r => r.id !== id));
+  renderRules();
+  toast('Reguła usunięta', 'success');
+}
+function renderRules() {
+  const el = document.getElementById('rules-list-container');
+  if (!el) return;
+  const rules = getRules();
+  if (!rules.length) {
+    el.innerHTML = '<div style="color:var(--text3);font-size:13px;text-align:center;padding:20px">Brak reguł — dodaj pierwszą</div>';
+    return;
+  }
+  el.innerHTML = rules.map(r => {
+    const typeIcons = {'max-risk':'💰','max-losses':'🛑','stop-hour':'🕐','max-daily':'📊','custom':'📝'};
+    const icon = typeIcons[r.type] || '📝';
+    const descEl = document.createElement('span');
+    descEl.textContent = r.value;
+    const desc = descEl.textContent;
+    return `<div class="summary-card" style="margin-bottom:8px;display:flex;align-items:center;gap:12px;padding:10px 14px">
+      <span style="font-size:20px">${icon}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px">${r.label}</div>
+        <div style="font-size:13px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${desc}">${desc}</div>
+      </div>
+      <button class="icon-btn del" onclick="deleteRule('${r.id}')" title="Usuń regułę" style="flex-shrink:0">🗑</button>
+    </div>`;
+  }).join('');
+}
+function checkRulesBeforeSave() {
+  const rules = getRules();
+  const broken = [], messages = [];
+  if (!rules.length) return { broken: false, messages: [] };
+  const today = new Date().toISOString().slice(0,10);
+  const accId = state.currentAccountId;
+  const trades = accId ? getTrades(accId) : [];
+  const todayCount = trades.filter(t=>(t.date||'').slice(0,10)===today).length;
+  const sortedTrades = [...trades].sort((a,b)=>new Date(a.date)-new Date(b.date));
+  let lossStreak = 0;
+  for (let i = sortedTrades.length-1; i>=0; i--) {
+    if (sortedTrades[i].pnl !== null && sortedTrades[i].pnl < 0) lossStreak++;
+    else break;
+  }
+  const nowHour = new Date().getHours();
+  rules.forEach(r => {
+    if (r.type === 'max-daily') {
+      const lim = parseInt(r.value);
+      if (!isNaN(lim) && todayCount >= lim) {
+        broken.push(r); messages.push('Maks. ' + lim + ' transakcji dziennie — masz już ' + todayCount);
+      }
+    } else if (r.type === 'max-losses') {
+      const lim = parseInt(r.value);
+      if (!isNaN(lim) && lossStreak >= lim) {
+        broken.push(r); messages.push('Nie wchodzisz po ' + lim + ' stratach — obecna passa strat: ' + lossStreak);
+      }
+    } else if (r.type === 'stop-hour') {
+      const stopH = parseInt(r.value);
+      if (!isNaN(stopH) && nowHour >= stopH) {
+        broken.push(r); messages.push('Stop trading o ' + r.value + ':00 — jest ' + nowHour + ':' + String(new Date().getMinutes()).padStart(2,'0'));
+      }
+    }
+  });
+  return { broken: broken.length > 0, messages };
+}
+
 function switchToolsTab(tab) {
-  ['calculator','strategies','brokers'].forEach(t => {
+  ['calculator','strategies','brokers','rules'].forEach(t => {
     const el = document.getElementById('tools-tab-' + t);
     const btn = document.getElementById('ttab-' + t);
     if (el) el.style.display = t === tab ? 'block' : 'none';
@@ -13736,6 +14200,7 @@ function switchToolsTab(tab) {
   });
   if (tab === 'strategies') renderToolsStrategies();
   if (tab === 'brokers') initBrokerCalc();
+  if (tab === 'rules') renderRules();
   if (tab === 'calculator') {
     const acc = getAccounts().find(a => a.id === state.currentAccountId);
     if (acc) {
@@ -14419,6 +14884,9 @@ function setJournalReadiness(val, btn) {
   btn.classList.add('active');
   const warn = document.getElementById('journal-readiness-warning');
   if (warn) warn.style.display = val === 'no' ? 'block' : 'none';
+  if (val === 'no') {
+    toast('Nie jesteś w formie — rozważ dzisiaj nie handlować lub zmniejsz wolumen', 'warning');
+  }
   updateJournalPreProgress();
 }
 
@@ -15764,6 +16232,149 @@ function showNoUsersHint() {
     : 'Witaj w TraderLogJournal! Utwórz konto aby zacząć.';
   showAuthSuccess(msg);
   // Nowi użytkownicy dostają rolę 'user', nie admin
+}
+
+// ===== BIBLIOTEKA STRATEGII =====
+let _libFilter = 'all';
+
+function getLibraryFiles() {
+  const db = getDB();
+  return db['library_files'] || [];
+}
+function saveLibraryFiles(arr) {
+  const db = getDB();
+  db['library_files'] = arr;
+  saveDB(db);
+}
+
+function renderLibrary() {
+  const adminMode = (typeof isAdmin === 'function') ? isAdmin() : false;
+  const adminSection = document.getElementById('library-admin-section');
+  if (adminSection) adminSection.style.display = adminMode ? 'block' : 'none';
+  filterLibrary(_libFilter);
+}
+
+function filterLibrary(type) {
+  _libFilter = type;
+  // Update filter buttons
+  ['all','PDF','MQ4','Screenshot'].forEach(t => {
+    const btn = document.getElementById('lib-filter-' + t);
+    if (btn) {
+      if (t === type) { btn.className = 'btn-sm btn-accent'; }
+      else { btn.className = 'btn-sm'; }
+    }
+  });
+  const el = document.getElementById('library-files-container');
+  if (!el) return;
+  let files = getLibraryFiles();
+  if (type !== 'all') files = files.filter(f => f.type === type || (type === 'MQ4' && (f.type === 'MQ4' || f.type === 'MQ5')));
+  if (!files.length) {
+    el.innerHTML = `<div style="text-align:center;padding:60px 20px;color:var(--text3)"><div style="font-size:48px;margin-bottom:16px">📂</div><div style="font-size:16px;font-weight:600;margin-bottom:8px">${type === 'all' ? 'Admin nie dodał jeszcze materiałów' : 'Brak materiałów typu ' + type}</div></div>`;
+    return;
+  }
+  const adminMode = (typeof isAdmin === 'function') ? isAdmin() : false;
+  const typeIcons = {'PDF':'📄','MQ4':'🤖','MQ5':'🤖','Screenshot':'🖼','Inne':'📁'};
+  const typeColors = {'PDF':'var(--red)','MQ4':'var(--amber)','MQ5':'var(--amber)','Screenshot':'var(--blue)','Inne':'var(--text2)'};
+  el.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px">${files.map(f => {
+    const icon = typeIcons[f.type] || '📁';
+    const color = typeColors[f.type] || 'var(--text2)';
+    const dateStr = f.createdAt ? new Date(f.createdAt).toLocaleDateString('pl-PL') : '';
+    const titleEl = document.createElement('span'); titleEl.textContent = f.title; const safeTitle = titleEl.textContent;
+    const descEl = document.createElement('span'); descEl.textContent = f.desc||''; const safeDesc = descEl.textContent;
+    return `<div class="summary-card" style="display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;align-items:flex-start;gap:12px">
+        <span style="font-size:32px;flex-shrink:0">${icon}</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:14px;font-weight:700;color:var(--text);word-break:break-word">${safeTitle}</div>
+          <div style="font-size:10px;color:${color};font-weight:600;text-transform:uppercase;margin-top:2px">${f.type} · ${dateStr}</div>
+        </div>
+      </div>
+      ${safeDesc ? `<div style="font-size:12px;color:var(--text2);line-height:1.5">${safeDesc}</div>` : ''}
+      <div style="display:flex;gap:8px;margin-top:auto">
+        <button class="btn-sm btn-accent" onclick="downloadLibraryFile('${f.id}')" style="flex:1;font-size:12px">⬇ Pobierz</button>
+        ${adminMode ? `<button class="btn-sm" onclick="deleteLibraryFile('${f.id}')" style="color:var(--red);border-color:var(--red);font-size:12px">🗑</button>` : ''}
+      </div>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+function libPreviewFile() {
+  const input = document.getElementById('lib-file');
+  const info = document.getElementById('lib-file-info');
+  if (!input || !input.files.length) { if(info) info.textContent = ''; return; }
+  const file = input.files[0];
+  const sizeMB = (file.size / 1048576).toFixed(2);
+  if (info) info.textContent = file.name + ' (' + sizeMB + ' MB)';
+  if (file.size > 5 * 1048576) {
+    toast('Plik większy niż 5MB — rozważ podanie URL zamiast uploadu base64', 'warning');
+  }
+}
+
+function addLibraryFile() {
+  const title = document.getElementById('lib-title')?.value?.trim() || '';
+  const type  = document.getElementById('lib-type')?.value || 'Inne';
+  const desc  = document.getElementById('lib-desc')?.value?.trim() || '';
+  const url   = document.getElementById('lib-url')?.value?.trim() || '';
+  const fileInput = document.getElementById('lib-file');
+  if (!title) return toast('Podaj tytuł materiału', 'error');
+  const statusEl = document.getElementById('lib-upload-status');
+  const addBtn = document.getElementById('lib-add-btn');
+  const doAdd = (base64) => {
+    const file = {
+      id: genId(), title, type, desc,
+      url: url || null,
+      base64: base64 || null,
+      filename: fileInput?.files?.[0]?.name || null,
+      createdAt: Date.now(),
+    };
+    const files = getLibraryFiles();
+    files.unshift(file);
+    saveLibraryFiles(files);
+    // Clear form
+    ['lib-title','lib-desc','lib-url'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+    if (fileInput) fileInput.value = '';
+    const info = document.getElementById('lib-file-info'); if(info) info.textContent='';
+    if (statusEl) statusEl.textContent = '';
+    if (addBtn) addBtn.disabled = false;
+    renderLibrary();
+    toast('Materiał dodany do biblioteki ✓', 'success');
+  };
+  if (fileInput && fileInput.files.length) {
+    if (addBtn) addBtn.disabled = true;
+    if (statusEl) statusEl.textContent = 'Konwertowanie pliku...';
+    const reader = new FileReader();
+    reader.onload = e => doAdd(e.target.result);
+    reader.onerror = () => { toast('Błąd odczytu pliku', 'error'); if(addBtn) addBtn.disabled=false; if(statusEl) statusEl.textContent=''; };
+    reader.readAsDataURL(fileInput.files[0]);
+  } else if (url) {
+    doAdd(null);
+  } else {
+    toast('Dodaj plik lub podaj URL', 'error');
+  }
+}
+
+function deleteLibraryFile(id) {
+  if (!confirm('Usunąć ten materiał z biblioteki?')) return;
+  saveLibraryFiles(getLibraryFiles().filter(f => f.id !== id));
+  filterLibrary(_libFilter);
+  toast('Materiał usunięty', 'success');
+}
+
+function downloadLibraryFile(id) {
+  const f = getLibraryFiles().find(f => f.id === id);
+  if (!f) return toast('Nie znaleziono pliku', 'error');
+  if (f.base64) {
+    const a = document.createElement('a');
+    a.href = f.base64;
+    a.download = f.filename || (f.title + '.' + (f.type||'').toLowerCase().replace('mq4','mq4').replace('mq5','mq5') || 'file');
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => a.remove(), 500);
+  } else if (f.url) {
+    window.open(f.url, '_blank');
+  } else {
+    toast('Brak pliku ani URL do pobrania', 'error');
+  }
 }
 
 // Rejestracja Service Worker (PWA)
