@@ -1212,6 +1212,10 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
       <button class="nav-btn" onclick="showPage('library')" id="nav-library" data-i18n="nav_library">
         <span class="nav-icon">📚</span><span class="nav-label">Biblioteka</span>
       </button>
+      <button class="nav-btn" onclick="showPage('ideas')" id="nav-ideas">
+        <span class="nav-icon">💡</span><span class="nav-label">Pomysły</span>
+        <span id="nav-ideas-badge" style="display:none;background:var(--amber);color:#000;border-radius:10px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:auto"></span>
+      </button>
       <button class="nav-btn" onclick="showPage('tools')" id="nav-tools" data-i18n="nav_tools">
         <span class="nav-icon">🛠</span><span class="nav-label">Narzędzia</span>
       </button>
@@ -2896,6 +2900,48 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
       </div>
     </div>
 
+    <!-- ===== POMYSŁY ===== -->
+    <div id="page-ideas" class="page">
+      <div class="page-title">💡 Pomysły</div>
+      <div class="page-subtitle">Podziel się pomysłem na nową funkcję lub ulepszenie aplikacji</div>
+
+      <!-- Formularz zgłoszenia -->
+      <div class="summary-card" style="margin-bottom:24px" id="ideas-submit-section">
+        <div class="summary-card-title">✍️ Zgłoś pomysł</div>
+        <div style="display:flex;flex-direction:column;gap:12px;margin-top:12px">
+          <div>
+            <label class="form-label-modal" style="font-size:11px">Tytuł pomysłu *</label>
+            <input class="form-input-modal" id="idea-title" placeholder="np. Eksport transakcji do Excel" style="font-size:13px">
+          </div>
+          <div>
+            <label class="form-label-modal" style="font-size:11px">Opis (opcjonalnie)</label>
+            <textarea class="form-input-modal" id="idea-desc" rows="3" placeholder="Opisz dokładniej co chcesz osiągnąć i dlaczego..." style="font-size:13px;resize:vertical"></textarea>
+          </div>
+          <div>
+            <button class="btn-sm btn-accent" onclick="submitIdea()" id="ideas-submit-btn" style="min-width:140px">💡 Zgłoś pomysł</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Widok admina — filtry -->
+      <div id="ideas-admin-filters" style="display:none;margin-bottom:16px">
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn-sm btn-accent" id="ifilter-all" onclick="setIdeasFilter('all')" style="font-size:12px">Wszystkie</button>
+          <button class="btn-sm" id="ifilter-pending" onclick="setIdeasFilter('pending')" style="font-size:12px">🟡 Oczekujące</button>
+          <button class="btn-sm" id="ifilter-accepted" onclick="setIdeasFilter('accepted')" style="font-size:12px">✅ Zaakceptowane</button>
+          <button class="btn-sm" id="ifilter-rejected" onclick="setIdeasFilter('rejected')" style="font-size:12px">❌ Odrzucone</button>
+        </div>
+      </div>
+
+      <!-- Lista pomysłów -->
+      <div id="ideas-list-container">
+        <div style="text-align:center;padding:60px 20px;color:var(--text3)">
+          <div style="font-size:48px;margin-bottom:16px">💡</div>
+          <div style="font-size:14px">Ładowanie...</div>
+        </div>
+      </div>
+    </div>
+
     <!-- ADMIN PAGE -->
     <div id="page-admin" class="page">
       <div class="page-title" data-i18n="adm_title">Panel Administratora</div>
@@ -3710,7 +3756,9 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
       <button class="modal-close" onclick="closeModal('reminder-modal')">✕</button>
     </div>
     <div style="padding:4px 0 16px">
-      <div id="reminder-modal-label" style="font-size:13px;color:var(--text2);margin-bottom:14px;padding:10px 12px;background:var(--bg3);border-radius:8px;border:1px solid var(--border);line-height:1.5"></div>
+      <div id="reminder-modal-label" style="font-size:13px;color:var(--text2);margin-bottom:10px;padding:10px 12px;background:var(--bg3);border-radius:8px;border:1px solid var(--border);line-height:1.5"></div>
+      <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Własna notatka (opcjonalnie)</div>
+      <textarea id="reminder-modal-note" class="form-input-modal" rows="2" placeholder="np. sprawdź poziom wsparcia przed wejściem…" style="font-size:13px;resize:vertical;min-height:52px;margin-bottom:14px"></textarea>
       <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Kiedy przypomnieć?</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px">
         <button class="btn-sm reminder-time-btn" onclick="setReminderTime(this, 15*60*1000)">⚡ Za 15 min</button>
@@ -3788,6 +3836,36 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
       <div style="display:flex;gap:8px;justify-content:flex-end">
         <button onclick="document.getElementById('session-warning-modal').classList.remove('open')" class="btn-sm" style="font-size:12px">Rozumiem, kontynuuj</button>
         <button onclick="document.getElementById('session-warning-modal').classList.remove('open');doLogout()" style="padding:6px 14px;background:var(--red);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">Wyloguj się teraz</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- IDEAS ADMIN MODAL -->
+<div class="modal-overlay" id="ideas-admin-modal" role="dialog" aria-modal="true">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <div class="modal-title">💡 Odpowiedź na pomysł</div>
+      <button class="modal-close" onclick="closeModal('ideas-admin-modal')">✕</button>
+    </div>
+    <div style="padding:4px 0 16px">
+      <div id="iam-title" style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px"></div>
+      <div id="iam-desc" style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:16px;padding:10px 12px;background:var(--bg3);border-radius:8px;border:1px solid var(--border)"></div>
+      <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Status</div>
+      <select class="form-select-modal" id="iam-status" style="font-size:13px;margin-bottom:14px">
+        <option value="pending">🟡 Oczekuje</option>
+        <option value="accepted">✅ Zaakceptowany</option>
+        <option value="rejected">❌ Odrzucony</option>
+      </select>
+      <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Notatka dla użytkownika (opcjonalnie)</div>
+      <textarea class="form-input-modal" id="iam-note" rows="3" placeholder="np. Świetny pomysł, planujemy dodać w Sprint 4..." style="font-size:13px;resize:vertical"></textarea>
+      <input type="hidden" id="iam-id">
+    </div>
+    <div style="display:flex;justify-content:space-between;gap:8px;margin-top:4px">
+      <button class="btn-sm" onclick="deleteIdeaAdmin()" style="color:var(--red);border-color:var(--red)">🗑 Usuń</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn-sm" onclick="closeModal('ideas-admin-modal')">Anuluj</button>
+        <button class="btn-sm btn-accent" onclick="saveIdeaAdminAction()">Zapisz</button>
       </div>
     </div>
   </div>
@@ -4299,6 +4377,7 @@ function showPage(page) {
   if (page === 'journal') { if(typeof renderJournal==='function') renderJournal(); }
   if (page === 'emotions') { if(typeof renderEmotions==='function') renderEmotions(); }
   if (page === 'library') { if(typeof renderLibrary==='function') renderLibrary(); }
+  if (page === 'ideas')   { if(typeof renderIdeasPage==='function') renderIdeasPage(); }
   // Aktualizuj tytuł w topstrip
   const PAGE_TITLES = {
     dashboard:'Dashboard',
@@ -4308,6 +4387,7 @@ function showPage(page) {
     summary:   t('nav_summary'),
     emotions:  t('nav_emotions'),
     library:   t('nav_library'),
+    ideas:     '💡 Pomysły',
     tools:     t('nav_tools'),
     accounts:  t('nav_accounts'),
     drafts:    t('nav_drafts'),
@@ -4693,7 +4773,7 @@ function renderTradingProfile() {
   const worstEmo    = Object.entries(emoStats).filter(([,v])=>v.count>=3).sort((a,b)=>(a[1].wins/a[1].count)-(b[1].wins/b[1].count))[0];
 
   // Discipline score — rules adherence
-  const rules = getRules ? getRules() : [];
+  const rules = getRules() || [];
   const rulesWithBreaks = closed.filter(t => t.rulesBroken && t.rulesBroken.length > 0).length;
   const disciplineScore = rules.length > 0
     ? Math.max(0, Math.round((1 - rulesWithBreaks / closed.length) * 100))
@@ -5890,7 +5970,7 @@ function saveTrade() {
     const pct   = parseFloat(document.getElementById('t-tp' + i + '-pct')?.value);
     if (price && !isNaN(price) && !isNaN(pct) && pct > 0) _tpTotalPct += pct;
   }
-  if (_tpTotalPct > 100) return toast('Suma % zamknięcia na poziomach TP wynosi ' + _tpTotalPct + '% — musi być ≤ 100%', 'error');
+  if (_tpTotalPct > 100) return toast(t('err_tp_sum_over100').replace('{pct}', _tpTotalPct), 'error');
 
   // Walidacja emocji — wymagane przed zapisem (pomijana dla kont botowych)
   const _status      = document.getElementById('t-status')?.value || '';
@@ -5965,6 +6045,27 @@ function saveTrade() {
   renderTrades();
   renderSummary();
   toast(t('toast_trade_saved'), 'success');
+  // Auto-sync to Supabase in background (non-blocking)
+  if (_sb && _isOnline) {
+    (async () => {
+      try {
+        const _syncAcc = getAccounts().find(a => a.id === state.currentAccountId);
+        if (_syncAcc) {
+          const sbAccId = _syncAcc.sbId || await sbSyncAccount(_syncAcc);
+          if (sbAccId) {
+            await sbSyncTrade(trade, sbAccId);
+            if (trade.sbId) {
+              const _st = getTrades(state.currentAccountId);
+              const _si = _st.findIndex(x => x.id === trade.id);
+              if (_si >= 0 && !_st[_si].sbId) { _st[_si].sbId = trade.sbId; saveTrades(state.currentAccountId, _st); }
+            }
+            _lastSyncTime = Date.now();
+            updateSyncIndicator();
+          }
+        }
+      } catch(e) { console.warn('Auto-sync trade:', e); }
+    })();
+  }
   } // end _doSave
 
   function _afterDailyCheck() {
@@ -6460,6 +6561,31 @@ document.addEventListener('paste', e => {
 
 // ===== SCREENSHOTS =====
 
+// Supabase Storage — bucket 'screenshots' (public)
+const _SB_SCREENSHOTS_BUCKET = 'screenshots';
+
+async function uploadScreenshotToStorage(dataUrl, prefix) {
+  if (!_sb) return null;
+  try {
+    const userId = getUsers()[state.currentUser]?.supabaseId || state.currentUser || 'anon';
+    const base64 = dataUrl.split(',')[1];
+    const binaryStr = atob(base64);
+    const bytes = new Uint8Array(binaryStr.length);
+    for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i);
+    const path = userId + '/' + (prefix || 's') + '_' + genId() + '.jpg';
+    const { error } = await _sb.storage.from(_SB_SCREENSHOTS_BUCKET).upload(path, bytes, {
+      contentType: 'image/jpeg', upsert: false
+    });
+    if (error) { console.warn('Screenshot upload error:', error.message); return null; }
+    return 'sb://' + path;
+  } catch(e) { console.warn('uploadScreenshotToStorage:', e); return null; }
+}
+
+function sbScreenshotPublicUrl(sbUrl) {
+  if (!sbUrl || !sbUrl.startsWith('sb://')) return null;
+  return _SB_URL + '/storage/v1/object/public/' + _SB_SCREENSHOTS_BUCKET + '/' + sbUrl.slice(5);
+}
+
 // [v1.7] Kompresja obrazu przed zapisem — max 800px, JPG 70%
 function compressImage(dataUrl, maxWidth, quality) {
   return new Promise(resolve => {
@@ -6501,27 +6627,20 @@ async function autoUploadScreenToDrive(dataUrl, tradeId, idx) {
 
 
 function handleFiles(files) {
-  if (!_gapiLoaded || !_gapiAccessToken) {
-    toast(t('err_drive_required'), 'error');
-    connectGoogleDrive();
-    return;
-  }
+  if (!_sb) { toast(t('err_login_first'), 'error'); return; }
   Array.from(files).forEach(f => {
     if (!f.type.startsWith('image/')) return;
     const reader = new FileReader();
     reader.onload = async e => {
       const compressed = await compressImage(e.target.result, 800, 0.7);
       const id = genId();
-      const tradeId = state.editTradeId || document.getElementById('trade-id')?.value;
-      const idx = state.tempScreenshots.length;
-      // Dodaj placeholder "wgrywanie..." natychmiast
+      const tradeId = state.editTradeId || document.getElementById('trade-id')?.value || 'new';
       state.tempScreenshots.push({ id, dataUrl: null, uploading: true });
       renderScreenshotPreviews();
-      const driveUrl = await autoUploadScreenToDrive(compressed, tradeId, idx);
-      if (driveUrl) {
-        _driveScreenCache[driveUrl.replace('drive://','')] = compressed;
+      const sbUrl = await uploadScreenshotToStorage(compressed, 'trade_' + tradeId);
+      if (sbUrl) {
         const s = state.tempScreenshots.find(s => s.id === id);
-        if (s) { s.dataUrl = driveUrl; s.uploading = false; }
+        if (s) { s.dataUrl = sbUrl; s.uploading = false; }
       } else {
         state.tempScreenshots = state.tempScreenshots.filter(s => s.id !== id);
         toast(t('err_drive_upload'), 'error');
@@ -6569,6 +6688,10 @@ async function loadDriveScreenshot(driveId, imgEl) {
 // Renderuj screenshot — obsługuje Drive ID (chmurka gdy nie połączony) i base64
 function renderScreenImg(url, onclick = '', sid = '') {
   if (!url) return `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--bg3)"><span style="font-size:10px;color:var(--text3)">⏳</span></div>`;
+  if (url.startsWith('sb://')) {
+    const publicUrl = sbScreenshotPublicUrl(url);
+    return `<img src="${publicUrl}" style="width:100%;height:100%;object-fit:cover" loading="lazy" ${onclick ? `onclick="${onclick}"` : ''}>`;
+  }
   if (isDriveScreenshot(url)) {
     const driveId = url.replace('drive://', '').replace('gdrive://', '');
     const imgId = 'driveimg_' + driveId.slice(0, 8) + (sid ? '_' + sid.slice(0, 4) : '');
@@ -9260,6 +9383,7 @@ const T = {
     library_filter_article:'Artykuł',
     library_url_hint:      'Lub wklej URL (YouTube, artykuł)',
     library_download:      'Pobierz',
+    library_open:          'Otwórz',
     // Journal page
     journal_title:         '📔 Rutyna dnia',
     journal_routine_title: 'Rutyna dzienna',
@@ -9426,6 +9550,7 @@ const T = {
     err_delete_admin:        'Błąd usuwania ({code})',
     err_no_perms:            'Brak uprawnień',
     err_balance_missing:     'Wpisz stan konta u brokera',
+    err_tp_sum_over100:      'Suma % zamknięcia na poziomach TP wynosi {pct}% — musi być ≤ 100%',
     toast_analysis_archived: 'Analiza zarchiwizowana',
     toast_analysis_restored: 'Analiza przywrócona',
     toast_withdrawal_saved:  '✓ Operacja zapisana: {type} {amount} USD',
@@ -9748,6 +9873,7 @@ const T = {
     library_filter_article:'Article',
     library_url_hint:      'Or paste a URL (YouTube, article link)',
     library_download:      'Download',
+    library_open:          'Open',
     // Journal page
     journal_title:         '📔 Daily Routine',
     journal_routine_title: 'Daily Routine',
@@ -9914,6 +10040,7 @@ const T = {
     err_delete_admin:        'Delete error ({code})',
     err_no_perms:            'No permissions',
     err_balance_missing:     'Enter the broker account balance',
+    err_tp_sum_over100:      'TP close % sum is {pct}% — must be ≤ 100%',
     toast_analysis_archived: 'Analysis archived',
     toast_analysis_restored: 'Analysis restored',
     toast_withdrawal_saved:  '✓ Operation saved: {type} {amount} USD',
@@ -10198,7 +10325,7 @@ function applyLangToStatic() {
   });
 
   // ── 14. Re-render active page to apply translations to dynamic content ─────
-  const pages = ['dashboard','trades','summary','accounts','drafts','analysis','calendar','calculator','admin','settings','emotions','library'];
+  const pages = ['dashboard','trades','summary','accounts','drafts','analysis','calendar','calculator','admin','settings','emotions','library','ideas'];
   const activePage = pages.find(p => document.getElementById('page-'+p)?.classList.contains('active'));
   // Don't re-render if a modal is open (would reset form fields!)
   const anyModalOpen = document.querySelector('.modal-overlay.open');
@@ -10996,7 +11123,10 @@ function renderAnalysisList() {
               ${linkedTrade?`<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:var(--blue-dim);color:var(--blue)">🔗 ${linkedTrade.symbol} ${linkedTrade.dir}</span>`:''}
             </div>
           </div>
-          ${bs?`<span style="font-size:18px;flex-shrink:0">${bs.icon}</span>`:''}
+          <div style="display:flex;align-items:center;gap:4px;flex-shrink:0" onclick="event.stopPropagation()">
+            ${bs?`<span style="font-size:18px">${bs.icon}</span>`:''}
+            <button class="icon-btn" onclick="openReminderModal('📊 ${(a.title||'Analiza').replace(/'/g,"\\'")}','${a.id}','analysis')" title="Ustaw przypomnienie" style="font-size:12px;padding:3px 5px">🔔</button>
+          </div>
         </div>`;
       }).join('');
       return `<div style="margin-bottom:20px">
@@ -11031,6 +11161,7 @@ function renderAnalysisList() {
           <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;margin-left:8px;flex-shrink:0">
             <div style="font-size:11px;color:var(--text3);font-family:var(--font-mono)">${formatDate(a.date).slice(0,10)}</div>
             <div style="display:flex;gap:4px" onclick="event.stopPropagation()">
+              <button class="icon-btn" onclick="openReminderModal('📊 ${(a.title||'Analiza').replace(/'/g,"\\'")}','${a.id}','analysis')" title="Ustaw przypomnienie" style="font-size:13px">🔔</button>
               <button class="icon-btn" onclick="archiveAnalysis('${a.id}')" title="${isArchived?'Przywróć':'Archiwizuj'}" style="font-size:13px">${isArchived?'📤':'📦'}</button>
               <button class="icon-btn" onclick="openEditAnalysis('${a.id}')" title="Edytuj">✏️</button>
               <button class="icon-btn del" onclick="deleteAnalysis('${a.id}')" title="Usuń">🗑</button>
@@ -11359,26 +11490,20 @@ document.addEventListener('click', e => {
 
 // ── Screenshots in analysis ───────────────────────────────────────────────────
 function anHandleFiles(files) {
-  if (!_gapiLoaded || !_gapiAccessToken) {
-    toast(t('err_drive_required'), 'error');
-    connectGoogleDrive();
-    return;
-  }
+  if (!_sb) { toast(t('err_login_first'), 'error'); return; }
   Array.from(files).forEach(f => {
     if (!f.type.startsWith('image/')) return;
     const r = new FileReader();
     r.onload = async e => {
       const compressed = await compressImage(e.target.result, 800, 0.7);
       const id = genId();
-      const analysisId = document.getElementById('an-id')?.value;
-      const idx = _anScreenshots.length;
+      const analysisId = document.getElementById('an-id')?.value || 'new';
       _anScreenshots.push({ id, dataUrl: null, uploading: true });
       renderAnScreenshots();
-      const driveUrl = await autoUploadScreenToDrive(compressed, analysisId, idx);
-      if (driveUrl) {
-        _driveScreenCache[driveUrl.replace('drive://','')] = compressed;
+      const sbUrl = await uploadScreenshotToStorage(compressed, 'an_' + analysisId);
+      if (sbUrl) {
         const s = _anScreenshots.find(s => s.id === id);
-        if (s) { s.dataUrl = driveUrl; s.uploading = false; }
+        if (s) { s.dataUrl = sbUrl; s.uploading = false; }
       } else {
         _anScreenshots = _anScreenshots.filter(s => s.id !== id);
         toast(t('err_drive_upload'), 'error');
@@ -12930,6 +13055,9 @@ async function sbSyncDown(userId, userLogin) {
       saveDB(db);
     }
 
+    // Sync user settings (rules, journal, notes)
+    await sbLoadUserSettings();
+
     // Sync listy użytkowników dla admina
     const localUsers = getUsers();
     if (localUsers[loginKey]?.role === 'admin') {
@@ -13356,6 +13484,46 @@ async function sbFullSyncUp() {
   toast('✓ Zsynchronizowano ' + synced + ' transakcji z ' + accounts.length + ' kont', 'success');
 }
 
+async function sbSaveUserSetting(key, value) {
+  if (!_sb || !state.currentUser) return;
+  const userId = getUsers()[state.currentUser]?.supabaseId;
+  if (!userId) return;
+  try {
+    await _sb.from('user_settings').upsert(
+      { user_id: userId, key, value, updated_at: new Date().toISOString() },
+      { onConflict: 'user_id,key' }
+    );
+  } catch(e) { console.warn('sbSaveUserSetting', key, e.message); }
+}
+
+async function sbLoadUserSettings() {
+  if (!_sb || !state.currentUser) return;
+  const userId = getUsers()[state.currentUser]?.supabaseId;
+  if (!userId) return;
+  try {
+    const { data } = await _sb.from('user_settings').select('key,value,updated_at').eq('user_id', userId);
+    if (!data?.length) return;
+    const db = getDB();
+    const user = state.currentUser;
+    data.forEach(row => {
+      if (!row.key || row.value === undefined) return;
+      if (row.key === 'rules') {
+        const localKey = 'rules_' + user;
+        const localTs = db['_rules_updatedAt_' + user] ? new Date(db['_rules_updatedAt_' + user]) : new Date(0);
+        const remoteTs = row.updated_at ? new Date(row.updated_at) : new Date(0);
+        if (!db[localKey] || remoteTs > localTs) db[localKey] = row.value;
+      } else if (row.key === 'notes') {
+        if (!db['notes_' + user]?.length) db['notes_' + user] = row.value;
+      } else if (row.key.startsWith('journal_')) {
+        const ds = row.key.slice(8);
+        const localKey = 'journal_' + user + '_' + ds;
+        if (!db[localKey]) db[localKey] = row.value;
+      }
+    });
+    saveDB(db);
+  } catch(e) { console.warn('sbLoadUserSettings:', e.message); }
+}
+
 async function sbSyncTrade(trade, accountId) {
   if (!_sb || !state.currentUser) return;
   const userId = getUsers()[state.currentUser]?.supabaseId;
@@ -13372,7 +13540,7 @@ async function sbSyncTrade(trade, accountId) {
     pre_analysis: trade.pre || null, post_notes: trade.post || null,
     trade_date: trade.date || new Date().toISOString(),
     updated_at: new Date().toISOString(),
-    screenshots: (trade.screenshots || []).filter(s => typeof s === 'string' && s.startsWith('drive://')),
+    screenshots: (trade.screenshots || []).filter(s => typeof s === 'string' && (s.startsWith('drive://') || s.startsWith('sb://'))),
     emotion_pre: trade.emotionPre || null,
     emotion_post: trade.emotionPost || null,
     linked_analysis_id: trade.linkedAnalysisId || null,
@@ -14564,21 +14732,20 @@ function addStrategyPoint(text, screenshot) {
 async function addPointScreenshot(input, scrId, event) {
   const file = input.files[0];
   if (!file) return;
-  if (!_gapiLoaded || !_gapiAccessToken) { toast('Połącz z Google Drive aby dodać screenshoty ☁️', 'error'); connectGoogleDrive(); input.value=''; return; }
+  if (!_sb) { toast(t('err_login_first'), 'error'); input.value=''; return; }
   const label = input.closest('label');
   if (label) label.style.opacity = '0.5';
   const reader = new FileReader();
   reader.onload = async e => {
     const compressed = await compressImage(e.target.result, 800, 0.7);
-    const driveUrl = await autoUploadScreenToDrive(compressed, 'strat_' + scrId, 0);
-    const dataUrl = driveUrl || null;
-    if (!dataUrl) { toast(t('err_drive_upload'), 'error'); if (label) label.style.opacity = '1'; return; }
-    _driveScreenCache[driveUrl.replace('drive://','')] = compressed;
+    const sbUrl = await uploadScreenshotToStorage(compressed, 'strat_' + scrId);
+    if (!sbUrl) { toast(t('err_drive_upload'), 'error'); if (label) label.style.opacity = '1'; return; }
+    const displayUrl = sbScreenshotPublicUrl(sbUrl) || compressed;
     const hidden = document.getElementById(scrId + '_data');
-    if (hidden) hidden.value = dataUrl;
+    if (hidden) hidden.value = sbUrl;
     if (label) {
       label.style.opacity = '1';
-      label.innerHTML = `<img src="${compressed}" id="${scrId}_img" style="width:30px;height:30px;object-fit:cover;border-radius:5px" onclick="event.preventDefault();openLightbox('${compressed}')">
+      label.innerHTML = `<img src="${displayUrl}" id="${scrId}_img" style="width:30px;height:30px;object-fit:cover;border-radius:5px" onclick="event.preventDefault();openLightbox('${displayUrl}')">
         <input type="file" accept="image/*" style="display:none" onchange="addPointScreenshot(this,'${scrId}',event)">`;
     }
   };
@@ -15195,8 +15362,11 @@ function getRules() {
 }
 function saveRules(arr) {
   const db = getDB();
-  db['rules_'+(state.currentUser||'')] = arr;
+  const user = state.currentUser || '';
+  db['rules_' + user] = arr;
+  db['_rules_updatedAt_' + user] = new Date().toISOString();
   saveDB(db);
+  if (_sb && _isOnline) sbSaveUserSetting('rules', arr).catch(e => console.warn('rules sync:', e));
 }
 function updateRuleValueHint() {
   const type = document.getElementById('rule-type')?.value;
@@ -15864,6 +16034,7 @@ function getJournalEntry(dateStr) {
 function saveJournalEntryData(dateStr, entry) {
   if (!state.currentUser) return;
   const db = getDB(); db['journal_' + state.currentUser + '_' + dateStr] = entry; saveDB(db);
+  if (_sb && _isOnline) sbSaveUserSetting('journal_' + dateStr, entry).catch(e => console.warn('journal sync:', e));
 }
 function getNotes() {
   const db = getDB();
@@ -15871,6 +16042,7 @@ function getNotes() {
 }
 function saveNotes(arr) {
   const db = getDB(); db['notes_' + (state.currentUser||'')] = arr; saveDB(db);
+  if (_sb && _isOnline) sbSaveUserSetting('notes', arr).catch(e => console.warn('notes sync:', e));
 }
 function getWeeklyReview(weekKey) {
   if (!state.currentUser) return null;
@@ -16902,6 +17074,8 @@ function openReminderModal(title, linkedId, linkedPage) {
   document.getElementById('reminder-modal-linked-page').value = linkedPage || '';
   document.getElementById('reminder-modal-time').value = '';
   document.getElementById('reminder-custom-datetime').value = '';
+  const noteEl = document.getElementById('reminder-modal-note');
+  if (noteEl) noteEl.value = '';
   document.querySelectorAll('.reminder-time-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('reminder-modal').classList.add('open');
 }
@@ -16939,8 +17113,9 @@ function confirmAddReminder() {
   const title     = document.getElementById('reminder-modal-label').textContent || 'Przypomnienie';
   const linkedId  = document.getElementById('reminder-modal-linked-id').value || '';
   const linkedPage = document.getElementById('reminder-modal-linked-page').value || '';
+  const note      = (document.getElementById('reminder-modal-note')?.value || '').trim();
   const reminders = getReminders();
-  reminders.push({ id: genId(), title, linkedId, linkedPage, remindAt, createdAt: Date.now(), done: false });
+  reminders.push({ id: genId(), title, note: note || null, linkedId, linkedPage, remindAt, createdAt: Date.now(), done: false });
   saveReminders(reminders);
   updateReminderBell();
   closeModal('reminder-modal');
@@ -16968,7 +17143,14 @@ function checkReminders() {
 
 function showReminderPopup(reminder) {
   _currentReminderPopupId = reminder.id;
-  document.getElementById('reminder-popup-text').textContent = reminder.title;
+  const popupText = document.getElementById('reminder-popup-text');
+  popupText.textContent = reminder.title;
+  if (reminder.note) {
+    const noteDiv = document.createElement('div');
+    noteDiv.style.cssText = 'font-size:12px;color:var(--text3);margin-top:4px;font-style:italic';
+    noteDiv.textContent = reminder.note;
+    popupText.appendChild(noteDiv);
+  }
   const gotoBtn = document.getElementById('reminder-popup-goto');
   if (reminder.linkedPage) {
     gotoBtn.style.display = 'inline-flex';
@@ -17025,6 +17207,7 @@ function openReminderList() {
           <div style="font-size:18px">${overdue ? '🔴' : '🔔'}</div>
           <div style="flex:1;min-width:0">
             <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(r.title)}</div>
+            ${r.note ? `<div style="font-size:11px;color:var(--text2);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(r.note)}</div>` : ''}
             <div style="font-size:11px;color:${overdue ? 'var(--red)' : 'var(--text3)'}">${overdue ? '⚠️ Minęło · ' : ''}${fmtTime(r.remindAt)}</div>
           </div>
           <div style="display:flex;gap:4px;flex-shrink:0">
@@ -17558,6 +17741,7 @@ function filterLibrary(type) {
       </div>
       ${safeDesc ? `<div style="font-size:12px;color:var(--text2);line-height:1.5">${safeDesc}</div>` : ''}
       <div style="display:flex;gap:8px;margin-top:auto">
+        ${(f.storagePath || f.url) ? `<button class="btn-sm" onclick="openLibraryFile('${f.id}')" style="font-size:12px">👁 ${t('library_open')}</button>` : ''}
         <button class="btn-sm btn-accent" onclick="downloadLibraryFile('${f.id}')" style="flex:1;font-size:12px">⬇ ${t('library_download')}</button>
         ${adminMode ? `<button class="btn-sm" onclick="deleteLibraryFile('${f.id}')" style="color:var(--red);border-color:var(--red);font-size:12px">🗑</button>` : ''}
       </div>
@@ -17603,6 +17787,7 @@ async function addLibraryFile() {
   if (fileInput && fileInput.files.length) {
     const f = fileInput.files[0];
     if (f.size > _LIB_MAX_BYTES) return toast(t('err_library_size'), 'error');
+    if (!_sb) return toast(t('err_login_first'), 'error');
     if (addBtn) addBtn.disabled = true;
     if (statusEl) statusEl.textContent = 'Wysyłanie...';
     const ext = f.name.split('.').pop();
@@ -17635,6 +17820,7 @@ function deleteLibraryFile(id) {
   showConfirm(t('confirm_delete_library'), async () => {
     const f = getLibraryFiles().find(x => x.id === id);
     if (f?.storagePath) {
+      if (!_sb) { toast(t('err_login_first'), 'error'); return; }
       await _sb.storage.from('library').remove([f.storagePath]);
     }
     saveLibraryFiles(getLibraryFiles().filter(x => x.id !== id));
@@ -17643,10 +17829,26 @@ function deleteLibraryFile(id) {
   });
 }
 
+async function openLibraryFile(id) {
+  const f = getLibraryFiles().find(f => f.id === id);
+  if (!f) return toast(t('err_library_no_src'), 'error');
+  if (f.storagePath) {
+    if (!_sb) return toast(t('err_login_first'), 'error');
+    const { data, error } = await _sb.storage.from('library').createSignedUrl(f.storagePath, 3600);
+    if (error) { toast(t('err_library_download'), 'error'); return; }
+    window.open(data.signedUrl, '_blank');
+  } else if (f.url) {
+    window.open(f.url, '_blank');
+  } else {
+    toast(t('err_library_no_src'), 'error');
+  }
+}
+
 async function downloadLibraryFile(id) {
   const f = getLibraryFiles().find(f => f.id === id);
-  if (!f) return toast('Nie znaleziono pliku', 'error');
+  if (!f) return toast(t('err_library_no_src'), 'error');
   if (f.storagePath) {
+    if (!_sb) return toast(t('err_login_first'), 'error');
     const { data, error } = await _sb.storage.from('library').createSignedUrl(f.storagePath, 3600);
     if (error) { toast(t('err_library_download'), 'error'); return; }
     window.open(data.signedUrl, '_blank');
@@ -17663,6 +17865,211 @@ async function downloadLibraryFile(id) {
   } else {
     toast(t('err_library_no_src'), 'error');
   }
+}
+
+// ===== IDEAS =====
+
+let _ideasFilter = 'all';
+let _ideasCache  = null;
+
+function setIdeasFilter(f) {
+  _ideasFilter = f;
+  ['all','pending','accepted','rejected'].forEach(k => {
+    const btn = document.getElementById('ifilter-' + k);
+    if (btn) btn.className = k === f ? 'btn-sm btn-accent' : 'btn-sm';
+  });
+  _renderIdeasList(_ideasCache || []);
+}
+
+async function renderIdeasPage() {
+  const admin = isAdmin();
+  const filtersEl = document.getElementById('ideas-admin-filters');
+  if (filtersEl) filtersEl.style.display = admin ? 'block' : 'none';
+
+  const container = document.getElementById('ideas-list-container');
+  if (container) container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text3);font-size:13px">Ładowanie...</div>';
+
+  if (!_sb) {
+    if (container) container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text3)">Zaloguj się, aby zobaczyć pomysły.</div>';
+    return;
+  }
+
+  try {
+    const { data, error } = await _sb.from('ideas').select('*').order('created_at', { ascending: false });
+    if (error) throw error;
+    _ideasCache = data || [];
+    _updateIdeasBadge(_ideasCache);
+    _renderIdeasList(_ideasCache);
+  } catch(e) {
+    if (container) container.innerHTML = `<div style="text-align:center;padding:40px;color:var(--red);font-size:13px">Błąd ładowania: ${escHtml(e.message)}</div>`;
+  }
+}
+
+function _updateIdeasBadge(ideas) {
+  const pending = ideas.filter(i => i.status === 'pending').length;
+  const badge = document.getElementById('nav-ideas-badge');
+  if (badge) {
+    badge.textContent = pending > 9 ? '9+' : pending;
+    badge.style.display = (isAdmin() && pending > 0) ? 'inline-flex' : 'none';
+  }
+}
+
+function _renderIdeasList(ideas) {
+  const container = document.getElementById('ideas-list-container');
+  if (!container) return;
+  const admin = isAdmin();
+  const userId = _sb?.auth?.getUser ? null : null;
+  const myEmail = state.currentUser || '';
+
+  let filtered = ideas;
+  if (admin) {
+    if (_ideasFilter !== 'all') filtered = ideas.filter(i => i.status === _ideasFilter);
+  } else {
+    filtered = ideas.filter(i => i.status === 'accepted' || i.user_email === myEmail);
+  }
+
+  if (!filtered.length) {
+    container.innerHTML = `<div style="text-align:center;padding:60px 20px;color:var(--text3)">
+      <div style="font-size:48px;margin-bottom:16px">💡</div>
+      <div style="font-size:14px;font-weight:600">${_ideasFilter === 'pending' ? 'Brak oczekujących pomysłów' : _ideasFilter === 'rejected' ? 'Brak odrzuconych' : 'Brak pomysłów'}</div>
+      <div style="font-size:12px;margin-top:8px">Zgłoś pierwszy pomysł używając formularza powyżej</div>
+    </div>`;
+    return;
+  }
+
+  const statusLabel = { pending: '🟡 Oczekuje', accepted: '✅ Zaakceptowany', rejected: '❌ Odrzucony' };
+  const statusColor = { pending: 'var(--amber)', accepted: 'var(--green)', rejected: 'var(--red)' };
+  const fmtDate = ts => ts ? new Date(ts).toLocaleDateString('pl-PL', {day:'numeric',month:'short',year:'numeric'}) : '';
+
+  // Group for non-admin: mine first, then accepted from others
+  let rows;
+  if (!admin) {
+    const mine    = filtered.filter(i => i.user_email === myEmail);
+    const others  = filtered.filter(i => i.user_email !== myEmail && i.status === 'accepted');
+    rows = [...mine, ...others];
+  } else {
+    rows = filtered;
+  }
+
+  container.innerHTML = `<div style="display:flex;flex-direction:column;gap:12px">` +
+    rows.map(idea => {
+      const isOwn = idea.user_email === myEmail;
+      const sc = statusColor[idea.status] || 'var(--text3)';
+      const sl = statusLabel[idea.status] || idea.status;
+      return `<div class="summary-card" style="cursor:${admin?'default':'auto'}">
+        <div style="display:flex;align-items:flex-start;gap:12px">
+          <div style="font-size:28px;flex-shrink:0">💡</div>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+              <div style="font-size:14px;font-weight:700;color:var(--text)">${escHtml(idea.title)}</div>
+              <span style="font-size:11px;font-weight:600;color:${sc}">${sl}</span>
+              ${isOwn && !admin ? '<span style="font-size:10px;background:var(--accent-dim);color:var(--accent);padding:1px 7px;border-radius:10px">Mój</span>' : ''}
+            </div>
+            ${idea.description ? `<div style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:6px">${escHtml(idea.description)}</div>` : ''}
+            ${idea.admin_note ? `<div style="font-size:12px;color:var(--text3);font-style:italic;padding:6px 10px;background:var(--bg3);border-radius:6px;margin-bottom:6px;border-left:3px solid ${sc}">💬 ${escHtml(idea.admin_note)}</div>` : ''}
+            <div style="font-size:11px;color:var(--text3);display:flex;gap:12px;flex-wrap:wrap">
+              ${admin ? `<span>👤 ${escHtml(idea.user_email||'?')}</span>` : ''}
+              <span>📅 ${fmtDate(idea.created_at)}</span>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
+            ${admin ? `<button class="btn-sm btn-accent" onclick="openIdeaAdminModal('${idea.id}')" style="font-size:11px;padding:4px 10px">✏️ Odpowiedz</button>` : ''}
+            ${(isOwn && idea.status === 'pending' && !admin) ? `<button class="btn-sm" onclick="deleteMyIdea('${idea.id}')" style="color:var(--red);border-color:var(--red);font-size:11px;padding:4px 10px">🗑</button>` : ''}
+          </div>
+        </div>
+      </div>`;
+    }).join('') + '</div>';
+}
+
+async function submitIdea() {
+  if (!_sb) return toast('Zaloguj się najpierw', 'error');
+  const title = document.getElementById('idea-title')?.value?.trim() || '';
+  const desc  = document.getElementById('idea-desc')?.value?.trim()  || '';
+  if (!title) return toast('Wpisz tytuł pomysłu', 'error');
+
+  const btn = document.getElementById('ideas-submit-btn');
+  if (btn) btn.disabled = true;
+
+  try {
+    const { data: { user } } = await _sb.auth.getUser();
+    const { error } = await _sb.from('ideas').insert({
+      user_id:     user?.id || null,
+      user_email:  user?.email || state.currentUser || '',
+      title,
+      description: desc || null,
+      status:      'pending',
+    });
+    if (error) throw error;
+    document.getElementById('idea-title').value = '';
+    document.getElementById('idea-desc').value  = '';
+    toast('Pomysł zgłoszony ✓', 'success');
+    _ideasCache = null;
+    await renderIdeasPage();
+  } catch(e) {
+    toast('Błąd: ' + e.message, 'error');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+function openIdeaAdminModal(id) {
+  const idea = (_ideasCache || []).find(i => i.id === id);
+  if (!idea) return;
+  document.getElementById('iam-id').value         = id;
+  document.getElementById('iam-title').textContent = idea.title || '';
+  document.getElementById('iam-desc').textContent  = idea.description || '(brak opisu)';
+  document.getElementById('iam-status').value      = idea.status || 'pending';
+  document.getElementById('iam-note').value        = idea.admin_note || '';
+  openModal('ideas-admin-modal');
+}
+
+async function saveIdeaAdminAction() {
+  const id     = document.getElementById('iam-id').value;
+  const status = document.getElementById('iam-status').value;
+  const note   = document.getElementById('iam-note').value.trim();
+  if (!id || !_sb) return;
+
+  try {
+    const { error } = await _sb.from('ideas').update({
+      status,
+      admin_note:  note || null,
+      updated_at:  new Date().toISOString(),
+    }).eq('id', id);
+    if (error) throw error;
+    closeModal('ideas-admin-modal');
+    toast('Zapisano ✓', 'success');
+    _ideasCache = null;
+    await renderIdeasPage();
+  } catch(e) {
+    toast('Błąd: ' + e.message, 'error');
+  }
+}
+
+function deleteIdeaAdmin() {
+  const id = document.getElementById('iam-id').value;
+  if (!id) return;
+  showConfirm('Usunąć ten pomysł na stałe?', async () => {
+    try {
+      const { error } = await _sb.from('ideas').delete().eq('id', id);
+      if (error) throw error;
+      closeModal('ideas-admin-modal');
+      toast('Pomysł usunięty', 'success');
+      _ideasCache = null;
+      await renderIdeasPage();
+    } catch(e) { toast('Błąd: ' + e.message, 'error'); }
+  });
+}
+
+function deleteMyIdea(id) {
+  showConfirm('Wycofać ten pomysł?', async () => {
+    try {
+      const { error } = await _sb.from('ideas').delete().eq('id', id);
+      if (error) throw error;
+      toast('Pomysł wycofany', 'success');
+      _ideasCache = null;
+      await renderIdeasPage();
+    } catch(e) { toast('Błąd: ' + e.message, 'error'); }
+  });
 }
 
 // Rejestracja Service Worker (PWA)
