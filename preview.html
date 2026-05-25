@@ -6736,7 +6736,9 @@ const _SB_SCREENSHOTS_BUCKET = 'screenshots';
 async function uploadScreenshotToStorage(dataUrl, prefix) {
   if (!_sb) return null;
   try {
-    const userId = getUsers()[state.currentUser]?.supabaseId || state.currentUser || 'anon';
+    const { data: { session } } = await _sb.auth.getSession();
+    if (!session) { console.warn('Screenshot upload: brak aktywnej sesji'); return null; }
+    const userId = session.user.id; // zawsze UUID, nigdy email
     const base64 = dataUrl.split(',')[1];
     const binaryStr = atob(base64);
     const bytes = new Uint8Array(binaryStr.length);
