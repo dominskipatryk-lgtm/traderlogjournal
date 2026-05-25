@@ -6693,7 +6693,7 @@ function dvAddFiles(files) {
     if (!f.type.startsWith('image/')) return;
     const r = new FileReader();
     r.onload = async e => {
-      const compressed = await compressImage(e.target.result, 800, 0.7);
+      const compressed = await compressImage(e.target.result, 1920, 0.88);
       const id = genId();
       const tradeId = _detailId;
       const idx = _detailScreenshots.length;
@@ -6801,7 +6801,7 @@ function handleFiles(files) {
     if (!f.type.startsWith('image/')) return;
     const reader = new FileReader();
     reader.onload = async e => {
-      const compressed = await compressImage(e.target.result, 800, 0.7);
+      const compressed = await compressImage(e.target.result, 1920, 0.88);
       const id = genId();
       const tradeId = state.editTradeId || document.getElementById('trade-id')?.value || 'new';
       state.tempScreenshots.push({ id, dataUrl: null, uploading: true });
@@ -6938,6 +6938,8 @@ async function openLightboxSmart(urlOrId, id) {
       _driveScreenCache[driveId] = url;
       openLightbox(url);
     }
+  } else if (urlOrId && urlOrId.startsWith('sb://')) {
+    openLightbox(sbScreenshotPublicUrl(urlOrId));
   } else {
     openLightbox(urlOrId);
   }
@@ -11666,7 +11668,7 @@ function anHandleFiles(files) {
     if (!f.type.startsWith('image/')) return;
     const r = new FileReader();
     r.onload = async e => {
-      const compressed = await compressImage(e.target.result, 800, 0.7);
+      const compressed = await compressImage(e.target.result, 1920, 0.88);
       const id = genId();
       const analysisId = document.getElementById('an-id')?.value || 'new';
       _anScreenshots.push({ id, dataUrl: null, uploading: true });
@@ -14877,8 +14879,10 @@ function addStrategyPoint(text, screenshot) {
   div.style.cssText = 'display:flex;gap:6px;align-items:center;margin-bottom:4px';
   const scrId = 'spt_' + Date.now() + '_' + idx;
   const hasSrc = screenshot && screenshot.length > 5;
+  const isSbShot = hasSrc && screenshot.startsWith('sb://');
   const thumbSrc = hasSrc && isDriveScreenshot(screenshot)
     ? (_driveScreenCache[screenshot.replace('drive://','')] || '')
+    : isSbShot ? (sbScreenshotPublicUrl(screenshot) || '')
     : (screenshot || '');
   div.innerHTML = `
     <span style="color:var(--text3);font-size:12px;min-width:18px">${idx+1}.</span>
@@ -14911,7 +14915,7 @@ async function addPointScreenshot(input, scrId, event) {
   if (label) label.style.opacity = '0.5';
   const reader = new FileReader();
   reader.onload = async e => {
-    const compressed = await compressImage(e.target.result, 800, 0.7);
+    const compressed = await compressImage(e.target.result, 1920, 0.88);
     const sbUrl = await uploadScreenshotToStorage(compressed, 'strat_' + scrId);
     if (!sbUrl) { toast(t('err_drive_upload'), 'error'); if (label) label.style.opacity = '1'; return; }
     const displayUrl = sbScreenshotPublicUrl(sbUrl) || compressed;
@@ -15216,7 +15220,7 @@ function addSetupRefScreenshots(input) {
   files.forEach(file => {
     const reader = new FileReader();
     reader.onload = async e => {
-      const compressed = await compressImage(e.target.result, 800, 0.7);
+      const compressed = await compressImage(e.target.result, 1920, 0.88);
       const id = 'ss_' + Date.now() + Math.random();
       _currentSetupScreenshots.push({ id, dataUrl: null, uploading: true });
       renderSetupRefScreenshots();
@@ -15427,7 +15431,7 @@ function addSetupScreenshots(prefix, input) {
   files.forEach(file => {
     const reader = new FileReader();
     reader.onload = async e => {
-      const compressed = await compressImage(e.target.result, 800, 0.7);
+      const compressed = await compressImage(e.target.result, 1920, 0.88);
       const id = genId();
       const setupId = document.getElementById('setup-id')?.value || prefix;
       const idx = _setupSessionScreenshots[prefix].length;
