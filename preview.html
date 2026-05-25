@@ -718,6 +718,13 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 .settings-section { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius-lg); padding:24px; margin-bottom:20px; }
 .settings-section-title { font-family:var(--font-head); font-size:15px; font-weight:700; margin-bottom:18px; display:flex; align-items:center; gap:8px; }
 .recovery-code-box { background:var(--bg3); border:1px solid var(--border2); border-radius:8px; padding:14px 16px; font-family:var(--font-mono); font-size:18px; font-weight:700; letter-spacing:3px; text-align:center; color:var(--accent); cursor:pointer; user-select:all; }
+.smart-reminder-row { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 12px; background:var(--bg3); border:1px solid var(--border); border-radius:10px; cursor:pointer; transition:border-color .15s; }
+.smart-reminder-row:hover { border-color:var(--accent); }
+.smart-reminder-info { flex:1; }
+.toggle-cb { appearance:none; width:42px; height:24px; background:var(--bg4); border:2px solid var(--border2); border-radius:12px; cursor:pointer; position:relative; transition:background .2s,border-color .2s; flex-shrink:0; }
+.toggle-cb::after { content:''; position:absolute; top:2px; left:2px; width:16px; height:16px; background:#fff; border-radius:50%; transition:transform .2s; }
+.toggle-cb:checked { background:var(--accent); border-color:var(--accent); }
+.toggle-cb:checked::after { transform:translateX(18px); }
 .recovery-code-box:hover { border-color:var(--accent); }
 
 /* ── Drafts ── */
@@ -1845,6 +1852,51 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
             <div style="font-size:11px;color:var(--text3);margin-top:8px">
               Wymaga połączenia z Google Drive (Opcja B powyżej).
             </div>
+          </div>
+        </div>
+
+        <!-- Smart Reminders -->
+        <div class="settings-section">
+          <div class="settings-section-title">🔔 Inteligentne przypomnienia</div>
+          <p style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.6">
+            Automatyczne przypomnienia w odpowiednich momentach tygodnia.<br>
+            Pojawiają się w dzwonku (🔔) w górnym pasku — i jako powiadomienie przeglądarki jeśli zezwolisz.
+          </p>
+          <div id="notif-permission-bar" style="margin-bottom:16px;display:none">
+            <button class="btn-sm btn-accent" onclick="requestNotificationPermission()" style="font-size:12px" id="notif-perm-btn">
+              🔔 Zezwól na powiadomienia przeglądarki
+            </button>
+            <div id="notif-perm-status" style="font-size:11px;color:var(--text3);margin-top:6px"></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:12px" id="smart-reminders-list">
+            <label class="smart-reminder-row">
+              <div class="smart-reminder-info">
+                <div style="font-size:13px;font-weight:600">📋 Plan tygodnia</div>
+                <div style="font-size:11px;color:var(--text3)">Poniedziałek 8:00 — zacznij tydzień od planu</div>
+              </div>
+              <input type="checkbox" id="sr-monday" class="toggle-cb" onchange="saveSmartReminderSettings()">
+            </label>
+            <label class="smart-reminder-row">
+              <div class="smart-reminder-info">
+                <div style="font-size:13px;font-weight:600">📊 Weekly review</div>
+                <div style="font-size:11px;color:var(--text3)">Piątek 16:30 — oceń miniony tydzień</div>
+              </div>
+              <input type="checkbox" id="sr-friday" class="toggle-cb" onchange="saveSmartReminderSettings()">
+            </label>
+            <label class="smart-reminder-row">
+              <div class="smart-reminder-info">
+                <div style="font-size:13px;font-weight:600">📔 Wieczorny dziennik</div>
+                <div style="font-size:11px;color:var(--text3)">Codziennie 20:00 — uzupełnij podsumowanie dnia</div>
+              </div>
+              <input type="checkbox" id="sr-evening" class="toggle-cb" onchange="saveSmartReminderSettings()">
+            </label>
+            <label class="smart-reminder-row">
+              <div class="smart-reminder-info">
+                <div style="font-size:13px;font-weight:600">👋 Wróć do rutyny</div>
+                <div style="font-size:11px;color:var(--text3)">Po 3 dniach bez logowania — przypomnienie o dzienniku</div>
+              </div>
+              <input type="checkbox" id="sr-away" class="toggle-cb" onchange="saveSmartReminderSettings()">
+            </label>
           </div>
         </div>
 
@@ -8440,6 +8492,7 @@ async function renderSettings() {
   setTimeout(updateApiKeyStatus, 50);
   if (bar)  { bar.style.width='0'; bar.style.background=''; }
   if (hint) hint.textContent = '';
+  loadSmartReminderSettings();
 }
 
 // [v1.7] Kopiuj User ID do schowka — dla konfiguracji EA w MT4
@@ -16508,6 +16561,7 @@ function updateReminderBell() {
 
 function checkReminders() {
   if (!state.currentUser) return;
+  checkSmartReminders();
   const due = getReminders().filter(r => !r.done && r.remindAt <= Date.now());
   if (due.length > 0 && !_currentReminderPopupId) showReminderPopup(due[0]);
   updateReminderBell();
@@ -16596,6 +16650,138 @@ function doneReminder(id) {
   if (r) { r.done = true; saveReminders(reminders); }
   updateReminderBell();
   openReminderList();
+}
+
+// ===== SMART REMINDERS =====
+
+function getSmartReminderSettings() {
+  try {
+    return JSON.parse(localStorage.getItem('tlj_smart_reminders_' + (state.currentUser||'')) || '{}');
+  } catch { return {}; }
+}
+function saveSmartReminderSettings() {
+  const s = {
+    monday:  document.getElementById('sr-monday')?.checked  || false,
+    friday:  document.getElementById('sr-friday')?.checked  || false,
+    evening: document.getElementById('sr-evening')?.checked || false,
+    away:    document.getElementById('sr-away')?.checked    || false,
+  };
+  localStorage.setItem('tlj_smart_reminders_' + (state.currentUser||''), JSON.stringify(s));
+  toast(t('toast_profile_saved'), 'success');
+}
+function loadSmartReminderSettings() {
+  const s = getSmartReminderSettings();
+  const el = id => document.getElementById(id);
+  if (el('sr-monday'))  el('sr-monday').checked  = !!s.monday;
+  if (el('sr-friday'))  el('sr-friday').checked  = !!s.friday;
+  if (el('sr-evening')) el('sr-evening').checked = !!s.evening;
+  if (el('sr-away'))    el('sr-away').checked    = !!s.away;
+  // Show notification permission bar if Notification API available
+  const bar = document.getElementById('notif-permission-bar');
+  if (bar && 'Notification' in window) {
+    bar.style.display = 'block';
+    _updateNotifPermBtn();
+  }
+}
+function _updateNotifPermBtn() {
+  const btn = document.getElementById('notif-perm-btn');
+  const status = document.getElementById('notif-perm-status');
+  if (!btn || !('Notification' in window)) return;
+  if (Notification.permission === 'granted') {
+    btn.textContent = '✅ Powiadomienia włączone';
+    btn.disabled = true;
+    if (status) status.textContent = 'Powiadomienia przeglądarki są aktywne.';
+  } else if (Notification.permission === 'denied') {
+    btn.textContent = '🚫 Powiadomienia zablokowane';
+    btn.disabled = true;
+    if (status) status.textContent = 'Odblokuj w ustawieniach przeglądarki (kłódka w pasku adresu).';
+  } else {
+    btn.textContent = '🔔 Zezwól na powiadomienia';
+    btn.disabled = false;
+    if (status) status.textContent = '';
+  }
+}
+function requestNotificationPermission() {
+  if (!('Notification' in window)) return toast('Przeglądarka nie obsługuje powiadomień', 'error');
+  Notification.requestPermission().then(perm => {
+    _updateNotifPermBtn();
+    if (perm === 'granted') toast('✅ Powiadomienia włączone!', 'success');
+    else toast('Powiadomienia zablokowane w ustawieniach przeglądarki', 'error');
+  });
+}
+function showNativeNotification(title, body, page) {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  const n = new Notification(title, {
+    body, icon: '/logo_E_120.png', tag: 'tlj-smart-' + page,
+  });
+  if (page) n.onclick = () => { window.focus(); showPage(page); n.close(); };
+}
+function _smartReminderKey(type) {
+  return 'tlj_sr_sent_' + (state.currentUser||'') + '_' + type + '_' + new Date().toISOString().slice(0,10);
+}
+function _smartReminderSentToday(type) {
+  return !!localStorage.getItem(_smartReminderKey(type));
+}
+function _markSmartReminderSent(type) {
+  localStorage.setItem(_smartReminderKey(type), '1');
+}
+function _addSmartReminderToList(title, page, atMs) {
+  const reminders = getReminders();
+  // Don't duplicate — check if same title scheduled in next 24h
+  const in24h = Date.now() + 24*60*60*1000;
+  if (reminders.find(r => !r.done && r.title === title && r.remindAt <= in24h)) return;
+  reminders.push({ id: genId(), title, remindAt: atMs, linkedPage: page, done: false, createdAt: Date.now() });
+  saveReminders(reminders);
+  updateReminderBell();
+}
+function checkSmartReminders() {
+  if (!state.currentUser) return;
+  const s = getSmartReminderSettings();
+  const now = new Date();
+  const dow = now.getDay(); // 0=Sun,1=Mon,...,5=Fri
+  const h = now.getHours(), m = now.getMinutes();
+
+  // Monday 8:00 — plan tygodnia
+  if (s.monday && dow === 1 && h >= 8 && !_smartReminderSentToday('monday')) {
+    _markSmartReminderSent('monday');
+    _addSmartReminderToList('📋 Plan tygodnia — zacznij od planu na dziś', 'journal', Date.now());
+    showNativeNotification('📋 Plan tygodnia', 'Zacznij tydzień od rutyny dnia — otwórz dziennik', 'journal');
+  }
+
+  // Friday 16:30 — weekly review
+  if (s.friday && dow === 5 && (h > 16 || (h === 16 && m >= 30)) && !_smartReminderSentToday('friday')) {
+    _markSmartReminderSent('friday');
+    _addSmartReminderToList('📊 Weekly review — jak minął tydzień?', 'journal', Date.now());
+    showNativeNotification('📊 Weekly review', 'Czas ocenić miniony tydzień — wypełnij weekly review', 'journal');
+  }
+
+  // Daily 20:00 — journal evening (only if no post-session entry today)
+  if (s.evening && h >= 20 && !_smartReminderSentToday('evening')) {
+    const today = now.toISOString().slice(0,10);
+    const entry = getJournalEntry(today);
+    if (!entry?.postReview) {
+      _markSmartReminderSent('evening');
+      _addSmartReminderToList('📔 Uzupełnij dziennik z dziś', 'journal', Date.now());
+      showNativeNotification('📔 Wieczorny dziennik', 'Uzupełnij podsumowanie dnia — zajmie 2 minuty', 'journal');
+    }
+  }
+
+  // Away 3 days — last login check
+  if (s.away) {
+    const lastLoginKey = 'tlj_last_login_' + (state.currentUser||'');
+    const last = parseInt(localStorage.getItem(lastLoginKey) || '0');
+    const daysSince = (Date.now() - last) / (1000*60*60*24);
+    if (last && daysSince >= 3 && !_smartReminderSentToday('away')) {
+      _markSmartReminderSent('away');
+      _addSmartReminderToList('👋 Wróć do rutyny tradingowej — ' + Math.floor(daysSince) + ' dni bez wpisu', 'journal', Date.now());
+    }
+  }
+  // Update last login timestamp (once per session)
+  const _llKey = 'tlj_last_login_' + (state.currentUser||'');
+  if (!sessionStorage.getItem('tlj_ll_set')) {
+    localStorage.setItem(_llKey, String(Date.now()));
+    sessionStorage.setItem('tlj_ll_set', '1');
+  }
 }
 
 // ===== DAILY BRIEFING =====
