@@ -2803,10 +2803,10 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
               <textarea class="form-input-modal" id="lib-desc" rows="2" placeholder="Krótki opis materiału..." style="font-size:13px;resize:vertical"></textarea>
             </div>
             <div>
-              <label class="form-label-modal" style="font-size:11px">Plik (PDF, MQ4, MQ5, PNG, JPG) <span style="color:var(--amber)">— maks. 400 KB</span></label>
+              <label class="form-label-modal" style="font-size:11px">Plik (PDF, MQ4, MQ5, PNG, JPG) <span style="color:var(--green)">— do 50 MB</span></label>
               <input type="file" id="lib-file" accept=".pdf,.mq4,.mq5,.png,.jpg,.jpeg" class="form-input-modal" style="font-size:12px;padding:6px" onchange="libPreviewFile()">
               <div id="lib-file-info" style="font-size:11px;color:var(--text3);margin-top:4px"></div>
-              <div style="font-size:11px;color:var(--text3);margin-top:2px">Większe pliki → wgraj na Google Drive/Dropbox i podaj URL poniżej</div>
+              <div style="font-size:11px;color:var(--text3);margin-top:2px">Lub podaj URL (YouTube, artykuł, Google Drive) poniżej</div>
             </div>
             <div>
               <label class="form-label-modal" style="font-size:11px">Lub URL do pliku</label>
@@ -3794,7 +3794,14 @@ function isCurrentAccountBot(accountId) {
 function getTrades(accountId) {
   const db = getDB();
   const key = state.currentUser + '_' + accountId;
-  return (db.trades || {})[key] || [];
+  let trades = (db.trades || {})[key] || [];
+  if (trades.some(t => t.date && t.date.length === 10)) {
+    trades = trades.map(t => t.date && t.date.length === 10 ? { ...t, date: t.date + 'T12:00' } : t);
+    if (!db.trades) db.trades = {};
+    db.trades[key] = trades;
+    saveDB(db);
+  }
+  return trades;
 }
 function saveTrades(accountId, arr) {
   const db = getDB();
@@ -4555,20 +4562,20 @@ function renderEmotions() {
   const curr   = getCurrSym(acc?.id);
   const fmt    = v => parseFloat(v).toFixed(2);
   const sub    = document.getElementById('emotions-subtitle');
-  if (sub) sub.textContent = (acc ? acc.name + ' · ' : '') + closed.length + ' zamkniętych transakcji';
+  if (sub) sub.textContent = (acc ? acc.name + ' · ' : '') + closed.length + ' ' + t('stat_closed');
 
   const emoTrades = closed.filter(t => t.emotionPre || t.emotionPost);
   if (!emoTrades.length && closed.length > 0) {
     el.innerHTML = `
       <div style="text-align:center;padding:40px 20px">
         <div style="font-size:48px;margin-bottom:12px">🧠</div>
-        <div style="font-size:16px;font-weight:600;margin-bottom:8px">Brak danych emocjonalnych</div>
-        <div style="font-size:13px;color:var(--text3);max-width:400px;margin:0 auto;line-height:1.7">Zacznij dodawać emocje do transakcji (pole "Emocja przed wejściem" i "Emocja po zamknięciu" w formularzu transakcji)</div>
-        <button class="btn-sm btn-accent" onclick="openTradeModalWithDraftCheck()" style="margin-top:16px">+ Dodaj transakcję z emocjami</button>
+        <div style="font-size:16px;font-weight:600;margin-bottom:8px">${t('emotions_no_data')}</div>
+        <div style="font-size:13px;color:var(--text3);max-width:400px;margin:0 auto;line-height:1.7">${t('emotions_no_data_hint')}</div>
+        <button class="btn-sm btn-accent" onclick="openTradeModalWithDraftCheck()" style="margin-top:16px">+ ${t('emotions_add_btn')}</button>
       </div>`;
     return;
   }
-  if (!closed.length) { el.innerHTML = emptyState('🧠','Brak transakcji','Dodaj transakcje aby zobaczyć analizę emocjonalną'); return; }
+  if (!closed.length) { el.innerHTML = emptyState('🧠', t('empty_no_trades'), t('emotions_empty_hint')); return; }
 
   // Separate pre/post
   const byEmoPre = {}, byEmoPost = {};
@@ -4576,9 +4583,9 @@ function renderEmotions() {
   closed.filter(t=>t.emotionPost).forEach(t => { const e=t.emotionPost; if(!byEmoPost[e])byEmoPost[e]={c:0,pnl:0,w:0}; byEmoPost[e].c++; byEmoPost[e].pnl+=t.pnl||0; if(t.pnl>0)byEmoPost[e].w++; });
 
   const emoTable = data => {
-    if (!Object.keys(data).length) return `<div style="font-size:12px;color:var(--text3);padding:12px 0">Brak danych — uzupełnij emocje w transakcjach</div>`;
+    if (!Object.keys(data).length) return `<div style="font-size:12px;color:var(--text3);padding:12px 0">${t('emotions_table_empty')}</div>`;
     return `<table style="width:100%;font-size:12px;border-collapse:collapse">
-      <thead><tr style="color:var(--text3);font-size:10px;border-bottom:1px solid var(--border)"><th style="text-align:left;padding:6px 0">Emocja</th><th style="text-align:center">Trd</th><th style="text-align:center">WR%</th><th style="text-align:right">Śr. P&L</th><th style="text-align:right">Suma P&L</th></tr></thead>
+      <thead><tr style="color:var(--text3);font-size:10px;border-bottom:1px solid var(--border)"><th style="text-align:left;padding:6px 0">${t('emotions_col_emotion')}</th><th style="text-align:center">Trd</th><th style="text-align:center">WR%</th><th style="text-align:right">${t('emotions_col_avg_pnl')}</th><th style="text-align:right">${t('emotions_col_sum_pnl')}</th></tr></thead>
       <tbody>${Object.entries(data).sort((a,b)=>b[1].pnl-a[1].pnl).map(([e,d])=>{
         const wr=Math.round(d.w/d.c*100), avg=d.pnl/d.c;
         return `<tr style="border-bottom:1px solid rgba(255,255,255,.04)">
@@ -4607,27 +4614,27 @@ function renderEmotions() {
   <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">
     <div class="summary-card" style="text-align:center">
       <div style="font-size:28px;font-weight:800;font-family:var(--font-mono);color:var(--accent)">${withEmo}</div>
-      <div style="font-size:11px;color:var(--text3);margin-top:4px">Transakcji z emocjami</div>
-      <div style="font-size:12px;color:var(--text2);margin-top:2px">${coverage}% pokrycia</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:4px">${t('emotions_trades_with')}</div>
+      <div style="font-size:12px;color:var(--text2);margin-top:2px">${coverage}% ${t('emotions_coverage')}</div>
     </div>
     <div class="summary-card" style="text-align:center">
       <div style="font-size:22px;margin-bottom:4px">${bestEmo ? bestEmo[0] : '—'}</div>
-      <div style="font-size:11px;color:var(--green);font-weight:600">Najlepsza emocja</div>
-      ${bestEmo ? `<div style="font-size:12px;color:var(--text2);margin-top:2px">Suma: <span class="pnl-pos">+${fmt(bestEmo[1].pnl)}</span></div>` : ''}
+      <div style="font-size:11px;color:var(--green);font-weight:600">${t('emotions_best')}</div>
+      ${bestEmo ? `<div style="font-size:12px;color:var(--text2);margin-top:2px">${t('emotions_sum')}: <span class="pnl-pos">+${fmt(bestEmo[1].pnl)}</span></div>` : ''}
     </div>
     <div class="summary-card" style="text-align:center">
       <div style="font-size:22px;margin-bottom:4px">${worstEmo ? worstEmo[0] : '—'}</div>
-      <div style="font-size:11px;color:var(--red);font-weight:600">Najgorsza emocja</div>
-      ${worstEmo ? `<div style="font-size:12px;color:var(--text2);margin-top:2px">Suma: <span class="pnl-neg">${fmt(worstEmo[1].pnl)}</span></div>` : ''}
+      <div style="font-size:11px;color:var(--red);font-weight:600">${t('emotions_worst')}</div>
+      ${worstEmo ? `<div style="font-size:12px;color:var(--text2);margin-top:2px">${t('emotions_sum')}: <span class="pnl-neg">${fmt(worstEmo[1].pnl)}</span></div>` : ''}
     </div>
   </div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
     <div class="summary-card">
-      <div class="summary-card-title" style="color:var(--amber)">😌 Przed wejściem w transakcję</div>
+      <div class="summary-card-title" style="color:var(--amber)">😌 ${t('emotions_pre_label')}</div>
       ${emoTable(byEmoPre)}
     </div>
     <div class="summary-card">
-      <div class="summary-card-title" style="color:var(--accent)">😊 Po zamknięciu transakcji</div>
+      <div class="summary-card-title" style="color:var(--accent)">😊 ${t('emotions_post_label')}</div>
       ${emoTable(byEmoPost)}
     </div>
   </div>
@@ -4663,7 +4670,7 @@ function renderEmotions() {
   ${(()=>{
     // --- Heatmapa godzin handlu ---
     // Wymaga dat z czasem (YYYY-MM-DDTHH:MM) — daty bez czasu mają getHours()=2 (UTC offset)
-    const tradesWithTime = closed.filter(t => t.date && t.date.length >= 13); // 'YYYY-MM-DDTHH:MM'
+    const tradesWithTime = closed.filter(t => t.date && t.date.includes('T'));
     const days = ['Pn','Wt','Śr','Cz','Pt'];
     const hours = [7,8,9,10,11,12,13,14,15,16,17,18];
     const grid = {};
@@ -4686,7 +4693,7 @@ function renderEmotions() {
     const allPnls = days.flatMap(d=>hours.map(h=>grid[d][h].pnl)).filter(v=>v!==0);
     const maxAbs = allPnls.length ? Math.max(...allPnls.map(Math.abs), 0.001) : 1;
     const cellStyle = (pnl, c) => {
-      if (!c) return 'background:var(--bg3);color:var(--text3)';
+      if (!c) return 'background:repeating-linear-gradient(45deg,var(--bg3),var(--bg3) 2px,var(--bg2) 2px,var(--bg2) 6px);color:var(--text3)';
       const intensity = Math.min(Math.abs(pnl)/maxAbs, 1);
       const alpha = 0.15 + intensity*0.55;
       return pnl > 0
@@ -4756,19 +4763,19 @@ function renderEmotions() {
     const db2 = getDB();
     const lims = db2['ot-limits_'+(state.currentUser||'')] || {maxDaily:5, maxLosses:3};
     return `<div class="summary-card" style="margin-top:16px">
-      <div class="summary-card-title" style="color:var(--red)">⚠️ Overtrading Alert — konfiguracja</div>
-      <div style="font-size:12px;color:var(--text2);margin-bottom:12px">Ustaw limity — aplikacja wyświetli ostrzeżenie po przekroczeniu</div>
+      <div class="summary-card-title" style="color:var(--red)">⚠️ ${t('ot_config_title')}</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:12px">${t('ot_config_desc')}</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
         <div>
-          <label class="form-label-modal" style="font-size:11px">Maks. transakcji dziennie</label>
+          <label class="form-label-modal" style="font-size:11px">${t('rule_type_max_daily')}</label>
           <input class="form-input-modal" id="ot-max-daily" type="number" min="1" max="100" value="${lims.maxDaily}" style="font-size:13px">
         </div>
         <div>
-          <label class="form-label-modal" style="font-size:11px">Maks. strat z rzędu</label>
+          <label class="form-label-modal" style="font-size:11px">${t('rule_type_max_losses')}</label>
           <input class="form-input-modal" id="ot-max-losses" type="number" min="1" max="50" value="${lims.maxLosses}" style="font-size:13px">
         </div>
       </div>
-      <button class="btn-sm btn-accent" onclick="saveOtLimits()" style="width:100%">💾 Zapisz limity</button>
+      <button class="btn-sm btn-accent" onclick="saveOtLimits()" style="width:100%">💾 ${t('ot_save_limits')}</button>
     </div>`;
   })()}`;
 }
@@ -4790,7 +4797,7 @@ function checkOvertradingAlert(accountId) {
   const trades = getTrades(accountId);
   const todayTrades = trades.filter(t => (t.date||'').slice(0,10) === today);
   if (todayTrades.length >= lims.maxDaily) {
-    showOvertradingPopup('Przekroczyłeś dzienny limit ' + lims.maxDaily + ' transakcji!');
+    showOvertradingPopup(t('ot_popup_daily').replace('{n}', lims.maxDaily));
     return;
   }
   const sorted = [...trades].sort((a,b)=>new Date(a.date)-new Date(b.date));
@@ -4800,7 +4807,7 @@ function checkOvertradingAlert(accountId) {
     else break;
   }
   if (streak >= lims.maxLosses) {
-    showOvertradingPopup('UWAGA: ' + streak + ' straty z rzędu!');
+    showOvertradingPopup(t('ot_popup_streak').replace('{n}', streak));
   }
 }
 
@@ -4819,7 +4826,7 @@ function showOvertradingPopup(msg) {
   const btn = document.createElement('button');
   btn.className = 'btn-sm';
   btn.style.cssText = 'background:var(--red);color:#fff;border-color:var(--red);width:100%;font-size:14px;padding:10px';
-  btn.textContent = 'Rozumiem';
+  btn.textContent = t('ot_popup_btn');
   btn.onclick = () => el.remove();
   el.appendChild(stopEl);
   el.appendChild(msgEl);
@@ -5397,7 +5404,7 @@ function deleteAccount(id) {
     if (state.currentAccountId === id) state.currentAccountId = accounts[0]?.id || null;
     refreshTopbarAccount();
     renderAccounts();
-    toast('Konto usunięte', 'success');
+    toast(t('toast_account_deleted'), 'success');
   });
 }
 
@@ -5569,7 +5576,7 @@ function saveTrade() {
     if (_isNewTrade) {
       const _otTodayCount = _otTrades.filter(t => (t.date||'').slice(0,10) === _otToday).length;
       if (_otTodayCount + 1 > _otLims.maxDaily)
-        _otDailyMsg = '⚠️ Przekroczysz dzienny limit ' + _otLims.maxDaily + ' transakcji!\n(Masz już ' + _otTodayCount + ')\n\nCzy mimo to zapisać?';
+        _otDailyMsg = t('ot_daily_limit').replace('{n}', _otLims.maxDaily).replace('{count}', _otTodayCount);
       const _otSorted = [..._otTrades].sort((a,b)=>new Date(a.date)-new Date(b.date));
       let _otStreak = 0;
       for (let i = _otSorted.length-1; i >= 0; i--) {
@@ -5577,7 +5584,7 @@ function saveTrade() {
         else break;
       }
       if (_otStreak >= _otLims.maxLosses)
-        _otStreakMsg = '⚠️ Masz ' + _otStreak + ' strat z rzędu!\nLimit: ' + _otLims.maxLosses + '\n\nCzy na pewno chcesz wejść?';
+        _otStreakMsg = t('ot_loss_streak').replace('{n}', _otStreak).replace('{limit}', _otLims.maxLosses);
     }
   }
 
@@ -5673,7 +5680,7 @@ function saveTrade() {
   renderDashboard();
   renderTrades();
   renderSummary();
-  toast('Transakcja zapisana ✓', 'success');
+  toast(t('toast_trade_saved'), 'success');
   } // end _doSave
 
   function _afterDailyCheck() {
@@ -5685,7 +5692,7 @@ function saveTrade() {
     _afterDailyCheck();
   }
   if (_rulesCheck.broken) {
-    showConfirm('⚠️ Łamiesz regułę:\n' + _rulesCheck.messages.join('\n') + '\n\nCzy na pewno chcesz zapisać?', _afterRulesCheck);
+    showConfirm(t('rules_broken_msg').replace('{rules}', _rulesCheck.messages.join('\n')), _afterRulesCheck);
     return;
   }
   _afterRulesCheck();
@@ -5698,7 +5705,7 @@ function deleteTrade(id) {
     renderDashboard();
     renderTrades();
     renderSummary();
-    toast('Transakcja usunięta', 'success');
+    toast(t('toast_trade_deleted'), 'success');
   });
 }
 
@@ -6102,7 +6109,7 @@ function detailDeleteCurrent() {
     renderDashboard();
     renderTrades();
     renderSummary();
-    toast('Transakcja usunięta', 'success');
+    toast(t('toast_trade_deleted'), 'success');
   });
 }
 
@@ -8927,6 +8934,75 @@ const T = {
     page_journal:    '📔 Rutyna dnia',
     // Filter
     filter_all_emotions: '🧠 Emocje: Wszystkie',
+    // Emotions page
+    emotions_title:        '🧠 Analiza emocjonalna',
+    emotions_pre_label:    'Emocja przed wejściem',
+    emotions_post_label:   'Emocja po zamknięciu',
+    emotions_chart_title:  'Win rate wg emocji',
+    emotions_heatmap_title:'Heatmapa emocji',
+    emotions_weekly_title: 'Przegląd tygodnia',
+    emotions_weekly_empty: 'Brak przeglądów tygodnia',
+    emotions_no_data:      'Brak danych emocjonalnych',
+    emotions_no_data_hint: 'Zacznij dodawać emocje do transakcji (pole "Emocja przed wejściem" i "Emocja po zamknięciu" w formularzu transakcji)',
+    emotions_add_btn:      'Dodaj transakcję z emocjami',
+    emotions_empty_hint:   'Dodaj transakcje aby zobaczyć analizę emocjonalną',
+    emotions_table_empty:  'Brak danych — uzupełnij emocje w transakcjach',
+    emotions_col_emotion:  'Emocja',
+    emotions_col_avg_pnl:  'Śr. P&L',
+    emotions_col_sum_pnl:  'Suma P&L',
+    emotions_trades_with:  'Transakcji z emocjami',
+    emotions_coverage:     'pokrycia',
+    emotions_best:         'Najlepsza emocja',
+    emotions_worst:        'Najgorsza emocja',
+    emotions_sum:          'Suma',
+    // Rules page
+    rules_title:           'Reguły tradingowe',
+    rules_add:             '+ Dodaj regułę',
+    rules_empty:           'Brak reguł — dodaj pierwszą',
+    rule_type_max_daily:   'Maks. transakcji dziennie',
+    rule_type_max_losses:  'Maks. seria strat',
+    rule_type_stop_hour:   'Stop po godzinie',
+    rule_type_max_risk:    'Maks. ryzyko %',
+    rule_type_custom:      'Reguła własna',
+    rules_reminder_label:  '(tylko przypomnienie — nie blokuje)',
+    // Library page
+    library_title:         '📚 Biblioteka strategii',
+    library_add:           '+ Dodaj materiał',
+    library_empty:         'Brak materiałów — dodaj pierwszy',
+    library_filter_all:    'Wszystkie',
+    library_filter_pdf:    'PDF',
+    library_filter_video:  'Wideo',
+    library_filter_article:'Artykuł',
+    library_url_hint:      'Lub wklej URL (YouTube, artykuł)',
+    library_download:      'Pobierz',
+    // Journal page
+    journal_title:         '📔 Rutyna dnia',
+    journal_routine_title: 'Rutyna dzienna',
+    routine_step1:         'Plan poranny',
+    routine_step2:         'Przegląd rynku',
+    routine_step3:         'Plan transakcji',
+    routine_step4:         'Podsumowanie dnia',
+    routine_step5:         'Refleksja',
+    // Toast messages
+    toast_trade_saved:     'Transakcja zapisana ✓',
+    toast_trade_deleted:   'Transakcja usunięta',
+    toast_account_deleted: 'Konto usunięte',
+    toast_rule_deleted:    'Reguła usunięta',
+    toast_note_deleted:    'Notatka usunięta',
+    // Overtrading modal
+    ot_daily_limit:        '⚠️ Przekroczysz dzienny limit {n} transakcji!\n(Masz już {count})\n\nZapisać mimo to?',
+    ot_loss_streak:        '⚠️ Masz {n} strat z rzędu!\nLimit: {limit}\n\nNa pewno wchodzisz?',
+    rules_broken_msg:      '⚠️ Łamiesz regułę:\n{rules}\n\nNa pewno zapisać?',
+    ot_config_title:       'Overtrading Alert — konfiguracja',
+    ot_config_desc:        'Ustaw limity — aplikacja wyświetli ostrzeżenie po przekroczeniu',
+    ot_save_limits:        'Zapisz limity',
+    ot_popup_daily:        'Przekroczyłeś dzienny limit {n} transakcji!',
+    ot_popup_streak:       'UWAGA: {n} strat z rzędu!',
+    ot_popup_btn:          'Rozumiem',
+    rule_msg_max_daily:    'Maks. {lim} transakcji dziennie — masz już {count}',
+    rule_msg_max_losses:   'Nie wchodzisz po {lim} stratach — obecna passa strat: {streak}',
+    rule_msg_stop_hour:    'Stop trading o {hour}:00 — jest {now}',
+    rule_msg_max_risk:     'Ryzyko {pct}% przekracza limit {lim}%',
   },
   en: {
     // Nav
@@ -9182,6 +9258,75 @@ const T = {
     page_journal:    '📔 Daily Routine',
     // Filter
     filter_all_emotions: '🧠 Emotions: All',
+    // Emotions page
+    emotions_title:        '🧠 Emotional Analysis',
+    emotions_pre_label:    'Emotion before entry',
+    emotions_post_label:   'Emotion after close',
+    emotions_chart_title:  'Win rate by emotion',
+    emotions_heatmap_title:'Emotion heatmap',
+    emotions_weekly_title: 'Weekly review',
+    emotions_weekly_empty: 'No weekly reviews yet',
+    emotions_no_data:      'No emotion data',
+    emotions_no_data_hint: 'Start adding emotions to trades (fields "Emotion before entry" and "Emotion after close" in the trade form)',
+    emotions_add_btn:      'Add trade with emotions',
+    emotions_empty_hint:   'Add trades to see emotional analysis',
+    emotions_table_empty:  'No data — fill in emotions in trades',
+    emotions_col_emotion:  'Emotion',
+    emotions_col_avg_pnl:  'Avg P&L',
+    emotions_col_sum_pnl:  'Total P&L',
+    emotions_trades_with:  'Trades with emotions',
+    emotions_coverage:     'coverage',
+    emotions_best:         'Best emotion',
+    emotions_worst:        'Worst emotion',
+    emotions_sum:          'Total',
+    // Rules page
+    rules_title:           'Trading Rules',
+    rules_add:             '+ Add rule',
+    rules_empty:           'No rules — add your first',
+    rule_type_max_daily:   'Max daily trades',
+    rule_type_max_losses:  'Max loss streak',
+    rule_type_stop_hour:   'Stop after hour',
+    rule_type_max_risk:    'Max risk %',
+    rule_type_custom:      'Custom rule',
+    rules_reminder_label:  '(reminder only — does not block)',
+    // Library page
+    library_title:         '📚 Strategy Library',
+    library_add:           '+ Add material',
+    library_empty:         'No materials — add your first',
+    library_filter_all:    'All',
+    library_filter_pdf:    'PDF',
+    library_filter_video:  'Video',
+    library_filter_article:'Article',
+    library_url_hint:      'Or paste a URL (YouTube, article link)',
+    library_download:      'Download',
+    // Journal page
+    journal_title:         '📔 Daily Routine',
+    journal_routine_title: 'Daily Routine',
+    routine_step1:         'Morning plan',
+    routine_step2:         'Market review',
+    routine_step3:         'Trade plan',
+    routine_step4:         'End of day review',
+    routine_step5:         'Reflection',
+    // Toast messages
+    toast_trade_saved:     'Trade saved ✓',
+    toast_trade_deleted:   'Trade deleted',
+    toast_account_deleted: 'Account deleted',
+    toast_rule_deleted:    'Rule deleted',
+    toast_note_deleted:    'Note deleted',
+    // Overtrading modal
+    ot_daily_limit:        '⚠️ You will exceed the daily limit of {n} trades!\n(You already have {count})\n\nSave anyway?',
+    ot_loss_streak:        '⚠️ You have {n} consecutive losses!\nLimit: {limit}\n\nAre you sure you want to enter?',
+    rules_broken_msg:      '⚠️ You are breaking a rule:\n{rules}\n\nAre you sure you want to save?',
+    ot_config_title:       'Overtrading Alert — settings',
+    ot_config_desc:        'Set limits — the app will warn you when exceeded',
+    ot_save_limits:        'Save limits',
+    ot_popup_daily:        'You have exceeded the daily limit of {n} trades!',
+    ot_popup_streak:       'WARNING: {n} consecutive losses!',
+    ot_popup_btn:          'Got it',
+    rule_msg_max_daily:    'Max {lim} trades per day — you already have {count}',
+    rule_msg_max_losses:   'No entry after {lim} losses — current streak: {streak}',
+    rule_msg_stop_hour:    'Stop trading at {hour}:00 — current time: {now}',
+    rule_msg_max_risk:     'Risk {pct}% exceeds limit of {lim}%',
   }
 };
 
@@ -14260,7 +14405,7 @@ function deleteRule(id) {
   showConfirm('Usunąć tę regułę?', () => {
     saveRules(getRules().filter(r => r.id !== id));
     renderRules();
-    toast('Reguła usunięta', 'success');
+    toast(t('toast_rule_deleted'), 'success');
   });
 }
 function renderRules() {
@@ -14268,7 +14413,7 @@ function renderRules() {
   if (!el) return;
   const rules = getRules();
   if (!rules.length) {
-    el.innerHTML = '<div style="color:var(--text3);font-size:13px;text-align:center;padding:20px">Brak reguł — dodaj pierwszą</div>';
+    el.innerHTML = `<div style="color:var(--text3);font-size:13px;text-align:center;padding:20px">${t('rules_empty')}</div>`;
     return;
   }
   el.innerHTML = rules.map(r => {
@@ -14281,10 +14426,10 @@ function renderRules() {
     return `<div class="summary-card" style="margin-bottom:8px;display:flex;align-items:center;gap:12px;padding:10px 14px">
       <span style="font-size:20px">${icon}</span>
       <div style="flex:1;min-width:0">
-        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px">${r.label}${isCustom ? '<span style="margin-left:6px;color:var(--amber);font-size:10px;text-transform:none;letter-spacing:0">(tylko przypomnienie — nie blokuje)</span>' : ''}</div>
+        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px">${r.label}${isCustom ? `<span style="margin-left:6px;color:var(--amber);font-size:10px;text-transform:none;letter-spacing:0">${t('rules_reminder_label')}</span>` : ''}</div>
         <div style="font-size:13px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${desc}">${desc}</div>
       </div>
-      <button class="icon-btn del" onclick="deleteRule('${r.id}')" title="Usuń regułę" style="flex-shrink:0">🗑</button>
+      <button class="icon-btn del" onclick="deleteRule('${r.id}')" title="${t('delete')}" style="flex-shrink:0">🗑</button>
     </div>`;
   }).join('');
 }
@@ -14307,17 +14452,17 @@ function checkRulesBeforeSave() {
     if (r.type === 'max-daily') {
       const lim = parseInt(r.value);
       if (!isNaN(lim) && todayCount >= lim) {
-        broken.push(r); messages.push('Maks. ' + lim + ' transakcji dziennie — masz już ' + todayCount);
+        broken.push(r); messages.push(t('rule_msg_max_daily').replace('{lim}', lim).replace('{count}', todayCount));
       }
     } else if (r.type === 'max-losses') {
       const lim = parseInt(r.value);
       if (!isNaN(lim) && lossStreak >= lim) {
-        broken.push(r); messages.push('Nie wchodzisz po ' + lim + ' stratach — obecna passa strat: ' + lossStreak);
+        broken.push(r); messages.push(t('rule_msg_max_losses').replace('{lim}', lim).replace('{streak}', lossStreak));
       }
     } else if (r.type === 'stop-hour') {
       const stopH = parseInt(r.value);
       if (!isNaN(stopH) && nowHour >= stopH) {
-        broken.push(r); messages.push('Stop trading o ' + r.value + ':00 — jest ' + nowHour + ':' + String(new Date().getMinutes()).padStart(2,'0'));
+        broken.push(r); messages.push(t('rule_msg_stop_hour').replace('{hour}', r.value).replace('{now}', nowHour + ':' + String(new Date().getMinutes()).padStart(2,'0')));
       }
     } else if (r.type === 'max-risk') {
       const limitPct = parseFloat(r.value);
@@ -14330,7 +14475,7 @@ function checkRulesBeforeSave() {
         const riskAmount = Math.abs(entry - sl) * size;
         const riskPct = (riskAmount / cap) * 100;
         if (riskPct > limitPct) {
-          broken.push(r); messages.push('Ryzyko ' + riskPct.toFixed(1) + '% przekracza limit ' + limitPct + '%');
+          broken.push(r); messages.push(t('rule_msg_max_risk').replace('{pct}', riskPct.toFixed(1)).replace('{lim}', limitPct));
         }
       }
     }
@@ -16420,7 +16565,7 @@ function filterLibrary(type) {
   let files = getLibraryFiles();
   if (type !== 'all') files = files.filter(f => f.type === type || (type === 'MQ4' && (f.type === 'MQ4' || f.type === 'MQ5')));
   if (!files.length) {
-    el.innerHTML = `<div style="text-align:center;padding:60px 20px;color:var(--text3)"><div style="font-size:48px;margin-bottom:16px">📂</div><div style="font-size:16px;font-weight:600;margin-bottom:8px">${type === 'all' ? 'Admin nie dodał jeszcze materiałów' : 'Brak materiałów typu ' + type}</div></div>`;
+    el.innerHTML = `<div style="text-align:center;padding:60px 20px;color:var(--text3)"><div style="font-size:48px;margin-bottom:16px">📂</div><div style="font-size:16px;font-weight:600;margin-bottom:8px">${type === 'all' ? t('library_empty') : t('library_empty')}</div></div>`;
     return;
   }
   const adminMode = (typeof isAdmin === 'function') ? isAdmin() : false;
@@ -16442,32 +16587,32 @@ function filterLibrary(type) {
       </div>
       ${safeDesc ? `<div style="font-size:12px;color:var(--text2);line-height:1.5">${safeDesc}</div>` : ''}
       <div style="display:flex;gap:8px;margin-top:auto">
-        <button class="btn-sm btn-accent" onclick="downloadLibraryFile('${f.id}')" style="flex:1;font-size:12px">⬇ Pobierz</button>
+        <button class="btn-sm btn-accent" onclick="downloadLibraryFile('${f.id}')" style="flex:1;font-size:12px">⬇ ${t('library_download')}</button>
         ${adminMode ? `<button class="btn-sm" onclick="deleteLibraryFile('${f.id}')" style="color:var(--red);border-color:var(--red);font-size:12px">🗑</button>` : ''}
       </div>
     </div>`;
   }).join('')}</div>`;
 }
 
-const _LIB_MAX_BYTES = 400 * 1024; // 400 KB — localStorage limit protection
+const _LIB_MAX_BYTES = 50 * 1024 * 1024; // 50 MB — Supabase Storage limit
 function libPreviewFile() {
   const input = document.getElementById('lib-file');
   const info = document.getElementById('lib-file-info');
   if (!input || !input.files.length) { if(info) info.textContent = ''; return; }
   const file = input.files[0];
-  const sizeKB = (file.size / 1024).toFixed(0);
+  const sizeStr = file.size > 1024*1024 ? (file.size/1024/1024).toFixed(1)+' MB' : (file.size/1024).toFixed(0)+' KB';
   if (info) {
     if (file.size > _LIB_MAX_BYTES) {
-      info.textContent = file.name + ' (' + sizeKB + ' KB) — ZA DUŻY!';
+      info.textContent = file.name + ' (' + sizeStr + ') — ZA DUŻY! (limit 50 MB)';
       info.style.color = 'var(--red)';
     } else {
-      info.textContent = file.name + ' (' + sizeKB + ' KB)';
+      info.textContent = file.name + ' (' + sizeStr + ')';
       info.style.color = 'var(--green)';
     }
   }
 }
 
-function addLibraryFile() {
+async function addLibraryFile() {
   const title = document.getElementById('lib-title')?.value?.trim() || '';
   const type  = document.getElementById('lib-type')?.value || 'Inne';
   const desc  = document.getElementById('lib-desc')?.value?.trim() || '';
@@ -16476,59 +16621,69 @@ function addLibraryFile() {
   if (!title) return toast('Podaj tytuł materiału', 'error');
   const statusEl = document.getElementById('lib-upload-status');
   const addBtn = document.getElementById('lib-add-btn');
-  const doAdd = (base64) => {
-    const file = {
-      id: genId(), title, type, desc,
-      url: url || null,
-      base64: base64 || null,
-      filename: fileInput?.files?.[0]?.name || null,
-      createdAt: Date.now(),
-    };
-    const files = getLibraryFiles();
-    files.unshift(file);
-    saveLibraryFiles(files);
-    // Clear form
-    ['lib-title','lib-desc','lib-url'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
-    if (fileInput) fileInput.value = '';
-    const info = document.getElementById('lib-file-info'); if(info) info.textContent='';
-    if (statusEl) statusEl.textContent = '';
-    if (addBtn) addBtn.disabled = false;
-    renderLibrary();
-    toast('Materiał dodany do biblioteki ✓', 'success');
+  const newFile = {
+    id: genId(), title, type, desc,
+    url: url || null,
+    base64: null,
+    storagePath: null,
+    filename: fileInput?.files?.[0]?.name || null,
+    createdAt: Date.now(),
   };
   if (fileInput && fileInput.files.length) {
     const f = fileInput.files[0];
-    if (f.size > _LIB_MAX_BYTES) {
-      return toast('Plik zbyt duży (' + (f.size/1024).toFixed(0) + ' KB). Limit: ' + (_LIB_MAX_BYTES/1024) + ' KB.\nPodaj URL pliku zamiast uploadu — localStorage nie udźwignie dużych plików.', 'error');
-    }
+    if (f.size > _LIB_MAX_BYTES) return toast('Plik zbyt duży. Limit: 50 MB', 'error');
     if (addBtn) addBtn.disabled = true;
-    if (statusEl) statusEl.textContent = 'Konwertowanie pliku...';
-    const reader = new FileReader();
-    reader.onload = e => doAdd(e.target.result);
-    reader.onerror = () => { toast('Błąd odczytu pliku', 'error'); if(addBtn) addBtn.disabled=false; if(statusEl) statusEl.textContent=''; };
-    reader.readAsDataURL(f);
-  } else if (url) {
-    doAdd(null);
-  } else {
-    toast('Dodaj plik lub podaj URL', 'error');
+    if (statusEl) statusEl.textContent = 'Wysyłanie...';
+    const ext = f.name.split('.').pop();
+    const path = (state.currentUser||'anon') + '/' + genId() + '.' + ext;
+    const { error } = await _sb.storage.from('library').upload(path, f);
+    if (error) {
+      toast('Błąd uploadu: ' + error.message, 'error');
+      if (addBtn) addBtn.disabled = false;
+      if (statusEl) statusEl.textContent = '';
+      return;
+    }
+    newFile.storagePath = path;
+    newFile.filename = f.name;
+  } else if (!url) {
+    return toast('Dodaj plik lub podaj URL', 'error');
   }
+  const files = getLibraryFiles();
+  files.unshift(newFile);
+  saveLibraryFiles(files);
+  ['lib-title','lib-desc','lib-url'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  if (fileInput) fileInput.value = '';
+  const info = document.getElementById('lib-file-info'); if(info) info.textContent='';
+  if (statusEl) statusEl.textContent = '';
+  if (addBtn) addBtn.disabled = false;
+  renderLibrary();
+  toast('Materiał dodany do biblioteki ✓', 'success');
 }
 
 function deleteLibraryFile(id) {
-  showConfirm('Usunąć ten materiał z biblioteki?', () => {
-    saveLibraryFiles(getLibraryFiles().filter(f => f.id !== id));
+  showConfirm('Usunąć ten materiał z biblioteki?', async () => {
+    const f = getLibraryFiles().find(x => x.id === id);
+    if (f?.storagePath) {
+      await _sb.storage.from('library').remove([f.storagePath]);
+    }
+    saveLibraryFiles(getLibraryFiles().filter(x => x.id !== id));
     filterLibrary(_libFilter);
     toast('Materiał usunięty', 'success');
   });
 }
 
-function downloadLibraryFile(id) {
+async function downloadLibraryFile(id) {
   const f = getLibraryFiles().find(f => f.id === id);
   if (!f) return toast('Nie znaleziono pliku', 'error');
-  if (f.base64) {
+  if (f.storagePath) {
+    const { data, error } = await _sb.storage.from('library').createSignedUrl(f.storagePath, 3600);
+    if (error) { toast('Błąd pobierania', 'error'); return; }
+    window.open(data.signedUrl, '_blank');
+  } else if (f.base64) {
+    // fallback dla starych plików base64
     const a = document.createElement('a');
     a.href = f.base64;
-    a.download = f.filename || (f.title + '.' + (f.type||'').toLowerCase().replace('mq4','mq4').replace('mq5','mq5') || 'file');
+    a.download = f.filename || (f.title + '.' + (f.type||'').toLowerCase() || 'file');
     document.body.appendChild(a);
     a.click();
     setTimeout(() => a.remove(), 500);
