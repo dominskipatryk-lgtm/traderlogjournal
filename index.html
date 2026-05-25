@@ -384,15 +384,15 @@ body.light-mode tr:nth-child(even) { background: rgba(0,0,0,.02); }
 /* Trades table */
 .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
 .section-title { font-family: var(--font-head); font-size: 18px; font-weight: 700; }
-.table-wrap { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
-.trades-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.table-wrap { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow-x: auto; overflow-y: hidden; }
+.trades-table { width: 100%; border-collapse: collapse; font-size: 12px; }
 .trades-table th {
-  padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 500;
+  padding: 8px 12px; text-align: left; font-size: 10px; font-weight: 500;
   color: var(--text3); text-transform: uppercase; letter-spacing: .6px;
   border-bottom: 1px solid var(--border); background: var(--bg3);
-  font-family: var(--font-mono);
+  font-family: var(--font-mono); white-space: nowrap;
 }
-.trades-table td { padding: 13px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.trades-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; white-space: nowrap; }
 .trades-table tr:last-child td { border-bottom: none; }
 .trades-table tr:hover td { background: var(--bg3); }
 .badge {
@@ -1186,34 +1186,34 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
       <button class="nav-btn" onclick="showPage('trades')" data-i18n="nav_trades">
         <span class="nav-icon">📋</span><span class="nav-label">Transakcje</span>
       </button>
-      <button class="nav-btn" onclick="showPage('journal')" id="nav-journal">
+      <button class="nav-btn" onclick="showPage('journal')" id="nav-journal" data-i18n="nav_journal">
         <span class="nav-icon">📔</span><span class="nav-label">Rutyna dnia</span>
       </button>
       <button class="nav-btn" onclick="showPage('analysis')" data-i18n="nav_analysis">
         <span class="nav-icon">🔍</span><span class="nav-label">Analiza</span>
       </button>
 
-      <div class="sidebar-section-label">Statystyki</div>
+      <div class="sidebar-section-label" data-i18n="sec_stats">Statystyki</div>
       <button class="nav-btn" onclick="showPage('summary')" data-i18n="nav_summary">
         <span class="nav-icon">📈</span><span class="nav-label">Statystyki</span>
       </button>
-      <button class="nav-btn" onclick="showPage('emotions')" id="nav-emotions">
+      <button class="nav-btn" onclick="showPage('emotions')" id="nav-emotions" data-i18n="nav_emotions">
         <span class="nav-icon">🧠</span><span class="nav-label">Emocje & Psychologia</span>
       </button>
 
-      <div class="sidebar-section-label">Zasoby</div>
-      <button class="nav-btn" onclick="showPage('library')" id="nav-library">
+      <div class="sidebar-section-label" data-i18n="sec_resources">Zasoby</div>
+      <button class="nav-btn" onclick="showPage('library')" id="nav-library" data-i18n="nav_library">
         <span class="nav-icon">📚</span><span class="nav-label">Biblioteka</span>
       </button>
-      <button class="nav-btn" onclick="showPage('tools')" id="nav-tools">
+      <button class="nav-btn" onclick="showPage('tools')" id="nav-tools" data-i18n="nav_tools">
         <span class="nav-icon">🛠</span><span class="nav-label">Narzędzia</span>
       </button>
 
-      <div class="sidebar-section-label">Konto</div>
+      <div class="sidebar-section-label" data-i18n="sec_account">Konto</div>
       <button class="nav-btn" onclick="showPage('accounts')" data-i18n="nav_accounts">
         <span class="nav-icon">🏦</span><span class="nav-label">Konta</span>
       </button>
-      <button class="nav-btn" onclick="showPage('drafts')" id="nav-drafts">
+      <button class="nav-btn" onclick="showPage('drafts')" id="nav-drafts" data-i18n="nav_drafts">
         <span class="nav-icon">📝</span>
         <span class="nav-label">Szkice</span>
         <span id="nav-draft-badge" style="display:none;background:var(--amber);color:#000;border-radius:10px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:auto"></span>
@@ -1221,7 +1221,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
       <button class="nav-btn" onclick="showPage('settings')" id="nav-settings" data-i18n="nav_settings">
         <span class="nav-icon">⚙️</span><span class="nav-label">Ustawienia</span>
       </button>
-      <button class="nav-btn" onclick="showPage('admin')" id="nav-admin" style="display:none">
+      <button class="nav-btn" onclick="showPage('admin')" id="nav-admin" style="display:none" data-i18n="nav_admin">
         <span class="nav-icon">🔧</span><span class="nav-label">Admin</span>
       </button>
     </nav>
@@ -1335,7 +1335,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
       <div class="page-title" data-i18n="nav_trades">Transakcje</div>
       <div class="page-subtitle" data-i18n="trades_subtitle">Wszystkie transakcje aktywnego konta</div>
       <div class="filter-bar">
-        <input class="search-input" id="search-input" placeholder="🔍 szukaj instrumentu..." oninput="renderTrades()">
+        <input class="search-input" id="search-input" data-i18n-placeholder="ph_search_trades" placeholder="🔍 szukaj instrumentu..." oninput="renderTrades()">
         <select class="filter-select" id="filter-dir" onchange="renderTrades()">
           <option value="">Kierunek: Wszystkie</option>
           <option value="LONG">LONG</option>
@@ -1473,6 +1473,10 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
         <button class="tools-tab" onclick="switchToolsTab('brokers')" id="ttab-brokers"
           style="padding:10px 20px;background:none;border:none;color:var(--text3);font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px">
           💱 Kalkulator prowizji
+        </button>
+        <button class="tools-tab" onclick="switchToolsTab('rules')" id="ttab-rules"
+          style="padding:10px 20px;background:none;border:none;color:var(--text3);font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px">
+          📏 Reguły
         </button>
       </div>
 
@@ -1621,6 +1625,40 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
         </div>
       </div>
 
+      <!-- TAB: Reguły osobiste tradera -->
+      <div id="tools-tab-rules" style="display:none">
+        <div class="page-title">📏 Moje reguły tradingowe</div>
+        <div class="page-subtitle">Zdefiniuj zasady — aplikacja sprawdzi czy je łamiesz przy zapisie transakcji</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:960px;margin-top:20px">
+          <div class="summary-card">
+            <div class="summary-card-title" style="color:var(--accent)">➕ Dodaj nową regułę</div>
+            <div style="display:flex;flex-direction:column;gap:10px;margin-top:12px">
+              <div>
+                <label class="form-label-modal" style="font-size:11px">Typ reguły</label>
+                <select class="form-select-modal" id="rule-type" onchange="updateRuleValueHint()">
+                  <option value="max-risk">Maks. ryzyko na trade (%)</option>
+                  <option value="max-losses">Nie wchodzę po X stratach</option>
+                  <option value="stop-hour">Stop trading o godzinie</option>
+                  <option value="max-daily">Maks. transakcji dziennie</option>
+                  <option value="custom">Inne (własna zasada)</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label-modal" id="rule-value-label" style="font-size:11px">Wartość / opis</label>
+                <input class="form-input-modal" id="rule-value" data-i18n-placeholder="ph_rule_label" placeholder="np. 2 (dla %) lub opis zasady" style="font-size:13px">
+              </div>
+              <button class="btn-sm btn-accent" onclick="addRule()" style="width:100%">+ Dodaj regułę</button>
+            </div>
+          </div>
+          <div>
+            <div class="summary-card-title" style="color:var(--amber);margin-bottom:12px">✅ Aktywne reguły</div>
+            <div id="rules-list-container">
+              <div style="color:var(--text3);font-size:13px;text-align:center;padding:20px">Brak reguł — dodaj pierwszą</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
     <!-- SETTINGS PAGE -->
     <div id="page-settings" class="page">
       <div class="page-title" data-i18n="sett_title">Ustawienia konta</div>
@@ -1636,7 +1674,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
           </div>
           <div class="form-group-modal" style="margin-bottom:14px">
             <label class="form-label-modal">Imię / Nazwa wyświetlana</label>
-            <input class="form-input-modal" id="sett-name" placeholder="Twoja nazwa">
+            <input class="form-input-modal" id="sett-name" data-i18n-placeholder="ph_sett_name" placeholder="Twoja nazwa wyświetlana">
           </div>
           <div class="form-group-modal" style="margin-bottom:18px">
             <label class="form-label-modal">E-mail</label>
@@ -1664,7 +1702,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
           <button class="btn-sm" onclick="cleanOldScreenshots()" style="font-size:11px;margin-right:8px">
             🗜 Usuń screenshoty starsze niż 30 dni
           </button>
-          <button class="btn-sm" onclick="if(confirm('Usunąć WSZYSTKIE screenshoty?\\nDane transakcji pozostaną.'))cleanAllScreenshots()" style="font-size:11px;margin-right:8px;color:var(--red);border-color:var(--red)">
+          <button class="btn-sm" onclick="showConfirm('Usunąć WSZYSTKIE screenshoty?\nDane transakcji pozostaną.', cleanAllScreenshots)" style="font-size:11px;margin-right:8px;color:var(--red);border-color:var(--red)">
             🗑 Usuń WSZYSTKIE screenshoty
           </button>
           <button class="btn-sm btn-accent" onclick="backupToGoogleDrive&&backupToGoogleDrive()" style="font-size:11px">
@@ -1830,7 +1868,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
       </div>
       <!-- Filters -->
       <div class="filter-bar" style="margin-bottom:16px">
-        <input class="search-input" id="analysis-search" placeholder="🔍 szukaj..." oninput="renderAnalysisList()">
+        <input class="search-input" id="analysis-search" data-i18n-placeholder="ph_search_analysis" placeholder="🔍 szukaj..." oninput="renderAnalysisList()">
         <select class="filter-select" id="analysis-filter-instr" onchange="renderAnalysisList()">
           <option value="">Wszystkie instrumenty</option>
         </select>
@@ -2386,7 +2424,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
                   <button onclick="openReminderModal('Plan sesji: ' + formatDatePL(_jSelectedDate), _jSelectedDate, 'journal')" class="btn-sm" style="font-size:11px">🔔 Przypomnij mi</button>
                   <button onclick="createAnalysisFromJournal()" class="btn-sm" style="font-size:11px">📈 Utwórz analizę</button>
                 </div>
-                <button onclick="saveJournalEntry();toast('Rutyna przed sesją zapisana ✓','success')" class="btn-sm btn-accent" style="font-size:12px">💾 Zapisz rutynę</button>
+                <button onclick="saveJournalEntry();toast(t('toast_journal_pre_saved'),'success')" class="btn-sm btn-accent" style="font-size:12px">💾 Zapisz rutynę</button>
               </div>
             </div>
 
@@ -2547,14 +2585,14 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
                 <div style="display:flex;justify-content:space-between;align-items:center">
                   <span style="font-size:12px;color:var(--text3)">Sesja zamknięta — zapisz wpis i wyloguj się</span>
                   <div style="display:flex;gap:8px">
-                    <button onclick="saveJournalEntry();toast('Wpis zapisany ✓','success')" class="btn-sm btn-accent" style="font-size:12px">💾 Zapisz wpis</button>
+                    <button onclick="saveJournalEntry();toast(t('toast_journal_entry_saved'),'success')" class="btn-sm btn-accent" style="font-size:12px">💾 Zapisz wpis</button>
                     <button onclick="confirmAndLogout()" style="padding:6px 14px;background:var(--red);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">🚪 Wyloguj się</button>
                   </div>
                 </div>
               </div>
 
               <div style="display:flex;justify-content:flex-end;margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
-                <button onclick="saveJournalEntry();toast('Zamknięcie sesji zapisane ✓','success')" class="btn-sm btn-accent" style="font-size:12px">💾 Zapisz zamknięcie sesji</button>
+                <button onclick="saveJournalEntry();toast(t('toast_journal_post_saved'),'success')" class="btn-sm btn-accent" style="font-size:12px">💾 Zapisz zamknięcie sesji</button>
               </div>
             </div>
           </div>
@@ -2569,7 +2607,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
             <div style="display:flex;gap:6px;margin-bottom:12px">
               <button class="btn-sm btn-accent" onclick="openNewNote()" style="flex:1;font-size:12px">+ Nowa notatka</button>
             </div>
-            <input class="form-input-modal" id="notes-search" placeholder="🔍 szukaj notatek..." oninput="renderNotesList()" style="margin-bottom:10px;font-size:12px">
+            <input class="form-input-modal" id="notes-search" data-i18n-placeholder="ph_search_notes" placeholder="🔍 szukaj notatek..." oninput="renderNotesList()" style="margin-bottom:10px;font-size:12px">
             <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px" id="notes-category-filters">
               <button class="notes-cat-btn active" data-cat="" onclick="setNotesCat(this,'')" style="padding:3px 8px;border-radius:6px;font-size:11px;border:1px solid var(--border);background:var(--accent-dim);color:var(--accent);cursor:pointer">Wszystkie</button>
               <button class="notes-cat-btn" data-cat="strategy" onclick="setNotesCat(this,'strategy')" style="padding:3px 8px;border-radius:6px;font-size:11px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);cursor:pointer">🎯 Strategie</button>
@@ -2591,7 +2629,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
             <div id="note-editor-content" style="display:none">
               <input type="hidden" id="note-id">
               <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
-                <input id="note-title" class="form-input-modal" placeholder="Tytuł notatki..." style="flex:1;font-size:15px;font-weight:600">
+                <input id="note-title" class="form-input-modal" data-i18n-placeholder="ph_note_title" placeholder="Tytuł notatki…" style="flex:1;font-size:15px;font-weight:600">
                 <select id="note-category" class="form-select-modal" style="font-size:12px;width:auto">
                   <option value="strategy">🎯 Strategie</option>
                   <option value="setup">📐 Setupy</option>
@@ -2607,8 +2645,8 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
               <div style="margin-bottom:8px">
                 <input id="note-tags" class="form-input-modal" placeholder="Tagi: oddziel przecinkiem (np. XAUUSD, SMC, setup)" style="font-size:12px">
               </div>
-              <textarea id="note-content" class="form-input-modal" style="min-height:340px;line-height:1.8;font-size:14px"
-                placeholder="Pisz swoje notatki... Możesz używać # nagłówków, - list, **pogrubienia**"></textarea>
+              <textarea id="note-content" class="form-input-modal" data-i18n-placeholder="ph_note_content" style="min-height:340px;line-height:1.8;font-size:14px"
+                placeholder="Pisz swoje notatki tutaj…"></textarea>
               <div style="margin-top:10px">
                 <div style="font-size:11px;color:var(--text3);margin-bottom:6px">Screenshoty</div>
                 <div id="note-screenshots-preview" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
@@ -2690,15 +2728,15 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
             <div style="display:flex;flex-direction:column;gap:16px">
               <div>
                 <label style="font-size:12px;font-weight:700;color:var(--text);display:block;margin-bottom:6px">✅ Co poszło dobrze? (Twoja ocena)</label>
-                <textarea id="weekly-q1" class="form-input-modal" style="min-height:70px;line-height:1.7" placeholder="Które transakcje i decyzje były naprawdę dobre? Dlaczego?"></textarea>
+                <textarea id="weekly-q1" class="form-input-modal" data-i18n-placeholder="ph_weekly_strengths" style="min-height:70px;line-height:1.7" placeholder="Które transakcje i decyzje były naprawdę dobre? Dlaczego?"></textarea>
               </div>
               <div>
                 <label style="font-size:12px;font-weight:700;color:var(--text);display:block;margin-bottom:6px">❌ Co poszło źle i co byś zmienił?</label>
-                <textarea id="weekly-q2" class="form-input-modal" style="min-height:70px;line-height:1.7" placeholder="Konkretne błędy, złamane zasady, emocjonalne decyzje..."></textarea>
+                <textarea id="weekly-q2" class="form-input-modal" data-i18n-placeholder="ph_weekly_weaknesses" style="min-height:70px;line-height:1.7" placeholder="Konkretne błędy, złamane zasady, emocjonalne decyzje..."></textarea>
               </div>
               <div>
                 <label style="font-size:12px;font-weight:700;color:var(--text);display:block;margin-bottom:6px">📌 Jedna konkretna zmiana na przyszły tydzień</label>
-                <textarea id="weekly-q3" class="form-input-modal" style="min-height:60px;line-height:1.7" placeholder="Np. 'Nie wchodzę po 3 stratach z rzędu' albo 'Sprawdzam NFP przed otwarciem'"></textarea>
+                <textarea id="weekly-q3" class="form-input-modal" data-i18n-placeholder="ph_weekly_plan" style="min-height:60px;line-height:1.7" placeholder="Np. 'Nie wchodzę po 3 stratach z rzędu' albo 'Sprawdzam NFP przed otwarciem'"></textarea>
               </div>
               <div>
                 <label style="font-size:12px;font-weight:700;color:var(--text);display:block;margin-bottom:8px">🎯 Czy trzymałeś swój plan tradingowy?</label>
@@ -2732,19 +2770,70 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 
     <!-- EMOTIONS PAGE (placeholder — pełna implementacja w Task 7) -->
     <div id="page-emotions" class="page">
-      <div class="page-title">🧠 Emocje & Psychologia</div>
+      <div class="page-title" data-i18n="page_emotions">🧠 Emocje & Psychologia</div>
       <div class="page-subtitle" id="emotions-subtitle">Analiza emocjonalna — emocje vs. P&L</div>
       <div id="emotions-content"></div>
     </div>
 
     <!-- LIBRARY PAGE (placeholder — pełna implementacja w Task 8) -->
     <div id="page-library" class="page">
-      <div class="page-title">📚 Biblioteka</div>
-      <div class="page-subtitle">Strategie i wskaźniki od admina — przeglądaj i pobieraj</div>
-      <div style="text-align:center;padding:60px 20px;color:var(--text3)">
-        <div style="font-size:48px;margin-bottom:16px">📚</div>
-        <div style="font-size:16px;font-weight:600;margin-bottom:8px">Biblioteka w budowie</div>
-        <div style="font-size:13px">Wkrótce: gotowe strategie i wskaźniki do pobrania i importu</div>
+      <div class="page-title" data-i18n="page_library">📚 Biblioteka strategii</div>
+      <div class="page-subtitle">Materiały od admina — strategie, wskaźniki i screenshoty do pobrania</div>
+
+      <!-- Admin: sekcja dodawania -->
+      <div id="library-admin-section" style="display:none;margin-bottom:24px">
+        <div class="summary-card" style="border-color:var(--accent)">
+          <div class="summary-card-title" style="color:var(--accent)">➕ Dodaj materiał do biblioteki</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px">
+            <div>
+              <label class="form-label-modal" style="font-size:11px">Tytuł</label>
+              <input class="form-input-modal" id="lib-title" data-i18n-placeholder="ph_lib_title" placeholder="np. Strategia ICT Orderblock" style="font-size:13px">
+            </div>
+            <div>
+              <label class="form-label-modal" style="font-size:11px">Typ materiału</label>
+              <select class="form-select-modal" id="lib-type" style="font-size:13px">
+                <option value="PDF">PDF</option>
+                <option value="MQ4">MQ4 / Expert Advisor</option>
+                <option value="Screenshot">Screenshot</option>
+                <option value="Inne">Inne</option>
+              </select>
+            </div>
+            <div style="grid-column:1/-1">
+              <label class="form-label-modal" style="font-size:11px">Opis</label>
+              <textarea class="form-input-modal" id="lib-desc" rows="2" placeholder="Krótki opis materiału..." style="font-size:13px;resize:vertical"></textarea>
+            </div>
+            <div>
+              <label class="form-label-modal" style="font-size:11px">Plik (PDF, MQ4, MQ5, PNG, JPG) <span style="color:var(--green)">— do 50 MB</span></label>
+              <input type="file" id="lib-file" accept=".pdf,.mq4,.mq5,.png,.jpg,.jpeg" class="form-input-modal" style="font-size:12px;padding:6px" onchange="libPreviewFile()">
+              <div id="lib-file-info" style="font-size:11px;color:var(--text3);margin-top:4px"></div>
+              <div style="font-size:11px;color:var(--text3);margin-top:2px">Lub podaj URL (YouTube, artykuł, Google Drive) poniżej</div>
+            </div>
+            <div>
+              <label class="form-label-modal" style="font-size:11px">Lub URL do pliku</label>
+              <input class="form-input-modal" id="lib-url" data-i18n-placeholder="ph_lib_url" placeholder="https://..." style="font-size:13px">
+            </div>
+          </div>
+          <div style="margin-top:14px;display:flex;gap:10px">
+            <button class="btn-sm btn-accent" onclick="addLibraryFile()" id="lib-add-btn" style="min-width:140px">+ Dodaj do biblioteki</button>
+            <span id="lib-upload-status" style="font-size:12px;color:var(--text3);align-self:center"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pasek filtrów -->
+      <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">
+        <button class="btn-sm btn-accent" id="lib-filter-all" onclick="filterLibrary('all')" style="font-size:12px">Wszystkie</button>
+        <button class="btn-sm" id="lib-filter-PDF" onclick="filterLibrary('PDF')" style="font-size:12px">PDF</button>
+        <button class="btn-sm" id="lib-filter-MQ4" onclick="filterLibrary('MQ4')" style="font-size:12px">MQ4</button>
+        <button class="btn-sm" id="lib-filter-Screenshot" onclick="filterLibrary('Screenshot')" style="font-size:12px">Screenshoty</button>
+      </div>
+
+      <!-- Lista plików -->
+      <div id="library-files-container">
+        <div style="text-align:center;padding:60px 20px;color:var(--text3)">
+          <div style="font-size:48px;margin-bottom:16px">📚</div>
+          <div style="font-size:16px;font-weight:600;margin-bottom:8px">Ładowanie...</div>
+        </div>
       </div>
     </div>
 
@@ -2792,6 +2881,17 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
   </main>
   </div><!-- /app-main -->
 </div><!-- /app -->
+
+<!-- CONFIRM MODAL -->
+<div class="modal-overlay" id="confirm-modal" role="dialog" aria-modal="true" aria-label="Potwierdzenie">
+  <div class="modal" style="max-width:440px">
+    <div id="confirm-modal-msg" style="white-space:pre-wrap;line-height:1.6;font-size:14px;padding:8px 0 24px"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn-sm" id="confirm-modal-no">Anuluj</button>
+      <button class="btn-sm btn-accent" id="confirm-modal-yes">Potwierdź</button>
+    </div>
+  </div>
+</div>
 
 <!-- TRADE MODAL -->
 <div class="modal-overlay" id="trade-modal" role="dialog" aria-modal="true" aria-label="Transakcja">
@@ -2998,7 +3098,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
               <span style="font-size:10px;color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">auto z cen · edytowalne</span>
             </label>
             <div style="position:relative">
-              <input class="form-input-modal" id="t-pnl" type="number" step="any" placeholder="wylicza się automatycznie" oninput="pnlManualEdit()" style="padding-right:80px">
+              <input class="form-input-modal" id="t-pnl" type="number" step="any" data-i18n-placeholder="ph_pnl_auto" placeholder="wylicza się automatycznie" oninput="pnlManualEdit()" style="padding-right:80px">
               <button onclick="autoPnl(true)" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:var(--bg4);border:1px solid var(--border2);border-radius:5px;color:var(--accent);font-size:10px;padding:3px 8px;cursor:pointer;font-family:var(--font-head);font-weight:600" title="Przelicz ponownie">↻ auto</button>
             </div>
           </div>
@@ -3050,11 +3150,11 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
         </div>
         <div class="form-group-modal full">
           <label class="form-label-modal">Analiza przed wejściem</label>
-          <textarea class="form-input-modal" id="t-pre" placeholder="Opisz swoją analizę przed otwarciem pozycji..."></textarea>
+          <textarea class="form-input-modal" id="t-pre" data-i18n-placeholder="ph_trade_pre" placeholder="Opisz swoją analizę przed otwarciem pozycji…"></textarea>
         </div>
         <div class="form-group-modal full">
           <label class="form-label-modal">Wnioski po zamknięciu</label>
-          <textarea class="form-input-modal" id="t-post" placeholder="Co poszło dobrze? Co można było zrobić lepiej?"></textarea>
+          <textarea class="form-input-modal" id="t-post" data-i18n-placeholder="ph_trade_post" placeholder="Co poszło dobrze? Co można było zrobić lepiej?"></textarea>
         </div>
         <div class="form-group-modal full">
           <label class="form-label-modal" style="margin-bottom:8px">🧠 Stan emocjonalny <span style="font-size:10px;color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">— przed wejściem</span></label>
@@ -3694,7 +3794,14 @@ function isCurrentAccountBot(accountId) {
 function getTrades(accountId) {
   const db = getDB();
   const key = state.currentUser + '_' + accountId;
-  return (db.trades || {})[key] || [];
+  let trades = (db.trades || {})[key] || [];
+  if (trades.some(t => t.date && t.date.length === 10)) {
+    trades = trades.map(t => t.date && t.date.length === 10 ? { ...t, date: t.date + 'T12:00' } : t);
+    if (!db.trades) db.trades = {};
+    db.trades[key] = trades;
+    saveDB(db);
+  }
+  return trades;
 }
 function saveTrades(accountId, arr) {
   const db = getDB();
@@ -3809,8 +3916,7 @@ function doLogout() {
 }
 
 function confirmAndLogout() {
-  if (!confirm('Wylogować się?')) return;
-  _executeLogout();
+  showConfirm(t('confirm_logout'), _executeLogout);
 }
 
 function _executeLogout() {
@@ -3845,8 +3951,8 @@ function _executeLogout() {
 // ===== DEMO DATA =====
 function seedDemoData() {
   const user = state.currentUser;
-  if (!user) { toast('Zaloguj się najpierw', 'error'); return; }
-  if (!confirm('Wygenerować 60 dni danych demo?\n\nZostaną dodane:\n• Konto "📊 Demo — 60 dni"\n• ~150 transakcji\n• Wpisy dziennika\n• Analizy rynkowe\n• Weekly reviews\n\nTwoje prawdziwe konta NIE zostaną zmienione.')) return;
+  if (!user) { toast(t('err_login_first'), 'error'); return; }
+  showConfirm('Wygenerować 60 dni danych demo?\n\nZostaną dodane:\n• Konto "📊 Demo — 60 dni"\n• ~150 transakcji\n• Wpisy dziennika\n• Analizy rynkowe\n• Weekly reviews\n\nTwoje prawdziwe konta NIE zostaną zmienione.', () => {
 
   const DEMO_ID = 'demo-seed-001';
 
@@ -3900,7 +4006,7 @@ function seedDemoData() {
 
   const trades = [], analyses = [], journalMap = {}, weeklyMap = {};
 
-  const today = new Date('2026-05-25');
+  const today = new Date(); // użyj dzisiejszej daty żeby overtrading alert działał z demo
   const start = new Date(today); start.setDate(start.getDate() - 60);
 
   for (let d = new Date(start); d <= today; d.setDate(d.getDate() + 1)) {
@@ -3945,7 +4051,7 @@ function seedDemoData() {
         tps:[], exit: exitP, pnl,
         tf: pick(tfs), setup: pick(setups),
         pre: pick(preTxts), post: pick(postTxts),
-        emotionPre:  pick(emotPre)+','+pick(emotPre),
+        emotionPre:  pick(emotPre),
         emotionPost: pick(emotPost),
         screenshots:[], mt4Ticket:null, linkedAnalysisId:null,
         updatedAt: new Date(dt).getTime(),
@@ -4039,24 +4145,26 @@ function seedDemoData() {
   renderDashboard(); renderTrades(); renderSummary();
   toast(`✅ Dane demo wygenerowane — ${trades.length} transakcji, ${analyses.length} analiz, ${Object.keys(journalMap).length} wpisów dziennika`, 'success');
   showPage('dashboard');
+  }); // end showConfirm
 }
 
 function clearDemoData() {
   const DEMO_ID = 'demo-seed-001';
   const user = state.currentUser;
   if (!user) return;
-  if (!confirm('Usunąć konto demo i wszystkie jego dane?')) return;
-  const db = getDB();
-  if (db.accounts) db.accounts[user] = (db.accounts[user]||[]).filter(a => a.id !== DEMO_ID);
-  if (db.trades) delete db.trades[user+'_'+DEMO_ID];
-  delete db['analyses_'+user+'_'+DEMO_ID];
-  saveDB(db);
-  if (state.currentAccountId === DEMO_ID) {
-    const remaining = getAccounts();
-    state.currentAccountId = remaining[0]?.id || null;
-  }
-  renderDashboard(); renderTrades();
-  toast('Konto demo usunięte', 'success');
+  showConfirm(t('confirm_delete_demo'), () => {
+    const db = getDB();
+    if (db.accounts) db.accounts[user] = (db.accounts[user]||[]).filter(a => a.id !== DEMO_ID);
+    if (db.trades) delete db.trades[user+'_'+DEMO_ID];
+    delete db['analyses_'+user+'_'+DEMO_ID];
+    saveDB(db);
+    if (state.currentAccountId === DEMO_ID) {
+      const remaining = getAccounts();
+      state.currentAccountId = remaining[0]?.id || null;
+    }
+    renderDashboard(); renderTrades();
+    toast(t('toast_demo_deleted'), 'success');
+  });
 }
 
 // ===== NAVIGATION =====
@@ -4097,10 +4205,19 @@ function showPage(page) {
   if (page === 'library') { if(typeof renderLibrary==='function') renderLibrary(); }
   // Aktualizuj tytuł w topstrip
   const PAGE_TITLES = {
-    dashboard:'Dashboard', trades:'Transakcje', journal:'Rutyna dnia', analysis:'Analiza',
-    summary:'Statystyki', emotions:'Emocje & Psychologia', library:'Biblioteka',
-    tools:'Narzędzia', accounts:'Konta', drafts:'Szkice', settings:'Ustawienia',
-    admin:'Admin', calendar:'Kalendarz'
+    dashboard:'Dashboard',
+    trades:    t('nav_trades'),
+    journal:   t('nav_journal'),
+    analysis:  t('nav_analysis').replace(/^\S+\s/,''),
+    summary:   t('nav_summary'),
+    emotions:  t('nav_emotions'),
+    library:   t('nav_library'),
+    tools:     t('nav_tools'),
+    accounts:  t('nav_accounts'),
+    drafts:    t('nav_drafts'),
+    settings:  t('nav_settings').replace(/^\S+\s/,''),
+    admin:     t('nav_admin'),
+    calendar:  t('nav_calendar').replace(/^\S+\s/,'')
   };
   const topstripTitle = document.getElementById('topstrip-title');
   if (topstripTitle) topstripTitle.textContent = PAGE_TITLES[page] || page;
@@ -4229,32 +4346,32 @@ function buildTradesTable(trades) {
   if (!trades.length) return emptyState('📭','Brak transakcji','Dodaj pierwszą transakcję klikając + Nowa transakcja');
   return `<table class="trades-table">
     <thead><tr>
-      <th>Instrument</th><th>Kierunek</th><th>Data</th>
-      <th>Wejście</th><th>Wyjście</th><th>Wolumen</th>
-      <th>P&L</th><th>Setup</th><th>Status</th><th>Akcje</th>
+      <th>${t('th_instrument')}</th><th>${t('th_dir')}</th><th>${t('th_date')}</th>
+      <th>${t('th_entry')}</th><th>${t('th_exit')}</th><th>${t('th_size')}</th>
+      <th>${t('th_pnl')}</th><th>${t('th_setup')}</th><th>${t('th_status')}</th><th>${t('th_actions')}</th>
     </tr></thead>
     <tbody>
-    ${trades.map(t => {
-      const linkedAnalysis = (t.linkedAnalysisId && t.linkedAnalysisId.length > 5)
-        ? getAnalyses().find(a => a.id === t.linkedAnalysisId)
+    ${trades.map(trade => {
+      const linkedAnalysis = (trade.linkedAnalysisId && trade.linkedAnalysisId.length > 5)
+        ? getAnalyses().find(a => a.id === trade.linkedAnalysisId)
         : null;
-      return `<tr style="cursor:pointer" onclick="openDetailModal('${t.id}')">
-      <td><strong class="mono">${t.symbol}</strong></td>
-      <td><span class="badge badge-${t.dir.toLowerCase()}">${t.dir}</span></td>
-      <td class="mono" style="font-size:12px">${formatDate(t.date)}</td>
-      <td class="mono">${t.entry ?? '—'}</td>
-      <td class="mono">${t.exit ?? '—'}</td>
-      <td class="mono">${t.size ?? '—'}</td>
-      <td class="${t.pnl > 0 ? 'pnl-pos' : t.pnl < 0 ? 'pnl-neg' : ''}">${t.pnl != null ? (t.pnl > 0 ? '+' : '') + fmt(t.pnl) : '—'}</td>
+      return `<tr style="cursor:pointer" onclick="openDetailModal('${trade.id}')">
+      <td><strong class="mono">${trade.symbol}</strong></td>
+      <td><span class="badge badge-${trade.dir.toLowerCase()}">${trade.dir}</span></td>
+      <td class="mono" style="font-size:11px">${formatDate(trade.date)}</td>
+      <td class="mono">${trade.entry ?? '—'}</td>
+      <td class="mono">${trade.exit ?? '—'}</td>
+      <td class="mono">${trade.size ?? '—'}</td>
+      <td class="${trade.pnl > 0 ? 'pnl-pos' : trade.pnl < 0 ? 'pnl-neg' : ''}">${trade.pnl != null ? (trade.pnl > 0 ? '+' : '') + fmt(trade.pnl) : '—'}</td>
       <td>
-        <span class="tag">${t.setup || '—'}</span>
+        <span class="tag">${trade.setup || '—'}</span>
         ${linkedAnalysis ? `<span onclick="event.stopPropagation();openEditAnalysis('${linkedAnalysis.id}')" title="${linkedAnalysis.title}" style="display:inline-flex;align-items:center;gap:3px;font-size:10px;padding:2px 6px;border-radius:4px;background:var(--blue-dim);color:var(--blue);cursor:pointer;margin-left:4px">🔗 Analiza</span>` : ''}
       </td>
-      <td><span class="badge badge-${t.status}">${t.status === 'open' ? 'Otwarta' : 'Zamknięta'}</span></td>
+      <td><span class="badge badge-${trade.status}">${trade.status === 'open' ? t('status_open') : t('status_closed')}</span>${trade.rulesBroken && trade.rulesBroken.length ? `<span style="display:inline-block;margin-left:4px;font-size:10px;padding:1px 5px;border-radius:4px;background:rgba(255,79,107,.15);color:var(--red);border:1px solid rgba(255,79,107,.3)" title="${trade.rulesBroken.join(', ')}">❌ Reguła złamana</span>` : ''}</td>
       <td><div class="action-btns" onclick="event.stopPropagation()">
-        <button class="icon-btn" onclick="openDetailModal('${t.id}')" title="Szczegóły">👁</button>
-        <button class="icon-btn" onclick="openEditModal('${t.id}')" title="Edytuj">✏️</button>
-        <button class="icon-btn del" onclick="deleteTrade('${t.id}')" title="Usuń">🗑</button>
+        <button class="icon-btn" onclick="openDetailModal('${trade.id}')" title="Szczegóły">👁</button>
+        <button class="icon-btn" onclick="openEditModal('${trade.id}')" title="Edytuj">✏️</button>
+        <button class="icon-btn del" onclick="deleteTrade('${trade.id}')" title="Usuń">🗑</button>
       </div></td>
     </tr>`;
     }).join('')}
@@ -4423,13 +4540,13 @@ function renderStatsStrategies() {
     </div>
   </div>
   <div class="summary-card"><div class="summary-card-title">📋 R:R każdej transakcji (${closed.length})</div>
-    <div style="overflow-x:auto"><table style="width:100%;font-size:12px;border-collapse:collapse">
-      <thead><tr style="color:var(--text3);font-size:10px;border-bottom:1px solid var(--border)">
-        <th style="text-align:left;padding:5px 8px">Data</th><th style="text-align:left;padding:5px 8px">Symbol</th>
-        <th style="text-align:center;padding:5px 8px">Dir</th><th style="text-align:center;padding:5px 8px">TF</th>
-        <th style="text-align:center;padding:5px 8px">Setup</th><th style="text-align:center;padding:5px 8px">Ryzyko</th>
-        <th style="text-align:center;padding:5px 8px">Reward</th><th style="text-align:center;padding:5px 8px">R:R</th>
-        <th style="text-align:right;padding:5px 8px">P&L</th>
+    <div style="overflow-x:auto;max-height:420px;overflow-y:auto"><table style="width:100%;font-size:12px;border-collapse:collapse">
+      <thead style="position:sticky;top:0;z-index:1;background:var(--bg3)"><tr style="color:var(--text3);font-size:10px;border-bottom:1px solid var(--border)">
+        <th style="text-align:left;padding:5px 8px;white-space:nowrap">${t('th_date')}</th><th style="text-align:left;padding:5px 8px;white-space:nowrap">${t('th_instrument')}</th>
+        <th style="text-align:center;padding:5px 8px;white-space:nowrap">${t('th_dir')}</th><th style="text-align:center;padding:5px 8px;white-space:nowrap">TF</th>
+        <th style="text-align:center;padding:5px 8px;white-space:nowrap">${t('th_setup')}</th><th style="text-align:center;padding:5px 8px;white-space:nowrap">${t('th_risk')}</th>
+        <th style="text-align:center;padding:5px 8px;white-space:nowrap">${t('th_reward')}</th><th style="text-align:center;padding:5px 8px;white-space:nowrap">R:R</th>
+        <th style="text-align:right;padding:5px 8px;white-space:nowrap">${t('th_pnl')}</th>
       </tr></thead>
       <tbody>${rrRows}</tbody>
     </table></div>
@@ -4445,20 +4562,20 @@ function renderEmotions() {
   const curr   = getCurrSym(acc?.id);
   const fmt    = v => parseFloat(v).toFixed(2);
   const sub    = document.getElementById('emotions-subtitle');
-  if (sub) sub.textContent = (acc ? acc.name + ' · ' : '') + closed.length + ' zamkniętych transakcji';
+  if (sub) sub.textContent = (acc ? acc.name + ' · ' : '') + closed.length + ' ' + t('stat_closed');
 
   const emoTrades = closed.filter(t => t.emotionPre || t.emotionPost);
   if (!emoTrades.length && closed.length > 0) {
     el.innerHTML = `
       <div style="text-align:center;padding:40px 20px">
         <div style="font-size:48px;margin-bottom:12px">🧠</div>
-        <div style="font-size:16px;font-weight:600;margin-bottom:8px">Brak danych emocjonalnych</div>
-        <div style="font-size:13px;color:var(--text3);max-width:400px;margin:0 auto;line-height:1.7">Zacznij dodawać emocje do transakcji (pole "Emocja przed wejściem" i "Emocja po zamknięciu" w formularzu transakcji)</div>
-        <button class="btn-sm btn-accent" onclick="openTradeModalWithDraftCheck()" style="margin-top:16px">+ Dodaj transakcję z emocjami</button>
+        <div style="font-size:16px;font-weight:600;margin-bottom:8px">${t('emotions_no_data')}</div>
+        <div style="font-size:13px;color:var(--text3);max-width:400px;margin:0 auto;line-height:1.7">${t('emotions_no_data_hint')}</div>
+        <button class="btn-sm btn-accent" onclick="openTradeModalWithDraftCheck()" style="margin-top:16px">+ ${t('emotions_add_btn')}</button>
       </div>`;
     return;
   }
-  if (!closed.length) { el.innerHTML = emptyState('🧠','Brak transakcji','Dodaj transakcje aby zobaczyć analizę emocjonalną'); return; }
+  if (!closed.length) { el.innerHTML = emptyState('🧠', t('empty_no_trades'), t('emotions_empty_hint')); return; }
 
   // Separate pre/post
   const byEmoPre = {}, byEmoPost = {};
@@ -4466,9 +4583,9 @@ function renderEmotions() {
   closed.filter(t=>t.emotionPost).forEach(t => { const e=t.emotionPost; if(!byEmoPost[e])byEmoPost[e]={c:0,pnl:0,w:0}; byEmoPost[e].c++; byEmoPost[e].pnl+=t.pnl||0; if(t.pnl>0)byEmoPost[e].w++; });
 
   const emoTable = data => {
-    if (!Object.keys(data).length) return `<div style="font-size:12px;color:var(--text3);padding:12px 0">Brak danych — uzupełnij emocje w transakcjach</div>`;
+    if (!Object.keys(data).length) return `<div style="font-size:12px;color:var(--text3);padding:12px 0">${t('emotions_table_empty')}</div>`;
     return `<table style="width:100%;font-size:12px;border-collapse:collapse">
-      <thead><tr style="color:var(--text3);font-size:10px;border-bottom:1px solid var(--border)"><th style="text-align:left;padding:6px 0">Emocja</th><th style="text-align:center">Trd</th><th style="text-align:center">WR%</th><th style="text-align:right">Śr. P&L</th><th style="text-align:right">Suma P&L</th></tr></thead>
+      <thead><tr style="color:var(--text3);font-size:10px;border-bottom:1px solid var(--border)"><th style="text-align:left;padding:6px 0">${t('emotions_col_emotion')}</th><th style="text-align:center">Trd</th><th style="text-align:center">WR%</th><th style="text-align:right">${t('emotions_col_avg_pnl')}</th><th style="text-align:right">${t('emotions_col_sum_pnl')}</th></tr></thead>
       <tbody>${Object.entries(data).sort((a,b)=>b[1].pnl-a[1].pnl).map(([e,d])=>{
         const wr=Math.round(d.w/d.c*100), avg=d.pnl/d.c;
         return `<tr style="border-bottom:1px solid rgba(255,255,255,.04)">
@@ -4497,39 +4614,225 @@ function renderEmotions() {
   <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">
     <div class="summary-card" style="text-align:center">
       <div style="font-size:28px;font-weight:800;font-family:var(--font-mono);color:var(--accent)">${withEmo}</div>
-      <div style="font-size:11px;color:var(--text3);margin-top:4px">Transakcji z emocjami</div>
-      <div style="font-size:12px;color:var(--text2);margin-top:2px">${coverage}% pokrycia</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:4px">${t('emotions_trades_with')}</div>
+      <div style="font-size:12px;color:var(--text2);margin-top:2px">${coverage}% ${t('emotions_coverage')}</div>
     </div>
     <div class="summary-card" style="text-align:center">
       <div style="font-size:22px;margin-bottom:4px">${bestEmo ? bestEmo[0] : '—'}</div>
-      <div style="font-size:11px;color:var(--green);font-weight:600">Najlepsza emocja</div>
-      ${bestEmo ? `<div style="font-size:12px;color:var(--text2);margin-top:2px">Suma: <span class="pnl-pos">+${fmt(bestEmo[1].pnl)}</span></div>` : ''}
+      <div style="font-size:11px;color:var(--green);font-weight:600">${t('emotions_best')}</div>
+      ${bestEmo ? `<div style="font-size:12px;color:var(--text2);margin-top:2px">${t('emotions_sum')}: <span class="pnl-pos">+${fmt(bestEmo[1].pnl)}</span></div>` : ''}
     </div>
     <div class="summary-card" style="text-align:center">
       <div style="font-size:22px;margin-bottom:4px">${worstEmo ? worstEmo[0] : '—'}</div>
-      <div style="font-size:11px;color:var(--red);font-weight:600">Najgorsza emocja</div>
-      ${worstEmo ? `<div style="font-size:12px;color:var(--text2);margin-top:2px">Suma: <span class="pnl-neg">${fmt(worstEmo[1].pnl)}</span></div>` : ''}
+      <div style="font-size:11px;color:var(--red);font-weight:600">${t('emotions_worst')}</div>
+      ${worstEmo ? `<div style="font-size:12px;color:var(--text2);margin-top:2px">${t('emotions_sum')}: <span class="pnl-neg">${fmt(worstEmo[1].pnl)}</span></div>` : ''}
     </div>
   </div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
     <div class="summary-card">
-      <div class="summary-card-title" style="color:var(--amber)">😌 Przed wejściem w transakcję</div>
+      <div class="summary-card-title" style="color:var(--amber)">😌 ${t('emotions_pre_label')}</div>
       ${emoTable(byEmoPre)}
     </div>
     <div class="summary-card">
-      <div class="summary-card-title" style="color:var(--accent)">😊 Po zamknięciu transakcji</div>
+      <div class="summary-card-title" style="color:var(--accent)">😊 ${t('emotions_post_label')}</div>
       ${emoTable(byEmoPost)}
     </div>
   </div>
-  <div class="summary-card" style="background:linear-gradient(135deg,rgba(0,212,161,.06),rgba(79,158,255,.04));border-color:rgba(0,212,161,.2)">
-    <div class="summary-card-title" style="color:var(--accent)">🚀 Nadchodzi w następnej wersji</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">
-      <div style="font-size:12px;color:var(--text2);padding:10px;background:var(--bg3);border-radius:8px;border:1px solid var(--border)">📊 <strong>Wykres emocje vs P&L</strong><br><span style="color:var(--text3)">Słupkowy interaktywny</span></div>
-      <div style="font-size:12px;color:var(--text2);padding:10px;background:var(--bg3);border-radius:8px;border:1px solid var(--border)">⚠️ <strong>Overtrading Alert</strong><br><span style="color:var(--text3)">Po X transakcjach w sesji</span></div>
-      <div style="font-size:12px;color:var(--text2);padding:10px;background:var(--bg3);border-radius:8px;border:1px solid var(--border)">😡 <strong>Revenge Trading Detector</strong><br><span style="color:var(--text3)">Wejście &lt;15 min po stracie</span></div>
-      <div style="font-size:12px;color:var(--text2);padding:10px;background:var(--bg3);border-radius:8px;border:1px solid var(--border)">📈 <strong>Postęp jakości decyzji</strong><br><span style="color:var(--text3)">Miesiąc po miesiącu</span></div>
-    </div>
-  </div>`;
+  ${(()=>{
+    // --- Wykres Emocje vs P&L (horizontal bars) ---
+    const preEntries = Object.entries(byEmoPre);
+    if (!preEntries.length) return '';
+    const maxAbsAvg = Math.max(...preEntries.map(([,d])=>Math.abs(d.pnl/d.c)), 0.001);
+    const bars = preEntries.sort((a,b)=>b[1].pnl/b[1].c - a[1].pnl/a[1].c).map(([e,d])=>{
+      const avg = d.pnl/d.c;
+      const wr = Math.round(d.w/d.c*100);
+      const barW = Math.round(Math.abs(avg)/maxAbsAvg*100);
+      const color = avg >= 0 ? 'var(--green)' : 'var(--red)';
+      return `<div style="margin-bottom:10px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
+          <span style="font-size:16px;width:24px">${e}</span>
+          <div style="flex:1;height:14px;background:var(--bg3);border-radius:4px;overflow:hidden">
+            <div style="width:${barW}%;height:100%;background:${color};border-radius:4px;transition:width .3s"></div>
+          </div>
+          <span style="font-family:var(--font-mono);font-size:12px;width:60px;text-align:right;color:${color}">${avg>=0?'+':''}${fmt(avg)}</span>
+          <span style="font-size:11px;color:var(--text3);width:40px;text-align:right">${wr}%</span>
+          <span style="font-size:10px;color:var(--text3);width:22px;text-align:right">${d.c}x</span>
+        </div>
+      </div>`;
+    }).join('');
+    return `<div class="summary-card" style="margin-top:16px">
+      <div class="summary-card-title" style="color:var(--amber)">📊 Emocje pre vs Avg P&L</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:12px">Pasek = proporcja do najwyższego avg P&L · WR% · liczba transakcji</div>
+      ${bars}
+    </div>`;
+  })()}
+
+  ${(()=>{
+    // --- Heatmapa godzin handlu ---
+    // Wymaga dat z czasem (YYYY-MM-DDTHH:MM) — daty bez czasu mają getHours()=2 (UTC offset)
+    const tradesWithTime = closed.filter(t => t.date && t.date.includes('T'));
+    const days = ['Pn','Wt','Śr','Cz','Pt'];
+    const hours = [7,8,9,10,11,12,13,14,15,16,17,18];
+    const grid = {};
+    days.forEach(d => { grid[d]={}; hours.forEach(h => { grid[d][h]={pnl:0,c:0}; }); });
+    const dowMap = {1:'Pn',2:'Wt',3:'Śr',4:'Cz',5:'Pt'};
+    tradesWithTime.forEach(t => {
+      const dt = new Date(t.date);
+      const dow = dowMap[dt.getDay()];
+      const h = dt.getHours();
+      if (!dow || h < 7 || h > 18) return;
+      const hk = hours.includes(h) ? h : null;
+      if (!hk) return;
+      grid[dow][hk].c++;
+      grid[dow][hk].pnl += t.pnl||0;
+    });
+    if (!tradesWithTime.length) return `<div class="summary-card" style="margin-top:16px;border-color:rgba(255,255,255,.08)">
+      <div class="summary-card-title" style="color:var(--text3)">⏰ Heatmapa godzin</div>
+      <div style="font-size:12px;color:var(--text3);padding:8px 0">Brak transakcji z zapisanym czasem — wprowadzaj transakcje z polem daty i godziny (format: data + czas).</div>
+    </div>`;
+    const allPnls = days.flatMap(d=>hours.map(h=>grid[d][h].pnl)).filter(v=>v!==0);
+    const maxAbs = allPnls.length ? Math.max(...allPnls.map(Math.abs), 0.001) : 1;
+    const cellStyle = (pnl, c) => {
+      if (!c) return 'background:repeating-linear-gradient(45deg,var(--bg3),var(--bg3) 2px,var(--bg2) 2px,var(--bg2) 6px);color:var(--text3)';
+      const intensity = Math.min(Math.abs(pnl)/maxAbs, 1);
+      const alpha = 0.15 + intensity*0.55;
+      return pnl > 0
+        ? `background:rgba(0,212,161,${alpha.toFixed(2)});color:#fff`
+        : `background:rgba(255,79,107,${alpha.toFixed(2)});color:#fff`;
+    };
+    const headerCells = hours.map(h=>`<div style="text-align:center;font-size:10px;color:var(--text3);padding:2px">${h}h</div>`).join('');
+    const bodyRows = days.map(d=>{
+      const cells = hours.map(h=>{
+        const {pnl,c} = grid[d][h];
+        const cs = cellStyle(pnl,c);
+        const label = c ? c : '';
+        return `<div style="${cs};border-radius:4px;padding:4px 2px;text-align:center;font-size:11px;font-weight:600;min-height:28px;display:flex;align-items:center;justify-content:center" title="${c?('P&L: '+(pnl>=0?'+':'')+fmt(pnl)+', '+c+' trans.'):t('emotions_heatmap_no_data')}">${label}</div>`;
+      }).join('');
+      return `<div style="display:contents"><div style="font-size:11px;color:var(--text2);display:flex;align-items:center;font-weight:600">${d}</div>${cells}</div>`;
+    }).join('');
+    return `<div class="summary-card" style="margin-top:16px">
+      <div class="summary-card-title" style="color:var(--blue)">${t('emotions_heatmap_when')}</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:10px">${t('emotions_heatmap_legend')}</div>
+      <div style="display:grid;grid-template-columns:32px repeat(${hours.length},1fr);gap:3px">
+        <div></div>${headerCells}
+        ${bodyRows}
+      </div>
+    </div>`;
+  })()}
+
+  ${(()=>{
+    // --- Konsekwencja planu ---
+    const tradeDates = [...new Set(closed.map(t=>(t.date||'').slice(0,10)).filter(Boolean))];
+    const withPlan=[], withoutPlan=[];
+    tradeDates.forEach(ds => {
+      const entry = getJournalEntry(ds);
+      if (!entry) return;
+      const pf = entry['post-plan-followed'];
+      const dayPnl = closed.filter(t=>(t.date||'').slice(0,10)===ds).reduce((s,t)=>s+(t.pnl||0),0);
+      const dayW = closed.filter(t=>(t.date||'').slice(0,10)===ds && t.pnl>0).length;
+      const dayC = closed.filter(t=>(t.date||'').slice(0,10)===ds).length;
+      if (pf==='yes'||pf==='mostly') withPlan.push({pnl:dayPnl,w:dayW,c:dayC});
+      else if (pf==='no'||pf==='partially') withoutPlan.push({pnl:dayPnl,w:dayW,c:dayC});
+    });
+    const totalDaysWithData = withPlan.length + withoutPlan.length;
+    if (!totalDaysWithData) return '';
+    const avgPlan    = withPlan.length    ? withPlan.reduce((s,d)=>s+d.pnl,0)/withPlan.length : null;
+    const avgNoPlan  = withoutPlan.length ? withoutPlan.reduce((s,d)=>s+d.pnl,0)/withoutPlan.length : null;
+    const disciplinePct = Math.round(withPlan.length/totalDaysWithData*100);
+    const cardStyle = (val) => val===null ? '' : val>=0 ? 'border-color:var(--green)' : 'border-color:var(--red)';
+    return `<div class="summary-card" style="margin-top:16px">
+      <div class="summary-card-title" style="color:var(--accent)">${t('emotions_plan_title')}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px">
+        <div class="summary-card" style="${cardStyle(avgPlan)};text-align:center">
+          <div style="font-size:11px;color:var(--green);font-weight:600;margin-bottom:6px">${t('emotions_with_plan')}</div>
+          <div style="font-size:22px;font-weight:800;font-family:var(--font-mono);color:${avgPlan!==null&&avgPlan>=0?'var(--green)':'var(--red)'}">${avgPlan!==null?(avgPlan>=0?'+':'')+fmt(avgPlan):'—'}</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:4px">${withPlan.length} ${t('emotions_days')}</div>
+        </div>
+        <div class="summary-card" style="${cardStyle(avgNoPlan)};text-align:center">
+          <div style="font-size:11px;color:var(--red);font-weight:600;margin-bottom:6px">${t('emotions_without_plan')}</div>
+          <div style="font-size:22px;font-weight:800;font-family:var(--font-mono);color:${avgNoPlan!==null&&avgNoPlan>=0?'var(--green)':'var(--red)'}">${avgNoPlan!==null?(avgNoPlan>=0?'+':'')+fmt(avgNoPlan):'—'}</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:4px">${withoutPlan.length} ${t('emotions_days')}</div>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--text2);margin-top:10px;text-align:center"><strong style="color:${disciplinePct>=70?'var(--accent)':disciplinePct>=50?'var(--amber)':'var(--red)'}">${disciplinePct}%</strong> ${t('emotions_discipline')}</div>
+    </div>`;
+  })()}
+
+  ${(()=>{
+    // --- Overtrading Alert konfiguracja ---
+    const db2 = getDB();
+    const lims = db2['ot-limits_'+(state.currentUser||'')] || {maxDaily:5, maxLosses:3};
+    return `<div class="summary-card" style="margin-top:16px">
+      <div class="summary-card-title" style="color:var(--red)">⚠️ ${t('ot_config_title')}</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:12px">${t('ot_config_desc')}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+        <div>
+          <label class="form-label-modal" style="font-size:11px">${t('rule_type_max_daily')}</label>
+          <input class="form-input-modal" id="ot-max-daily" type="number" min="1" max="100" value="${lims.maxDaily}" style="font-size:13px">
+        </div>
+        <div>
+          <label class="form-label-modal" style="font-size:11px">${t('rule_type_max_losses')}</label>
+          <input class="form-input-modal" id="ot-max-losses" type="number" min="1" max="50" value="${lims.maxLosses}" style="font-size:13px">
+        </div>
+      </div>
+      <button class="btn-sm btn-accent" onclick="saveOtLimits()" style="width:100%">💾 ${t('ot_save_limits')}</button>
+    </div>`;
+  })()}`;
+}
+
+function saveOtLimits() {
+  const maxDaily  = parseInt(document.getElementById('ot-max-daily')?.value) || 5;
+  const maxLosses = parseInt(document.getElementById('ot-max-losses')?.value) || 3;
+  const db = getDB();
+  db['ot-limits_'+(state.currentUser||'')] = {maxDaily, maxLosses};
+  saveDB(db);
+  toast(t('toast_ot_limits_saved'), 'success');
+}
+
+function checkOvertradingAlert(accountId) {
+  if (!state.currentUser) return;
+  const db = getDB();
+  const lims = db['ot-limits_'+state.currentUser] || {maxDaily:5, maxLosses:3};
+  const today = new Date().toISOString().slice(0,10);
+  const trades = getTrades(accountId);
+  const todayTrades = trades.filter(t => (t.date||'').slice(0,10) === today);
+  if (todayTrades.length >= lims.maxDaily) {
+    showOvertradingPopup(t('ot_popup_daily').replace('{n}', lims.maxDaily));
+    return;
+  }
+  const sorted = [...trades].sort((a,b)=>new Date(a.date)-new Date(b.date));
+  let streak = 0;
+  for (let i = sorted.length-1; i >= 0; i--) {
+    if (sorted[i].pnl !== null && sorted[i].pnl < 0) streak++;
+    else break;
+  }
+  if (streak >= lims.maxLosses) {
+    showOvertradingPopup(t('ot_popup_streak').replace('{n}', streak));
+  }
+}
+
+function showOvertradingPopup(msg) {
+  const existing = document.getElementById('ot-popup');
+  if (existing) existing.remove();
+  const el = document.createElement('div');
+  el.id = 'ot-popup';
+  el.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:99999;background:#1a0408;border:2px solid var(--red);border-radius:16px;padding:32px 40px;text-align:center;max-width:380px;width:90vw;box-shadow:0 0 60px rgba(255,79,107,.4)';
+  const msgEl = document.createElement('div');
+  msgEl.style.cssText = 'font-size:15px;color:var(--text);margin-bottom:20px;line-height:1.5';
+  msgEl.textContent = msg;
+  const stopEl = document.createElement('div');
+  stopEl.textContent = '⚠️ STOP';
+  stopEl.style.cssText = 'font-size:48px;margin-bottom:12px';
+  const btn = document.createElement('button');
+  btn.className = 'btn-sm';
+  btn.style.cssText = 'background:var(--red);color:#fff;border-color:var(--red);width:100%;font-size:14px;padding:10px';
+  btn.textContent = t('ot_popup_btn');
+  btn.onclick = () => el.remove();
+  el.appendChild(stopEl);
+  el.appendChild(msgEl);
+  el.appendChild(btn);
+  document.body.appendChild(el);
+  setTimeout(() => { if (el.parentNode) el.remove(); }, 8000);
 }
 
 // ===== SUMMARY =====
@@ -4608,8 +4911,16 @@ function renderSummary() {
     if (calDays>=30 && equity>0) {
       const tradingDays = Math.max(1,calDays*(252/365));
       const rawCagr = (Math.pow(equity/startCapital,252/tradingDays)-1)*100;
-      cagr = Math.max(-999.99,Math.min(9999.99,rawCagr));
-      cagrNote = Math.round(calDays)+' dni';
+      if (rawCagr > 999.99) {
+        cagr = null;
+        cagrNote = '> 999% (za krótki okres)';
+      } else if (rawCagr < -99.99) {
+        cagr = null;
+        cagrNote = '< -99% (za krótki okres)';
+      } else {
+        cagr = rawCagr;
+        cagrNote = Math.round(calDays)+' dni';
+      }
     } else if (calDays>0&&calDays<30) { cagrNote='za krótki okres (<30 dni)'; }
   }
 
@@ -4884,6 +5195,91 @@ function renderSummary() {
         </table>
       </div>
     </div>`;
+  })()}
+
+  ${(()=>{
+    // FAZA D — Korelacja sen/energia vs wyniki
+    const tradeDays = [...new Set(closed.map(t=>(t.date||'').slice(0,10)).filter(Boolean))];
+    const dayData = [];
+    tradeDays.forEach(ds => {
+      const entry = getJournalEntry(ds);
+      if (!entry) return;
+      const dayTrades = closed.filter(t=>(t.date||'').slice(0,10)===ds);
+      if (!dayTrades.length) return;
+      const dayPnl = dayTrades.reduce((s,t)=>s+(t.pnl||0),0);
+      const dayW = dayTrades.filter(t=>t.pnl>0).length;
+      const sleep = parseFloat(entry.preSleep);
+      const energy = parseFloat(entry.preEnergy);
+      dayData.push({ ds, dayPnl, dayW, dayC: dayTrades.length, sleep: isNaN(sleep)?null:sleep, energy: isNaN(energy)?null:energy });
+    });
+    if (dayData.length < 5) return `<div class="summary-card" style="margin-top:16px;border-color:rgba(255,255,255,.08)">
+      <div class="summary-card-title" style="color:var(--text3)">😴 Sen i energia vs wyniki</div>
+      <div style="display:flex;align-items:center;gap:12px;padding:8px 0">
+        <span style="font-size:32px">🔒</span>
+        <div>
+          <div style="font-size:13px;color:var(--text2);font-weight:600">Za mało danych — uzupełnij Rutynę dnia</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:3px">Potrzeba min. 5 dni z wpisem dziennika i transakcjami. Aktualnie: <strong style="color:var(--amber)">${dayData.length}</strong> dni.</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px">Dodaj sen i poziom energii w Rutynie dnia → dane pojawią się tutaj automatycznie.</div>
+        </div>
+      </div>
+    </div>`;
+
+    // Sen grouping
+    const sleepGroups = {'< 6h': [], '6-7h': [], '7h+': []};
+    dayData.filter(d=>d.sleep!==null).forEach(d => {
+      if (d.sleep < 6) sleepGroups['< 6h'].push(d);
+      else if (d.sleep < 7) sleepGroups['6-7h'].push(d);
+      else sleepGroups['7h+'].push(d);
+    });
+    // Energy grouping
+    const energyGroups = {'1-2 (niska)': [], '3 (średnia)': [], '4-5 (wysoka)': []};
+    dayData.filter(d=>d.energy!==null).forEach(d => {
+      if (d.energy <= 2) energyGroups['1-2 (niska)'].push(d);
+      else if (d.energy === 3) energyGroups['3 (średnia)'].push(d);
+      else energyGroups['4-5 (wysoka)'].push(d);
+    });
+
+    const groupCard = (label, days, bestAvg, worstAvg) => {
+      if (!days.length) return `<div class="summary-card" style="text-align:center;opacity:.4"><div style="font-size:13px;font-weight:600;margin-bottom:4px">${label}</div><div style="font-size:11px;color:var(--text3)">brak danych</div></div>`;
+      const avgPnl = days.reduce((s,d)=>s+d.dayPnl,0)/days.length;
+      const wr = Math.round(days.reduce((s,d)=>s+d.dayW,0)/days.reduce((s,d)=>s+d.dayC,0)*100);
+      const isBest = Math.abs(avgPnl - bestAvg) < 0.001;
+      const isWorst = Math.abs(avgPnl - worstAvg) < 0.001;
+      const borderColor = isBest ? 'var(--green)' : isWorst ? 'var(--red)' : 'var(--border)';
+      const labelColor = isBest ? 'var(--green)' : isWorst ? 'var(--red)' : 'var(--text2)';
+      return `<div class="summary-card" style="text-align:center;border-color:${borderColor}">
+        <div style="font-size:12px;font-weight:600;color:${labelColor};margin-bottom:6px">${label}${isBest?' 🏆':isWorst?' 💤':''}</div>
+        <div style="font-size:22px;font-weight:800;font-family:var(--font-mono);color:${avgPnl>=0?'var(--green)':'var(--red)'}">${avgPnl>=0?'+':''}${fmt(avgPnl)}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">avg P&L · WR ${wr}% · ${days.length} dni</div>
+      </div>`;
+    };
+
+    const sleepAvgs = Object.values(sleepGroups).filter(g=>g.length).map(g=>g.reduce((s,d)=>s+d.dayPnl,0)/g.length);
+    const bestSleep = sleepAvgs.length ? Math.max(...sleepAvgs) : 0;
+    const worstSleep = sleepAvgs.length ? Math.min(...sleepAvgs) : 0;
+    const energyAvgs = Object.values(energyGroups).filter(g=>g.length).map(g=>g.reduce((s,d)=>s+d.dayPnl,0)/g.length);
+    const bestEnergy = energyAvgs.length ? Math.max(...energyAvgs) : 0;
+    const worstEnergy = energyAvgs.length ? Math.min(...energyAvgs) : 0;
+
+    const hasSleepData = Object.values(sleepGroups).some(g=>g.length);
+    const hasEnergyData = Object.values(energyGroups).some(g=>g.length);
+
+    return `<div style="margin-top:16px">
+      ${hasSleepData ? `<div class="summary-card" style="margin-bottom:16px">
+        <div class="summary-card-title">😴 Sen vs Wyniki (avg P&L dzienny)</div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:12px">Dane z ${dayData.filter(d=>d.sleep!==null).length} dni z wpisem dziennika i transakcjami</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+          ${Object.entries(sleepGroups).map(([k,g])=>groupCard(k,g,bestSleep,worstSleep)).join('')}
+        </div>
+      </div>` : ''}
+      ${hasEnergyData ? `<div class="summary-card">
+        <div class="summary-card-title">⚡ Energia vs Wyniki (avg P&L dzienny)</div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:12px">Dane z ${dayData.filter(d=>d.energy!==null).length} dni z wpisem dziennika i transakcjami</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+          ${Object.entries(energyGroups).map(([k,g])=>groupCard(k,g,bestEnergy,worstEnergy)).join('')}
+        </div>
+      </div>` : ''}
+    </div>`;
   })()}`;
 }
 
@@ -4927,7 +5323,7 @@ function selectAccount(id) {
   state.currentAccountId = id;
   refreshTopbarAccount();
   renderAccounts();
-  toast('Przełączono konto', 'success');
+  toast(t('toast_account_switched'), 'success');
 }
 
 function _setAccBotToggle(isBot) {
@@ -4947,7 +5343,7 @@ function openAccountModal() {
   document.getElementById('acc-strategy').value = '';
   document.getElementById('acc-mt4-login').value = '';
   document.getElementById('acc-currency').value = 'USD';
-  document.getElementById('acc-modal-title').textContent = 'Nowe konto';
+  document.getElementById('acc-modal-title').textContent = t('modal_new_account');
   document.querySelectorAll('.color-swatch').forEach((s,i) => s.classList.toggle('selected', i===0));
   _setAccBotToggle(false);
   // live border update on change
@@ -4966,7 +5362,7 @@ function openEditAccount(id) {
   document.getElementById('acc-type').value = acc.type || 'Forex';
   document.getElementById('acc-mt4-login').value = acc.mt4Login || '';
   document.getElementById('acc-currency').value = acc.currency || 'USD';
-  document.getElementById('acc-modal-title').textContent = 'Edytuj konto';
+  document.getElementById('acc-modal-title').textContent = t('modal_edit_account');
   document.querySelectorAll('.color-swatch').forEach(s => s.classList.toggle('selected', s.dataset.color === acc.color));
   _setAccBotToggle(!!acc.isBot);
   document.querySelectorAll('input[name="acc-is-bot"]').forEach(r => r.onchange = () => _setAccBotToggle(r.value === 'bot'));
@@ -4975,7 +5371,7 @@ function openEditAccount(id) {
 
 function saveAccount() {
   const name = document.getElementById('acc-name').value.trim();
-  if (!name) return toast('Podaj nazwę konta', 'error');
+  if (!name) return toast(t('err_account_name'), 'error');
   const id = document.getElementById('acc-id').value || genId();
   const color = document.querySelector('.color-swatch.selected')?.dataset.color || '#00d4a1';
   const acc = {
@@ -4997,18 +5393,19 @@ function saveAccount() {
   closeModal('account-modal');
   refreshTopbarAccount();
   renderAccounts();
-  toast('Konto zapisane', 'success');
+  toast(t('toast_account_saved'), 'success');
   sbSyncAccount(acc).then(sbId => { if (sbId) { acc.sbId = sbId; saveAccounts(getAccounts().map(a => a.id === id ? acc : a)); } });
 }
 
 function deleteAccount(id) {
-  if (!confirm('Usunąć konto i WSZYSTKIE jego transakcje?')) return;
-  const accounts = getAccounts().filter(a => a.id !== id);
-  saveAccounts(accounts);
-  if (state.currentAccountId === id) state.currentAccountId = accounts[0]?.id || null;
-  refreshTopbarAccount();
-  renderAccounts();
-  toast('Konto usunięte', 'success');
+  showConfirm(t('confirm_delete_account'), () => {
+    const accounts = getAccounts().filter(a => a.id !== id);
+    saveAccounts(accounts);
+    if (state.currentAccountId === id) state.currentAccountId = accounts[0]?.id || null;
+    refreshTopbarAccount();
+    renderAccounts();
+    toast(t('toast_account_deleted'), 'success');
+  });
 }
 
 function selectColor(el) {
@@ -5078,7 +5475,7 @@ function openTradeModal() {
   setEmotionUI('pre', '');
   setEmotionUI('post', '');
   const _pclNew = document.getElementById('pnl-currency-label'); if (_pclNew) _pclNew.textContent = 'P&L (' + getCurrSym() + ')';
-  document.getElementById('modal-title').textContent = 'Nowa transakcja';
+  document.getElementById('modal-title').textContent = t('trade_new_title');
   _pnlManual = false;
   const _pp = document.getElementById('pnl-preview'); if(_pp) { _pp.textContent=''; }
   const _pf = document.getElementById('t-pnl'); if(_pf) _pf.style.borderColor='';
@@ -5119,7 +5516,7 @@ function openEditModal(id) {
   setEmotionUI('pre', t.emotionPre || '');
   setEmotionUI('post', t.emotionPost || '');
   const _pclEdit = document.getElementById('pnl-currency-label'); if (_pclEdit) _pclEdit.textContent = 'P&L (' + getCurrSym() + ')';
-  document.getElementById('modal-title').textContent = 'Edytuj: ' + t.symbol;
+  document.getElementById('modal-title').textContent = t('trade_edit_title') + ': ' + t.symbol;
   _draftKey = 'edit_' + id;
   _pnlManual = false;
   const _pp2 = document.getElementById('pnl-preview'); if(_pp2) { _pp2.textContent=''; }
@@ -5166,16 +5563,42 @@ function autoStatusOnExit() {
 }
 
 function saveTrade() {
+  const _rulesCheck = checkRulesBeforeSave();
+
+  // Pre-compute overtrading warnings
+  let _otDailyMsg = null, _otStreakMsg = null;
+  if (state.currentUser && state.currentAccountId) {
+    const _otDb = getDB();
+    const _otLims = _otDb['ot-limits_'+state.currentUser] || {maxDaily:5, maxLosses:3};
+    const _otToday = new Date().toISOString().slice(0,10);
+    const _otTrades = getTrades(state.currentAccountId);
+    const _isNewTrade = !document.getElementById('trade-id')?.value;
+    if (_isNewTrade) {
+      const _otTodayCount = _otTrades.filter(t => (t.date||'').slice(0,10) === _otToday).length;
+      if (_otTodayCount + 1 > _otLims.maxDaily)
+        _otDailyMsg = t('ot_daily_limit').replace('{n}', _otLims.maxDaily).replace('{count}', _otTodayCount);
+      const _otSorted = [..._otTrades].sort((a,b)=>new Date(a.date)-new Date(b.date));
+      let _otStreak = 0;
+      for (let i = _otSorted.length-1; i >= 0; i--) {
+        if (_otSorted[i].pnl !== null && _otSorted[i].pnl < 0) _otStreak++;
+        else break;
+      }
+      if (_otStreak >= _otLims.maxLosses)
+        _otStreakMsg = t('ot_loss_streak').replace('{n}', _otStreak).replace('{limit}', _otLims.maxLosses);
+    }
+  }
+
+  function _doSave() {
   const symbol = document.getElementById('t-symbol').value.trim().toUpperCase();
-  if (!symbol) return toast('Podaj instrument', 'error');
+  if (!symbol) return toast(t('err_instrument_required'), 'error');
   saveSymbol(symbol);
-  if (!state.currentAccountId) return toast('Wybierz konto', 'error');
+  if (!state.currentAccountId) return toast(t('err_account_required'), 'error');
   const _entryRaw = document.getElementById('t-entry').value;
   const _exitRaw  = document.getElementById('t-exit').value;
   const _sizeRaw  = document.getElementById('t-size').value;
-  if (_entryRaw && isNaN(parseFloat(_entryRaw))) return toast('Cena wejścia musi być liczbą', 'error');
-  if (_exitRaw  && isNaN(parseFloat(_exitRaw)))  return toast('Cena wyjścia musi być liczbą', 'error');
-  if (_sizeRaw  && isNaN(parseFloat(_sizeRaw)))  return toast('Rozmiar pozycji musi być liczbą', 'error');
+  if (_entryRaw && isNaN(parseFloat(_entryRaw))) return toast(t('err_entry_nan'), 'error');
+  if (_exitRaw  && isNaN(parseFloat(_exitRaw)))  return toast(t('err_exit_nan'), 'error');
+  if (_sizeRaw  && isNaN(parseFloat(_sizeRaw)))  return toast(t('err_size_nan'), 'error');
   // Walidacja sumy % TP
   let _tpTotalPct = 0;
   for (let i = 1; i <= 4; i++) {
@@ -5244,6 +5667,7 @@ function saveTrade() {
     screenshots: state.tempScreenshots.filter(s => s.dataUrl && !s.uploading).map(s => s.dataUrl),
     mt4Ticket: (() => { const v = parseInt(document.getElementById('t-mt4-ticket')?.value); return Number.isFinite(v) ? v : null; })(),
     linkedAnalysisId: document.getElementById('t-linked-analysis-id')?.value || null,
+    rulesBroken: _rulesCheck.broken ? _rulesCheck.messages : [],
     updatedAt: Date.now(),
   };
   const trades = getTrades(state.currentAccountId);
@@ -5256,17 +5680,33 @@ function saveTrade() {
   renderDashboard();
   renderTrades();
   renderSummary();
-  toast('Transakcja zapisana ✓', 'success');
+  toast(t('toast_trade_saved'), 'success');
+  } // end _doSave
+
+  function _afterDailyCheck() {
+    if (_otStreakMsg) { showConfirm(_otStreakMsg, _doSave); return; }
+    _doSave();
+  }
+  function _afterRulesCheck() {
+    if (_otDailyMsg) { showConfirm(_otDailyMsg, _afterDailyCheck); return; }
+    _afterDailyCheck();
+  }
+  if (_rulesCheck.broken) {
+    showConfirm(t('rules_broken_msg').replace('{rules}', _rulesCheck.messages.join('\n')), _afterRulesCheck);
+    return;
+  }
+  _afterRulesCheck();
 }
 
 function deleteTrade(id) {
-  if (!confirm('Usunąć tę transakcję?')) return;
-  const trades = getTrades(state.currentAccountId).filter(t => t.id !== id);
-  saveTrades(state.currentAccountId, trades);
-  renderDashboard();
-  renderTrades();
-  renderSummary();
-  toast('Transakcja usunięta', 'success');
+  showConfirm(t('confirm_delete_trade'), () => {
+    const trades = getTrades(state.currentAccountId).filter(t => t.id !== id);
+    saveTrades(state.currentAccountId, trades);
+    renderDashboard();
+    renderTrades();
+    renderSummary();
+    toast(t('toast_trade_deleted'), 'success');
+  });
 }
 
 // ===== DETAIL MODAL (full view + inline edit) =====
@@ -5555,18 +5995,19 @@ function selectDvLinkedAnalysis(analysisId) {
   saveTrades(state.currentAccountId, trades);
   renderDetailModal();
   renderTrades();
-  toast('Analiza powiązana ✓', 'success');
+  toast(t('toast_analysis_linked'), 'success');
 }
 function dvUnlinkAnalysis(tradeId) {
-  if (!confirm('Usunąć powiązanie z analizą?')) return;
-  const trades = getTrades(state.currentAccountId);
-  const idx = trades.findIndex(t => t.id === tradeId);
-  if (idx < 0) return;
-  trades[idx] = { ...trades[idx], linkedAnalysisId: null, updatedAt: Date.now() };
-  saveTrades(state.currentAccountId, trades);
-  renderDetailModal();
-  renderTrades();
-  toast('Powiązanie usunięte', 'success');
+  showConfirm(t('confirm_unlink_analysis'), () => {
+    const trades = getTrades(state.currentAccountId);
+    const idx = trades.findIndex(t => t.id === tradeId);
+    if (idx < 0) return;
+    trades[idx] = { ...trades[idx], linkedAnalysisId: null, updatedAt: Date.now() };
+    saveTrades(state.currentAccountId, trades);
+    renderDetailModal();
+    renderTrades();
+    toast(t('toast_analysis_unlinked'), 'success');
+  });
 }
 
 // ── toggle edit mode ──
@@ -5609,12 +6050,12 @@ function detailSaveEdit() {
   const _dvEmosPost = document.getElementById('dv-emotion-post')?.value || '';
   if (!isCurrentAccountBot()) {
     if (!_dvEmosPre) {
-      toast('Zaznacz emocję PRZED wejściem — wymagane do zapisu', 'error');
+      toast(t('err_emotion_pre'), 'error');
       (document.getElementById('dv-emotion-pre-picker') || document.getElementById('dv-emotion-pre'))?.scrollIntoView({ behavior:'smooth', block:'center' });
       return;
     }
     if (_dvStatus === 'closed' && !_dvEmosPost) {
-      toast('Zaznacz emocję PO zamknięciu — wymagane dla zamkniętej transakcji', 'error');
+      toast(t('err_emotion_post'), 'error');
       (document.getElementById('dv-emotion-post-picker') || document.getElementById('dv-emotion-post'))?.scrollIntoView({ behavior:'smooth', block:'center' });
       return;
     }
@@ -5656,19 +6097,20 @@ function detailSaveEdit() {
   renderDashboard();
   renderTrades();
   renderSummary();
-  toast('Transakcja zapisana ✓', 'success');
+  toast(t('toast_trade_updated'), 'success');
 }
 
 // ── delete from detail ──
 function detailDeleteCurrent() {
-  if (!confirm('Usunąć tę transakcję?')) return;
-  const trades = getTrades(state.currentAccountId).filter(t => t.id !== _detailId);
-  saveTrades(state.currentAccountId, trades);
-  closeModal('detail-modal');
-  renderDashboard();
-  renderTrades();
-  renderSummary();
-  toast('Transakcja usunięta', 'success');
+  showConfirm(t('confirm_delete_trade'), () => {
+    const trades = getTrades(state.currentAccountId).filter(t => t.id !== _detailId);
+    saveTrades(state.currentAccountId, trades);
+    closeModal('detail-modal');
+    renderDashboard();
+    renderTrades();
+    renderSummary();
+    toast(t('toast_trade_deleted'), 'success');
+  });
 }
 
 // ── screenshots in detail ──
@@ -5689,7 +6131,7 @@ function dvRemoveScreen(id) {
 }
 function dvAddFiles(files) {
   if (!_gapiLoaded || !_gapiAccessToken) {
-    toast('Połącz z Google Drive aby dodać screenshoty ☁️', 'error');
+    toast(t('err_drive_required'), 'error');
     connectGoogleDrive();
     return;
   }
@@ -5710,7 +6152,7 @@ function dvAddFiles(files) {
         if (s) { s.dataUrl = driveUrl; s.uploading = false; }
       } else {
         _detailScreenshots = _detailScreenshots.filter(s => s.id !== id);
-        toast('Błąd wgrywania na Drive', 'error');
+        toast(t('err_drive_upload'), 'error');
       }
       renderDvScreens();
     };
@@ -5776,7 +6218,7 @@ async function autoUploadScreenToDrive(dataUrl, tradeId, idx) {
 
 function handleFiles(files) {
   if (!_gapiLoaded || !_gapiAccessToken) {
-    toast('Połącz z Google Drive aby dodać screenshoty ☁️', 'error');
+    toast(t('err_drive_required'), 'error');
     connectGoogleDrive();
     return;
   }
@@ -5798,7 +6240,7 @@ function handleFiles(files) {
         if (s) { s.dataUrl = driveUrl; s.uploading = false; }
       } else {
         state.tempScreenshots = state.tempScreenshots.filter(s => s.id !== id);
-        toast('Błąd wgrywania na Drive — spróbuj ponownie', 'error');
+        toast(t('err_drive_upload'), 'error');
       }
       renderScreenshotPreviews();
     };
@@ -5873,7 +6315,7 @@ function connectAndShowDrive(driveId, screenId, placeholder, onclickStr) {
     loadDriveScreenshot(driveId, img);
     return;
   }
-  toast('Łączenie z Google Drive...', 'success');
+  toast(t('toast_drive_connecting'), 'success');
   connectGoogleDrive();
   // Po połączeniu reloadDriveScreenshots() zamieni wszystkie chmurki na obrazy
 }
@@ -5947,6 +6389,16 @@ function closeLightbox() { document.getElementById('lightbox').classList.remove(
 
 // ===== MODAL UTILS =====
 function openModal(id) { document.getElementById(id).classList.add('open'); }
+function showConfirm(msg, onYes, onNo) {
+  const overlay = document.getElementById('confirm-modal');
+  document.getElementById('confirm-modal-msg').textContent = msg;
+  const yesBtn = document.getElementById('confirm-modal-yes');
+  const noBtn  = document.getElementById('confirm-modal-no');
+  function _close() { overlay.classList.remove('open'); }
+  yesBtn.onclick = () => { _close(); onYes && onYes(); };
+  noBtn.onclick  = () => { _close(); onNo  && onNo();  };
+  overlay.classList.add('open');
+}
 let _discardingDraft = false;
 function closeModal(id) {
   // [v1.7] Jeśli zamykamy modal transakcji — zapisz szkic automatycznie
@@ -6077,11 +6529,11 @@ function recalc() {
 }
 function applyLotToForm() {
   const l = document.getElementById('calc-lots')?.value;
-  if (l) { document.getElementById('t-size').value = parseFloat(l).toFixed(4); toast('Loty wstawione do formularza ✓','success'); }
+  if (l) { document.getElementById('t-size').value = parseFloat(l).toFixed(4); toast(t('toast_lots_inserted'),'success'); }
 }
 function applyUnitsToForm() {
   const u = document.getElementById('calc-units')?.value;
-  if (u) { document.getElementById('t-size').value = parseFloat(u); toast('Jednostki wstawione ✓','success'); }
+  if (u) { document.getElementById('t-size').value = parseFloat(u); toast(t('toast_units_inserted'),'success'); }
 }
 
 // ===== PAGE CALC =====
@@ -6138,14 +6590,14 @@ function fmtN(n) { return new Intl.NumberFormat('pl-PL',{minimumFractionDigits:2
 // ===== UNIFIED RISK & R:R CALCULATOR =====
 function unifiedFillFromAccount() {
   const acc = getAccounts().find(a => a.id === state.currentAccountId);
-  if (!acc) { toast('Wybierz konto tradingowe', 'error'); return; }
+  if (!acc) { toast(t('err_account_required'), 'error'); return; }
   const trades = getTrades(state.currentAccountId);
   const pnl = trades.filter(t=>t.status==='closed').reduce((s,t)=>s+(t.pnl||0),0);
   const capital = (acc.capital||0) + pnl;
   const capEl = document.getElementById('u-capital');
   if (capEl) capEl.value = capital.toFixed(2);
   calcUnifiedRisk();
-  toast('Kapitał uzupełniony z konta: ' + acc.name, 'success');
+  toast(t('toast_capital_filled').replace('{name}', acc.name), 'success');
 }
 
 function calcUnifiedRisk() {
@@ -6416,10 +6868,11 @@ function saveSymbol(sym) {
   saveUserSymbolsStore(arr);
 }
 function clearAllSymbols() {
-  if (!confirm('Usunąć wszystkie zapisane instrumenty?')) return;
-  localStorage.removeItem('traderlog_symbols_' + (state.currentUser||''));
-  closeSymbolDropdown();
-  toast('Lista wyczyszczona', 'success');
+  showConfirm(t('confirm_clear_symbols'), () => {
+    localStorage.removeItem('traderlog_symbols_' + (state.currentUser||''));
+    closeSymbolDropdown();
+    toast(t('toast_list_cleared'), 'success');
+  });
 }
 function deleteSymbol(sym, e) {
   e.stopPropagation();
@@ -6682,9 +7135,7 @@ function cleanOldScreenshots() {
       cleanAllScreenshots();
     }
   } else {
-    if (confirm('Brak screenhotów starszych niż 30 dni.\n\nCzy usunąć WSZYSTKIE screenshoty?\n(Dane transakcji pozostaną)')) {
-      cleanAllScreenshots();
-    }
+    showConfirm('Brak screenhotów starszych niż 30 dni.\n\nCzy usunąć WSZYSTKIE screenshoty?\n(Dane transakcji pozostaną)', cleanAllScreenshots);
   }
 }
 
@@ -6864,7 +7315,7 @@ async function renderAdmin() {
 }
 
 function openAddUserModal() {
-  document.getElementById('add-user-modal-title').textContent = 'Dodaj użytkownika';
+  document.getElementById('add-user-modal-title').textContent = t('adm_add_user').replace('+ ','');
   document.getElementById('au-original-login').value = '';
   document.getElementById('au-login').value = '';
   document.getElementById('au-name').value = '';
@@ -6924,41 +7375,43 @@ function adminResetPass(login) {
 
 async function adminDeleteUser(userId, login) {
   if (!isAdmin()) { toast('Brak uprawnień', 'error'); return; }
-  if (!confirm('Usunąć użytkownika ' + login + '? Tej operacji nie można cofnąć.')) return;
-  try {
-    const { data: { session } } = await _sb.auth.getSession();
-    const adminToken = session?.access_token;
-    if (!adminToken) { toast('Brak sesji — zaloguj się ponownie', 'error'); return; }
-    const res = await fetch(_SB_URL + '/rest/v1/profiles?id=eq.' + encodeURIComponent(userId), {
-      method: 'DELETE',
-      headers: {
-        'apikey': _SB_ANON,
-        'Authorization': 'Bearer ' + adminToken
+  showConfirm('Usunąć użytkownika ' + login + '? Tej operacji nie można cofnąć.', async () => {
+    try {
+      const { data: { session } } = await _sb.auth.getSession();
+      const adminToken = session?.access_token;
+      if (!adminToken) { toast('Brak sesji — zaloguj się ponownie', 'error'); return; }
+      const res = await fetch(_SB_URL + '/rest/v1/profiles?id=eq.' + encodeURIComponent(userId), {
+        method: 'DELETE',
+        headers: {
+          'apikey': _SB_ANON,
+          'Authorization': 'Bearer ' + adminToken
+        }
+      });
+      if (!res.ok) {
+        const errText = await res.text();
+        console.warn('Delete error:', res.status, errText);
+        toast('Błąd usuwania (' + res.status + ')', 'error');
+        return;
       }
-    });
-    if (!res.ok) {
-      const errText = await res.text();
-      console.warn('Delete error:', res.status, errText);
-      toast('Błąd usuwania (' + res.status + ')', 'error');
-      return;
-    }
-    toast('Użytkownik usunięty ✓', 'success');
-    renderAdmin();
-  } catch(e) { toast('Błąd: ' + e.message, 'error'); }
+      toast('Użytkownik usunięty ✓', 'success');
+      renderAdmin();
+    } catch(e) { toast('Błąd: ' + e.message, 'error'); }
+  });
 }
 
 function adminNukeAll() {
-  if (!confirm('UWAGA! Usunąć WSZYSTKIE dane wszystkich użytkowników?\nTego nie można cofnąć!')) return;
-  if (!confirm('Jesteś PEWIEN? Stracisz wszystkie transakcje, konta i ustawienia!')) return;
-  const users = getUsers();
-  // Keep only admin
-  const adminUser = state.currentUser;
-  const myData = users[adminUser];
-  const emptyDB = { users: { [adminUser]: myData }, accounts: {}, trades: {} };
-  saveDB(emptyDB);
-  _dbCache = emptyDB;
-  toast('Baza wyczyszczona', 'success');
-  renderAdmin();
+  showConfirm('UWAGA! Usunąć WSZYSTKIE dane wszystkich użytkowników?\nTego nie można cofnąć!', () => {
+    showConfirm('Jesteś PEWIEN? Stracisz wszystkie transakcje, konta i ustawienia!', () => {
+      const users = getUsers();
+      const adminUser = state.currentUser;
+      const myData = users[adminUser];
+      const emptyDB = { users: { [adminUser]: myData }, accounts: {}, trades: {} };
+      saveDB(emptyDB);
+      _dbCache = emptyDB;
+      toast('Baza wyczyszczona', 'success');
+      renderAdmin();
+    });
+  });
 }
 
 async function adminExport() {
@@ -6978,31 +7431,32 @@ async function adminExport() {
 }
 
 async function adminImport() {
-  if (!confirm('Importuj dane? Obecne dane zostaną ZASTĄPIONE importem!')) return;
-  let json = null;
-  if (IS_ELECTRON) {
-    json = await window.electronAPI.importData();
-  } else {
-    json = await new Promise(res => {
-      const inp = document.createElement('input');
-      inp.type = 'file'; inp.accept = '.json';
-      inp.onchange = e => { const f = e.target.files[0]; if (!f) { res(null); return; }
-        const r = new FileReader(); r.onload = ev => res(ev.target.result); r.readAsText(f); };
-      inp.click();
-    });
-  }
-  if (!json) return;
-  try {
-    const data = JSON.parse(json);
-    saveDB(data);
-    _dbCache = data;
-    toast('Import zakończony ✓', 'success');
-    setTimeout(() => {
-      renderDashboard(); renderTrades(); renderSummary();
-      renderAccounts(); refreshTopbarAccount(); updateDraftBadges();
-      updateAdminNav(); renderAdmin();
-    }, 400);
-  } catch { toast('Błąd importu – nieprawidłowy plik', 'error'); }
+  showConfirm('Importuj dane? Obecne dane zostaną ZASTĄPIONE importem!', async () => {
+    let json = null;
+    if (IS_ELECTRON) {
+      json = await window.electronAPI.importData();
+    } else {
+      json = await new Promise(res => {
+        const inp = document.createElement('input');
+        inp.type = 'file'; inp.accept = '.json';
+        inp.onchange = e => { const f = e.target.files[0]; if (!f) { res(null); return; }
+          const r = new FileReader(); r.onload = ev => res(ev.target.result); r.readAsText(f); };
+        inp.click();
+      });
+    }
+    if (!json) return;
+    try {
+      const data = JSON.parse(json);
+      saveDB(data);
+      _dbCache = data;
+      toast('Import zakończony ✓', 'success');
+      setTimeout(() => {
+        renderDashboard(); renderTrades(); renderSummary();
+        renderAccounts(); refreshTopbarAccount(); updateDraftBadges();
+        updateAdminNav(); renderAdmin();
+      }, 400);
+    } catch { toast('Błąd importu – nieprawidłowy plik', 'error'); }
+  });
 }
 
 
@@ -7411,11 +7865,11 @@ function setAutosaveDot(state) {
   if (!dot) return;
   dot.className = 'autosave-dot ' + state;
   if (state === 'saved') {
-    label.textContent = 'Szkic zapisany';
+    label.textContent = t('draft_saved_label');
     time.textContent  = 'przed chwilą';
     dot.style.background = 'var(--accent)';
   } else if (state === 'saving') {
-    label.textContent = 'Zapisuję szkic…';
+    label.textContent = t('draft_saving_label');
     time.textContent  = '';
   } else {
     label.textContent = 'auto-zapis wersji roboczej';
@@ -7439,19 +7893,11 @@ function openTradeModalWithDraftCheck() {
 
 function showDraftRestorePrompt(meta) {
   const ago = timeAgo(meta.savedAt);
-  const choice = confirm(
-    `Znaleziono niezapisaną wersję roboczą:\n\n` +
-    `Instrument: ${meta.symbol}  |  ${meta.dir}  |  ${meta.tf}\n` +
-    `Zapisana: ${ago}\n\n` +
-    `Kliknij OK aby przywrócić szkic, Anuluj aby zacząć od nowa.`
+  showConfirm(
+    `Znaleziono niezapisaną wersję roboczą:\n\nInstrument: ${meta.symbol}  |  ${meta.dir}  |  ${meta.tf}\nZapisana: ${ago}\n\nKliknij Potwierdź aby przywrócić szkic, Anuluj aby zacząć od nowa.`,
+    () => restoreDraft(meta.id),
+    () => { _draftKey = meta.id; openTradeModal(); hookFormAutoSave(); }
   );
-  if (choice) {
-    restoreDraft(meta.id);
-  } else {
-    _draftKey = meta.id; // keep key so we overwrite it
-    openTradeModal();
-    hookFormAutoSave();
-  }
 }
 
 function restoreDraft(id) {
@@ -7486,7 +7932,7 @@ function restoreDraft(id) {
   openModal('trade-modal');
   applyTfModeUI();
   hookFormAutoSave();
-  toast('Szkic przywrócony ✓', 'success');
+  toast(t('toast_draft_restored'), 'success');
 }
 
 // ── Hook all form inputs to auto-save ────────────────────────────────────────
@@ -7513,11 +7959,12 @@ function clearCurrentDraft() {
 // ── Discard draft and close ───────────────────────────────────────────────────
 function discardDraftAndClose() {
   if (!formHasContent()) { closeModal('trade-modal'); return; }
-  if (!confirm('Odrzucić wersję roboczą? Dane zostaną utracone.')) return;
-  clearCurrentDraft();
-  _discardingDraft = true; // [v1.7] nie zapisuj szkicu przy zamknięciu
-  closeModal('trade-modal');
-  toast('Szkic odrzucony', 'success');
+  showConfirm(t('confirm_discard_draft'), () => {
+    clearCurrentDraft();
+    _discardingDraft = true;
+    closeModal('trade-modal');
+    toast(t('toast_draft_discarded'), 'success');
+  });
 }
 
 // ── Drafts page ───────────────────────────────────────────────────────────────
@@ -7573,19 +8020,21 @@ function openTradeModalFromDrafts() {
   hookFormAutoSave();
 }
 function deleteSingleDraft(id) {
-  if (!confirm('Usunąć ten szkic?')) return;
-  deleteDraftData(id);
-  updateDraftBadges();
-  renderDraftsPage();
-  toast('Szkic usunięty', 'success');
+  showConfirm(t('confirm_delete_draft'), () => {
+    deleteDraftData(id);
+    updateDraftBadges();
+    renderDraftsPage();
+    toast(t('toast_draft_deleted'), 'success');
+  });
 }
 function clearAllDrafts() {
-  if (!confirm('Usunąć wszystkie wersje robocze?')) return;
-  const idx = getDraftIndex();
-  idx.forEach(d => deleteDraftData(d.id));
-  updateDraftBadges();
-  renderDraftsPage();
-  toast('Wszystkie szkice usunięte', 'success');
+  showConfirm(t('confirm_clear_drafts'), () => {
+    const idx = getDraftIndex();
+    idx.forEach(d => deleteDraftData(d.id));
+    updateDraftBadges();
+    renderDraftsPage();
+    toast(t('toast_drafts_cleared'), 'success');
+  });
 }
 
 // ── Badge / indicator updates ─────────────────────────────────────────────────
@@ -7696,7 +8145,7 @@ async function doLogin() {
       });
       const profiles = await res.json();
       if (!profiles?.length || !profiles[0].email) {
-        if (btn) { btn.textContent = 'Zaloguj się'; btn.disabled = false; }
+        if (btn) { btn.textContent = t('auth_login_btn'); btn.disabled = false; }
         return showAuthError('Nie znaleziono użytkownika');
       }
       email = profiles[0].email;
@@ -7704,7 +8153,7 @@ async function doLogin() {
 
     // Zaloguj przez Supabase
     const { data, error } = await _sb.auth.signInWithPassword({ email, password: pass });
-    if (btn) { btn.textContent = 'Zaloguj się'; btn.disabled = false; }
+    if (btn) { btn.textContent = t('auth_login_btn'); btn.disabled = false; }
     if (error) {
       if (error.message?.toLowerCase().includes('email not confirmed')) {
         return showAuthError('Potwierdź adres e-mail — sprawdź skrzynkę pocztową (też folder SPAM).');
@@ -7745,13 +8194,13 @@ async function doLogin() {
           users['patryk'] = { pass: '__supabase__', name: 'Patryk', email: _ADMIN_EMAIL, role: 'admin', subscription: 'admin', supabaseId: data.user.id, createdAt: Date.now() };
           saveUsers(users);
           await sbSyncDown(data.user.id, 'patryk');
-          if (btn) { btn.textContent = 'Zaloguj się'; btn.disabled = false; }
+          if (btn) { btn.textContent = t('auth_login_btn'); btn.disabled = false; }
           loginAs('patryk', users['patryk']);
           return;
         }
       }
       await _sb.auth.signOut();
-      if (btn) { btn.textContent = 'Zaloguj się'; btn.disabled = false; }
+      if (btn) { btn.textContent = t('auth_login_btn'); btn.disabled = false; }
       return showAuthError('Profil nie istnieje. Skontaktuj się z administratorem.');
     }
 
@@ -7777,7 +8226,7 @@ async function doLogin() {
     loginAs(profile.login, users[profile.login]);
 
   } catch(e) {
-    if (btn) { btn.textContent = 'Zaloguj się'; btn.disabled = false; }
+    if (btn) { btn.textContent = t('auth_login_btn'); btn.disabled = false; }
     showAuthError('Błąd logowania: ' + e.message);
   }
 }
@@ -7798,7 +8247,7 @@ async function doRegister() {
   const btn = document.querySelector('#register-form .btn-primary');
   if (btn) { btn.textContent = '⏳ Tworzę konto...'; btn.disabled = true; }
 
-  const done = (err) => { if (btn) { btn.textContent = 'Utwórz konto'; btn.disabled = false; } if (err) showAuthError(err); };
+  const done = (err) => { if (btn) { btn.textContent = t('auth_reg_btn'); btn.disabled = false; } if (err) showAuthError(err); };
 
   try {
     // Inicjalizuj Supabase jeśli nie jest
@@ -8036,7 +8485,7 @@ function saveProfileSettings() {
   saveUsers(users);
   // Update topbar display name
   document.getElementById('topbar-username').textContent = u.name;
-  toast('Profil zapisany ✓', 'success');
+  toast(t('toast_profile_saved'), 'success');
 }
 
 function savePasswordSettings() {
@@ -8235,14 +8684,14 @@ const T = {
     // Nav
     nav_dashboard:   'Dashboard',
     nav_trades:      'Transakcje',
-    nav_summary:     'Podsumowanie',
+    nav_summary:     'Statystyki',
     nav_accounts:    'Konta',
     nav_drafts:      'Szkice',
-    nav_analysis:    '🔍 Analiza',
-    nav_calendar:    '📅 Kalendarz',
-    nav_calculator:  '🔢 Kalkulator',
-    nav_admin:       '⚙️ Admin',
-    nav_settings:    '⚙️ Ustawienia',
+    nav_analysis:    'Analiza',
+    nav_calendar:    'Kalendarz',
+    nav_calculator:  'Kalkulator',
+    nav_admin:       'Admin',
+    nav_settings:    'Ustawienia',
     // Auth
     auth_login_tab:  'Logowanie',
     auth_reg_tab:    'Rejestracja',
@@ -8465,19 +8914,248 @@ const T = {
     btn_new_trade:   '+ Nowa transakcja',
     btn_new_analysis:'+ Nowa analiza',
     btn_add_account: 'Dodaj konto',
+    // New nav items
+    nav_journal:     'Rutyna dnia',
+    nav_emotions:    'Emocje & Psychologia',
+    nav_library:     'Biblioteka',
+    nav_tools:       'Narzędzia',
+    nav_admin:       'Admin',
+    // Sidebar section labels
+    sec_stats:       'Statystyki',
+    sec_resources:   'Zasoby',
+    sec_account:     'Konto',
+    // R:R table extra headers
+    th_risk:         'Ryzyko',
+    th_reward:       'Reward',
+    // Page titles for new sections
+    page_emotions:   '🧠 Emocje & Psychologia',
+    page_library:    '📚 Biblioteka strategii',
+    page_tools:      '🛠 Narzędzia',
+    page_journal:    '📔 Rutyna dnia',
+    // Filter
+    filter_all_emotions: '🧠 Emocje: Wszystkie',
+    // Emotions page
+    emotions_title:        '🧠 Analiza emocjonalna',
+    emotions_pre_label:    'Emocja przed wejściem',
+    emotions_post_label:   'Emocja po zamknięciu',
+    emotions_chart_title:  'Win rate wg emocji',
+    emotions_heatmap_title:'Heatmapa emocji',
+    emotions_weekly_title: 'Przegląd tygodnia',
+    emotions_weekly_empty: 'Brak przeglądów tygodnia',
+    emotions_no_data:      'Brak danych emocjonalnych',
+    emotions_no_data_hint: 'Zacznij dodawać emocje do transakcji (pole "Emocja przed wejściem" i "Emocja po zamknięciu" w formularzu transakcji)',
+    emotions_add_btn:      'Dodaj transakcję z emocjami',
+    emotions_empty_hint:   'Dodaj transakcje aby zobaczyć analizę emocjonalną',
+    emotions_table_empty:  'Brak danych — uzupełnij emocje w transakcjach',
+    emotions_col_emotion:  'Emocja',
+    emotions_col_avg_pnl:  'Śr. P&L',
+    emotions_col_sum_pnl:  'Suma P&L',
+    emotions_trades_with:  'Transakcji z emocjami',
+    emotions_coverage:     'pokrycia',
+    emotions_best:         'Najlepsza emocja',
+    emotions_worst:        'Najgorsza emocja',
+    emotions_sum:          'Suma',
+    // Rules page
+    rules_title:           'Reguły tradingowe',
+    rules_add:             '+ Dodaj regułę',
+    rules_empty:           'Brak reguł — dodaj pierwszą',
+    rule_type_max_daily:   'Maks. transakcji dziennie',
+    rule_type_max_losses:  'Maks. seria strat',
+    rule_type_stop_hour:   'Stop po godzinie',
+    rule_type_max_risk:    'Maks. ryzyko %',
+    rule_type_custom:      'Reguła własna',
+    rules_reminder_label:  '(tylko przypomnienie — nie blokuje)',
+    // Library page
+    library_title:         '📚 Biblioteka strategii',
+    library_add:           '+ Dodaj materiał',
+    library_empty:         'Brak materiałów — dodaj pierwszy',
+    library_filter_all:    'Wszystkie',
+    library_filter_pdf:    'PDF',
+    library_filter_video:  'Wideo',
+    library_filter_article:'Artykuł',
+    library_url_hint:      'Lub wklej URL (YouTube, artykuł)',
+    library_download:      'Pobierz',
+    // Journal page
+    journal_title:         '📔 Rutyna dnia',
+    journal_routine_title: 'Rutyna dzienna',
+    routine_step1:         'Plan poranny',
+    routine_step2:         'Przegląd rynku',
+    routine_step3:         'Plan transakcji',
+    routine_step4:         'Podsumowanie dnia',
+    routine_step5:         'Refleksja',
+    // Toast messages
+    toast_trade_saved:     'Transakcja zapisana ✓',
+    toast_trade_deleted:   'Transakcja usunięta',
+    toast_account_deleted: 'Konto usunięte',
+    toast_rule_deleted:    'Reguła usunięta',
+    toast_note_deleted:    'Notatka usunięta',
+    // Overtrading modal
+    ot_daily_limit:        '⚠️ Przekroczysz dzienny limit {n} transakcji!\n(Masz już {count})\n\nZapisać mimo to?',
+    ot_loss_streak:        '⚠️ Masz {n} strat z rzędu!\nLimit: {limit}\n\nNa pewno wchodzisz?',
+    rules_broken_msg:      '⚠️ Łamiesz regułę:\n{rules}\n\nNa pewno zapisać?',
+    ot_config_title:       'Overtrading Alert — konfiguracja',
+    ot_config_desc:        'Ustaw limity — aplikacja wyświetli ostrzeżenie po przekroczeniu',
+    ot_save_limits:        'Zapisz limity',
+    ot_popup_daily:        'Przekroczyłeś dzienny limit {n} transakcji!',
+    ot_popup_streak:       'UWAGA: {n} strat z rzędu!',
+    ot_popup_btn:          'Rozumiem',
+    rule_msg_max_daily:    'Maks. {lim} transakcji dziennie — masz już {count}',
+    rule_msg_max_losses:   'Nie wchodzisz po {lim} stratach — obecna passa strat: {streak}',
+    rule_msg_stop_hour:    'Stop trading o {hour}:00 — jest {now}',
+    rule_msg_max_risk:     'Ryzyko {pct}% przekracza limit {lim}%',
+    // Emotions — heatmap + plan consistency
+    emotions_heatmap_when:   '⏰ Kiedy grasz najlepiej?',
+    emotions_heatmap_legend: 'Zielony = zysk · Czerwony = strata · Liczba = transakcji',
+    emotions_heatmap_no_data:'brak',
+    emotions_plan_title:     '🎯 Konsekwencja planu',
+    emotions_with_plan:      'Gdy trzymałem plan',
+    emotions_without_plan:   'Gdy nie trzymałem planu',
+    emotions_discipline:     'dni z planem = dyscyplina',
+    emotions_days:           'dni',
+    // Journal
+    journal_today:           'Dziś',
+    journal_not_ready:       'Nie jesteś w formie — rozważ dzisiaj nie handlować lub zmniejsz wolumen',
+    journal_routine_complete:'✅ Rutyna kompletna',
+    journal_session_closed:  '✅ Sesja zamknięta',
+    journal_steps:           '{done}/4 kroków',
+    journal_no_trades:       'Brak zamkniętych transakcji dziś — dobry dzień na obserwację',
+    journal_trades_label:    'Transakcji',
+    journal_emotion_label:   'Emocja',
+    // Mood labels
+    mood_1: 'Bardzo zły', mood_2: 'Zły', mood_3: 'Neutralny', mood_4: 'Dobry', mood_5: 'Świetny',
+    // Notes
+    notes_empty:         'Brak notatek — kliknij + Nowa',
+    notes_no_results:    'Brak wyników',
+    notes_untitled:      'Bez tytułu',
+    notes_last_saved:    'Ostatnio zapisano: ',
+    notes_just_saved:    'Zapisano: ',
+    notes_saved_toast:   'Notatka zapisana ✓',
+    notes_pinned_toast:  'Notatka przypięta 📌',
+    notes_unpinned_toast:'Odpięto',
+    notes_empty_content: 'Wpisz tytuł lub treść',
+    // Weekly review
+    weekly_week:            'Tydzień',
+    weekly_no_trades:       'Brak zamkniętych transakcji w tym tygodniu',
+    weekly_no_analyses:     'Brak analiz zapisanych w tym tygodniu',
+    weekly_no_data:         'Brak danych — dodaj transakcje',
+    weekly_pnl:             'P&L tygodnia',
+    weekly_trades:          'Transakcji',
+    weekly_journal_days:    'Dni z dziennikiem',
+    weekly_saved:           'Przegląd tygodniowy zapisany ✓',
+    weekly_no_weaknesses:   '✅ Brak wyraźnych słabości w danych tego tygodnia',
+    weekly_continue:        'Kontynuuj analizę — więcej danych pokaże mocne strony',
+    weekly_col_date:        'Data',
+    weekly_col_dir:         'Kier.',
+    weekly_col_emo_pre:     'Emocja ↑',
+    weekly_col_emo_post:    'Emocja ↓',
+    weekly_no_entry:        'brak wpisu rano',
+    weekly_plan_saved:      'plan zapisany',
+    weekly_trades_suffix:   'transakcji',
+    weekly_analyses_suffix: 'analiz',
+    weekly_day_mood:        'Nastrój przed sesją',
+    weekly_good_winrate:    '🎯 Win rate {pct}% — ponad połowa transakcji na plusie',
+    weekly_good_plus:       '💰 Tydzień zamknięty na plusie: +{sym}{pnl}',
+    weekly_good_setup:      '📐 Setup "{s}" — {pct}% WR w tym tygodniu',
+    weekly_good_emo:        '🧠 Najlepsze wyniki gdy: "{e}" — {pct}% WR',
+    weekly_good_instr:      '💹 {s} — najlepszy instrument: +{sym}{pnl}',
+    weekly_good_journal:    '📓 Dziennik wypełniony {n}/7 dni — dobry nawyk!',
+    weekly_bad_winrate:     '📉 Win rate tylko {pct}% — przeanalizuj warunki wejść',
+    weekly_bad_minus:       '🔴 Tydzień na minusie: {sym}{pnl} — sprawdź zarządzanie ryzykiem',
+    weekly_bad_setup:       '📐 Setup "{s}" — {sym}{pnl} łącznie, rozważ jego pominięcie',
+    weekly_bad_emo:         '😤 {n}× trading z negatywnymi emocjami — work in progress',
+    weekly_bad_no_emo:      '🧠 {n} transakcji bez oznaczenia emocji — uzupełnij dane',
+    weekly_bad_no_diary:    '📓 {n}× handlowałeś bez planu w dzienniku — zacznij sesję od wpisu',
+    // Success toasts
+    toast_trade_updated:     'Transakcja zaktualizowana ✓',
+    toast_account_saved:     'Konto zapisane',
+    toast_account_switched:  'Przełączono konto',
+    toast_analysis_linked:   'Analiza powiązana ✓',
+    toast_analysis_unlinked: 'Powiązanie usunięte',
+    toast_ot_limits_saved:   'Limity overtrading zapisane ✓',
+    toast_demo_deleted:      'Konto demo usunięte',
+    toast_journal_pre_saved: 'Rutyna przed sesją zapisana ✓',
+    toast_journal_entry_saved:'Wpis zapisany ✓',
+    toast_journal_post_saved:'Zamknięcie sesji zapisane ✓',
+    toast_lots_inserted:     'Loty wstawione do formularza ✓',
+    toast_units_inserted:    'Jednostki wstawione ✓',
+    toast_capital_filled:    'Kapitał uzupełniony z konta: {name}',
+    toast_list_cleared:      'Lista wyczyszczona',
+    toast_draft_restored:    'Szkic przywrócony ✓',
+    toast_draft_discarded:   'Szkic odrzucony',
+    toast_draft_deleted:     'Szkic usunięty',
+    toast_drafts_cleared:    'Wszystkie szkice usunięte',
+    toast_drive_connecting:  'Łączenie z Google Drive...',
+    // Error toasts
+    err_instrument_required: 'Podaj instrument',
+    err_account_required:    'Wybierz konto',
+    err_account_name:        'Podaj nazwę konta',
+    err_login_first:         'Zaloguj się najpierw',
+    err_entry_nan:           'Cena wejścia musi być liczbą',
+    err_exit_nan:            'Cena wyjścia musi być liczbą',
+    err_size_nan:            'Rozmiar pozycji musi być liczbą',
+    err_drive_upload:        'Błąd wgrywania na Drive',
+    err_drive_required:      'Połącz z Google Drive aby dodać screenshoty ☁️',
+    err_emotion_pre:         'Zaznacz emocję PRZED wejściem — wymagane do zapisu',
+    err_emotion_post:        'Zaznacz emocję PO zamknięciu — wymagane dla zamkniętej transakcji',
+    toast_profile_saved:     'Profil zapisany ✓',
+    modal_new_account:       'Nowe konto',
+    modal_edit_account:      'Edytuj konto',
+    draft_saved_label:       'Szkic zapisany',
+    draft_saving_label:      'Zapisuję szkic…',
+    toast_library_added:     'Materiał dodany do biblioteki ✓',
+    toast_library_deleted:   'Materiał usunięty',
+    err_library_title:       'Podaj tytuł materiału',
+    err_library_size:        'Plik zbyt duży. Limit: 50 MB',
+    err_library_upload:      'Błąd uploadu: {msg}',
+    err_library_no_file:     'Dodaj plik lub podaj URL',
+    err_library_download:    'Błąd pobierania',
+    err_library_no_src:      'Brak pliku ani URL do pobrania',
+    // Confirm dialogs
+    confirm_logout:          'Wylogować się?',
+    confirm_delete_trade:    'Usunąć tę transakcję?',
+    confirm_unlink_analysis: 'Usunąć powiązanie z analizą?',
+    confirm_delete_account:  'Usunąć konto i WSZYSTKIE jego transakcje?',
+    confirm_delete_demo:     'Usunąć konto demo i wszystkie jego dane?',
+    confirm_discard_draft:   'Odrzucić wersję roboczą? Dane zostaną utracone.',
+    confirm_delete_draft:    'Usunąć ten szkic?',
+    confirm_clear_drafts:    'Usunąć wszystkie wersje robocze?',
+    confirm_delete_analysis: 'Usunąć tę analizę?',
+    confirm_discard_analysis:'Odrzucić tę analizę?',
+    confirm_delete_strategy: 'Usunąć strategię?',
+    confirm_delete_setup:    'Usunąć setup?',
+    confirm_delete_rule:     'Usunąć tę regułę?',
+    confirm_delete_note:     'Usunąć tę notatkę?',
+    confirm_delete_library:  'Usunąć ten materiał z biblioteki?',
+    confirm_clear_symbols:   'Usunąć wszystkie zapisane instrumenty?',
+    // Placeholders
+    ph_trade_pre:            'Opisz swoją analizę przed otwarciem pozycji…',
+    ph_trade_post:           'Co poszło dobrze? Co można było zrobić lepiej?',
+    ph_note_title:           'Tytuł notatki…',
+    ph_note_content:         'Pisz swoje notatki tutaj…',
+    ph_pnl_auto:             'wylicza się automatycznie',
+    ph_sett_name:            'Twoja nazwa wyświetlana',
+    ph_search_trades:        'Szukaj po instrumencie lub setupie…',
+    ph_search_analysis:      'Szukaj po instrumencie, opisie…',
+    ph_search_notes:         'Szukaj w notatkach…',
+    ph_weekly_strengths:     'Co poszło dobrze w tym tygodniu?',
+    ph_weekly_weaknesses:    'Co wymaga poprawy?',
+    ph_weekly_plan:          'Plan na następny tydzień…',
+    ph_rule_label:           'Opis reguły…',
+    ph_lib_title:            'Tytuł materiału…',
+    ph_lib_url:              'https://… (YouTube, artykuł, strona)',
   },
   en: {
     // Nav
     nav_dashboard:   'Dashboard',
     nav_trades:      'Trades',
-    nav_summary:     'Summary',
+    nav_summary:     'Statistics',
     nav_accounts:    'Accounts',
     nav_drafts:      'Drafts',
-    nav_analysis:    '🔍 Analysis',
-    nav_calendar:    '📅 Calendar',
-    nav_calculator:  '🔢 Calculator',
-    nav_admin:       '⚙️ Admin',
-    nav_settings:    '⚙️ Settings',
+    nav_analysis:    'Analysis',
+    nav_calendar:    'Calendar',
+    nav_calculator:  'Calculator',
+    nav_admin:       'Admin',
+    nav_settings:    'Settings',
     // Auth
     auth_login_tab:  'Login',
     auth_reg_tab:    'Register',
@@ -8700,6 +9378,235 @@ const T = {
     btn_new_trade:   '+ New trade',
     btn_new_analysis:'+ New analysis',
     btn_add_account: 'Add account',
+    // New nav items
+    nav_journal:     'Daily Routine',
+    nav_emotions:    'Emotions & Psychology',
+    nav_library:     'Library',
+    nav_tools:       'Tools',
+    nav_admin:       'Admin',
+    // Sidebar section labels
+    sec_stats:       'Statistics',
+    sec_resources:   'Resources',
+    sec_account:     'Account',
+    // R:R table extra headers
+    th_risk:         'Risk',
+    th_reward:       'Reward',
+    // Page titles
+    page_emotions:   '🧠 Emotions & Psychology',
+    page_library:    '📚 Strategy Library',
+    page_tools:      '🛠 Tools',
+    page_journal:    '📔 Daily Routine',
+    // Filter
+    filter_all_emotions: '🧠 Emotions: All',
+    // Emotions page
+    emotions_title:        '🧠 Emotional Analysis',
+    emotions_pre_label:    'Emotion before entry',
+    emotions_post_label:   'Emotion after close',
+    emotions_chart_title:  'Win rate by emotion',
+    emotions_heatmap_title:'Emotion heatmap',
+    emotions_weekly_title: 'Weekly review',
+    emotions_weekly_empty: 'No weekly reviews yet',
+    emotions_no_data:      'No emotion data',
+    emotions_no_data_hint: 'Start adding emotions to trades (fields "Emotion before entry" and "Emotion after close" in the trade form)',
+    emotions_add_btn:      'Add trade with emotions',
+    emotions_empty_hint:   'Add trades to see emotional analysis',
+    emotions_table_empty:  'No data — fill in emotions in trades',
+    emotions_col_emotion:  'Emotion',
+    emotions_col_avg_pnl:  'Avg P&L',
+    emotions_col_sum_pnl:  'Total P&L',
+    emotions_trades_with:  'Trades with emotions',
+    emotions_coverage:     'coverage',
+    emotions_best:         'Best emotion',
+    emotions_worst:        'Worst emotion',
+    emotions_sum:          'Total',
+    // Rules page
+    rules_title:           'Trading Rules',
+    rules_add:             '+ Add rule',
+    rules_empty:           'No rules — add your first',
+    rule_type_max_daily:   'Max daily trades',
+    rule_type_max_losses:  'Max loss streak',
+    rule_type_stop_hour:   'Stop after hour',
+    rule_type_max_risk:    'Max risk %',
+    rule_type_custom:      'Custom rule',
+    rules_reminder_label:  '(reminder only — does not block)',
+    // Library page
+    library_title:         '📚 Strategy Library',
+    library_add:           '+ Add material',
+    library_empty:         'No materials — add your first',
+    library_filter_all:    'All',
+    library_filter_pdf:    'PDF',
+    library_filter_video:  'Video',
+    library_filter_article:'Article',
+    library_url_hint:      'Or paste a URL (YouTube, article link)',
+    library_download:      'Download',
+    // Journal page
+    journal_title:         '📔 Daily Routine',
+    journal_routine_title: 'Daily Routine',
+    routine_step1:         'Morning plan',
+    routine_step2:         'Market review',
+    routine_step3:         'Trade plan',
+    routine_step4:         'End of day review',
+    routine_step5:         'Reflection',
+    // Toast messages
+    toast_trade_saved:     'Trade saved ✓',
+    toast_trade_deleted:   'Trade deleted',
+    toast_account_deleted: 'Account deleted',
+    toast_rule_deleted:    'Rule deleted',
+    toast_note_deleted:    'Note deleted',
+    // Overtrading modal
+    ot_daily_limit:        '⚠️ You will exceed the daily limit of {n} trades!\n(You already have {count})\n\nSave anyway?',
+    ot_loss_streak:        '⚠️ You have {n} consecutive losses!\nLimit: {limit}\n\nAre you sure you want to enter?',
+    rules_broken_msg:      '⚠️ You are breaking a rule:\n{rules}\n\nAre you sure you want to save?',
+    ot_config_title:       'Overtrading Alert — settings',
+    ot_config_desc:        'Set limits — the app will warn you when exceeded',
+    ot_save_limits:        'Save limits',
+    ot_popup_daily:        'You have exceeded the daily limit of {n} trades!',
+    ot_popup_streak:       'WARNING: {n} consecutive losses!',
+    ot_popup_btn:          'Got it',
+    rule_msg_max_daily:    'Max {lim} trades per day — you already have {count}',
+    rule_msg_max_losses:   'No entry after {lim} losses — current streak: {streak}',
+    rule_msg_stop_hour:    'Stop trading at {hour}:00 — current time: {now}',
+    rule_msg_max_risk:     'Risk {pct}% exceeds limit of {lim}%',
+    // Emotions — heatmap + plan consistency
+    emotions_heatmap_when:   '⏰ When do you trade best?',
+    emotions_heatmap_legend: 'Green = profit · Red = loss · Count = trades',
+    emotions_heatmap_no_data:'none',
+    emotions_plan_title:     '🎯 Plan Consistency',
+    emotions_with_plan:      'When I followed the plan',
+    emotions_without_plan:   'When I broke the plan',
+    emotions_discipline:     'days with plan = discipline',
+    emotions_days:           'days',
+    // Journal
+    journal_today:           'Today',
+    journal_not_ready:       "You're not at your best — consider not trading today or reducing size",
+    journal_routine_complete:'✅ Routine complete',
+    journal_session_closed:  '✅ Session closed',
+    journal_steps:           '{done}/4 steps',
+    journal_no_trades:       'No closed trades today — good day to observe',
+    journal_trades_label:    'Trades',
+    journal_emotion_label:   'Emotion',
+    // Mood labels
+    mood_1: 'Very bad', mood_2: 'Bad', mood_3: 'Neutral', mood_4: 'Good', mood_5: 'Great',
+    // Notes
+    notes_empty:         'No notes — click + New',
+    notes_no_results:    'No results',
+    notes_untitled:      'Untitled',
+    notes_last_saved:    'Last saved: ',
+    notes_just_saved:    'Saved: ',
+    notes_saved_toast:   'Note saved ✓',
+    notes_pinned_toast:  'Note pinned 📌',
+    notes_unpinned_toast:'Unpinned',
+    notes_empty_content: 'Enter title or content',
+    // Weekly review
+    weekly_week:            'Week',
+    weekly_no_trades:       'No closed trades this week',
+    weekly_no_analyses:     'No analyses saved this week',
+    weekly_no_data:         'No data — add trades',
+    weekly_pnl:             'Weekly P&L',
+    weekly_trades:          'Trades',
+    weekly_journal_days:    'Days with journal',
+    weekly_saved:           'Weekly review saved ✓',
+    weekly_no_weaknesses:   "✅ No significant weaknesses in this week's data",
+    weekly_continue:        'Continue analysis — more data will reveal strengths',
+    weekly_col_date:        'Date',
+    weekly_col_dir:         'Dir.',
+    weekly_col_emo_pre:     'Emotion ↑',
+    weekly_col_emo_post:    'Emotion ↓',
+    weekly_no_entry:        'no morning entry',
+    weekly_plan_saved:      'plan saved',
+    weekly_trades_suffix:   'trades',
+    weekly_analyses_suffix: 'analyses',
+    weekly_day_mood:        'Mood before session',
+    weekly_good_winrate:    '🎯 Win rate {pct}% — over half your trades were positive',
+    weekly_good_plus:       '💰 Week closed in profit: +{sym}{pnl}',
+    weekly_good_setup:      '📐 Setup "{s}" — {pct}% WR this week',
+    weekly_good_emo:        '🧠 Best results when: "{e}" — {pct}% WR',
+    weekly_good_instr:      '💹 {s} — best instrument: +{sym}{pnl}',
+    weekly_good_journal:    '📓 Journal filled {n}/7 days — great habit!',
+    weekly_bad_winrate:     '📉 Win rate only {pct}% — review your entry conditions',
+    weekly_bad_minus:       '🔴 Week in the red: {sym}{pnl} — review risk management',
+    weekly_bad_setup:       '📐 Setup "{s}" — {sym}{pnl} total, consider skipping it',
+    weekly_bad_emo:         '😤 {n}× trading with negative emotions — work in progress',
+    weekly_bad_no_emo:      '🧠 {n} trades without emotion tags — fill in the data',
+    weekly_bad_no_diary:    "📓 {n}× you traded without a journal entry — start each session with an entry",
+    // Success toasts
+    toast_trade_updated:     'Trade updated ✓',
+    toast_account_saved:     'Account saved',
+    toast_account_switched:  'Account switched',
+    toast_analysis_linked:   'Analysis linked ✓',
+    toast_analysis_unlinked: 'Link removed',
+    toast_ot_limits_saved:   'Overtrading limits saved ✓',
+    toast_demo_deleted:      'Demo account deleted',
+    toast_journal_pre_saved: 'Pre-session routine saved ✓',
+    toast_journal_entry_saved:'Entry saved ✓',
+    toast_journal_post_saved:'Session close saved ✓',
+    toast_lots_inserted:     'Lots inserted into form ✓',
+    toast_units_inserted:    'Units inserted ✓',
+    toast_capital_filled:    'Capital filled from account: {name}',
+    toast_list_cleared:      'List cleared',
+    toast_draft_restored:    'Draft restored ✓',
+    toast_draft_discarded:   'Draft discarded',
+    toast_draft_deleted:     'Draft deleted',
+    toast_drafts_cleared:    'All drafts deleted',
+    toast_drive_connecting:  'Connecting to Google Drive...',
+    // Error toasts
+    err_instrument_required: 'Enter instrument',
+    err_account_required:    'Select account',
+    err_account_name:        'Enter account name',
+    err_login_first:         'Sign in first',
+    err_entry_nan:           'Entry price must be a number',
+    err_exit_nan:            'Exit price must be a number',
+    err_size_nan:            'Position size must be a number',
+    err_drive_upload:        'Drive upload error',
+    err_drive_required:      'Connect Google Drive to add screenshots ☁️',
+    err_emotion_pre:         'Select emotion BEFORE entry — required to save',
+    err_emotion_post:        'Select emotion AFTER close — required for closed trade',
+    toast_profile_saved:     'Profile saved ✓',
+    modal_new_account:       'New account',
+    modal_edit_account:      'Edit account',
+    draft_saved_label:       'Draft saved',
+    draft_saving_label:      'Saving draft…',
+    toast_library_added:     'Material added to library ✓',
+    toast_library_deleted:   'Material deleted',
+    err_library_title:       'Enter material title',
+    err_library_size:        'File too large. Limit: 50 MB',
+    err_library_upload:      'Upload error: {msg}',
+    err_library_no_file:     'Add a file or enter a URL',
+    err_library_download:    'Download error',
+    err_library_no_src:      'No file or URL to download',
+    // Confirm dialogs
+    confirm_logout:          'Sign out?',
+    confirm_delete_trade:    'Delete this trade?',
+    confirm_unlink_analysis: 'Remove analysis link?',
+    confirm_delete_account:  'Delete account and ALL its trades?',
+    confirm_delete_demo:     'Delete demo account and all its data?',
+    confirm_discard_draft:   'Discard draft? Data will be lost.',
+    confirm_delete_draft:    'Delete this draft?',
+    confirm_clear_drafts:    'Delete all drafts?',
+    confirm_delete_analysis: 'Delete this analysis?',
+    confirm_discard_analysis:'Discard this analysis?',
+    confirm_delete_strategy: 'Delete strategy?',
+    confirm_delete_setup:    'Delete setup?',
+    confirm_delete_rule:     'Delete this rule?',
+    confirm_delete_note:     'Delete this note?',
+    confirm_delete_library:  'Delete this material from the library?',
+    confirm_clear_symbols:   'Delete all saved instruments?',
+    // Placeholders
+    ph_trade_pre:            'Describe your pre-trade analysis…',
+    ph_trade_post:           'What went well? What could be improved?',
+    ph_note_title:           'Note title…',
+    ph_note_content:         'Write your notes here…',
+    ph_pnl_auto:             'calculated automatically',
+    ph_sett_name:            'Your display name',
+    ph_search_trades:        'Search by instrument or setup…',
+    ph_search_analysis:      'Search by instrument, description…',
+    ph_search_notes:         'Search notes…',
+    ph_weekly_strengths:     'What went well this week?',
+    ph_weekly_weaknesses:    'What needs improvement?',
+    ph_weekly_plan:          'Plan for next week…',
+    ph_rule_label:           'Rule description…',
+    ph_lib_title:            'Material title…',
+    ph_lib_url:              'https://… (YouTube, article, website)',
   }
 };
 
@@ -8712,20 +9619,7 @@ function setLang(lang) {
   document.querySelectorAll('[id^="lang-pl"]').forEach(b => b.classList.toggle('active', lang==='pl'));
   document.querySelectorAll('[id^="lang-en"]').forEach(b => b.classList.toggle('active', lang==='en'));
   // Re-render UI
-  applyLangToStatic();
-  // Re-render current page
-  const pages = ['dashboard','trades','summary','accounts','drafts','calendar','calculator','admin','settings'];
-  const activePage = pages.find(p => document.getElementById('page-'+p)?.classList.contains('active'));
-  if (activePage) {
-    if (activePage === 'dashboard') renderDashboard();
-    if (activePage === 'trades') renderTrades();
-    if (activePage === 'summary') renderSummary();
-    if (activePage === 'accounts') renderAccounts();
-    if (activePage === 'drafts') renderDraftsPage();
-    if (activePage === 'calendar') renderCalendar();
-    if (activePage === 'admin') renderAdmin();
-    if (activePage === 'settings') renderSettings();
-  }
+  applyLangToStatic(); // applyLangToStatic handles re-render internally
 }
 
 function applyLangToStatic() {
@@ -8908,8 +9802,28 @@ function applyLangToStatic() {
     });
   }
 
-  // ── 12. Re-render active page to apply translations to dynamic content ─────
-  const pages = ['dashboard','trades','summary','accounts','drafts','analysis','calendar','calculator','admin','settings'];
+  // ── 12. Filter selects ────────────────────────────────────────────────────
+  const filterDir = document.getElementById('filter-dir');
+  if (filterDir?.options[0]) filterDir.options[0].text = lang==='en'?'Direction: All':'Kierunek: Wszystkie';
+  const filterStatus = document.getElementById('filter-status');
+  if (filterStatus) {
+    if (filterStatus.options[0]) filterStatus.options[0].text = lang==='en'?'Status: All':'Status: Wszystkie';
+    if (filterStatus.options[1]) filterStatus.options[1].text = lang==='en'?'Open':'Otwarte';
+    if (filterStatus.options[2]) filterStatus.options[2].text = lang==='en'?'Closed':'Zamknięte';
+  }
+  const filterResult = document.getElementById('filter-result');
+  if (filterResult?.options[0]) filterResult.options[0].text = lang==='en'?'Result: All':'Wynik: Wszystkie';
+  const filterEmotion = document.getElementById('filter-emotion');
+  if (filterEmotion?.options[0]) filterEmotion.options[0].text = lang==='en'?'🧠 Emotions: All':'🧠 Emocje: Wszystkie';
+
+  // ── 13. Placeholder translations ──────────────────────────────────────────
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const key = el.getAttribute('data-i18n-placeholder');
+    el.placeholder = t(key);
+  });
+
+  // ── 14. Re-render active page to apply translations to dynamic content ─────
+  const pages = ['dashboard','trades','summary','accounts','drafts','analysis','calendar','calculator','admin','settings','emotions','library'];
   const activePage = pages.find(p => document.getElementById('page-'+p)?.classList.contains('active'));
   // Don't re-render if a modal is open (would reset form fields!)
   const anyModalOpen = document.querySelector('.modal-overlay.open');
@@ -8925,6 +9839,8 @@ function applyLangToStatic() {
       else if (activePage === 'calendar') renderCalendar();
       else if (activePage === 'admin') renderAdmin();
       else if (activePage === 'settings') renderSettings();
+      else if (activePage === 'emotions') renderEmotions();
+      else if (activePage === 'library') renderLibrary();
     }, 50);
   }
   } catch(e) { console.warn('applyLangToStatic error:', e); }
@@ -9167,26 +10083,27 @@ function manualBackupExport() {
 }
 
 function manualBackupImport() {
-  if (!confirm('Importuj dane? Obecne dane zostaną ZASTĄPIONE!')) return;
-  const inp = document.createElement('input');
-  inp.type = 'file'; inp.accept = '.json';
-  inp.onchange = e => {
-    const f = e.target.files[0]; if (!f) return;
-    const r = new FileReader();
-    r.onload = ev => {
-      try {
-        const data = JSON.parse(ev.target.result);
-        saveDB(data); _dbCache = data;
-        toast('Import zakończony ✓', 'success');
-        setTimeout(() => {
-          renderDashboard(); renderTrades(); renderSummary();
-          renderAccounts(); refreshTopbarAccount(); updateDraftBadges();
-        }, 400);
-      } catch { toast('Błąd importu — nieprawidłowy plik', 'error'); }
+  showConfirm('Importuj dane? Obecne dane zostaną ZASTĄPIONE!', () => {
+    const inp = document.createElement('input');
+    inp.type = 'file'; inp.accept = '.json';
+    inp.onchange = e => {
+      const f = e.target.files[0]; if (!f) return;
+      const r = new FileReader();
+      r.onload = ev => {
+        try {
+          const data = JSON.parse(ev.target.result);
+          saveDB(data); _dbCache = data;
+          toast('Import zakończony ✓', 'success');
+          setTimeout(() => {
+            renderDashboard(); renderTrades(); renderSummary();
+            renderAccounts(); refreshTopbarAccount(); updateDraftBadges();
+          }, 400);
+        } catch { toast('Błąd importu — nieprawidłowy plik', 'error'); }
+      };
+      r.readAsText(f);
     };
-    r.readAsText(f);
-  };
-  inp.click();
+    inp.click();
+  });
 }
 
 // ── Export CSV ────────────────────────────────────────────────────────────────
@@ -9494,27 +10411,28 @@ async function backupToGoogleDrive() {
 
 async function restoreFromGoogleDrive() {
   if (!_gapiLoaded) { connectGoogleDrive(); return; }
-  if (!confirm('Przywrócić dane z Google Drive? Obecne dane zostaną zastąpione!')) return;
-  try {
-    const fname = `traderlogjournal-${state.currentUser}-backup.json`;
-    const token = _gapiAccessToken;
-    const searchResp = await driveRequest(`https://www.googleapis.com/drive/v3/files?q=name='${fname}'&spaces=drive`, {
-      headers: { Authorization: 'Bearer ' + token }
-    });
-    if (!searchResp) return;
-    const searchData = await searchResp.json();
-    const fileId = searchData.files?.[0]?.id;
-    if (!fileId) { toast('Nie znaleziono backupu na Drive', 'error'); return; }
-    const fileResp = await driveRequest(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
-      headers: { Authorization: 'Bearer ' + token }
-    });
-    if (!fileResp) return;
-    const data = await fileResp.json();
-    saveDB(data); _dbCache = data;
-    toast('Przywrócono z Google Drive ✓', 'success');
-    renderDashboard(); renderTrades(); renderSummary();
-    renderAccounts(); refreshTopbarAccount(); updateDraftBadges();
-  } catch(e) { toast('Błąd przywracania: ' + e.message, 'error'); }
+  showConfirm('Przywrócić dane z Google Drive? Obecne dane zostaną zastąpione!', async () => {
+    try {
+      const fname = `traderlogjournal-${state.currentUser}-backup.json`;
+      const token = _gapiAccessToken;
+      const searchResp = await driveRequest(`https://www.googleapis.com/drive/v3/files?q=name='${fname}'&spaces=drive`, {
+        headers: { Authorization: 'Bearer ' + token }
+      });
+      if (!searchResp) return;
+      const searchData = await searchResp.json();
+      const fileId = searchData.files?.[0]?.id;
+      if (!fileId) { toast('Nie znaleziono backupu na Drive', 'error'); return; }
+      const fileResp = await driveRequest(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+        headers: { Authorization: 'Bearer ' + token }
+      });
+      if (!fileResp) return;
+      const data = await fileResp.json();
+      saveDB(data); _dbCache = data;
+      toast('Przywrócono z Google Drive ✓', 'success');
+      renderDashboard(); renderTrades(); renderSummary();
+      renderAccounts(); refreshTopbarAccount(); updateDraftBadges();
+    } catch(e) { toast('Błąd przywracania: ' + e.message, 'error'); }
+  });
 }
 
 async function openDriveFolder() {
@@ -10017,7 +10935,7 @@ function assignTradeToAnalysis(tradeId) {
     trades[idx] = t;
     saveTrades(state.currentAccountId, trades);
     _selectedTradeForAnalysis = null;
-    toast('Powiązanie usunięte', 'success');
+    toast(t('toast_analysis_unlinked'), 'success');
   } else {
     t.linkedAnalysisId = currentAnalysisId;
     t.updatedAt = Date.now();
@@ -10067,7 +10985,7 @@ document.addEventListener('click', e => {
 // ── Screenshots in analysis ───────────────────────────────────────────────────
 function anHandleFiles(files) {
   if (!_gapiLoaded || !_gapiAccessToken) {
-    toast('Połącz z Google Drive aby dodać screenshoty ☁️', 'error');
+    toast(t('err_drive_required'), 'error');
     connectGoogleDrive();
     return;
   }
@@ -10088,7 +11006,7 @@ function anHandleFiles(files) {
         if (s) { s.dataUrl = driveUrl; s.uploading = false; }
       } else {
         _anScreenshots = _anScreenshots.filter(s => s.id !== id);
-        toast('Błąd wgrywania na Drive', 'error');
+        toast(t('err_drive_upload'), 'error');
       }
       renderAnScreenshots();
       anAutosave();
@@ -10394,15 +11312,15 @@ function saveAnalysis() {
 }
 
 function deleteAnalysis(id) {
-  if (!confirm('Usunąć tę analizę?')) return;
-  saveAnalyses(getAnalyses().filter(a => a.id !== id));
-  renderAnalysisList();
-  toast('Analiza usunięta', 'success');
+  showConfirm(t('confirm_delete_analysis'), () => {
+    saveAnalyses(getAnalyses().filter(a => a.id !== id));
+    renderAnalysisList();
+    toast('Analiza usunięta', 'success');
+  });
 }
 
 function discardAnalysis() {
-  if (!confirm('Odrzucić tę analizę?')) return;
-  closeModal('analysis-modal');
+  showConfirm(t('confirm_discard_analysis'), () => closeModal('analysis-modal'));
 }
 
 function saveAnalysisAsTrade() {
@@ -12551,7 +13469,7 @@ function quickReport(type) {
 
 
 function openWithdrawalModal() {
-  if (!state.currentAccountId) return toast('Wybierz konto', 'error');
+  if (!state.currentAccountId) return toast(t('err_account_required'), 'error');
   const accounts = getAccounts();
   const acc = accounts.find(a => a.id === state.currentAccountId);
   const trades = getTrades(state.currentAccountId);
@@ -13110,7 +14028,7 @@ async function addPointScreenshot(input, scrId, event) {
     const compressed = await compressImage(e.target.result, 800, 0.7);
     const driveUrl = await autoUploadScreenToDrive(compressed, 'strat_' + scrId, 0);
     const dataUrl = driveUrl || null;
-    if (!dataUrl) { toast('Błąd wgrywania na Drive', 'error'); if (label) label.style.opacity = '1'; return; }
+    if (!dataUrl) { toast(t('err_drive_upload'), 'error'); if (label) label.style.opacity = '1'; return; }
     _driveScreenCache[driveUrl.replace('drive://','')] = compressed;
     const hidden = document.getElementById(scrId + '_data');
     if (hidden) hidden.value = dataUrl;
@@ -13149,12 +14067,13 @@ function saveStrategy() {
 
 
 function deleteStrategy(id) {
-  if (!confirm('Usunąć strategię?')) return;
-  const strategies = getStrategies().filter(s => s.id !== id);
-  saveStrategies(strategies);
-  renderStrategyList();
-  renderToolsStrategies();
-  toast('Strategia usunięta', 'success');
+  showConfirm(t('confirm_delete_strategy'), () => {
+    const strategies = getStrategies().filter(s => s.id !== id);
+    saveStrategies(strategies);
+    renderStrategyList();
+    renderToolsStrategies();
+    toast('Strategia usunięta', 'success');
+  });
 }
 
 
@@ -13423,7 +14342,7 @@ function addSetupRefScreenshots(input) {
         if (s) { s.dataUrl = driveUrl; s.uploading = false; }
       } else {
         _currentSetupScreenshots = _currentSetupScreenshots.filter(s => s.id !== id);
-        toast('Błąd wgrywania na Drive', 'error');
+        toast(t('err_drive_upload'), 'error');
       }
       renderSetupRefScreenshots();
     };
@@ -13484,11 +14403,12 @@ function saveSetup() {
 
 
 function deleteSetup(id) {
-  if (!confirm('Usunąć setup?')) return;
-  const strategyId = getAllSetups().find(s => s.id === id)?.strategyId;
-  saveAllSetups(getAllSetups().filter(s => s.id !== id));
-  if (strategyId) renderSetupList(strategyId);
-  toast('Setup usunięty', 'success');
+  showConfirm(t('confirm_delete_setup'), () => {
+    const strategyId = getAllSetups().find(s => s.id === id)?.strategyId;
+    saveAllSetups(getAllSetups().filter(s => s.id !== id));
+    if (strategyId) renderSetupList(strategyId);
+    toast('Setup usunięty', 'success');
+  });
 }
 
 
@@ -13635,7 +14555,7 @@ function addSetupScreenshots(prefix, input) {
         if (s) { s.dataUrl = driveUrl; s.uploading = false; }
       } else {
         _setupSessionScreenshots[prefix] = _setupSessionScreenshots[prefix].filter(s => s.id !== id);
-        toast('Błąd wgrywania na Drive', 'error');
+        toast(t('err_drive_upload'), 'error');
       }
       renderSessionScreenshots(prefix);
     };
@@ -13724,8 +14644,133 @@ function openChecklistFromForm(prefix) {
 }
 
 
+// ===== REGUŁY TRADERA =====
+function getRules() {
+  const db = getDB();
+  return db['rules_'+(state.currentUser||'')] || [];
+}
+function saveRules(arr) {
+  const db = getDB();
+  db['rules_'+(state.currentUser||'')] = arr;
+  saveDB(db);
+}
+function updateRuleValueHint() {
+  const type = document.getElementById('rule-type')?.value;
+  const label = document.getElementById('rule-value-label');
+  const inp = document.getElementById('rule-value');
+  if (!label || !inp) return;
+  const hints = {
+    'max-risk': ['Maks. ryzyko %', '2', '% kapitału'],
+    'max-losses': ['Po ilu stratach stop', '3', 'liczba strat z rzędu'],
+    'stop-hour': ['Godzina stopu (24h)', '17', 'np. 17 = po 17:00'],
+    'max-daily': ['Maks. transakcji/dzień', '5', 'liczba'],
+    'custom': ['Opis zasady', 'np. Nie traduj podczas NEWS', 'własny opis'],
+  };
+  const h = hints[type] || hints['custom'];
+  label.textContent = h[0];
+  inp.placeholder = h[1];
+  inp.title = h[2];
+}
+function addRule() {
+  const type = document.getElementById('rule-type')?.value || 'custom';
+  const value = document.getElementById('rule-value')?.value?.trim() || '';
+  if (!value) return toast('Podaj wartość reguły', 'error');
+  const typeLabels = {
+    'max-risk': 'Maks. ryzyko %', 'max-losses': 'Stop po X stratach',
+    'stop-hour': 'Stop o godzinie', 'max-daily': 'Maks. transakcji/dzień', 'custom': 'Własna zasada'
+  };
+  const rule = { id: genId(), type, value, label: typeLabels[type]||type, createdAt: Date.now() };
+  const rules = getRules();
+  rules.push(rule);
+  saveRules(rules);
+  if (document.getElementById('rule-value')) document.getElementById('rule-value').value = '';
+  renderRules();
+  toast('Reguła dodana ✓', 'success');
+}
+function deleteRule(id) {
+  showConfirm(t('confirm_delete_rule'), () => {
+    saveRules(getRules().filter(r => r.id !== id));
+    renderRules();
+    toast(t('toast_rule_deleted'), 'success');
+  });
+}
+function renderRules() {
+  const el = document.getElementById('rules-list-container');
+  if (!el) return;
+  const rules = getRules();
+  if (!rules.length) {
+    el.innerHTML = `<div style="color:var(--text3);font-size:13px;text-align:center;padding:20px">${t('rules_empty')}</div>`;
+    return;
+  }
+  el.innerHTML = rules.map(r => {
+    const typeIcons = {'max-risk':'💰','max-losses':'🛑','stop-hour':'🕐','max-daily':'📊','custom':'📝'};
+    const icon = typeIcons[r.type] || '📝';
+    const isCustom = r.type === 'custom';
+    const descEl = document.createElement('span');
+    descEl.textContent = r.value;
+    const desc = descEl.textContent;
+    return `<div class="summary-card" style="margin-bottom:8px;display:flex;align-items:center;gap:12px;padding:10px 14px">
+      <span style="font-size:20px">${icon}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px">${r.label}${isCustom ? `<span style="margin-left:6px;color:var(--amber);font-size:10px;text-transform:none;letter-spacing:0">${t('rules_reminder_label')}</span>` : ''}</div>
+        <div style="font-size:13px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${desc}">${desc}</div>
+      </div>
+      <button class="icon-btn del" onclick="deleteRule('${r.id}')" title="${t('delete')}" style="flex-shrink:0">🗑</button>
+    </div>`;
+  }).join('');
+}
+function checkRulesBeforeSave() {
+  const rules = getRules();
+  const broken = [], messages = [];
+  if (!rules.length) return { broken: false, messages: [] };
+  const today = new Date().toISOString().slice(0,10);
+  const accId = state.currentAccountId;
+  const trades = accId ? getTrades(accId) : [];
+  const todayCount = trades.filter(t=>(t.date||'').slice(0,10)===today).length;
+  const sortedTrades = [...trades].sort((a,b)=>new Date(a.date)-new Date(b.date));
+  let lossStreak = 0;
+  for (let i = sortedTrades.length-1; i>=0; i--) {
+    if (sortedTrades[i].pnl !== null && sortedTrades[i].pnl < 0) lossStreak++;
+    else break;
+  }
+  const nowHour = new Date().getHours();
+  rules.forEach(r => {
+    if (r.type === 'max-daily') {
+      const lim = parseInt(r.value);
+      if (!isNaN(lim) && todayCount >= lim) {
+        broken.push(r); messages.push(t('rule_msg_max_daily').replace('{lim}', lim).replace('{count}', todayCount));
+      }
+    } else if (r.type === 'max-losses') {
+      const lim = parseInt(r.value);
+      if (!isNaN(lim) && lossStreak >= lim) {
+        broken.push(r); messages.push(t('rule_msg_max_losses').replace('{lim}', lim).replace('{streak}', lossStreak));
+      }
+    } else if (r.type === 'stop-hour') {
+      const stopH = parseInt(r.value);
+      if (!isNaN(stopH) && nowHour >= stopH) {
+        broken.push(r); messages.push(t('rule_msg_stop_hour').replace('{hour}', r.value).replace('{now}', nowHour + ':' + String(new Date().getMinutes()).padStart(2,'0')));
+      }
+    } else if (r.type === 'max-risk') {
+      const limitPct = parseFloat(r.value);
+      const entry = parseFloat(document.getElementById('t-entry')?.value);
+      const sl    = parseFloat(document.getElementById('t-sl')?.value);
+      const size  = parseFloat(document.getElementById('t-size')?.value);
+      const acc   = accId ? getAccounts().find(a=>a.id===accId) : null;
+      const cap   = acc ? ((acc.capital||0) + trades.filter(t=>t.status==='closed').reduce((s,t)=>s+(t.pnl||0),0)) : 0;
+      if (!isNaN(limitPct) && entry && sl && size && cap > 0) {
+        const riskAmount = Math.abs(entry - sl) * size;
+        const riskPct = (riskAmount / cap) * 100;
+        if (riskPct > limitPct) {
+          broken.push(r); messages.push(t('rule_msg_max_risk').replace('{pct}', riskPct.toFixed(1)).replace('{lim}', limitPct));
+        }
+      }
+    }
+  });
+  return { broken: broken.length > 0, messages };
+}
+
 function switchToolsTab(tab) {
-  ['calculator','strategies','brokers'].forEach(t => {
+  ['calculator','strategies','brokers','rules'].forEach(t => {
     const el = document.getElementById('tools-tab-' + t);
     const btn = document.getElementById('ttab-' + t);
     if (el) el.style.display = t === tab ? 'block' : 'none';
@@ -13736,6 +14781,7 @@ function switchToolsTab(tab) {
   });
   if (tab === 'strategies') renderToolsStrategies();
   if (tab === 'brokers') initBrokerCalc();
+  if (tab === 'rules') renderRules();
   if (tab === 'calculator') {
     const acc = getAccounts().find(a => a.id === state.currentAccountId);
     if (acc) {
@@ -14267,11 +15313,13 @@ function resetRoutineToday() {
 
 // --- Data helpers ---
 function getJournalEntry(dateStr) {
+  if (!state.currentUser) return null;
   const db = getDB();
-  return db['journal_' + (state.currentUser||'') + '_' + dateStr] || null;
+  return db['journal_' + state.currentUser + '_' + dateStr] || null;
 }
 function saveJournalEntryData(dateStr, entry) {
-  const db = getDB(); db['journal_' + (state.currentUser||'') + '_' + dateStr] = entry; saveDB(db);
+  if (!state.currentUser) return;
+  const db = getDB(); db['journal_' + state.currentUser + '_' + dateStr] = entry; saveDB(db);
 }
 function getNotes() {
   const db = getDB();
@@ -14281,11 +15329,13 @@ function saveNotes(arr) {
   const db = getDB(); db['notes_' + (state.currentUser||'')] = arr; saveDB(db);
 }
 function getWeeklyReview(weekKey) {
+  if (!state.currentUser) return null;
   const db = getDB();
-  return db['weekly_' + (state.currentUser||'') + '_' + weekKey] || null;
+  return db['weekly_' + state.currentUser + '_' + weekKey] || null;
 }
 function saveWeeklyReviewData(weekKey, data) {
-  const db = getDB(); db['weekly_' + (state.currentUser||'') + '_' + weekKey] = data; saveDB(db);
+  if (!state.currentUser) return;
+  const db = getDB(); db['weekly_' + state.currentUser + '_' + weekKey] = data; saveDB(db);
 }
 function getWeekKey(date) {
   const d = new Date(date); const jan1 = new Date(d.getFullYear(),0,1);
@@ -14356,13 +15406,16 @@ function _hookJournalProgressInputs() {
 function renderJournalCal() {
   const grid = document.getElementById('jcal-grid'); if (!grid) return;
   const label = document.getElementById('jcal-label');
-  const monthNames = ['Styczeń','Luty','Marzec','Kwiecień','Maj','Czerwiec','Lipiec','Sierpień','Wrzesień','Październik','Listopad','Grudzień'];
+  const monthNames = _lang==='en'
+    ? ['January','February','March','April','May','June','July','August','September','October','November','December']
+    : ['Styczeń','Luty','Marzec','Kwiecień','Maj','Czerwiec','Lipiec','Sierpień','Wrzesień','Październik','Listopad','Grudzień'];
   if (label) label.textContent = monthNames[_jCalMonth] + ' ' + _jCalYear;
   const today = new Date().toISOString().slice(0,10);
   const firstDay = new Date(_jCalYear, _jCalMonth, 1);
   const lastDay  = new Date(_jCalYear, _jCalMonth+1, 0);
   const startDow = (firstDay.getDay()+6)%7; // Mon=0
-  let html = ['Pon','Wt','Śr','Czw','Pt','Sob','Nd'].map(d=>`<div style="font-size:9px;color:var(--text3);padding:2px 0;font-weight:700">${d}</div>`).join('');
+  const calDays = _lang==='en' ? ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'] : ['Pon','Wt','Śr','Czw','Pt','Sob','Nd'];
+  let html = calDays.map(d=>`<div style="font-size:9px;color:var(--text3);padding:2px 0;font-weight:700">${d}</div>`).join('');
   for (let i=0;i<startDow;i++) html += `<div class="jcal-day other-month"></div>`;
   for (let d=1;d<=lastDay.getDate();d++) {
     const ds = _jCalYear+'-'+String(_jCalMonth+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
@@ -14415,6 +15468,9 @@ function setJournalReadiness(val, btn) {
   btn.classList.add('active');
   const warn = document.getElementById('journal-readiness-warning');
   if (warn) warn.style.display = val === 'no' ? 'block' : 'none';
+  if (val === 'no') {
+    toast(t('journal_not_ready'), 'warning');
+  }
   updateJournalPreProgress();
 }
 
@@ -14444,7 +15500,7 @@ function updateJournalPreProgress() {
   const bar = document.getElementById('journal-pre-progress-bar');
   const badge = document.getElementById('journal-pre-progress-badge');
   if (bar) bar.style.width = (done / 4 * 100) + '%';
-  if (badge) badge.textContent = done === 4 ? '✅ Rutyna kompletna' : done + '/4 kroków';
+  if (badge) badge.textContent = done === 4 ? t('journal_routine_complete') : t('journal_steps').replace('{done}', done);
   if (bar && done === 4) bar.style.background = 'var(--accent)';
   else if (bar) bar.style.background = 'var(--amber)';
 }
@@ -14470,14 +15526,14 @@ function updateJournalPostProgress() {
   const bar = document.getElementById('journal-post-progress-bar');
   const badge = document.getElementById('journal-post-progress-badge');
   if (bar) bar.style.width = (done / 4 * 100) + '%';
-  if (badge) badge.textContent = done === 4 ? '✅ Sesja zamknięta' : done + '/4 kroków';
+  if (badge) badge.textContent = done === 4 ? t('journal_session_closed') : t('journal_steps').replace('{done}', done);
 }
 
 function renderJournalPostDayStats(ds) {
   const el = document.getElementById('journal-post-day-stats');
   if (!el) return;
   const trades = getTrades(state.currentAccountId).filter(t => (t.date||'').startsWith(ds) && t.status === 'closed');
-  if (!trades.length) { el.innerHTML = '<span style="color:var(--text3)">Brak zamkniętych transakcji dziś — dobry dzień na obserwację</span>'; return; }
+  if (!trades.length) { el.innerHTML = `<span style="color:var(--text3)">${t('journal_no_trades')}</span>`; return; }
   const sym = getCurrSym(state.currentAccountId);
   const pnl = trades.reduce((s,t)=>s+(t.pnl||0),0);
   const wins = trades.filter(t=>(t.pnl||0)>0).length;
@@ -14493,7 +15549,7 @@ function renderJournalPostDayStats(ds) {
     </div>
     <div style="text-align:center;padding:10px 6px;background:var(--bg3);border-radius:8px">
       <div style="font-size:18px;font-weight:800;font-family:var(--font-mono)">${trades.length}</div>
-      <div style="font-size:10px;color:var(--text3);margin-top:3px">Transakcji</div>
+      <div style="font-size:10px;color:var(--text3);margin-top:3px">${t('journal_trades_label')}</div>
     </div>
     <div style="text-align:center;padding:10px 6px;background:var(--bg3);border-radius:8px">
       <div style="font-size:18px;font-weight:800;color:var(--accent);font-family:var(--font-mono)">${wr}%</div>
@@ -14501,7 +15557,7 @@ function renderJournalPostDayStats(ds) {
     </div>
     <div style="text-align:center;padding:10px 6px;background:var(--bg3);border-radius:8px">
       <div style="font-size:16px;font-weight:700">${topEmo}</div>
-      <div style="font-size:10px;color:var(--text3);margin-top:3px">Emocja</div>
+      <div style="font-size:10px;color:var(--text3);margin-top:3px">${t('journal_emotion_label')}</div>
     </div>
   </div>`;
 }
@@ -14510,7 +15566,7 @@ function loadJournalEntryForm(ds) {
   const label = document.getElementById('journal-entry-date-label');
   const sub   = document.getElementById('journal-entry-date-sub');
   const today = new Date().toISOString().slice(0,10);
-  if (label) label.textContent = ds === today ? 'Dziś' : formatDatePL(ds);
+  if (label) label.textContent = ds === today ? t('journal_today') : formatDatePL(ds);
   if (sub) sub.textContent = ds;
   const entry = getJournalEntry(ds) || {};
 
@@ -14609,7 +15665,7 @@ function setJournalMood(type, val, btn) {
   document.querySelectorAll('#journal-'+type+'-mood-btns .mood-btn').forEach(b=>b.classList.remove('selected'));
   btn.classList.add('selected');
   const lbl = document.getElementById('journal-'+type+'-mood-val');
-  const labels = {1:'Bardzo zły',2:'Zły',3:'Neutralny',4:'Dobry',5:'Świetny'};
+  const labels = {1:t('mood_1'),2:t('mood_2'),3:t('mood_3'),4:t('mood_4'),5:t('mood_5')};
   if (lbl) lbl.textContent = '— ' + (labels[val]||'');
   if (type === 'pre') updateJournalPreProgress();
   else updateJournalPostProgress();
@@ -14620,7 +15676,7 @@ function setJournalMoodDisplay(type, val) {
     b.classList.toggle('selected', parseInt(b.dataset.val)===val);
   });
   const lbl = document.getElementById('journal-'+type+'-mood-val');
-  const labels = {1:'Bardzo zły',2:'Zły',3:'Neutralny',4:'Dobry',5:'Świetny'};
+  const labels = {1:t('mood_1'),2:t('mood_2'),3:t('mood_3'),4:t('mood_4'),5:t('mood_5')};
   if (lbl) lbl.textContent = val ? '— ' + (labels[val]||'') : '';
 }
 
@@ -14671,8 +15727,11 @@ function saveJournalEntry() {
 function formatDatePL(ds) {
   if (!ds) return '';
   const d = new Date(ds+'T00:00:00');
-  const days = ['Niedziela','Poniedziałek','Wtorek','Środa','Czwartek','Piątek','Sobota'];
-  return days[d.getDay()] + ', ' + d.toLocaleDateString('pl-PL', {day:'numeric',month:'long',year:'numeric'});
+  const locale = _lang === 'en' ? 'en-US' : 'pl-PL';
+  const days = _lang === 'en'
+    ? ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
+    : ['Niedziela','Poniedziałek','Wtorek','Środa','Czwartek','Piątek','Sobota'];
+  return days[d.getDay()] + ', ' + d.toLocaleDateString(locale, {day:'numeric',month:'long',year:'numeric'});
 }
 
 // ---- NOTES ----
@@ -14695,12 +15754,12 @@ function renderNotesList() {
   notes.sort((a,b) => (b.pinned?1:0)-(a.pinned?1:0) || b.updatedAt-a.updatedAt);
   const CAT_ICONS = {strategy:'🎯',setup:'📐',market:'📊',thoughts:'💭',other:'📁'};
   if (!notes.length) {
-    el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--text3);font-size:12px">${q?'Brak wyników':'Brak notatek — kliknij + Nowa'}</div>`;
+    el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--text3);font-size:12px">${q ? t('notes_no_results') : t('notes_empty')}</div>`;
     return;
   }
   el.innerHTML = notes.map(n => `
     <div class="note-item ${_jCurrentNoteId===n.id?'active':''}" onclick="openNote('${n.id}')">
-      <div class="note-item-title">${n.pinned?'📌 ':''}${CAT_ICONS[n.category]||'📝'} ${escHtml(n.title||'Bez tytułu')}</div>
+      <div class="note-item-title">${n.pinned?'📌 ':''}${CAT_ICONS[n.category]||'📝'} ${escHtml(n.title||t('notes_untitled'))}</div>
       <div class="note-item-meta">${new Date(n.updatedAt).toLocaleDateString('pl-PL')}${n.tags?.length?' · '+n.tags.slice(0,2).join(', '):''}</div>
     </div>`).join('');
 }
@@ -14731,7 +15790,7 @@ function openNote(id) {
   document.getElementById('note-category').value = n.category||'other';
   document.getElementById('note-pin-btn').textContent = n.pinned ? '📌' : '📌';
   document.getElementById('note-pin-btn').style.opacity = n.pinned ? '1' : '0.4';
-  document.getElementById('note-saved-at').textContent = 'Ostatnio zapisano: ' + new Date(n.updatedAt).toLocaleString('pl-PL');
+  document.getElementById('note-saved-at').textContent = t('notes_last_saved') + new Date(n.updatedAt).toLocaleString(_lang==='en'?'en-US':'pl-PL');
   renderNoteScreenshots();
   document.getElementById('note-editor-empty').style.display = 'none';
   document.getElementById('note-editor-content').style.display = 'block';
@@ -14740,12 +15799,12 @@ function openNote(id) {
 
 function saveCurrentNote() {
   const title = document.getElementById('note-title')?.value?.trim();
-  if (!title && !document.getElementById('note-content')?.value?.trim()) { toast('Wpisz tytuł lub treść', 'error'); return; }
+  if (!title && !document.getElementById('note-content')?.value?.trim()) { toast(t('notes_empty_content'), 'error'); return; }
   const notes = getNotes();
   const id = _jCurrentNoteId || genId();
   const existing = notes.find(n=>n.id===id);
   const note = {
-    id, title: title||'Bez tytułu',
+    id, title: title||t('notes_untitled'),
     content: document.getElementById('note-content')?.value||'',
     category: document.getElementById('note-category')?.value||'other',
     tags: (document.getElementById('note-tags')?.value||'').split(',').map(t=>t.trim()).filter(Boolean),
@@ -14758,18 +15817,19 @@ function saveCurrentNote() {
   saveNotes(notes);
   _jCurrentNoteId = id;
   document.getElementById('note-id').value = id;
-  document.getElementById('note-saved-at').textContent = 'Zapisano: ' + new Date().toLocaleString('pl-PL');
-  renderNotesList(); toast('Notatka zapisana ✓', 'success');
+  document.getElementById('note-saved-at').textContent = t('notes_just_saved') + new Date().toLocaleString(_lang==='en'?'en-US':'pl-PL');
+  renderNotesList(); toast(t('notes_saved_toast'), 'success');
 }
 
 function deleteCurrentNote() {
   if (!_jCurrentNoteId) return;
-  if (!confirm('Usunąć tę notatkę?')) return;
-  saveNotes(getNotes().filter(n=>n.id!==_jCurrentNoteId));
-  _jCurrentNoteId = null;
-  document.getElementById('note-editor-empty').style.display = 'block';
-  document.getElementById('note-editor-content').style.display = 'none';
-  renderNotesList(); toast('Notatka usunięta','success');
+  showConfirm(t('confirm_delete_note'), () => {
+    saveNotes(getNotes().filter(n=>n.id!==_jCurrentNoteId));
+    _jCurrentNoteId = null;
+    document.getElementById('note-editor-empty').style.display = 'block';
+    document.getElementById('note-editor-content').style.display = 'none';
+    renderNotesList(); toast(t('toast_note_deleted'),'success');
+  });
 }
 
 function toggleNotePin() {
@@ -14777,7 +15837,7 @@ function toggleNotePin() {
   const notes = getNotes(); const n = notes.find(x=>x.id===_jCurrentNoteId); if (!n) return;
   n.pinned = !n.pinned; saveNotes(notes);
   document.getElementById('note-pin-btn').style.opacity = n.pinned ? '1' : '0.4';
-  renderNotesList(); toast(n.pinned ? 'Notatka przypięta 📌' : 'Odpięto', 'success');
+  renderNotesList(); toast(n.pinned ? t('notes_pinned_toast') : t('notes_unpinned_toast'), 'success');
 }
 
 function noteAddScreenshots(input) {
@@ -14830,21 +15890,21 @@ function renderWeeklyTrades() {
   const trades = getTrades(state.currentAccountId).filter(t => {
     const d = new Date(t.date); return d >= monday && d <= sunday && t.status === 'closed';
   }).sort((a,b) => new Date(a.date) - new Date(b.date));
-  if (cntEl) cntEl.textContent = trades.length ? trades.length + ' transakcji' : '';
+  if (cntEl) cntEl.textContent = trades.length ? `${trades.length} ${t('weekly_trades_suffix')}` : '';
   if (!trades.length) {
-    el.innerHTML = '<div style="color:var(--text3);font-size:13px;text-align:center;padding:16px">Brak zamkniętych transakcji w tym tygodniu</div>';
+    el.innerHTML = `<div style="color:var(--text3);font-size:13px;text-align:center;padding:16px">${t('weekly_no_trades')}</div>`;
     return;
   }
   const emoColors = { 'Spokojny':'var(--green)', 'Pewny':'var(--green)', 'Podekscytowany':'var(--amber)', 'FOMO':'var(--red)', 'Revenge':'var(--red)', 'Zaniepokojony':'var(--red)', 'Zmęczony':'var(--amber)', 'Sfrustrowany':'var(--red)', 'Neutralny':'var(--text3)' };
   let html = `<div style="overflow-x:auto">
     <table style="width:100%;border-collapse:collapse;font-size:12px">
       <thead><tr style="border-bottom:1px solid var(--border)">
-        <th style="padding:6px 8px;text-align:left;color:var(--text3);font-weight:600">Data</th>
-        <th style="padding:6px 8px;text-align:left;color:var(--text3);font-weight:600">Instrument</th>
-        <th style="padding:6px 8px;text-align:center;color:var(--text3);font-weight:600">Kier.</th>
-        <th style="padding:6px 8px;text-align:left;color:var(--text3);font-weight:600">Setup</th>
-        <th style="padding:6px 8px;text-align:center;color:var(--text3);font-weight:600">Emocja ↑</th>
-        <th style="padding:6px 8px;text-align:center;color:var(--text3);font-weight:600">Emocja ↓</th>
+        <th style="padding:6px 8px;text-align:left;color:var(--text3);font-weight:600">${t('weekly_col_date')}</th>
+        <th style="padding:6px 8px;text-align:left;color:var(--text3);font-weight:600">${t('th_instrument')}</th>
+        <th style="padding:6px 8px;text-align:center;color:var(--text3);font-weight:600">${t('weekly_col_dir')}</th>
+        <th style="padding:6px 8px;text-align:left;color:var(--text3);font-weight:600">${t('trade_setup')}</th>
+        <th style="padding:6px 8px;text-align:center;color:var(--text3);font-weight:600">${t('weekly_col_emo_pre')}</th>
+        <th style="padding:6px 8px;text-align:center;color:var(--text3);font-weight:600">${t('weekly_col_emo_post')}</th>
         <th style="padding:6px 8px;text-align:right;color:var(--text3);font-weight:600">P&L</th>
       </tr></thead>
       <tbody>`;
@@ -14884,9 +15944,9 @@ function renderWeeklyAnalyses() {
     if (!raw) return false;
     const d = new Date(raw); return d >= monday && d <= sunday;
   }).sort((a,b) => new Date(a.date||a.createdAt||0) - new Date(b.date||b.createdAt||0));
-  if (cntEl) cntEl.textContent = analyses.length ? analyses.length + ' analiz' : '';
+  if (cntEl) cntEl.textContent = analyses.length ? `${analyses.length} ${t('weekly_analyses_suffix')}` : '';
   if (!analyses.length) {
-    el.innerHTML = '<div style="color:var(--text3);font-size:13px;text-align:center;padding:16px">Brak analiz zapisanych w tym tygodniu</div>';
+    el.innerHTML = `<div style="color:var(--text3);font-size:13px;text-align:center;padding:16px">${t('weekly_no_analyses')}</div>`;
     return;
   }
   const biasStyle = { bullish:'color:var(--green)', bearish:'color:var(--red)', neutral:'color:var(--amber)' };
@@ -14924,8 +15984,8 @@ function renderWeeklyGoodBad() {
   const good = [], bad = [];
 
   if (!trades.length) {
-    goodEl.innerHTML = '<div style="color:var(--text3);font-size:12px">Brak danych — dodaj transakcje</div>';
-    badEl.innerHTML  = '<div style="color:var(--text3);font-size:12px">Brak danych — dodaj transakcje</div>';
+    goodEl.innerHTML = `<div style="color:var(--text3);font-size:12px">${t('weekly_no_data')}</div>`;
+    badEl.innerHTML  = `<div style="color:var(--text3);font-size:12px">${t('weekly_no_data')}</div>`;
     return;
   }
 
@@ -14935,8 +15995,8 @@ function renderWeeklyGoodBad() {
   const totalPnl = trades.reduce((s,t) => s+(t.pnl||0), 0);
 
   // ── Dobre ──────────────────────────────────────────────────────────
-  if (parseInt(winRate) >= 50) good.push(`🎯 Win rate ${winRate}% — ponad połowa transakcji na plusie`);
-  if (totalPnl > 0) good.push(`💰 Tydzień zamknięty na plusie: +${sym}${totalPnl.toFixed(2)}`);
+  if (parseInt(winRate) >= 50) good.push(t('weekly_good_winrate').replace('{pct}', winRate));
+  if (totalPnl > 0) good.push(t('weekly_good_plus').replace('{sym}', sym).replace('{pnl}', totalPnl.toFixed(2)));
 
   // Najlepszy setup
   const bySetup = {};
@@ -14948,7 +16008,7 @@ function renderWeeklyGoodBad() {
   });
   const bestSetup = Object.entries(bySetup).filter(([,v])=>v.c>=2).sort((a,b)=>(b[1].w/b[1].c)-(a[1].w/a[1].c))[0];
   if (bestSetup && bestSetup[1].c >= 2 && bestSetup[1].w/bestSetup[1].c >= 0.6)
-    good.push(`📐 Setup "${bestSetup[0]}" — ${((bestSetup[1].w/bestSetup[1].c)*100).toFixed(0)}% WR w tym tygodniu`);
+    good.push(t('weekly_good_setup').replace('{s}', bestSetup[0]).replace('{pct}', ((bestSetup[1].w/bestSetup[1].c)*100).toFixed(0)));
 
   // Najlepsza emocja
   const byEmo = {};
@@ -14961,7 +16021,7 @@ function renderWeeklyGoodBad() {
   const positiveEmos = ['Spokojny','Pewny','Neutralny'];
   const bestEmo = Object.entries(byEmo).filter(([k])=>positiveEmos.includes(k)).sort((a,b)=>b[1].w/b[1].c - a[1].w/a[1].c)[0];
   if (bestEmo && bestEmo[1].c >= 2 && bestEmo[1].w/bestEmo[1].c >= 0.5)
-    good.push(`🧠 Najlepsze wyniki gdy: "${bestEmo[0]}" — ${((bestEmo[1].w/bestEmo[1].c)*100).toFixed(0)}% WR`);
+    good.push(t('weekly_good_emo').replace('{e}', bestEmo[0]).replace('{pct}', ((bestEmo[1].w/bestEmo[1].c)*100).toFixed(0)));
 
   // Najlepszy instrument
   const byInstr = {};
@@ -14973,7 +16033,7 @@ function renderWeeklyGoodBad() {
   });
   const bestInstr = Object.entries(byInstr).filter(([,v])=>v.c>=2).sort((a,b)=>b[1].pnl-a[1].pnl)[0];
   if (bestInstr && bestInstr[1].pnl > 0)
-    good.push(`💹 ${bestInstr[0]} — najlepszy instrument: +${sym}${bestInstr[1].pnl.toFixed(2)}`);
+    good.push(t('weekly_good_instr').replace('{s}', bestInstr[0]).replace('{sym}', sym).replace('{pnl}', bestInstr[1].pnl.toFixed(2)));
 
   // Dziennik
   let journalDays = 0;
@@ -14981,25 +16041,25 @@ function renderWeeklyGoodBad() {
     const ds = new Date(monday.getTime()+i*86400000).toISOString().slice(0,10);
     if (getJournalEntry(ds)?.prePlan) journalDays++;
   }
-  if (journalDays >= 3) good.push(`📓 Dziennik wypełniony ${journalDays}/7 dni — dobry nawyk!`);
+  if (journalDays >= 3) good.push(t('weekly_good_journal').replace('{n}', journalDays));
 
   // ── Złe ───────────────────────────────────────────────────────────
-  if (parseInt(winRate) < 40) bad.push(`📉 Win rate tylko ${winRate}% — przeanalizuj warunki wejść`);
-  if (totalPnl < 0) bad.push(`🔴 Tydzień na minusie: ${sym}${totalPnl.toFixed(2)} — sprawdź zarządzanie ryzykiem`);
+  if (parseInt(winRate) < 40) bad.push(t('weekly_bad_winrate').replace('{pct}', winRate));
+  if (totalPnl < 0) bad.push(t('weekly_bad_minus').replace('{sym}', sym).replace('{pnl}', totalPnl.toFixed(2)));
 
   // Najgorszy setup
   const worstSetup = Object.entries(bySetup).filter(([,v])=>v.c>=2).sort((a,b)=>a[1].pnl-b[1].pnl)[0];
   if (worstSetup && worstSetup[1].pnl < 0)
-    bad.push(`📐 Setup "${worstSetup[0]}" — ${sym}${worstSetup[1].pnl.toFixed(2)} łącznie, rozważ jego pominięcie`);
+    bad.push(t('weekly_bad_setup').replace('{s}', worstSetup[0]).replace('{sym}', sym).replace('{pnl}', worstSetup[1].pnl.toFixed(2)));
 
   // Negatywne emocje
   const negEmos = ['FOMO','Revenge','Zaniepokojony','Sfrustrowany'];
   const negTrades = trades.filter(t => negEmos.includes(t.emotionPre));
-  if (negTrades.length) bad.push(`😤 ${negTrades.length}× trading z negatywnymi emocjami — work in progress`);
+  if (negTrades.length) bad.push(t('weekly_bad_emo').replace('{n}', negTrades.length));
 
   // Brak emocji
   const noEmoTrades = trades.filter(t => !t.emotionPre);
-  if (noEmoTrades.length) bad.push(`🧠 ${noEmoTrades.length} transakcji bez oznaczenia emocji — uzupełnij dane`);
+  if (noEmoTrades.length) bad.push(t('weekly_bad_no_emo').replace('{n}', noEmoTrades.length));
 
   // Brak dziennika w dni z handlem
   let noDiaryCount = 0;
@@ -15010,11 +16070,11 @@ function renderWeeklyGoodBad() {
     const cnt = trades.filter(t=>(t.date||'').startsWith(ds)).length;
     if (cnt && !hasPre) noDiaryCount++;
   }
-  if (noDiaryCount) bad.push(`📓 ${noDiaryCount}× handlowałeś bez planu w dzienniku — zacznij sesję od wpisu`);
+  if (noDiaryCount) bad.push(t('weekly_bad_no_diary').replace('{n}', noDiaryCount));
 
   const mkItem = txt => `<div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:6px"><span>${txt}</span></div>`;
-  goodEl.innerHTML = good.length ? good.map(mkItem).join('') : '<div style="color:var(--text3);font-size:12px">Kontynuuj analizę — więcej danych pokaże mocne strony</div>';
-  badEl.innerHTML  = bad.length  ? bad.map(mkItem).join('')  : '<div style="color:var(--green);font-size:12px">✅ Brak wyraźnych słabości w danych tego tygodnia</div>';
+  goodEl.innerHTML = good.length ? good.map(mkItem).join('') : `<div style="color:var(--text3);font-size:12px">${t('weekly_continue')}</div>`;
+  badEl.innerHTML  = bad.length  ? bad.map(mkItem).join('')  : `<div style="color:var(--green);font-size:12px">${t('weekly_no_weaknesses')}</div>`;
 }
 
 function weeklyNav(dir) {
@@ -15027,8 +16087,8 @@ function weeklyNav(dir) {
 function renderWeeklyLabel() {
   const el = document.getElementById('weekly-label'); if (!el) return;
   const {monday, sunday} = getWeekDates(_weeklyKey);
-  const fmt = d => d.toLocaleDateString('pl-PL',{day:'numeric',month:'short'});
-  el.textContent = `Tydzień ${_weeklyKey.split('-W')[1]} · ${fmt(monday)} – ${fmt(sunday)} ${monday.getFullYear()}`;
+  const fmt = d => d.toLocaleDateString(_lang==='en'?'en-US':'pl-PL',{day:'numeric',month:'short'});
+  el.textContent = `${t('weekly_week')} ${_weeklyKey.split('-W')[1]} · ${fmt(monday)} – ${fmt(sunday)} ${monday.getFullYear()}`;
 }
 
 function renderWeeklyStats() {
@@ -15037,7 +16097,7 @@ function renderWeeklyStats() {
   const trades = getTrades(state.currentAccountId).filter(t => {
     const d = new Date(t.date); return d >= monday && d <= sunday && t.status==='closed';
   });
-  if (!trades.length) { el.innerHTML = '<div style="color:var(--text3);font-size:13px">Brak zamkniętych transakcji w tym tygodniu</div>'; return; }
+  if (!trades.length) { el.innerHTML = `<div style="color:var(--text3);font-size:13px">${t('weekly_no_trades')}</div>`; return; }
   const wins = trades.filter(t=>(t.pnl||0)>0).length;
   const totalPnl = trades.reduce((s,t)=>s+(t.pnl||0),0);
   const winRate = trades.length ? ((wins/trades.length)*100).toFixed(0) : 0;
@@ -15055,11 +16115,11 @@ function renderWeeklyStats() {
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
       <div style="text-align:center;padding:12px;background:var(--bg3);border-radius:10px;border:1px solid var(--border)">
         <div style="font-size:22px;font-weight:800;color:${pnlColor};font-family:var(--font-mono)">${pnlSign}${sym}${Math.abs(totalPnl).toFixed(2)}</div>
-        <div style="font-size:11px;color:var(--text3);margin-top:4px">P&L tygodnia</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">${t('weekly_pnl')}</div>
       </div>
       <div style="text-align:center;padding:12px;background:var(--bg3);border-radius:10px;border:1px solid var(--border)">
         <div style="font-size:22px;font-weight:800;font-family:var(--font-mono)">${trades.length}</div>
-        <div style="font-size:11px;color:var(--text3);margin-top:4px">Transakcji</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">${t('weekly_trades')}</div>
       </div>
       <div style="text-align:center;padding:12px;background:var(--bg3);border-radius:10px;border:1px solid var(--border)">
         <div style="font-size:22px;font-weight:800;font-family:var(--font-mono);color:var(--accent)">${winRate}%</div>
@@ -15067,7 +16127,7 @@ function renderWeeklyStats() {
       </div>
       <div style="text-align:center;padding:12px;background:var(--bg3);border-radius:10px;border:1px solid var(--border)">
         <div style="font-size:22px;font-weight:800;font-family:var(--font-mono);color:var(--amber)">${journalDays}/${totalDays}</div>
-        <div style="font-size:11px;color:var(--text3);margin-top:4px">Dni z dziennikiem</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">${t('weekly_journal_days')}</div>
       </div>
     </div>`;
 }
@@ -15105,13 +16165,15 @@ function saveWeeklyReview() {
   };
   saveWeeklyReviewData(_weeklyKey, data);
   renderWeeklyMotivation();
-  toast('Przegląd tygodniowy zapisany ✓', 'success');
+  toast(t('weekly_saved'), 'success');
 }
 
 function renderWeeklyDays() {
   const el = document.getElementById('weekly-days-content'); if (!el) return;
   const {monday} = getWeekDates(_weeklyKey);
-  const dayNames = ['Poniedziałek','Wtorek','Środa','Czwartek','Piątek','Sobota','Niedziela'];
+  const dayNames = _lang==='en'
+    ? ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']
+    : ['Poniedziałek','Wtorek','Środa','Czwartek','Piątek','Sobota','Niedziela'];
   const moodEmoji = ['','😤','😕','😐','😊','😄'];
   const trades = getTrades(state.currentAccountId);
 
@@ -15135,13 +16197,13 @@ function renderWeeklyDays() {
     else if (!hasPre && dayTrades.length) { rowColor = 'rgba(255,80,80,.07)'; statusIcon = '⚠️'; }
 
     const pnlStr  = dayTrades.length ? `<span style="color:${dayPnl>=0?'var(--green)':'var(--red)'};font-weight:700;font-size:11px">${dayPnl>=0?'+':''}${dayPnl.toFixed(2)}</span>` : '<span style="font-size:11px;color:var(--text3)">—</span>';
-    const moodStr = mood ? `<span title="Nastrój przed sesją">${moodEmoji[mood]||''}</span>` : '<span style="color:var(--text3);font-size:11px">—</span>';
+    const moodStr = mood ? `<span title="${t('weekly_day_mood')}">${moodEmoji[mood]||''}</span>` : '<span style="color:var(--text3);font-size:11px">—</span>';
     const focStr  = focus ? `<span style="font-size:11px;color:${focus<=3?'var(--red)':focus<=6?'var(--amber)':'var(--green)'}">🎯${focus}/10</span>` : '<span style="font-size:11px;color:var(--text3)">—</span>';
 
     html += `<div style="display:grid;grid-template-columns:24px 90px 1fr auto auto auto auto;align-items:center;gap:8px;padding:8px 10px;background:${rowColor};border-radius:8px;border:1px solid var(--border)">
       <span style="font-size:14px">${statusIcon}</span>
       <span style="font-size:12px;font-weight:600;color:var(--text2)">${dayNames[i]}</span>
-      <span style="font-size:11px;color:var(--text3)">${hasPre?(entry.prePlan||entry.preGoal||'plan zapisany').slice(0,60)+'…':'<em>brak wpisu rano</em>'}</span>
+      <span style="font-size:11px;color:var(--text3)">${hasPre?(entry.prePlan||entry.preGoal||t('weekly_plan_saved')).slice(0,60)+'…':'<em>'+t('weekly_no_entry')+'</em>'}</span>
       <span style="font-size:11px;color:var(--text3)">${dayTrades.length?dayTrades.length+' tr.':'—'}</span>
       ${pnlStr}
       ${moodStr}
@@ -15760,6 +16822,170 @@ function showNoUsersHint() {
     : 'Witaj w TraderLogJournal! Utwórz konto aby zacząć.';
   showAuthSuccess(msg);
   // Nowi użytkownicy dostają rolę 'user', nie admin
+}
+
+// ===== BIBLIOTEKA STRATEGII =====
+let _libFilter = 'all';
+
+function getLibraryFiles() {
+  const db = getDB();
+  return db['library_files'] || [];
+}
+function saveLibraryFiles(arr) {
+  const db = getDB();
+  db['library_files'] = arr;
+  saveDB(db);
+}
+
+function renderLibrary() {
+  const adminMode = (typeof isAdmin === 'function') ? isAdmin() : false;
+  const adminSection = document.getElementById('library-admin-section');
+  if (adminSection) adminSection.style.display = adminMode ? 'block' : 'none';
+  filterLibrary(_libFilter);
+}
+
+function filterLibrary(type) {
+  _libFilter = type;
+  // Update filter buttons
+  ['all','PDF','MQ4','Screenshot'].forEach(t => {
+    const btn = document.getElementById('lib-filter-' + t);
+    if (btn) {
+      if (t === type) { btn.className = 'btn-sm btn-accent'; }
+      else { btn.className = 'btn-sm'; }
+    }
+  });
+  const el = document.getElementById('library-files-container');
+  if (!el) return;
+  let files = getLibraryFiles();
+  if (type !== 'all') files = files.filter(f => f.type === type || (type === 'MQ4' && (f.type === 'MQ4' || f.type === 'MQ5')));
+  if (!files.length) {
+    el.innerHTML = `<div style="text-align:center;padding:60px 20px;color:var(--text3)"><div style="font-size:48px;margin-bottom:16px">📂</div><div style="font-size:16px;font-weight:600;margin-bottom:8px">${type === 'all' ? t('library_empty') : t('library_empty')}</div></div>`;
+    return;
+  }
+  const adminMode = (typeof isAdmin === 'function') ? isAdmin() : false;
+  const typeIcons = {'PDF':'📄','MQ4':'🤖','MQ5':'🤖','Screenshot':'🖼','Inne':'📁'};
+  const typeColors = {'PDF':'var(--red)','MQ4':'var(--amber)','MQ5':'var(--amber)','Screenshot':'var(--blue)','Inne':'var(--text2)'};
+  el.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px">${files.map(f => {
+    const icon = typeIcons[f.type] || '📁';
+    const color = typeColors[f.type] || 'var(--text2)';
+    const dateStr = f.createdAt ? new Date(f.createdAt).toLocaleDateString('pl-PL') : '';
+    const titleEl = document.createElement('span'); titleEl.textContent = f.title; const safeTitle = titleEl.textContent;
+    const descEl = document.createElement('span'); descEl.textContent = f.desc||''; const safeDesc = descEl.textContent;
+    return `<div class="summary-card" style="display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;align-items:flex-start;gap:12px">
+        <span style="font-size:32px;flex-shrink:0">${icon}</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:14px;font-weight:700;color:var(--text);word-break:break-word">${safeTitle}</div>
+          <div style="font-size:10px;color:${color};font-weight:600;text-transform:uppercase;margin-top:2px">${f.type} · ${dateStr}</div>
+        </div>
+      </div>
+      ${safeDesc ? `<div style="font-size:12px;color:var(--text2);line-height:1.5">${safeDesc}</div>` : ''}
+      <div style="display:flex;gap:8px;margin-top:auto">
+        <button class="btn-sm btn-accent" onclick="downloadLibraryFile('${f.id}')" style="flex:1;font-size:12px">⬇ ${t('library_download')}</button>
+        ${adminMode ? `<button class="btn-sm" onclick="deleteLibraryFile('${f.id}')" style="color:var(--red);border-color:var(--red);font-size:12px">🗑</button>` : ''}
+      </div>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+const _LIB_MAX_BYTES = 50 * 1024 * 1024; // 50 MB — Supabase Storage limit
+function libPreviewFile() {
+  const input = document.getElementById('lib-file');
+  const info = document.getElementById('lib-file-info');
+  if (!input || !input.files.length) { if(info) info.textContent = ''; return; }
+  const file = input.files[0];
+  const sizeStr = file.size > 1024*1024 ? (file.size/1024/1024).toFixed(1)+' MB' : (file.size/1024).toFixed(0)+' KB';
+  if (info) {
+    if (file.size > _LIB_MAX_BYTES) {
+      info.textContent = file.name + ' (' + sizeStr + ') — ZA DUŻY! (limit 50 MB)';
+      info.style.color = 'var(--red)';
+    } else {
+      info.textContent = file.name + ' (' + sizeStr + ')';
+      info.style.color = 'var(--green)';
+    }
+  }
+}
+
+async function addLibraryFile() {
+  const title = document.getElementById('lib-title')?.value?.trim() || '';
+  const type  = document.getElementById('lib-type')?.value || 'Inne';
+  const desc  = document.getElementById('lib-desc')?.value?.trim() || '';
+  const url   = document.getElementById('lib-url')?.value?.trim() || '';
+  const fileInput = document.getElementById('lib-file');
+  if (!title) return toast(t('err_library_title'), 'error');
+  const statusEl = document.getElementById('lib-upload-status');
+  const addBtn = document.getElementById('lib-add-btn');
+  const newFile = {
+    id: genId(), title, type, desc,
+    url: url || null,
+    base64: null,
+    storagePath: null,
+    filename: fileInput?.files?.[0]?.name || null,
+    createdAt: Date.now(),
+  };
+  if (fileInput && fileInput.files.length) {
+    const f = fileInput.files[0];
+    if (f.size > _LIB_MAX_BYTES) return toast(t('err_library_size'), 'error');
+    if (addBtn) addBtn.disabled = true;
+    if (statusEl) statusEl.textContent = 'Wysyłanie...';
+    const ext = f.name.split('.').pop();
+    const path = (state.currentUser||'anon') + '/' + genId() + '.' + ext;
+    const { error } = await _sb.storage.from('library').upload(path, f);
+    if (error) {
+      toast(t('err_library_upload').replace('{msg}', error.message), 'error');
+      if (addBtn) addBtn.disabled = false;
+      if (statusEl) statusEl.textContent = '';
+      return;
+    }
+    newFile.storagePath = path;
+    newFile.filename = f.name;
+  } else if (!url) {
+    return toast(t('err_library_no_file'), 'error');
+  }
+  const files = getLibraryFiles();
+  files.unshift(newFile);
+  saveLibraryFiles(files);
+  ['lib-title','lib-desc','lib-url'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  if (fileInput) fileInput.value = '';
+  const info = document.getElementById('lib-file-info'); if(info) info.textContent='';
+  if (statusEl) statusEl.textContent = '';
+  if (addBtn) addBtn.disabled = false;
+  renderLibrary();
+  toast(t('toast_library_added'), 'success');
+}
+
+function deleteLibraryFile(id) {
+  showConfirm(t('confirm_delete_library'), async () => {
+    const f = getLibraryFiles().find(x => x.id === id);
+    if (f?.storagePath) {
+      await _sb.storage.from('library').remove([f.storagePath]);
+    }
+    saveLibraryFiles(getLibraryFiles().filter(x => x.id !== id));
+    filterLibrary(_libFilter);
+    toast(t('toast_library_deleted'), 'success');
+  });
+}
+
+async function downloadLibraryFile(id) {
+  const f = getLibraryFiles().find(f => f.id === id);
+  if (!f) return toast('Nie znaleziono pliku', 'error');
+  if (f.storagePath) {
+    const { data, error } = await _sb.storage.from('library').createSignedUrl(f.storagePath, 3600);
+    if (error) { toast(t('err_library_download'), 'error'); return; }
+    window.open(data.signedUrl, '_blank');
+  } else if (f.base64) {
+    // fallback dla starych plików base64
+    const a = document.createElement('a');
+    a.href = f.base64;
+    a.download = f.filename || (f.title + '.' + (f.type||'').toLowerCase() || 'file');
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => a.remove(), 500);
+  } else if (f.url) {
+    window.open(f.url, '_blank');
+  } else {
+    toast(t('err_library_no_src'), 'error');
+  }
 }
 
 // Rejestracja Service Worker (PWA)
