@@ -1330,67 +1330,6 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
         </div>
       </div>
       <div class="stats-grid" id="dash-stats"></div>
-
-      <!-- POSITION CALCULATOR -->
-      <div class="summary-card" id="dash-pos-calc" style="margin-bottom:20px;display:none">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-          <div style="display:flex;align-items:center;gap:8px">
-            <span style="font-size:18px">📐</span>
-            <div class="summary-card-title" style="margin-bottom:0">Kalkulator Pozycji</div>
-          </div>
-          <div style="display:flex;gap:18px;font-family:var(--font-mono);font-size:12px">
-            <span style="color:var(--text3)">Balans: <span id="calc-bal-disp" style="color:var(--text);font-weight:700">—</span></span>
-            <span style="color:var(--text3)">Equity: <span id="calc-eq-disp" style="color:var(--accent);font-weight:700">—</span></span>
-          </div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 2fr;gap:10px;align-items:end;margin-bottom:10px">
-          <div>
-            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Ryzyko %</div>
-            <input type="number" id="calc-risk" value="1" min="0.1" max="20" step="0.1" oninput="calcPosition()"
-              style="width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:8px 10px;font-size:18px;font-weight:800;font-family:var(--font-mono);text-align:center">
-          </div>
-          <div>
-            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">SL (pipy)</div>
-            <input type="number" id="calc-sl" value="20" min="1" step="1" oninput="calcPosition()"
-              style="width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:8px 10px;font-size:18px;font-weight:800;font-family:var(--font-mono);text-align:center">
-          </div>
-          <div>
-            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">R:R</div>
-            <input type="number" id="calc-rr" value="2" min="0.1" step="0.1" oninput="calcPosition()"
-              style="width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:8px 10px;font-size:18px;font-weight:800;font-family:var(--font-mono);text-align:center">
-          </div>
-          <div>
-            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Instrument / wartość pipy</div>
-            <select id="calc-pipval" onchange="calcPosition()"
-              style="width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:8px 10px;font-size:12px">
-              <option value="10">Forex majors — EURUSD, GBPUSD, XAUUSD ($10/pip/lot)</option>
-              <option value="7">JPY pairs — USDJPY, EURJPY ($7/pip/lot)</option>
-              <option value="1">US Indices — US30, NAS100 ($1/pt/lot)</option>
-              <option value="5">Crypto — BTCUSD ($5/pip/lot)</option>
-              <option value="custom">✏️ Własna wartość pipy</option>
-            </select>
-          </div>
-        </div>
-        <div id="calc-custom-wrap" style="display:none;margin-bottom:10px">
-          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Własna wartość pipy (USD/pip/lot)</div>
-          <input type="number" id="calc-custom-pip" value="10" min="0.01" step="0.01" oninput="calcPosition()"
-            style="width:160px;background:var(--bg3);border:1px solid var(--accent);color:var(--text);border-radius:7px;padding:7px 10px;font-size:14px;font-family:var(--font-mono)">
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px" id="calc-results"></div>
-        <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-          <div style="font-size:10px;color:var(--text3)">Break Even przy</div>
-          <input type="number" id="calc-be-pips" value="10" min="1" step="1" oninput="calcPosition()"
-            style="width:70px;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:4px 8px;font-size:12px;font-family:var(--font-mono);text-align:center">
-          <div style="font-size:10px;color:var(--text3)">pipach zysku →</div>
-          <div id="calc-be-result" style="font-size:12px;font-family:var(--font-mono);color:var(--amber);font-weight:700"></div>
-          <div style="margin-left:auto;font-size:11px;color:var(--text3)">Trailing stop:</div>
-          <input type="number" id="calc-trail-pips" value="15" min="1" step="1" oninput="calcPosition()"
-            style="width:70px;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:4px 8px;font-size:12px;font-family:var(--font-mono);text-align:center">
-          <div style="font-size:10px;color:var(--text3)">pipów</div>
-          <div id="calc-trail-result" style="font-size:12px;font-family:var(--font-mono);color:var(--blue,#4f9eff);font-weight:700"></div>
-        </div>
-      </div>
-
       <div class="equity-chart-wrap">
         <div class="chart-title" data-i18n="dash_equity_curve">Krzywa kapitału</div>
         <div class="chart-area">
@@ -1566,6 +1505,76 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 
       <div class="page-title" data-i18n="page_calc">Kalkulator Pozycji</div>
       <div class="page-subtitle" data-i18n="calc_subtitle">Przeliczaj jednostki TradingView na loty · zarządzaj ryzykiem i R:R</div>
+
+      <!-- QUICK MODE — Trade Manager style -->
+      <div class="summary-card" style="margin-bottom:20px;max-width:960px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:16px">⚡</span>
+            <div class="summary-card-title" style="margin-bottom:0">Quick Mode — Pipy</div>
+            <span style="font-size:11px;background:var(--accent-dim);color:var(--accent);padding:2px 8px;border-radius:10px;font-weight:700">Trade Manager</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="font-family:var(--font-mono);font-size:12px;color:var(--text3)">
+              Balans: <span id="calc-bal-disp" style="color:var(--text);font-weight:700">—</span>
+              &nbsp;·&nbsp;Equity: <span id="calc-eq-disp" style="color:var(--accent);font-weight:700">—</span>
+            </div>
+            <button class="btn-sm" onclick="calcFillFromAccount()" style="font-size:11px">⬇ Z konta</button>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 2fr;gap:10px;align-items:end;margin-bottom:10px">
+          <div>
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Ryzyko %</div>
+            <input type="number" id="calc-risk" value="1" min="0.1" max="20" step="0.1" oninput="calcPosition()"
+              style="width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:8px 10px;font-size:20px;font-weight:800;font-family:var(--font-mono);text-align:center">
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">SL (pipy)</div>
+            <input type="number" id="calc-sl" value="20" min="1" step="1" oninput="calcPosition()"
+              style="width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:8px 10px;font-size:20px;font-weight:800;font-family:var(--font-mono);text-align:center">
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">R:R</div>
+            <input type="number" id="calc-rr" value="2" min="0.1" step="0.1" oninput="calcPosition()"
+              style="width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:8px 10px;font-size:20px;font-weight:800;font-family:var(--font-mono);text-align:center">
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Instrument / wartość pipy</div>
+            <select id="calc-pipval" onchange="calcPosition()"
+              style="width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:9px 10px;font-size:12px">
+              <option value="10">Forex majors — EURUSD, GBPUSD, XAUUSD ($10/pip/lot)</option>
+              <option value="7">JPY pairs — USDJPY, EURJPY (~$7/pip/lot)</option>
+              <option value="1">US Indices — US30, NAS100 ($1/pt/lot)</option>
+              <option value="5">Crypto — BTCUSD (~$5/pip/lot)</option>
+              <option value="custom">✏️ Własna wartość pipy</option>
+            </select>
+          </div>
+        </div>
+        <div id="calc-custom-wrap" style="display:none;margin-bottom:10px">
+          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Własna wartość pipy (USD/pip/lot)</div>
+          <input type="number" id="calc-custom-pip" value="10" min="0.01" step="0.01" oninput="calcPosition()"
+            style="width:160px;background:var(--bg3);border:1px solid var(--accent);color:var(--text);border-radius:7px;padding:7px 10px;font-size:14px;font-family:var(--font-mono)">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:10px" id="calc-results"></div>
+        <div style="padding:10px 12px;background:var(--bg3);border-radius:8px;border:1px solid var(--border);display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:11px;color:var(--text3);white-space:nowrap">Break Even po</span>
+            <input type="number" id="calc-be-pips" value="10" min="1" step="1" oninput="calcPosition()"
+              style="width:64px;background:var(--bg4);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:3px 6px;font-size:12px;font-family:var(--font-mono);text-align:center">
+            <span style="font-size:11px;color:var(--text3)">pip zysku →</span>
+            <span id="calc-be-result" style="font-size:12px;font-family:var(--font-mono);color:var(--amber);font-weight:700"></span>
+          </div>
+          <div style="width:1px;height:20px;background:var(--border)"></div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:11px;color:var(--text3);white-space:nowrap">Trailing Stop</span>
+            <input type="number" id="calc-trail-pips" value="15" min="1" step="1" oninput="calcPosition()"
+              style="width:64px;background:var(--bg4);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:3px 6px;font-size:12px;font-family:var(--font-mono);text-align:center">
+            <span style="font-size:11px;color:var(--text3)">pip →</span>
+            <span id="calc-trail-result" style="font-size:12px;font-family:var(--font-mono);color:var(--blue,#4f9eff);font-weight:700"></span>
+          </div>
+        </div>
+      </div>
+
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:960px">
         <div class="summary-card" style="grid-column:1/-1">
           <div class="summary-card-title" style="color:var(--accent)">⇄ Przelicznik: Jednostki TradingView ↔ Loty</div>
@@ -4539,14 +4548,6 @@ function renderDashboard() {
     <div class="stat-card"><div class="stat-label">Wszystkich</div><div class="stat-value">${trades.length}</div><div class="stat-sub">Transakcji łącznie</div></div>
   `;
 
-  // Position calculator — show and update balance
-  const calcCard = document.getElementById('dash-pos-calc');
-  if (calcCard) calcCard.style.display = '';
-  const calcBal = document.getElementById('calc-bal-disp');
-  const calcEq  = document.getElementById('calc-eq-disp');
-  if (calcBal) calcBal.textContent = fmt(acc.capital) + ' ' + curr;
-  if (calcEq)  calcEq.textContent  = fmt(equity) + ' ' + curr;
-  calcPosition();
 
   // Equity curve
   drawEquityCurve(acc.capital, closed);
@@ -4556,12 +4557,27 @@ function renderDashboard() {
   document.getElementById('dash-recent-table').innerHTML = buildTradesTable(recent);
 }
 
+function calcFillFromAccount() {
+  const acc = getAccounts().find(a => a.id === state.currentAccountId);
+  if (!acc) { toast(t('err_account_required'), 'error'); return; }
+  const closedPnl = getTrades(acc.id).filter(t => t.status === 'closed').reduce((s,t) => s+(t.pnl||0), 0);
+  const balance = (acc.capital||0) + closedPnl;
+  const curr = getCurrSym(acc.id);
+  const balEl = document.getElementById('calc-bal-disp');
+  const eqEl  = document.getElementById('calc-eq-disp');
+  if (balEl) balEl.textContent = fmt(acc.capital) + ' ' + curr;
+  if (eqEl)  eqEl.textContent  = fmt(balance) + ' ' + curr;
+  // Also sync to detailed calculator
+  const capEl = document.getElementById('u-capital');
+  if (capEl) { capEl.value = balance.toFixed(2); calcUnifiedRisk(); }
+  calcPosition();
+  toast(t('toast_capital_filled').replace('{name}', acc.name), 'success');
+}
 function calcPosition() {
   const acc = getAccounts().find(a => a.id === state.currentAccountId);
-  if (!acc) return;
-  const closedPnl = getTrades(acc.id).filter(t => t.status === 'closed').reduce((s,t) => s + (t.pnl||0), 0);
-  const balance = (acc.capital || 0) + closedPnl;
-  const curr = getCurrSym(acc.id);
+  const curr = acc ? getCurrSym(acc.id) : '$';
+  const closedPnl = acc ? getTrades(acc.id).filter(t => t.status === 'closed').reduce((s,t) => s+(t.pnl||0), 0) : 0;
+  const balance = acc ? (acc.capital||0) + closedPnl : 0;
 
   const riskPct  = parseFloat(document.getElementById('calc-risk')?.value) || 1;
   const slPips   = parseFloat(document.getElementById('calc-sl')?.value)   || 20;
@@ -4580,11 +4596,11 @@ function calcPosition() {
     pipVal = parseFloat(pipValSel) || 10;
   }
 
-  const riskAmt  = balance * riskPct / 100;
-  const lot      = riskAmt / (slPips * pipVal);
-  const tpPips   = slPips * rr;
-  const tpAmt    = riskAmt * rr;
-  const lotStr   = lot < 0.001 ? '—' : lot < 0.01 ? lot.toFixed(4) : lot.toFixed(2);
+  const riskAmt = balance * riskPct / 100;
+  const lot     = riskAmt / (slPips * pipVal);
+  const tpPips  = slPips * rr;
+  const tpAmt   = riskAmt * rr;
+  const lotStr  = !balance || lot < 0.0001 ? '—' : lot < 0.01 ? lot.toFixed(4) : lot.toFixed(2);
 
   const res = document.getElementById('calc-results');
   if (res) res.innerHTML = `
@@ -4594,7 +4610,7 @@ function calcPosition() {
     </div>
     <div style="background:var(--bg3);border-radius:8px;padding:10px 14px;text-align:center;border:1px solid var(--border)">
       <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Ryzyko</div>
-      <div style="font-size:20px;font-weight:700;color:var(--red);font-family:var(--font-mono);line-height:1">${curr}${fmt(riskAmt)}</div>
+      <div style="font-size:20px;font-weight:700;color:var(--red);font-family:var(--font-mono);line-height:1">${balance ? curr + fmt(riskAmt) : '—'}</div>
       <div style="font-size:11px;color:var(--text3);margin-top:3px">${riskPct}% kapitału</div>
     </div>
     <div style="background:var(--bg3);border-radius:8px;padding:10px 14px;text-align:center;border:1px solid var(--border)">
@@ -4604,15 +4620,15 @@ function calcPosition() {
     </div>
     <div style="background:var(--bg3);border-radius:8px;padding:10px 14px;text-align:center;border:1px solid var(--green)">
       <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Potencjał</div>
-      <div style="font-size:20px;font-weight:700;color:var(--green);font-family:var(--font-mono);line-height:1">+${curr}${fmt(tpAmt)}</div>
+      <div style="font-size:20px;font-weight:700;color:var(--green);font-family:var(--font-mono);line-height:1">${balance ? '+' + curr + fmt(tpAmt) : '—'}</div>
       <div style="font-size:11px;color:var(--text3);margin-top:3px">${(riskPct * rr).toFixed(2)}% kapitału</div>
     </div>
   `;
 
   const beEl = document.getElementById('calc-be-result');
-  if (beEl) beEl.textContent = bePips + ' pip zysku → przesuń SL na wejście (BE)';
+  if (beEl) beEl.textContent = `przesuń SL na entry — zabezpieczasz ${curr}${balance ? fmt(bePips * pipVal * (lot||0)) : '0'}`;
   const trEl = document.getElementById('calc-trail-result');
-  if (trEl) trEl.textContent = 'SL podąża co ' + trailP + ' pip';
+  if (trEl) trEl.textContent = `SL podąża co ${trailP} pip (${curr}${balance ? fmt(trailP * pipVal * (lot||0)) : '0'}/krok)`;
 }
 function drawEquityCurve(startCapital, closedTrades) {
   const svg = document.getElementById('equity-svg');
@@ -15704,7 +15720,14 @@ function switchToolsTab(tab) {
       const uCap = document.getElementById('u-capital');
       if (uCap && !uCap.value) uCap.value = capital.toFixed(2);
       if (typeof calcUnifiedRisk === 'function') calcUnifiedRisk();
+      // sync balance display in Quick Mode
+      const curr = getCurrSym(acc.id);
+      const balEl = document.getElementById('calc-bal-disp');
+      const eqEl  = document.getElementById('calc-eq-disp');
+      if (balEl) balEl.textContent = fmt(acc.capital) + ' ' + curr;
+      if (eqEl)  eqEl.textContent  = fmt(capital) + ' ' + curr;
     }
+    calcPosition();
   }
 }
 
