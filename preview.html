@@ -3710,7 +3710,9 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
       <button class="modal-close" onclick="closeModal('reminder-modal')">✕</button>
     </div>
     <div style="padding:4px 0 16px">
-      <div id="reminder-modal-label" style="font-size:13px;color:var(--text2);margin-bottom:14px;padding:10px 12px;background:var(--bg3);border-radius:8px;border:1px solid var(--border);line-height:1.5"></div>
+      <div id="reminder-modal-label" style="font-size:13px;color:var(--text2);margin-bottom:10px;padding:10px 12px;background:var(--bg3);border-radius:8px;border:1px solid var(--border);line-height:1.5"></div>
+      <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Własna notatka (opcjonalnie)</div>
+      <textarea id="reminder-modal-note" class="form-input-modal" rows="2" placeholder="np. sprawdź poziom wsparcia przed wejściem…" style="font-size:13px;resize:vertical;min-height:52px;margin-bottom:14px"></textarea>
       <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Kiedy przypomnieć?</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px">
         <button class="btn-sm reminder-time-btn" onclick="setReminderTime(this, 15*60*1000)">⚡ Za 15 min</button>
@@ -11000,7 +11002,10 @@ function renderAnalysisList() {
               ${linkedTrade?`<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:var(--blue-dim);color:var(--blue)">🔗 ${linkedTrade.symbol} ${linkedTrade.dir}</span>`:''}
             </div>
           </div>
-          ${bs?`<span style="font-size:18px;flex-shrink:0">${bs.icon}</span>`:''}
+          <div style="display:flex;align-items:center;gap:4px;flex-shrink:0" onclick="event.stopPropagation()">
+            ${bs?`<span style="font-size:18px">${bs.icon}</span>`:''}
+            <button class="icon-btn" onclick="openReminderModal('📊 ${(a.title||'Analiza').replace(/'/g,"\\'")}','${a.id}','analysis')" title="Ustaw przypomnienie" style="font-size:12px;padding:3px 5px">🔔</button>
+          </div>
         </div>`;
       }).join('');
       return `<div style="margin-bottom:20px">
@@ -11035,6 +11040,7 @@ function renderAnalysisList() {
           <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;margin-left:8px;flex-shrink:0">
             <div style="font-size:11px;color:var(--text3);font-family:var(--font-mono)">${formatDate(a.date).slice(0,10)}</div>
             <div style="display:flex;gap:4px" onclick="event.stopPropagation()">
+              <button class="icon-btn" onclick="openReminderModal('📊 ${(a.title||'Analiza').replace(/'/g,"\\'")}','${a.id}','analysis')" title="Ustaw przypomnienie" style="font-size:13px">🔔</button>
               <button class="icon-btn" onclick="archiveAnalysis('${a.id}')" title="${isArchived?'Przywróć':'Archiwizuj'}" style="font-size:13px">${isArchived?'📤':'📦'}</button>
               <button class="icon-btn" onclick="openEditAnalysis('${a.id}')" title="Edytuj">✏️</button>
               <button class="icon-btn del" onclick="deleteAnalysis('${a.id}')" title="Usuń">🗑</button>
@@ -16906,6 +16912,8 @@ function openReminderModal(title, linkedId, linkedPage) {
   document.getElementById('reminder-modal-linked-page').value = linkedPage || '';
   document.getElementById('reminder-modal-time').value = '';
   document.getElementById('reminder-custom-datetime').value = '';
+  const noteEl = document.getElementById('reminder-modal-note');
+  if (noteEl) noteEl.value = '';
   document.querySelectorAll('.reminder-time-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('reminder-modal').classList.add('open');
 }
@@ -16943,8 +16951,9 @@ function confirmAddReminder() {
   const title     = document.getElementById('reminder-modal-label').textContent || 'Przypomnienie';
   const linkedId  = document.getElementById('reminder-modal-linked-id').value || '';
   const linkedPage = document.getElementById('reminder-modal-linked-page').value || '';
+  const note      = (document.getElementById('reminder-modal-note')?.value || '').trim();
   const reminders = getReminders();
-  reminders.push({ id: genId(), title, linkedId, linkedPage, remindAt, createdAt: Date.now(), done: false });
+  reminders.push({ id: genId(), title, note: note || null, linkedId, linkedPage, remindAt, createdAt: Date.now(), done: false });
   saveReminders(reminders);
   updateReminderBell();
   closeModal('reminder-modal');
@@ -16972,7 +16981,14 @@ function checkReminders() {
 
 function showReminderPopup(reminder) {
   _currentReminderPopupId = reminder.id;
-  document.getElementById('reminder-popup-text').textContent = reminder.title;
+  const popupText = document.getElementById('reminder-popup-text');
+  popupText.textContent = reminder.title;
+  if (reminder.note) {
+    const noteDiv = document.createElement('div');
+    noteDiv.style.cssText = 'font-size:12px;color:var(--text3);margin-top:4px;font-style:italic';
+    noteDiv.textContent = reminder.note;
+    popupText.appendChild(noteDiv);
+  }
   const gotoBtn = document.getElementById('reminder-popup-goto');
   if (reminder.linkedPage) {
     gotoBtn.style.display = 'inline-flex';
@@ -17029,6 +17045,7 @@ function openReminderList() {
           <div style="font-size:18px">${overdue ? '🔴' : '🔔'}</div>
           <div style="flex:1;min-width:0">
             <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(r.title)}</div>
+            ${r.note ? `<div style="font-size:11px;color:var(--text2);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(r.note)}</div>` : ''}
             <div style="font-size:11px;color:${overdue ? 'var(--red)' : 'var(--text3)'}">${overdue ? '⚠️ Minęło · ' : ''}${fmtTime(r.remindAt)}</div>
           </div>
           <div style="display:flex;gap:4px;flex-shrink:0">
