@@ -1,10 +1,10 @@
 //+------------------------------------------------------------------+
-//|  TraderLogJournal EA v1.2                                        |
-//|  Panel graficzny + przycisk Stop                                 |
+//|  TraderLogJournal EA v1.3                                        |
+//|  Panel graficzny + historia transakcji                           |
 //+------------------------------------------------------------------+
 #property copyright   "TraderLogJournal"
 #property link        "https://traderlogjournal.com"
-#property version     "1.20"
+#property version     "1.30"
 #property description "Integracja MT4 z dziennikiem TraderLogJournal"
 #property strict
 
@@ -16,6 +16,7 @@ input bool     SendOnOpen        = true;
 input bool     SendOnClose       = true;
 input bool     SendOnModify      = true;
 input bool     SendExistingOnStart = true; // Wyślij otwarte pozycje przy starcie
+input int      Sync_History_Days = 30;    // Synchronizuj historię zamkniętych transakcji (0 = wyłączone)
 input int      CheckEvery        = 2;
 input int      PanelX            = 20;     // Pozycja panelu X
 input int      PanelY            = 30;     // Pozycja panelu Y
@@ -45,6 +46,8 @@ TradeState prevTrades[];
 long       mt4AccountNumber = 0;
 bool       _paused          = false;
 int        _sentCount       = 0;
+bool       _historySynced   = false;
+int        _historyCount    = 0;
 
 //+------------------------------------------------------------------+
 int OnInit() {
@@ -70,6 +73,10 @@ int OnInit() {
    }
 
    SnapshotTrades();
+
+   if (Sync_History_Days > 0)
+      SyncHistory();
+
    EventSetTimer(CheckEvery);
    UpdatePanel();
    return INIT_SUCCEEDED;
@@ -116,7 +123,7 @@ void OnChartEvent(const int id, const long& lparam,
 
 //+------------------------------------------------------------------+
 void CreatePanel() {
-   int w = 210, h = 190;
+   int w = 210, h = 206;
    int x = PanelX, y = PanelY;
 
    // === TŁO ===
@@ -140,7 +147,7 @@ void CreatePanel() {
    CreateLabel("TLJ_LogoSub", x+83, y+9, "Journal", C'100,120,135', 10, false);
 
    // === Wersja EA ===
-   CreateLabel("TLJ_Ver", x+10, y+26, "EA v1.2", C'45,65,80', 8, false);
+   CreateLabel("TLJ_Ver", x+10, y+26, "EA v1.3", C'45,65,80', 8, false);
 
    // === Linia 1 ===
    ObjectCreate(0, "TLJ_L1", OBJ_RECTANGLE_LABEL, 0, 0, 0);
@@ -171,14 +178,18 @@ void CreatePanel() {
    CreateLabel("TLJ_K4", x+10, y+102, "OTWARTE", C'74,96,117', 8, false);
    CreateLabel(LBL_COUNT, x+140, y+102, "0 pozycji", C'201,209,217', 8, false);
 
-   // Sygnały
+   // Sygnały live
    CreateLabel("TLJ_K5", x+10, y+116, "WYSŁANO", C'74,96,117', 8, false);
    CreateLabel("TLJ_Sent", x+140, y+116, "0 sygnałów", C'201,209,217', 8, false);
+
+   // Historia
+   CreateLabel("TLJ_K6", x+10, y+130, "HISTORIA", C'74,96,117', 8, false);
+   CreateLabel("TLJ_Hist", x+140, y+130, "—", C'201,209,217', 8, false);
 
    // === Linia 2 ===
    ObjectCreate(0, "TLJ_L2", OBJ_RECTANGLE_LABEL, 0, 0, 0);
    ObjectSetInteger(0, "TLJ_L2", OBJPROP_XDISTANCE,  x+8);
-   ObjectSetInteger(0, "TLJ_L2", OBJPROP_YDISTANCE,  y+128);
+   ObjectSetInteger(0, "TLJ_L2", OBJPROP_YDISTANCE,  y+144);
    ObjectSetInteger(0, "TLJ_L2", OBJPROP_XSIZE,      w-16);
    ObjectSetInteger(0, "TLJ_L2", OBJPROP_YSIZE,      1);
    ObjectSetInteger(0, "TLJ_L2", OBJPROP_BGCOLOR,    C'30,45,61');
@@ -187,7 +198,7 @@ void CreatePanel() {
    // === BTN PAUZA ===
    ObjectCreate(0, BTN_PAUSE, OBJ_BUTTON, 0, 0, 0);
    ObjectSetInteger(0, BTN_PAUSE, OBJPROP_XDISTANCE,  x+8);
-   ObjectSetInteger(0, BTN_PAUSE, OBJPROP_YDISTANCE,  y+135);
+   ObjectSetInteger(0, BTN_PAUSE, OBJPROP_YDISTANCE,  y+151);
    ObjectSetInteger(0, BTN_PAUSE, OBJPROP_XSIZE,      93);
    ObjectSetInteger(0, BTN_PAUSE, OBJPROP_YSIZE,      22);
    ObjectSetString (0, BTN_PAUSE, OBJPROP_TEXT,       "⏸  Pauza");
@@ -201,7 +212,7 @@ void CreatePanel() {
    // === BTN STOP ===
    ObjectCreate(0, BTN_STOP, OBJ_BUTTON, 0, 0, 0);
    ObjectSetInteger(0, BTN_STOP, OBJPROP_XDISTANCE,  x+109);
-   ObjectSetInteger(0, BTN_STOP, OBJPROP_YDISTANCE,  y+135);
+   ObjectSetInteger(0, BTN_STOP, OBJPROP_YDISTANCE,  y+151);
    ObjectSetInteger(0, BTN_STOP, OBJPROP_XSIZE,      93);
    ObjectSetInteger(0, BTN_STOP, OBJPROP_YSIZE,      22);
    ObjectSetString (0, BTN_STOP, OBJPROP_TEXT,       "⏹  Stop EA");
@@ -213,7 +224,7 @@ void CreatePanel() {
    ObjectSetInteger(0, BTN_STOP, OBJPROP_BORDER_COLOR, C'93,40,40');
 
    // === FOOTER ===
-   CreateLabel("TLJ_Link", x+10, y+167, "traderlogjournal.com", C'45,63,80', 7, false);
+   CreateLabel("TLJ_Link", x+10, y+183, "traderlogjournal.com", C'45,63,80', 7, false);
 
    ChartRedraw();
 }
@@ -243,9 +254,18 @@ void UpdatePanel() {
    ObjectSetString(0, LBL_COUNT, OBJPROP_TEXT,
                    IntegerToString(open) + (open == 1 ? " pozycja" : open < 5 ? " pozycje" : " pozycji"));
 
-   // Wysłano
+   // Wysłano live
    ObjectSetString(0, "TLJ_Sent", OBJPROP_TEXT,
                    IntegerToString(_sentCount) + " sygnałów");
+
+   // Historia
+   if (_historySynced)
+      ObjectSetString(0, "TLJ_Hist", OBJPROP_TEXT,
+                      IntegerToString(_historyCount) + " transakcji");
+   else if (Sync_History_Days > 0)
+      ObjectSetString(0, "TLJ_Hist", OBJPROP_TEXT, "synchronizacja...");
+   else
+      ObjectSetString(0, "TLJ_Hist", OBJPROP_TEXT, "wyłączone");
 
    // Status
    string statusStr = _paused ? "⏸  Wstrzymany" : "●  Aktywny";
@@ -264,8 +284,8 @@ void DeletePanel() {
       LBL_ACCOUNT, LBL_EQUITY,
       "TLJ_LogoSub", "TLJ_Ver",
       "TLJ_L1", "TLJ_L2",
-      "TLJ_K1", "TLJ_K2", "TLJ_K3", "TLJ_K4", "TLJ_K5",
-      "TLJ_PnL", "TLJ_Sent", "TLJ_Link"
+      "TLJ_K1", "TLJ_K2", "TLJ_K3", "TLJ_K4", "TLJ_K5", "TLJ_K6",
+      "TLJ_PnL", "TLJ_Sent", "TLJ_Hist", "TLJ_Link"
    };
    for (int i = 0; i < ArraySize(objects); i++)
       ObjectDelete(0, objects[i]);
@@ -360,6 +380,76 @@ void CheckTradeChanges() {
    }
 
    SnapshotTrades();
+}
+
+//+------------------------------------------------------------------+
+string DateTimeToISO(datetime dt) {
+   MqlDateTime s;
+   TimeToStruct(dt, s);
+   return StringFormat("%04d-%02d-%02dT%02d:%02d:%02d",
+                       s.year, s.mon, s.day, s.hour, s.min, s.sec);
+}
+
+//+------------------------------------------------------------------+
+void SyncHistory() {
+   if (_historySynced) return;
+   _historySynced = true;
+
+   datetime cutoff = TimeCurrent() - (datetime)(Sync_History_Days * 86400);
+   int total = OrdersHistoryTotal();
+   _historyCount = 0;
+
+   for (int i = 0; i < total; i++) {
+      if (!OrderSelect(i, SELECT_BY_POS, MODE_HISTORY)) continue;
+      if (OrderType() > 1) continue;           // tylko BUY/SELL
+      if (OrderCloseTime() < cutoff) continue; // poza zakresem dni
+
+      double netProfit = OrderProfit() + OrderCommission() + OrderSwap();
+
+      string direction = (OrderType() == OP_BUY) ? "BUY" : "SELL";
+      string json = "{";
+      json += "\"user_id\":\""    + UserId                            + "\",";
+      json += "\"mt4_account\":"  + IntegerToString(mt4AccountNumber) + ",";
+      json += "\"symbol\":\""     + OrderSymbol()                     + "\",";
+      json += "\"direction\":\""  + direction                         + "\",";
+      json += "\"tf\":\"H1\",";
+      json += "\"entry\":"        + DoubleToString(OrderOpenPrice(), 5)  + ",";
+      json += "\"sl\":"           + DoubleToString(OrderStopLoss(), 5)   + ",";
+      json += "\"tp\":"           + DoubleToString(OrderTakeProfit(), 5) + ",";
+      json += "\"size\":"         + DoubleToString(OrderLots(), 2)       + ",";
+      json += "\"ticket\":"       + IntegerToString(OrderTicket())       + ",";
+      json += "\"event\":\"HISTORY\",";
+      json += "\"close_price\":"  + DoubleToString(OrderClosePrice(), 5) + ",";
+      json += "\"profit\":"       + DoubleToString(netProfit, 2)         + ",";
+      json += "\"open_time\":\""  + DateTimeToISO(OrderOpenTime())       + "\",";
+      json += "\"close_time\":\"" + DateTimeToISO(OrderCloseTime())      + "\",";
+      json += "\"processed\":false";
+      json += "}";
+
+      string headers = "Content-Type: application/json\r\n";
+      headers += "apikey: "           + AnonKey + "\r\n";
+      headers += "Authorization: Bearer " + AnonKey + "\r\n";
+      headers += "Prefer: return=minimal\r\n";
+
+      char   post[], result[];
+      string resultHeaders;
+      StringToCharArray(json, post, 0, StringLen(json));
+
+      int res = WebRequest("POST",
+                           ApiUrl + "/rest/v1/mt4_signals",
+                           headers, 5000, post, result, resultHeaders);
+
+      if (res == 201 || res == 200) {
+         _historyCount++;
+      } else {
+         Print("TLJ Historia błąd HTTP ", res, " ticket=#", OrderTicket(),
+               " | ", CharArrayToString(result));
+      }
+   }
+
+   Print("TLJ Historia: zsynchronizowano ", _historyCount, " zamkniętych transakcji z ostatnich ",
+         Sync_History_Days, " dni");
+   UpdatePanel();
 }
 
 //+------------------------------------------------------------------+
