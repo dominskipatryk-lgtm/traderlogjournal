@@ -2424,7 +2424,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
                   <button onclick="openReminderModal('Plan sesji: ' + formatDatePL(_jSelectedDate), _jSelectedDate, 'journal')" class="btn-sm" style="font-size:11px">🔔 Przypomnij mi</button>
                   <button onclick="createAnalysisFromJournal()" class="btn-sm" style="font-size:11px">📈 Utwórz analizę</button>
                 </div>
-                <button onclick="saveJournalEntry();toast('Rutyna przed sesją zapisana ✓','success')" class="btn-sm btn-accent" style="font-size:12px">💾 Zapisz rutynę</button>
+                <button onclick="saveJournalEntry();toast(t('toast_journal_pre_saved'),'success')" class="btn-sm btn-accent" style="font-size:12px">💾 Zapisz rutynę</button>
               </div>
             </div>
 
@@ -2585,14 +2585,14 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
                 <div style="display:flex;justify-content:space-between;align-items:center">
                   <span style="font-size:12px;color:var(--text3)">Sesja zamknięta — zapisz wpis i wyloguj się</span>
                   <div style="display:flex;gap:8px">
-                    <button onclick="saveJournalEntry();toast('Wpis zapisany ✓','success')" class="btn-sm btn-accent" style="font-size:12px">💾 Zapisz wpis</button>
+                    <button onclick="saveJournalEntry();toast(t('toast_journal_entry_saved'),'success')" class="btn-sm btn-accent" style="font-size:12px">💾 Zapisz wpis</button>
                     <button onclick="confirmAndLogout()" style="padding:6px 14px;background:var(--red);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">🚪 Wyloguj się</button>
                   </div>
                 </div>
               </div>
 
               <div style="display:flex;justify-content:flex-end;margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
-                <button onclick="saveJournalEntry();toast('Zamknięcie sesji zapisane ✓','success')" class="btn-sm btn-accent" style="font-size:12px">💾 Zapisz zamknięcie sesji</button>
+                <button onclick="saveJournalEntry();toast(t('toast_journal_post_saved'),'success')" class="btn-sm btn-accent" style="font-size:12px">💾 Zapisz zamknięcie sesji</button>
               </div>
             </div>
           </div>
@@ -3951,7 +3951,7 @@ function _executeLogout() {
 // ===== DEMO DATA =====
 function seedDemoData() {
   const user = state.currentUser;
-  if (!user) { toast('Zaloguj się najpierw', 'error'); return; }
+  if (!user) { toast(t('err_login_first'), 'error'); return; }
   showConfirm('Wygenerować 60 dni danych demo?\n\nZostaną dodane:\n• Konto "📊 Demo — 60 dni"\n• ~150 transakcji\n• Wpisy dziennika\n• Analizy rynkowe\n• Weekly reviews\n\nTwoje prawdziwe konta NIE zostaną zmienione.', () => {
 
   const DEMO_ID = 'demo-seed-001';
@@ -4163,7 +4163,7 @@ function clearDemoData() {
       state.currentAccountId = remaining[0]?.id || null;
     }
     renderDashboard(); renderTrades();
-    toast('Konto demo usunięte', 'success');
+    toast(t('toast_demo_deleted'), 'success');
   });
 }
 
@@ -4786,7 +4786,7 @@ function saveOtLimits() {
   const db = getDB();
   db['ot-limits_'+(state.currentUser||'')] = {maxDaily, maxLosses};
   saveDB(db);
-  toast('Limity overtrading zapisane ✓', 'success');
+  toast(t('toast_ot_limits_saved'), 'success');
 }
 
 function checkOvertradingAlert(accountId) {
@@ -5323,7 +5323,7 @@ function selectAccount(id) {
   state.currentAccountId = id;
   refreshTopbarAccount();
   renderAccounts();
-  toast('Przełączono konto', 'success');
+  toast(t('toast_account_switched'), 'success');
 }
 
 function _setAccBotToggle(isBot) {
@@ -5371,7 +5371,7 @@ function openEditAccount(id) {
 
 function saveAccount() {
   const name = document.getElementById('acc-name').value.trim();
-  if (!name) return toast('Podaj nazwę konta', 'error');
+  if (!name) return toast(t('err_account_name'), 'error');
   const id = document.getElementById('acc-id').value || genId();
   const color = document.querySelector('.color-swatch.selected')?.dataset.color || '#00d4a1';
   const acc = {
@@ -5393,7 +5393,7 @@ function saveAccount() {
   closeModal('account-modal');
   refreshTopbarAccount();
   renderAccounts();
-  toast('Konto zapisane', 'success');
+  toast(t('toast_account_saved'), 'success');
   sbSyncAccount(acc).then(sbId => { if (sbId) { acc.sbId = sbId; saveAccounts(getAccounts().map(a => a.id === id ? acc : a)); } });
 }
 
@@ -5590,15 +5590,15 @@ function saveTrade() {
 
   function _doSave() {
   const symbol = document.getElementById('t-symbol').value.trim().toUpperCase();
-  if (!symbol) return toast('Podaj instrument', 'error');
+  if (!symbol) return toast(t('err_instrument_required'), 'error');
   saveSymbol(symbol);
-  if (!state.currentAccountId) return toast('Wybierz konto', 'error');
+  if (!state.currentAccountId) return toast(t('err_account_required'), 'error');
   const _entryRaw = document.getElementById('t-entry').value;
   const _exitRaw  = document.getElementById('t-exit').value;
   const _sizeRaw  = document.getElementById('t-size').value;
-  if (_entryRaw && isNaN(parseFloat(_entryRaw))) return toast('Cena wejścia musi być liczbą', 'error');
-  if (_exitRaw  && isNaN(parseFloat(_exitRaw)))  return toast('Cena wyjścia musi być liczbą', 'error');
-  if (_sizeRaw  && isNaN(parseFloat(_sizeRaw)))  return toast('Rozmiar pozycji musi być liczbą', 'error');
+  if (_entryRaw && isNaN(parseFloat(_entryRaw))) return toast(t('err_entry_nan'), 'error');
+  if (_exitRaw  && isNaN(parseFloat(_exitRaw)))  return toast(t('err_exit_nan'), 'error');
+  if (_sizeRaw  && isNaN(parseFloat(_sizeRaw)))  return toast(t('err_size_nan'), 'error');
   // Walidacja sumy % TP
   let _tpTotalPct = 0;
   for (let i = 1; i <= 4; i++) {
@@ -5995,7 +5995,7 @@ function selectDvLinkedAnalysis(analysisId) {
   saveTrades(state.currentAccountId, trades);
   renderDetailModal();
   renderTrades();
-  toast('Analiza powiązana ✓', 'success');
+  toast(t('toast_analysis_linked'), 'success');
 }
 function dvUnlinkAnalysis(tradeId) {
   showConfirm(t('confirm_unlink_analysis'), () => {
@@ -6006,7 +6006,7 @@ function dvUnlinkAnalysis(tradeId) {
     saveTrades(state.currentAccountId, trades);
     renderDetailModal();
     renderTrades();
-    toast('Powiązanie usunięte', 'success');
+    toast(t('toast_analysis_unlinked'), 'success');
   });
 }
 
@@ -6097,7 +6097,7 @@ function detailSaveEdit() {
   renderDashboard();
   renderTrades();
   renderSummary();
-  toast('Transakcja zaktualizowana ✓', 'success');
+  toast(t('toast_trade_updated'), 'success');
 }
 
 // ── delete from detail ──
@@ -6131,7 +6131,7 @@ function dvRemoveScreen(id) {
 }
 function dvAddFiles(files) {
   if (!_gapiLoaded || !_gapiAccessToken) {
-    toast('Połącz z Google Drive aby dodać screenshoty ☁️', 'error');
+    toast(t('err_drive_required'), 'error');
     connectGoogleDrive();
     return;
   }
@@ -6152,7 +6152,7 @@ function dvAddFiles(files) {
         if (s) { s.dataUrl = driveUrl; s.uploading = false; }
       } else {
         _detailScreenshots = _detailScreenshots.filter(s => s.id !== id);
-        toast('Błąd wgrywania na Drive', 'error');
+        toast(t('err_drive_upload'), 'error');
       }
       renderDvScreens();
     };
@@ -6218,7 +6218,7 @@ async function autoUploadScreenToDrive(dataUrl, tradeId, idx) {
 
 function handleFiles(files) {
   if (!_gapiLoaded || !_gapiAccessToken) {
-    toast('Połącz z Google Drive aby dodać screenshoty ☁️', 'error');
+    toast(t('err_drive_required'), 'error');
     connectGoogleDrive();
     return;
   }
@@ -6240,7 +6240,7 @@ function handleFiles(files) {
         if (s) { s.dataUrl = driveUrl; s.uploading = false; }
       } else {
         state.tempScreenshots = state.tempScreenshots.filter(s => s.id !== id);
-        toast('Błąd wgrywania na Drive — spróbuj ponownie', 'error');
+        toast(t('err_drive_upload'), 'error');
       }
       renderScreenshotPreviews();
     };
@@ -6315,7 +6315,7 @@ function connectAndShowDrive(driveId, screenId, placeholder, onclickStr) {
     loadDriveScreenshot(driveId, img);
     return;
   }
-  toast('Łączenie z Google Drive...', 'success');
+  toast(t('toast_drive_connecting'), 'success');
   connectGoogleDrive();
   // Po połączeniu reloadDriveScreenshots() zamieni wszystkie chmurki na obrazy
 }
@@ -6529,11 +6529,11 @@ function recalc() {
 }
 function applyLotToForm() {
   const l = document.getElementById('calc-lots')?.value;
-  if (l) { document.getElementById('t-size').value = parseFloat(l).toFixed(4); toast('Loty wstawione do formularza ✓','success'); }
+  if (l) { document.getElementById('t-size').value = parseFloat(l).toFixed(4); toast(t('toast_lots_inserted'),'success'); }
 }
 function applyUnitsToForm() {
   const u = document.getElementById('calc-units')?.value;
-  if (u) { document.getElementById('t-size').value = parseFloat(u); toast('Jednostki wstawione ✓','success'); }
+  if (u) { document.getElementById('t-size').value = parseFloat(u); toast(t('toast_units_inserted'),'success'); }
 }
 
 // ===== PAGE CALC =====
@@ -6590,14 +6590,14 @@ function fmtN(n) { return new Intl.NumberFormat('pl-PL',{minimumFractionDigits:2
 // ===== UNIFIED RISK & R:R CALCULATOR =====
 function unifiedFillFromAccount() {
   const acc = getAccounts().find(a => a.id === state.currentAccountId);
-  if (!acc) { toast('Wybierz konto tradingowe', 'error'); return; }
+  if (!acc) { toast(t('err_account_required'), 'error'); return; }
   const trades = getTrades(state.currentAccountId);
   const pnl = trades.filter(t=>t.status==='closed').reduce((s,t)=>s+(t.pnl||0),0);
   const capital = (acc.capital||0) + pnl;
   const capEl = document.getElementById('u-capital');
   if (capEl) capEl.value = capital.toFixed(2);
   calcUnifiedRisk();
-  toast('Kapitał uzupełniony z konta: ' + acc.name, 'success');
+  toast(t('toast_capital_filled').replace('{name}', acc.name), 'success');
 }
 
 function calcUnifiedRisk() {
@@ -6871,7 +6871,7 @@ function clearAllSymbols() {
   showConfirm(t('confirm_clear_symbols'), () => {
     localStorage.removeItem('traderlog_symbols_' + (state.currentUser||''));
     closeSymbolDropdown();
-    toast('Lista wyczyszczona', 'success');
+    toast(t('toast_list_cleared'), 'success');
   });
 }
 function deleteSymbol(sym, e) {
@@ -7932,7 +7932,7 @@ function restoreDraft(id) {
   openModal('trade-modal');
   applyTfModeUI();
   hookFormAutoSave();
-  toast('Szkic przywrócony ✓', 'success');
+  toast(t('toast_draft_restored'), 'success');
 }
 
 // ── Hook all form inputs to auto-save ────────────────────────────────────────
@@ -7963,7 +7963,7 @@ function discardDraftAndClose() {
     clearCurrentDraft();
     _discardingDraft = true;
     closeModal('trade-modal');
-    toast('Szkic odrzucony', 'success');
+    toast(t('toast_draft_discarded'), 'success');
   });
 }
 
@@ -8024,7 +8024,7 @@ function deleteSingleDraft(id) {
     deleteDraftData(id);
     updateDraftBadges();
     renderDraftsPage();
-    toast('Szkic usunięty', 'success');
+    toast(t('toast_draft_deleted'), 'success');
   });
 }
 function clearAllDrafts() {
@@ -8033,7 +8033,7 @@ function clearAllDrafts() {
     idx.forEach(d => deleteDraftData(d.id));
     updateDraftBadges();
     renderDraftsPage();
-    toast('Wszystkie szkice usunięte', 'success');
+    toast(t('toast_drafts_cleared'), 'success');
   });
 }
 
@@ -9065,6 +9065,36 @@ const T = {
     weekly_bad_emo:         '😤 {n}× trading z negatywnymi emocjami — work in progress',
     weekly_bad_no_emo:      '🧠 {n} transakcji bez oznaczenia emocji — uzupełnij dane',
     weekly_bad_no_diary:    '📓 {n}× handlowałeś bez planu w dzienniku — zacznij sesję od wpisu',
+    // Success toasts
+    toast_trade_updated:     'Transakcja zaktualizowana ✓',
+    toast_account_saved:     'Konto zapisane',
+    toast_account_switched:  'Przełączono konto',
+    toast_analysis_linked:   'Analiza powiązana ✓',
+    toast_analysis_unlinked: 'Powiązanie usunięte',
+    toast_ot_limits_saved:   'Limity overtrading zapisane ✓',
+    toast_demo_deleted:      'Konto demo usunięte',
+    toast_journal_pre_saved: 'Rutyna przed sesją zapisana ✓',
+    toast_journal_entry_saved:'Wpis zapisany ✓',
+    toast_journal_post_saved:'Zamknięcie sesji zapisane ✓',
+    toast_lots_inserted:     'Loty wstawione do formularza ✓',
+    toast_units_inserted:    'Jednostki wstawione ✓',
+    toast_capital_filled:    'Kapitał uzupełniony z konta: {name}',
+    toast_list_cleared:      'Lista wyczyszczona',
+    toast_draft_restored:    'Szkic przywrócony ✓',
+    toast_draft_discarded:   'Szkic odrzucony',
+    toast_draft_deleted:     'Szkic usunięty',
+    toast_drafts_cleared:    'Wszystkie szkice usunięte',
+    toast_drive_connecting:  'Łączenie z Google Drive...',
+    // Error toasts
+    err_instrument_required: 'Podaj instrument',
+    err_account_required:    'Wybierz konto',
+    err_account_name:        'Podaj nazwę konta',
+    err_login_first:         'Zaloguj się najpierw',
+    err_entry_nan:           'Cena wejścia musi być liczbą',
+    err_exit_nan:            'Cena wyjścia musi być liczbą',
+    err_size_nan:            'Rozmiar pozycji musi być liczbą',
+    err_drive_upload:        'Błąd wgrywania na Drive',
+    err_drive_required:      'Połącz z Google Drive aby dodać screenshoty ☁️',
     // Confirm dialogs
     confirm_logout:          'Wylogować się?',
     confirm_delete_trade:    'Usunąć tę transakcję?',
@@ -9468,6 +9498,36 @@ const T = {
     weekly_bad_emo:         '😤 {n}× trading with negative emotions — work in progress',
     weekly_bad_no_emo:      '🧠 {n} trades without emotion tags — fill in the data',
     weekly_bad_no_diary:    "📓 {n}× you traded without a journal entry — start each session with an entry",
+    // Success toasts
+    toast_trade_updated:     'Trade updated ✓',
+    toast_account_saved:     'Account saved',
+    toast_account_switched:  'Account switched',
+    toast_analysis_linked:   'Analysis linked ✓',
+    toast_analysis_unlinked: 'Link removed',
+    toast_ot_limits_saved:   'Overtrading limits saved ✓',
+    toast_demo_deleted:      'Demo account deleted',
+    toast_journal_pre_saved: 'Pre-session routine saved ✓',
+    toast_journal_entry_saved:'Entry saved ✓',
+    toast_journal_post_saved:'Session close saved ✓',
+    toast_lots_inserted:     'Lots inserted into form ✓',
+    toast_units_inserted:    'Units inserted ✓',
+    toast_capital_filled:    'Capital filled from account: {name}',
+    toast_list_cleared:      'List cleared',
+    toast_draft_restored:    'Draft restored ✓',
+    toast_draft_discarded:   'Draft discarded',
+    toast_draft_deleted:     'Draft deleted',
+    toast_drafts_cleared:    'All drafts deleted',
+    toast_drive_connecting:  'Connecting to Google Drive...',
+    // Error toasts
+    err_instrument_required: 'Enter instrument',
+    err_account_required:    'Select account',
+    err_account_name:        'Enter account name',
+    err_login_first:         'Sign in first',
+    err_entry_nan:           'Entry price must be a number',
+    err_exit_nan:            'Exit price must be a number',
+    err_size_nan:            'Position size must be a number',
+    err_drive_upload:        'Drive upload error',
+    err_drive_required:      'Connect Google Drive to add screenshots ☁️',
     // Confirm dialogs
     confirm_logout:          'Sign out?',
     confirm_delete_trade:    'Delete this trade?',
@@ -10807,7 +10867,7 @@ function assignTradeToAnalysis(tradeId) {
     trades[idx] = t;
     saveTrades(state.currentAccountId, trades);
     _selectedTradeForAnalysis = null;
-    toast('Powiązanie usunięte', 'success');
+    toast(t('toast_analysis_unlinked'), 'success');
   } else {
     t.linkedAnalysisId = currentAnalysisId;
     t.updatedAt = Date.now();
@@ -10857,7 +10917,7 @@ document.addEventListener('click', e => {
 // ── Screenshots in analysis ───────────────────────────────────────────────────
 function anHandleFiles(files) {
   if (!_gapiLoaded || !_gapiAccessToken) {
-    toast('Połącz z Google Drive aby dodać screenshoty ☁️', 'error');
+    toast(t('err_drive_required'), 'error');
     connectGoogleDrive();
     return;
   }
@@ -10878,7 +10938,7 @@ function anHandleFiles(files) {
         if (s) { s.dataUrl = driveUrl; s.uploading = false; }
       } else {
         _anScreenshots = _anScreenshots.filter(s => s.id !== id);
-        toast('Błąd wgrywania na Drive', 'error');
+        toast(t('err_drive_upload'), 'error');
       }
       renderAnScreenshots();
       anAutosave();
@@ -13341,7 +13401,7 @@ function quickReport(type) {
 
 
 function openWithdrawalModal() {
-  if (!state.currentAccountId) return toast('Wybierz konto', 'error');
+  if (!state.currentAccountId) return toast(t('err_account_required'), 'error');
   const accounts = getAccounts();
   const acc = accounts.find(a => a.id === state.currentAccountId);
   const trades = getTrades(state.currentAccountId);
@@ -13900,7 +13960,7 @@ async function addPointScreenshot(input, scrId, event) {
     const compressed = await compressImage(e.target.result, 800, 0.7);
     const driveUrl = await autoUploadScreenToDrive(compressed, 'strat_' + scrId, 0);
     const dataUrl = driveUrl || null;
-    if (!dataUrl) { toast('Błąd wgrywania na Drive', 'error'); if (label) label.style.opacity = '1'; return; }
+    if (!dataUrl) { toast(t('err_drive_upload'), 'error'); if (label) label.style.opacity = '1'; return; }
     _driveScreenCache[driveUrl.replace('drive://','')] = compressed;
     const hidden = document.getElementById(scrId + '_data');
     if (hidden) hidden.value = dataUrl;
@@ -14214,7 +14274,7 @@ function addSetupRefScreenshots(input) {
         if (s) { s.dataUrl = driveUrl; s.uploading = false; }
       } else {
         _currentSetupScreenshots = _currentSetupScreenshots.filter(s => s.id !== id);
-        toast('Błąd wgrywania na Drive', 'error');
+        toast(t('err_drive_upload'), 'error');
       }
       renderSetupRefScreenshots();
     };
@@ -14427,7 +14487,7 @@ function addSetupScreenshots(prefix, input) {
         if (s) { s.dataUrl = driveUrl; s.uploading = false; }
       } else {
         _setupSessionScreenshots[prefix] = _setupSessionScreenshots[prefix].filter(s => s.id !== id);
-        toast('Błąd wgrywania na Drive', 'error');
+        toast(t('err_drive_upload'), 'error');
       }
       renderSessionScreenshots(prefix);
     };
