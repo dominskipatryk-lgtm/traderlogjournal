@@ -4019,8 +4019,9 @@ function seedDemoData() {
       prices[i.sym] = rnd(Math.max(i.p * 0.9, Math.min(i.p * 1.1, prices[i.sym] + (rng()-0.48)*i.drift)), i.dec);
     });
 
-    // 2-5 trades per day
-    const n = rInt(2,5);
+    // 2-5 trades per day; for today force 5 (= default maxDaily) so overtrading alert fires on next trade
+    const isToday = ds === today.toISOString().slice(0,10);
+    const n = isToday ? 5 : rInt(2,5);
     for (let t = 0; t < n; t++) {
       const ins = pick(instrs);
       const dir = rng() > 0.5 ? 'LONG' : 'SHORT';
@@ -4143,7 +4144,7 @@ function seedDemoData() {
   // Switch to demo account
   state.currentAccountId = DEMO_ID;
   renderDashboard(); renderTrades(); renderSummary();
-  toast(`✅ Dane demo wygenerowane — ${trades.length} transakcji, ${analyses.length} analiz, ${Object.keys(journalMap).length} wpisów dziennika`, 'success');
+  toast(t('toast_demo_generated').replace('{trades}',trades.length).replace('{analyses}',analyses.length).replace('{days}',Object.keys(journalMap).length), 'success');
   showPage('dashboard');
   }); // end showConfirm
 }
@@ -7063,7 +7064,7 @@ function saveDB(db) {
         if (sizeMB > 4) {
           saveDB._warnedStorage = true;
           const pct = Math.round(sizeMB / 5 * 100);
-          toast(`⚠️ Pamięć przeglądarki ${pct}% pełna (${sizeMB} MB). Rozważ usunięcie screenshotów lub backup na Drive.`, 'error');
+          toast(t('toast_mem_warning').replace('{pct}',pct).replace('{mb}',sizeMB), 'error');
         }
       }
     } catch(e) {
@@ -7198,7 +7199,7 @@ function updateAdminNav() {
 }
 
 async function renderAdmin() {
-  if (!isAdmin()) { toast('Brak uprawnień', 'error'); return; }
+  if (!isAdmin()) { toast(t('err_no_perms'), 'error'); return; }
   // [v1.4] FIX: usunięto sprawdzenie 'admin-content' który nie istnieje w HTML
   const statsEl = document.getElementById('admin-stats-row');
   const usersEl = document.getElementById('admin-users-table');
@@ -7359,27 +7360,27 @@ function adminSaveUser() {
   saveUsers(users);
   closeModal('add-user-modal');
   renderAdmin();
-  toast('Użytkownik zapisany ✓', 'success');
+  toast(t('toast_user_saved'), 'success');
 }
 
 function adminResetPass(login) {
   const np = prompt(`Nowe hasło dla "${login}" (min. 6 znaków):`);
   if (!np) return;
-  if (np.length < 6) { toast('Hasło min. 6 znaków', 'error'); return; }
+  if (np.length < 6) { toast(t('err_pass_short'), 'error'); return; }
   const users = getUsers();
   if (!users[login]) return;
   users[login].pass = np;
   saveUsers(users);
-  toast(`Hasło zmienione dla ${login}`, 'success');
+  toast(t('toast_pass_changed').replace('{login}', login), 'success');
 }
 
 async function adminDeleteUser(userId, login) {
-  if (!isAdmin()) { toast('Brak uprawnień', 'error'); return; }
+  if (!isAdmin()) { toast(t('err_no_perms'), 'error'); return; }
   showConfirm('Usunąć użytkownika ' + login + '? Tej operacji nie można cofnąć.', async () => {
     try {
       const { data: { session } } = await _sb.auth.getSession();
       const adminToken = session?.access_token;
-      if (!adminToken) { toast('Brak sesji — zaloguj się ponownie', 'error'); return; }
+      if (!adminToken) { toast(t('err_no_session'), 'error'); return; }
       const res = await fetch(_SB_URL + '/rest/v1/profiles?id=eq.' + encodeURIComponent(userId), {
         method: 'DELETE',
         headers: {
@@ -7390,10 +7391,10 @@ async function adminDeleteUser(userId, login) {
       if (!res.ok) {
         const errText = await res.text();
         console.warn('Delete error:', res.status, errText);
-        toast('Błąd usuwania (' + res.status + ')', 'error');
+        toast(t('err_delete_admin').replace('{code}', res.status), 'error');
         return;
       }
-      toast('Użytkownik usunięty ✓', 'success');
+      toast(t('toast_user_deleted'), 'success');
       renderAdmin();
     } catch(e) { toast('Błąd: ' + e.message, 'error'); }
   });
@@ -7408,7 +7409,7 @@ function adminNukeAll() {
       const emptyDB = { users: { [adminUser]: myData }, accounts: {}, trades: {} };
       saveDB(emptyDB);
       _dbCache = emptyDB;
-      toast('Baza wyczyszczona', 'success');
+      toast(t('toast_db_cleared'), 'success');
       renderAdmin();
     });
   });
@@ -7419,14 +7420,14 @@ async function adminExport() {
   const json = JSON.stringify(db, null, 2);
   if (IS_ELECTRON) {
     const ok = await window.electronAPI.exportData(json);
-    if (ok) toast('Dane wyeksportowane ✓', 'success');
+    if (ok) toast(t('toast_export_ok'), 'success');
   } else {
     const blob = new Blob([json], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = `traderlog-backup-${new Date().toISOString().slice(0,10)}.json`;
     a.click();
-    toast('Pobieranie rozpoczęte ✓', 'success');
+    toast(t('toast_download_started'), 'success');
   }
 }
 
@@ -7449,13 +7450,13 @@ async function adminImport() {
       const data = JSON.parse(json);
       saveDB(data);
       _dbCache = data;
-      toast('Import zakończony ✓', 'success');
+      toast(t('toast_import_ok'), 'success');
       setTimeout(() => {
         renderDashboard(); renderTrades(); renderSummary();
         renderAccounts(); refreshTopbarAccount(); updateDraftBadges();
         updateAdminNav(); renderAdmin();
       }, 400);
-    } catch { toast('Błąd importu – nieprawidłowy plik', 'error'); }
+    } catch { toast(t('toast_import_error'), 'error'); }
   });
 }
 
@@ -9127,6 +9128,30 @@ const T = {
     confirm_delete_note:     'Usunąć tę notatkę?',
     confirm_delete_library:  'Usunąć ten materiał z biblioteki?',
     confirm_clear_symbols:   'Usunąć wszystkie zapisane instrumenty?',
+    // Admin / misc
+    err_pass_short:          'Hasło min. 6 znaków',
+    toast_user_saved:        'Użytkownik zapisany ✓',
+    toast_user_deleted:      'Użytkownik usunięty ✓',
+    toast_pass_changed:      'Hasło zmienione dla {login}',
+    toast_db_cleared:        'Baza wyczyszczona',
+    toast_export_ok:         'Dane wyeksportowane ✓',
+    toast_download_started:  'Pobieranie rozpoczęte ✓',
+    toast_import_ok:         'Import zakończony ✓',
+    toast_import_error:      'Błąd importu – nieprawidłowy plik',
+    err_no_session:          'Brak sesji — zaloguj się ponownie',
+    err_delete_admin:        'Błąd usuwania ({code})',
+    err_no_perms:            'Brak uprawnień',
+    err_balance_missing:     'Wpisz stan konta u brokera',
+    toast_analysis_archived: 'Analiza zarchiwizowana',
+    toast_analysis_restored: 'Analiza przywrócona',
+    toast_withdrawal_saved:  '✓ Operacja zapisana: {type} {amount} USD',
+    withdrawal_type_out:     'Wypłata',
+    withdrawal_type_in:      'Wpłata',
+    withdrawal_type_balance: 'Bilansowanie',
+    toast_demo_generated:    '✅ Dane demo: {trades} transakcji, {analyses} analiz, {days} wpisów',
+    toast_mem_warning:       '⚠️ Pamięć przeglądarki {pct}% pełna ({mb} MB). Rozważ usunięcie screenshotów.',
+    toast_screenshots_uploading: '⏳ Wgrywam {n} screenshotów na Drive…',
+    toast_screenshots_uploaded:  '✓ Przeniesiono {n} screenshotów na Drive — zwolniono localStorage',
     // Placeholders
     ph_trade_pre:            'Opisz swoją analizę przed otwarciem pozycji…',
     ph_trade_post:           'Co poszło dobrze? Co można było zrobić lepiej?',
@@ -9591,6 +9616,30 @@ const T = {
     confirm_delete_note:     'Delete this note?',
     confirm_delete_library:  'Delete this material from the library?',
     confirm_clear_symbols:   'Delete all saved instruments?',
+    // Admin / misc
+    err_pass_short:          'Password min. 6 characters',
+    toast_user_saved:        'User saved ✓',
+    toast_user_deleted:      'User deleted ✓',
+    toast_pass_changed:      'Password changed for {login}',
+    toast_db_cleared:        'Database cleared',
+    toast_export_ok:         'Data exported ✓',
+    toast_download_started:  'Download started ✓',
+    toast_import_ok:         'Import completed ✓',
+    toast_import_error:      'Import error – invalid file',
+    err_no_session:          'No session — please log in again',
+    err_delete_admin:        'Delete error ({code})',
+    err_no_perms:            'No permissions',
+    err_balance_missing:     'Enter the broker account balance',
+    toast_analysis_archived: 'Analysis archived',
+    toast_analysis_restored: 'Analysis restored',
+    toast_withdrawal_saved:  '✓ Operation saved: {type} {amount} USD',
+    withdrawal_type_out:     'Withdrawal',
+    withdrawal_type_in:      'Deposit',
+    withdrawal_type_balance: 'Balance adjustment',
+    toast_demo_generated:    '✅ Demo data: {trades} trades, {analyses} analyses, {days} journal entries',
+    toast_mem_warning:       '⚠️ Browser storage {pct}% full ({mb} MB). Consider removing screenshots.',
+    toast_screenshots_uploading: '⏳ Uploading {n} screenshots to Drive…',
+    toast_screenshots_uploaded:  '✓ Moved {n} screenshots to Drive — localStorage freed',
     // Placeholders
     ph_trade_pre:            'Describe your pre-trade analysis…',
     ph_trade_post:           'What went well? What could be improved?',
@@ -9814,7 +9863,49 @@ function applyLangToStatic() {
   const filterResult = document.getElementById('filter-result');
   if (filterResult?.options[0]) filterResult.options[0].text = lang==='en'?'Result: All':'Wynik: Wszystkie';
   const filterEmotion = document.getElementById('filter-emotion');
-  if (filterEmotion?.options[0]) filterEmotion.options[0].text = lang==='en'?'🧠 Emotions: All':'🧠 Emocje: Wszystkie';
+  if (filterEmotion) {
+    const feVal = filterEmotion.value;
+    if (lang === 'en') {
+      filterEmotion.innerHTML = `
+        <option value="">🧠 Emotions: All</option>
+        <optgroup label="Before entry">
+          <option value="pre:Spokojny">😌 Calm (pre)</option>
+          <option value="pre:Pewny">💪 Confident (pre)</option>
+          <option value="pre:Podekscytowany">🔥 Excited (pre)</option>
+          <option value="pre:Zaniepokojony">😟 Anxious (pre)</option>
+          <option value="pre:FOMO">😰 FOMO (pre)</option>
+          <option value="pre:Revenge">😡 Revenge (pre)</option>
+        </optgroup>
+        <optgroup label="After close">
+          <option value="post:Zadowolony">😊 Satisfied (post)</option>
+          <option value="post:Spokojny">😌 Calm (post)</option>
+          <option value="post:Żałuję">😔 Regret (post)</option>
+          <option value="post:Sfrustrowany">😤 Frustrated (post)</option>
+          <option value="post:Chciwy">🤑 Greedy (post)</option>
+          <option value="post:Neutralny">🧘 Neutral (post)</option>
+        </optgroup>`;
+    } else {
+      filterEmotion.innerHTML = `
+        <option value="">🧠 Emocje: Wszystkie</option>
+        <optgroup label="Przed wejściem">
+          <option value="pre:Spokojny">😌 Spokojny (pre)</option>
+          <option value="pre:Pewny">💪 Pewny (pre)</option>
+          <option value="pre:Podekscytowany">🔥 Podekscytowany (pre)</option>
+          <option value="pre:Zaniepokojony">😟 Zaniepokojony (pre)</option>
+          <option value="pre:FOMO">😰 FOMO (pre)</option>
+          <option value="pre:Revenge">😡 Revenge (pre)</option>
+        </optgroup>
+        <optgroup label="Po zamknięciu">
+          <option value="post:Zadowolony">😊 Zadowolony (post)</option>
+          <option value="post:Spokojny">😌 Spokojny (post)</option>
+          <option value="post:Żałuję">😔 Żałuję (post)</option>
+          <option value="post:Sfrustrowany">😤 Sfrustrowany (post)</option>
+          <option value="post:Chciwy">🤑 Chciwy (post)</option>
+          <option value="post:Neutralny">🧘 Neutralny (post)</option>
+        </optgroup>`;
+    }
+    if (feVal) filterEmotion.value = feVal;
+  }
 
   // ── 13. Placeholder translations ──────────────────────────────────────────
   document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
@@ -10093,7 +10184,7 @@ function manualBackupImport() {
         try {
           const data = JSON.parse(ev.target.result);
           saveDB(data); _dbCache = data;
-          toast('Import zakończony ✓', 'success');
+          toast(t('toast_import_ok'), 'success');
           setTimeout(() => {
             renderDashboard(); renderTrades(); renderSummary();
             renderAccounts(); refreshTopbarAccount(); updateDraftBadges();
@@ -10461,7 +10552,7 @@ async function backupScreenshotsToGoogleDrive() {
     });
   });
   if (!allScreenshots.length) { toast('Brak base64 screenshotów — wszystkie już na Drive ✓', 'success'); return; }
-  toast(`⏳ Wgrywam ${allScreenshots.length} screenshotów na Drive...`, 'success');
+  toast(t('toast_screenshots_uploading').replace('{n}', allScreenshots.length), 'success');
   let saved = 0;
   try {
     for (const s of allScreenshots) {
@@ -10478,7 +10569,7 @@ async function backupScreenshotsToGoogleDrive() {
       }
     }
     if (saved > 0) { db.trades = tradesObj; saveDB(db); _dbCache = db; renderTrades(); renderSettings(); }
-    toast(`✓ Przeniesiono ${saved} screenshotów na Drive — zwolniono localStorage`, 'success');
+    toast(t('toast_screenshots_uploaded').replace('{n}', saved), 'success');
   } catch(e) { toast('Błąd migracji: ' + e.message, 'error'); }
 }
 
@@ -10706,7 +10797,7 @@ function archiveAnalysis(id) {
   analyses[idx].archived = !analyses[idx].archived;
   saveAnalyses(analyses);
   renderAnalysisList();
-  toast(analyses[idx].archived ? 'Analiza zarchiwizowana' : 'Analiza przywrócona', 'success');
+  toast(t(analyses[idx].archived ? 'toast_analysis_archived' : 'toast_analysis_restored'), 'success');
 }
 
 // ═══ TRADE ↔ ANALYSIS LINKING ═══
@@ -12892,7 +12983,7 @@ async function adminGenerateInvite() {
 async function adminActivateUser(userId) {
   // [v1.2] FIX: używamy tokenu sesji admina zamiast klucza anon.
   // Klucz anon nie ma uprawnień do PATCH profiles — wymagany token zalogowanego admina.
-  if (!isAdmin()) { toast('Brak uprawnień', 'error'); return; }
+  if (!isAdmin()) { toast(t('err_no_perms'), 'error'); return; }
   try {
     const { data: { session } } = await _sb.auth.getSession();
     const adminToken = session?.access_token;
@@ -13512,7 +13603,7 @@ function saveWithdrawal() {
   let amount = 0;
   if (type === 'balance') {
     const actual = parseFloat(document.getElementById('balance-actual')?.value) || 0;
-    if (!actual) return toast('Wpisz stan konta u brokera', 'error');
+    if (!actual) return toast(t('err_balance_missing'), 'error');
     const trades = getTrades(state.currentAccountId);
     const closedPnl = trades.filter(t => t.status === 'closed').reduce((s, t) => s + (t.pnl || 0), 0);
     const equity = (acc.capital || 0) + closedPnl;
@@ -13546,7 +13637,8 @@ function saveWithdrawal() {
   closeModal('withdrawal-modal');
   renderAccounts();
   renderDashboard();
-  toast(`✓ Operacja zapisana: ${type === 'withdrawal' ? 'Wypłata' : type === 'deposit' ? 'Wpłata' : 'Bilansowanie'} ${fmt(Math.abs(amount))} USD`, 'success');
+  const _wType = type === 'withdrawal' ? t('withdrawal_type_out') : type === 'deposit' ? t('withdrawal_type_in') : t('withdrawal_type_balance');
+  toast(t('toast_withdrawal_saved').replace('{type}', _wType).replace('{amount}', fmt(Math.abs(amount))), 'success');
 }
 
 
