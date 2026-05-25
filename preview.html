@@ -3945,7 +3945,7 @@ function seedDemoData() {
         tps:[], exit: exitP, pnl,
         tf: pick(tfs), setup: pick(setups),
         pre: pick(preTxts), post: pick(postTxts),
-        emotionPre:  pick(emotPre)+','+pick(emotPre),
+        emotionPre:  pick(emotPre),
         emotionPost: pick(emotPost),
         screenshots:[], mt4Ticket:null, linkedAnalysisId:null,
         updatedAt: new Date(dt).getTime(),
@@ -14267,11 +14267,13 @@ function resetRoutineToday() {
 
 // --- Data helpers ---
 function getJournalEntry(dateStr) {
+  if (!state.currentUser) return null;
   const db = getDB();
-  return db['journal_' + (state.currentUser||'') + '_' + dateStr] || null;
+  return db['journal_' + state.currentUser + '_' + dateStr] || null;
 }
 function saveJournalEntryData(dateStr, entry) {
-  const db = getDB(); db['journal_' + (state.currentUser||'') + '_' + dateStr] = entry; saveDB(db);
+  if (!state.currentUser) return;
+  const db = getDB(); db['journal_' + state.currentUser + '_' + dateStr] = entry; saveDB(db);
 }
 function getNotes() {
   const db = getDB();
@@ -14281,11 +14283,13 @@ function saveNotes(arr) {
   const db = getDB(); db['notes_' + (state.currentUser||'')] = arr; saveDB(db);
 }
 function getWeeklyReview(weekKey) {
+  if (!state.currentUser) return null;
   const db = getDB();
-  return db['weekly_' + (state.currentUser||'') + '_' + weekKey] || null;
+  return db['weekly_' + state.currentUser + '_' + weekKey] || null;
 }
 function saveWeeklyReviewData(weekKey, data) {
-  const db = getDB(); db['weekly_' + (state.currentUser||'') + '_' + weekKey] = data; saveDB(db);
+  if (!state.currentUser) return;
+  const db = getDB(); db['weekly_' + state.currentUser + '_' + weekKey] = data; saveDB(db);
 }
 function getWeekKey(date) {
   const d = new Date(date); const jan1 = new Date(d.getFullYear(),0,1);
