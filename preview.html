@@ -3916,7 +3916,7 @@ function doLogout() {
 }
 
 function confirmAndLogout() {
-  showConfirm('Wylogować się?', _executeLogout);
+  showConfirm(t('confirm_logout'), _executeLogout);
 }
 
 function _executeLogout() {
@@ -4152,7 +4152,7 @@ function clearDemoData() {
   const DEMO_ID = 'demo-seed-001';
   const user = state.currentUser;
   if (!user) return;
-  showConfirm('Usunąć konto demo i wszystkie jego dane?', () => {
+  showConfirm(t('confirm_delete_demo'), () => {
     const db = getDB();
     if (db.accounts) db.accounts[user] = (db.accounts[user]||[]).filter(a => a.id !== DEMO_ID);
     if (db.trades) delete db.trades[user+'_'+DEMO_ID];
@@ -4706,13 +4706,13 @@ function renderEmotions() {
         const {pnl,c} = grid[d][h];
         const cs = cellStyle(pnl,c);
         const label = c ? c : '';
-        return `<div style="${cs};border-radius:4px;padding:4px 2px;text-align:center;font-size:11px;font-weight:600;min-height:28px;display:flex;align-items:center;justify-content:center" title="${c?('P&L: '+(pnl>=0?'+':'')+fmt(pnl)+', '+c+' trans.'):'brak'}">${label}</div>`;
+        return `<div style="${cs};border-radius:4px;padding:4px 2px;text-align:center;font-size:11px;font-weight:600;min-height:28px;display:flex;align-items:center;justify-content:center" title="${c?('P&L: '+(pnl>=0?'+':'')+fmt(pnl)+', '+c+' trans.'):t('emotions_heatmap_no_data')}">${label}</div>`;
       }).join('');
       return `<div style="display:contents"><div style="font-size:11px;color:var(--text2);display:flex;align-items:center;font-weight:600">${d}</div>${cells}</div>`;
     }).join('');
     return `<div class="summary-card" style="margin-top:16px">
-      <div class="summary-card-title" style="color:var(--blue)">⏰ Kiedy grasz najlepiej?</div>
-      <div style="font-size:11px;color:var(--text3);margin-bottom:10px">Zielony = zysk · Czerwony = strata · Liczba = transakcji</div>
+      <div class="summary-card-title" style="color:var(--blue)">${t('emotions_heatmap_when')}</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:10px">${t('emotions_heatmap_legend')}</div>
       <div style="display:grid;grid-template-columns:32px repeat(${hours.length},1fr);gap:3px">
         <div></div>${headerCells}
         ${bodyRows}
@@ -4741,20 +4741,20 @@ function renderEmotions() {
     const disciplinePct = Math.round(withPlan.length/totalDaysWithData*100);
     const cardStyle = (val) => val===null ? '' : val>=0 ? 'border-color:var(--green)' : 'border-color:var(--red)';
     return `<div class="summary-card" style="margin-top:16px">
-      <div class="summary-card-title" style="color:var(--accent)">🎯 Konsekwencja planu</div>
+      <div class="summary-card-title" style="color:var(--accent)">${t('emotions_plan_title')}</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px">
         <div class="summary-card" style="${cardStyle(avgPlan)};text-align:center">
-          <div style="font-size:11px;color:var(--green);font-weight:600;margin-bottom:6px">Gdy trzymałem plan</div>
+          <div style="font-size:11px;color:var(--green);font-weight:600;margin-bottom:6px">${t('emotions_with_plan')}</div>
           <div style="font-size:22px;font-weight:800;font-family:var(--font-mono);color:${avgPlan!==null&&avgPlan>=0?'var(--green)':'var(--red)'}">${avgPlan!==null?(avgPlan>=0?'+':'')+fmt(avgPlan):'—'}</div>
-          <div style="font-size:11px;color:var(--text3);margin-top:4px">${withPlan.length} dni</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:4px">${withPlan.length} ${t('emotions_days')}</div>
         </div>
         <div class="summary-card" style="${cardStyle(avgNoPlan)};text-align:center">
-          <div style="font-size:11px;color:var(--red);font-weight:600;margin-bottom:6px">Gdy nie trzymałem planu</div>
+          <div style="font-size:11px;color:var(--red);font-weight:600;margin-bottom:6px">${t('emotions_without_plan')}</div>
           <div style="font-size:22px;font-weight:800;font-family:var(--font-mono);color:${avgNoPlan!==null&&avgNoPlan>=0?'var(--green)':'var(--red)'}">${avgNoPlan!==null?(avgNoPlan>=0?'+':'')+fmt(avgNoPlan):'—'}</div>
-          <div style="font-size:11px;color:var(--text3);margin-top:4px">${withoutPlan.length} dni</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:4px">${withoutPlan.length} ${t('emotions_days')}</div>
         </div>
       </div>
-      <div style="font-size:12px;color:var(--text2);margin-top:10px;text-align:center"><strong style="color:${disciplinePct>=70?'var(--accent)':disciplinePct>=50?'var(--amber)':'var(--red)'}">${disciplinePct}%</strong> dni z planem = dyscyplina</div>
+      <div style="font-size:12px;color:var(--text2);margin-top:10px;text-align:center"><strong style="color:${disciplinePct>=70?'var(--accent)':disciplinePct>=50?'var(--amber)':'var(--red)'}">${disciplinePct}%</strong> ${t('emotions_discipline')}</div>
     </div>`;
   })()}
 
@@ -5398,7 +5398,7 @@ function saveAccount() {
 }
 
 function deleteAccount(id) {
-  showConfirm('Usunąć konto i WSZYSTKIE jego transakcje?', () => {
+  showConfirm(t('confirm_delete_account'), () => {
     const accounts = getAccounts().filter(a => a.id !== id);
     saveAccounts(accounts);
     if (state.currentAccountId === id) state.currentAccountId = accounts[0]?.id || null;
@@ -5699,7 +5699,7 @@ function saveTrade() {
 }
 
 function deleteTrade(id) {
-  showConfirm('Usunąć tę transakcję?', () => {
+  showConfirm(t('confirm_delete_trade'), () => {
     const trades = getTrades(state.currentAccountId).filter(t => t.id !== id);
     saveTrades(state.currentAccountId, trades);
     renderDashboard();
@@ -5998,7 +5998,7 @@ function selectDvLinkedAnalysis(analysisId) {
   toast('Analiza powiązana ✓', 'success');
 }
 function dvUnlinkAnalysis(tradeId) {
-  showConfirm('Usunąć powiązanie z analizą?', () => {
+  showConfirm(t('confirm_unlink_analysis'), () => {
     const trades = getTrades(state.currentAccountId);
     const idx = trades.findIndex(t => t.id === tradeId);
     if (idx < 0) return;
@@ -6102,7 +6102,7 @@ function detailSaveEdit() {
 
 // ── delete from detail ──
 function detailDeleteCurrent() {
-  showConfirm('Usunąć tę transakcję?', () => {
+  showConfirm(t('confirm_delete_trade'), () => {
     const trades = getTrades(state.currentAccountId).filter(t => t.id !== _detailId);
     saveTrades(state.currentAccountId, trades);
     closeModal('detail-modal');
@@ -6868,7 +6868,7 @@ function saveSymbol(sym) {
   saveUserSymbolsStore(arr);
 }
 function clearAllSymbols() {
-  showConfirm('Usunąć wszystkie zapisane instrumenty?', () => {
+  showConfirm(t('confirm_clear_symbols'), () => {
     localStorage.removeItem('traderlog_symbols_' + (state.currentUser||''));
     closeSymbolDropdown();
     toast('Lista wyczyszczona', 'success');
@@ -7959,7 +7959,7 @@ function clearCurrentDraft() {
 // ── Discard draft and close ───────────────────────────────────────────────────
 function discardDraftAndClose() {
   if (!formHasContent()) { closeModal('trade-modal'); return; }
-  showConfirm('Odrzucić wersję roboczą? Dane zostaną utracone.', () => {
+  showConfirm(t('confirm_discard_draft'), () => {
     clearCurrentDraft();
     _discardingDraft = true;
     closeModal('trade-modal');
@@ -8020,7 +8020,7 @@ function openTradeModalFromDrafts() {
   hookFormAutoSave();
 }
 function deleteSingleDraft(id) {
-  showConfirm('Usunąć ten szkic?', () => {
+  showConfirm(t('confirm_delete_draft'), () => {
     deleteDraftData(id);
     updateDraftBadges();
     renderDraftsPage();
@@ -8028,7 +8028,7 @@ function deleteSingleDraft(id) {
   });
 }
 function clearAllDrafts() {
-  showConfirm('Usunąć wszystkie wersje robocze?', () => {
+  showConfirm(t('confirm_clear_drafts'), () => {
     const idx = getDraftIndex();
     idx.forEach(d => deleteDraftData(d.id));
     updateDraftBadges();
@@ -9003,6 +9003,85 @@ const T = {
     rule_msg_max_losses:   'Nie wchodzisz po {lim} stratach — obecna passa strat: {streak}',
     rule_msg_stop_hour:    'Stop trading o {hour}:00 — jest {now}',
     rule_msg_max_risk:     'Ryzyko {pct}% przekracza limit {lim}%',
+    // Emotions — heatmap + plan consistency
+    emotions_heatmap_when:   '⏰ Kiedy grasz najlepiej?',
+    emotions_heatmap_legend: 'Zielony = zysk · Czerwony = strata · Liczba = transakcji',
+    emotions_heatmap_no_data:'brak',
+    emotions_plan_title:     '🎯 Konsekwencja planu',
+    emotions_with_plan:      'Gdy trzymałem plan',
+    emotions_without_plan:   'Gdy nie trzymałem planu',
+    emotions_discipline:     'dni z planem = dyscyplina',
+    emotions_days:           'dni',
+    // Journal
+    journal_today:           'Dziś',
+    journal_not_ready:       'Nie jesteś w formie — rozważ dzisiaj nie handlować lub zmniejsz wolumen',
+    journal_routine_complete:'✅ Rutyna kompletna',
+    journal_session_closed:  '✅ Sesja zamknięta',
+    journal_steps:           '{done}/4 kroków',
+    journal_no_trades:       'Brak zamkniętych transakcji dziś — dobry dzień na obserwację',
+    journal_trades_label:    'Transakcji',
+    journal_emotion_label:   'Emocja',
+    // Mood labels
+    mood_1: 'Bardzo zły', mood_2: 'Zły', mood_3: 'Neutralny', mood_4: 'Dobry', mood_5: 'Świetny',
+    // Notes
+    notes_empty:         'Brak notatek — kliknij + Nowa',
+    notes_no_results:    'Brak wyników',
+    notes_untitled:      'Bez tytułu',
+    notes_last_saved:    'Ostatnio zapisano: ',
+    notes_just_saved:    'Zapisano: ',
+    notes_saved_toast:   'Notatka zapisana ✓',
+    notes_pinned_toast:  'Notatka przypięta 📌',
+    notes_unpinned_toast:'Odpięto',
+    notes_empty_content: 'Wpisz tytuł lub treść',
+    // Weekly review
+    weekly_week:            'Tydzień',
+    weekly_no_trades:       'Brak zamkniętych transakcji w tym tygodniu',
+    weekly_no_analyses:     'Brak analiz zapisanych w tym tygodniu',
+    weekly_no_data:         'Brak danych — dodaj transakcje',
+    weekly_pnl:             'P&L tygodnia',
+    weekly_trades:          'Transakcji',
+    weekly_journal_days:    'Dni z dziennikiem',
+    weekly_saved:           'Przegląd tygodniowy zapisany ✓',
+    weekly_no_weaknesses:   '✅ Brak wyraźnych słabości w danych tego tygodnia',
+    weekly_continue:        'Kontynuuj analizę — więcej danych pokaże mocne strony',
+    weekly_col_date:        'Data',
+    weekly_col_dir:         'Kier.',
+    weekly_col_emo_pre:     'Emocja ↑',
+    weekly_col_emo_post:    'Emocja ↓',
+    weekly_no_entry:        'brak wpisu rano',
+    weekly_plan_saved:      'plan zapisany',
+    weekly_trades_suffix:   'transakcji',
+    weekly_analyses_suffix: 'analiz',
+    weekly_day_mood:        'Nastrój przed sesją',
+    weekly_good_winrate:    '🎯 Win rate {pct}% — ponad połowa transakcji na plusie',
+    weekly_good_plus:       '💰 Tydzień zamknięty na plusie: +{sym}{pnl}',
+    weekly_good_setup:      '📐 Setup "{s}" — {pct}% WR w tym tygodniu',
+    weekly_good_emo:        '🧠 Najlepsze wyniki gdy: "{e}" — {pct}% WR',
+    weekly_good_instr:      '💹 {s} — najlepszy instrument: +{sym}{pnl}',
+    weekly_good_journal:    '📓 Dziennik wypełniony {n}/7 dni — dobry nawyk!',
+    weekly_bad_winrate:     '📉 Win rate tylko {pct}% — przeanalizuj warunki wejść',
+    weekly_bad_minus:       '🔴 Tydzień na minusie: {sym}{pnl} — sprawdź zarządzanie ryzykiem',
+    weekly_bad_setup:       '📐 Setup "{s}" — {sym}{pnl} łącznie, rozważ jego pominięcie',
+    weekly_bad_emo:         '😤 {n}× trading z negatywnymi emocjami — work in progress',
+    weekly_bad_no_emo:      '🧠 {n} transakcji bez oznaczenia emocji — uzupełnij dane',
+    weekly_bad_no_diary:    '📓 {n}× handlowałeś bez planu w dzienniku — zacznij sesję od wpisu',
+    // Confirm dialogs
+    confirm_logout:          'Wylogować się?',
+    confirm_delete_trade:    'Usunąć tę transakcję?',
+    confirm_unlink_analysis: 'Usunąć powiązanie z analizą?',
+    confirm_delete_account:  'Usunąć konto i WSZYSTKIE jego transakcje?',
+    confirm_delete_demo:     'Usunąć konto demo i wszystkie jego dane?',
+    confirm_discard_draft:   'Odrzucić wersję roboczą? Dane zostaną utracone.',
+    confirm_delete_draft:    'Usunąć ten szkic?',
+    confirm_clear_drafts:    'Usunąć wszystkie wersje robocze?',
+    confirm_delete_analysis: 'Usunąć tę analizę?',
+    confirm_discard_analysis:'Odrzucić tę analizę?',
+    confirm_delete_strategy: 'Usunąć strategię?',
+    confirm_delete_setup:    'Usunąć setup?',
+    confirm_delete_rule:     'Usunąć tę regułę?',
+    confirm_delete_note:     'Usunąć tę notatkę?',
+    confirm_delete_library:  'Usunąć ten materiał z biblioteki?',
+    confirm_clear_symbols:   'Usunąć wszystkie zapisane instrumenty?',
   },
   en: {
     // Nav
@@ -9327,6 +9406,85 @@ const T = {
     rule_msg_max_losses:   'No entry after {lim} losses — current streak: {streak}',
     rule_msg_stop_hour:    'Stop trading at {hour}:00 — current time: {now}',
     rule_msg_max_risk:     'Risk {pct}% exceeds limit of {lim}%',
+    // Emotions — heatmap + plan consistency
+    emotions_heatmap_when:   '⏰ When do you trade best?',
+    emotions_heatmap_legend: 'Green = profit · Red = loss · Count = trades',
+    emotions_heatmap_no_data:'none',
+    emotions_plan_title:     '🎯 Plan Consistency',
+    emotions_with_plan:      'When I followed the plan',
+    emotions_without_plan:   'When I broke the plan',
+    emotions_discipline:     'days with plan = discipline',
+    emotions_days:           'days',
+    // Journal
+    journal_today:           'Today',
+    journal_not_ready:       "You're not at your best — consider not trading today or reducing size",
+    journal_routine_complete:'✅ Routine complete',
+    journal_session_closed:  '✅ Session closed',
+    journal_steps:           '{done}/4 steps',
+    journal_no_trades:       'No closed trades today — good day to observe',
+    journal_trades_label:    'Trades',
+    journal_emotion_label:   'Emotion',
+    // Mood labels
+    mood_1: 'Very bad', mood_2: 'Bad', mood_3: 'Neutral', mood_4: 'Good', mood_5: 'Great',
+    // Notes
+    notes_empty:         'No notes — click + New',
+    notes_no_results:    'No results',
+    notes_untitled:      'Untitled',
+    notes_last_saved:    'Last saved: ',
+    notes_just_saved:    'Saved: ',
+    notes_saved_toast:   'Note saved ✓',
+    notes_pinned_toast:  'Note pinned 📌',
+    notes_unpinned_toast:'Unpinned',
+    notes_empty_content: 'Enter title or content',
+    // Weekly review
+    weekly_week:            'Week',
+    weekly_no_trades:       'No closed trades this week',
+    weekly_no_analyses:     'No analyses saved this week',
+    weekly_no_data:         'No data — add trades',
+    weekly_pnl:             'Weekly P&L',
+    weekly_trades:          'Trades',
+    weekly_journal_days:    'Days with journal',
+    weekly_saved:           'Weekly review saved ✓',
+    weekly_no_weaknesses:   "✅ No significant weaknesses in this week's data",
+    weekly_continue:        'Continue analysis — more data will reveal strengths',
+    weekly_col_date:        'Date',
+    weekly_col_dir:         'Dir.',
+    weekly_col_emo_pre:     'Emotion ↑',
+    weekly_col_emo_post:    'Emotion ↓',
+    weekly_no_entry:        'no morning entry',
+    weekly_plan_saved:      'plan saved',
+    weekly_trades_suffix:   'trades',
+    weekly_analyses_suffix: 'analyses',
+    weekly_day_mood:        'Mood before session',
+    weekly_good_winrate:    '🎯 Win rate {pct}% — over half your trades were positive',
+    weekly_good_plus:       '💰 Week closed in profit: +{sym}{pnl}',
+    weekly_good_setup:      '📐 Setup "{s}" — {pct}% WR this week',
+    weekly_good_emo:        '🧠 Best results when: "{e}" — {pct}% WR',
+    weekly_good_instr:      '💹 {s} — best instrument: +{sym}{pnl}',
+    weekly_good_journal:    '📓 Journal filled {n}/7 days — great habit!',
+    weekly_bad_winrate:     '📉 Win rate only {pct}% — review your entry conditions',
+    weekly_bad_minus:       '🔴 Week in the red: {sym}{pnl} — review risk management',
+    weekly_bad_setup:       '📐 Setup "{s}" — {sym}{pnl} total, consider skipping it',
+    weekly_bad_emo:         '😤 {n}× trading with negative emotions — work in progress',
+    weekly_bad_no_emo:      '🧠 {n} trades without emotion tags — fill in the data',
+    weekly_bad_no_diary:    "📓 {n}× you traded without a journal entry — start each session with an entry",
+    // Confirm dialogs
+    confirm_logout:          'Sign out?',
+    confirm_delete_trade:    'Delete this trade?',
+    confirm_unlink_analysis: 'Remove analysis link?',
+    confirm_delete_account:  'Delete account and ALL its trades?',
+    confirm_delete_demo:     'Delete demo account and all its data?',
+    confirm_discard_draft:   'Discard draft? Data will be lost.',
+    confirm_delete_draft:    'Delete this draft?',
+    confirm_clear_drafts:    'Delete all drafts?',
+    confirm_delete_analysis: 'Delete this analysis?',
+    confirm_discard_analysis:'Discard this analysis?',
+    confirm_delete_strategy: 'Delete strategy?',
+    confirm_delete_setup:    'Delete setup?',
+    confirm_delete_rule:     'Delete this rule?',
+    confirm_delete_note:     'Delete this note?',
+    confirm_delete_library:  'Delete this material from the library?',
+    confirm_clear_symbols:   'Delete all saved instruments?',
   }
 };
 
@@ -11026,7 +11184,7 @@ function saveAnalysis() {
 }
 
 function deleteAnalysis(id) {
-  showConfirm('Usunąć tę analizę?', () => {
+  showConfirm(t('confirm_delete_analysis'), () => {
     saveAnalyses(getAnalyses().filter(a => a.id !== id));
     renderAnalysisList();
     toast('Analiza usunięta', 'success');
@@ -11034,7 +11192,7 @@ function deleteAnalysis(id) {
 }
 
 function discardAnalysis() {
-  showConfirm('Odrzucić tę analizę?', () => closeModal('analysis-modal'));
+  showConfirm(t('confirm_discard_analysis'), () => closeModal('analysis-modal'));
 }
 
 function saveAnalysisAsTrade() {
@@ -13781,7 +13939,7 @@ function saveStrategy() {
 
 
 function deleteStrategy(id) {
-  showConfirm('Usunąć strategię?', () => {
+  showConfirm(t('confirm_delete_strategy'), () => {
     const strategies = getStrategies().filter(s => s.id !== id);
     saveStrategies(strategies);
     renderStrategyList();
@@ -14117,7 +14275,7 @@ function saveSetup() {
 
 
 function deleteSetup(id) {
-  showConfirm('Usunąć setup?', () => {
+  showConfirm(t('confirm_delete_setup'), () => {
     const strategyId = getAllSetups().find(s => s.id === id)?.strategyId;
     saveAllSetups(getAllSetups().filter(s => s.id !== id));
     if (strategyId) renderSetupList(strategyId);
@@ -14402,7 +14560,7 @@ function addRule() {
   toast('Reguła dodana ✓', 'success');
 }
 function deleteRule(id) {
-  showConfirm('Usunąć tę regułę?', () => {
+  showConfirm(t('confirm_delete_rule'), () => {
     saveRules(getRules().filter(r => r.id !== id));
     renderRules();
     toast(t('toast_rule_deleted'), 'success');
@@ -15120,13 +15278,16 @@ function _hookJournalProgressInputs() {
 function renderJournalCal() {
   const grid = document.getElementById('jcal-grid'); if (!grid) return;
   const label = document.getElementById('jcal-label');
-  const monthNames = ['Styczeń','Luty','Marzec','Kwiecień','Maj','Czerwiec','Lipiec','Sierpień','Wrzesień','Październik','Listopad','Grudzień'];
+  const monthNames = _lang==='en'
+    ? ['January','February','March','April','May','June','July','August','September','October','November','December']
+    : ['Styczeń','Luty','Marzec','Kwiecień','Maj','Czerwiec','Lipiec','Sierpień','Wrzesień','Październik','Listopad','Grudzień'];
   if (label) label.textContent = monthNames[_jCalMonth] + ' ' + _jCalYear;
   const today = new Date().toISOString().slice(0,10);
   const firstDay = new Date(_jCalYear, _jCalMonth, 1);
   const lastDay  = new Date(_jCalYear, _jCalMonth+1, 0);
   const startDow = (firstDay.getDay()+6)%7; // Mon=0
-  let html = ['Pon','Wt','Śr','Czw','Pt','Sob','Nd'].map(d=>`<div style="font-size:9px;color:var(--text3);padding:2px 0;font-weight:700">${d}</div>`).join('');
+  const calDays = _lang==='en' ? ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'] : ['Pon','Wt','Śr','Czw','Pt','Sob','Nd'];
+  let html = calDays.map(d=>`<div style="font-size:9px;color:var(--text3);padding:2px 0;font-weight:700">${d}</div>`).join('');
   for (let i=0;i<startDow;i++) html += `<div class="jcal-day other-month"></div>`;
   for (let d=1;d<=lastDay.getDate();d++) {
     const ds = _jCalYear+'-'+String(_jCalMonth+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
@@ -15180,7 +15341,7 @@ function setJournalReadiness(val, btn) {
   const warn = document.getElementById('journal-readiness-warning');
   if (warn) warn.style.display = val === 'no' ? 'block' : 'none';
   if (val === 'no') {
-    toast('Nie jesteś w formie — rozważ dzisiaj nie handlować lub zmniejsz wolumen', 'warning');
+    toast(t('journal_not_ready'), 'warning');
   }
   updateJournalPreProgress();
 }
@@ -15211,7 +15372,7 @@ function updateJournalPreProgress() {
   const bar = document.getElementById('journal-pre-progress-bar');
   const badge = document.getElementById('journal-pre-progress-badge');
   if (bar) bar.style.width = (done / 4 * 100) + '%';
-  if (badge) badge.textContent = done === 4 ? '✅ Rutyna kompletna' : done + '/4 kroków';
+  if (badge) badge.textContent = done === 4 ? t('journal_routine_complete') : t('journal_steps').replace('{done}', done);
   if (bar && done === 4) bar.style.background = 'var(--accent)';
   else if (bar) bar.style.background = 'var(--amber)';
 }
@@ -15237,14 +15398,14 @@ function updateJournalPostProgress() {
   const bar = document.getElementById('journal-post-progress-bar');
   const badge = document.getElementById('journal-post-progress-badge');
   if (bar) bar.style.width = (done / 4 * 100) + '%';
-  if (badge) badge.textContent = done === 4 ? '✅ Sesja zamknięta' : done + '/4 kroków';
+  if (badge) badge.textContent = done === 4 ? t('journal_session_closed') : t('journal_steps').replace('{done}', done);
 }
 
 function renderJournalPostDayStats(ds) {
   const el = document.getElementById('journal-post-day-stats');
   if (!el) return;
   const trades = getTrades(state.currentAccountId).filter(t => (t.date||'').startsWith(ds) && t.status === 'closed');
-  if (!trades.length) { el.innerHTML = '<span style="color:var(--text3)">Brak zamkniętych transakcji dziś — dobry dzień na obserwację</span>'; return; }
+  if (!trades.length) { el.innerHTML = `<span style="color:var(--text3)">${t('journal_no_trades')}</span>`; return; }
   const sym = getCurrSym(state.currentAccountId);
   const pnl = trades.reduce((s,t)=>s+(t.pnl||0),0);
   const wins = trades.filter(t=>(t.pnl||0)>0).length;
@@ -15260,7 +15421,7 @@ function renderJournalPostDayStats(ds) {
     </div>
     <div style="text-align:center;padding:10px 6px;background:var(--bg3);border-radius:8px">
       <div style="font-size:18px;font-weight:800;font-family:var(--font-mono)">${trades.length}</div>
-      <div style="font-size:10px;color:var(--text3);margin-top:3px">Transakcji</div>
+      <div style="font-size:10px;color:var(--text3);margin-top:3px">${t('journal_trades_label')}</div>
     </div>
     <div style="text-align:center;padding:10px 6px;background:var(--bg3);border-radius:8px">
       <div style="font-size:18px;font-weight:800;color:var(--accent);font-family:var(--font-mono)">${wr}%</div>
@@ -15268,7 +15429,7 @@ function renderJournalPostDayStats(ds) {
     </div>
     <div style="text-align:center;padding:10px 6px;background:var(--bg3);border-radius:8px">
       <div style="font-size:16px;font-weight:700">${topEmo}</div>
-      <div style="font-size:10px;color:var(--text3);margin-top:3px">Emocja</div>
+      <div style="font-size:10px;color:var(--text3);margin-top:3px">${t('journal_emotion_label')}</div>
     </div>
   </div>`;
 }
@@ -15277,7 +15438,7 @@ function loadJournalEntryForm(ds) {
   const label = document.getElementById('journal-entry-date-label');
   const sub   = document.getElementById('journal-entry-date-sub');
   const today = new Date().toISOString().slice(0,10);
-  if (label) label.textContent = ds === today ? 'Dziś' : formatDatePL(ds);
+  if (label) label.textContent = ds === today ? t('journal_today') : formatDatePL(ds);
   if (sub) sub.textContent = ds;
   const entry = getJournalEntry(ds) || {};
 
@@ -15376,7 +15537,7 @@ function setJournalMood(type, val, btn) {
   document.querySelectorAll('#journal-'+type+'-mood-btns .mood-btn').forEach(b=>b.classList.remove('selected'));
   btn.classList.add('selected');
   const lbl = document.getElementById('journal-'+type+'-mood-val');
-  const labels = {1:'Bardzo zły',2:'Zły',3:'Neutralny',4:'Dobry',5:'Świetny'};
+  const labels = {1:t('mood_1'),2:t('mood_2'),3:t('mood_3'),4:t('mood_4'),5:t('mood_5')};
   if (lbl) lbl.textContent = '— ' + (labels[val]||'');
   if (type === 'pre') updateJournalPreProgress();
   else updateJournalPostProgress();
@@ -15387,7 +15548,7 @@ function setJournalMoodDisplay(type, val) {
     b.classList.toggle('selected', parseInt(b.dataset.val)===val);
   });
   const lbl = document.getElementById('journal-'+type+'-mood-val');
-  const labels = {1:'Bardzo zły',2:'Zły',3:'Neutralny',4:'Dobry',5:'Świetny'};
+  const labels = {1:t('mood_1'),2:t('mood_2'),3:t('mood_3'),4:t('mood_4'),5:t('mood_5')};
   if (lbl) lbl.textContent = val ? '— ' + (labels[val]||'') : '';
 }
 
@@ -15438,8 +15599,11 @@ function saveJournalEntry() {
 function formatDatePL(ds) {
   if (!ds) return '';
   const d = new Date(ds+'T00:00:00');
-  const days = ['Niedziela','Poniedziałek','Wtorek','Środa','Czwartek','Piątek','Sobota'];
-  return days[d.getDay()] + ', ' + d.toLocaleDateString('pl-PL', {day:'numeric',month:'long',year:'numeric'});
+  const locale = _lang === 'en' ? 'en-US' : 'pl-PL';
+  const days = _lang === 'en'
+    ? ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
+    : ['Niedziela','Poniedziałek','Wtorek','Środa','Czwartek','Piątek','Sobota'];
+  return days[d.getDay()] + ', ' + d.toLocaleDateString(locale, {day:'numeric',month:'long',year:'numeric'});
 }
 
 // ---- NOTES ----
@@ -15462,12 +15626,12 @@ function renderNotesList() {
   notes.sort((a,b) => (b.pinned?1:0)-(a.pinned?1:0) || b.updatedAt-a.updatedAt);
   const CAT_ICONS = {strategy:'🎯',setup:'📐',market:'📊',thoughts:'💭',other:'📁'};
   if (!notes.length) {
-    el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--text3);font-size:12px">${q?'Brak wyników':'Brak notatek — kliknij + Nowa'}</div>`;
+    el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--text3);font-size:12px">${q ? t('notes_no_results') : t('notes_empty')}</div>`;
     return;
   }
   el.innerHTML = notes.map(n => `
     <div class="note-item ${_jCurrentNoteId===n.id?'active':''}" onclick="openNote('${n.id}')">
-      <div class="note-item-title">${n.pinned?'📌 ':''}${CAT_ICONS[n.category]||'📝'} ${escHtml(n.title||'Bez tytułu')}</div>
+      <div class="note-item-title">${n.pinned?'📌 ':''}${CAT_ICONS[n.category]||'📝'} ${escHtml(n.title||t('notes_untitled'))}</div>
       <div class="note-item-meta">${new Date(n.updatedAt).toLocaleDateString('pl-PL')}${n.tags?.length?' · '+n.tags.slice(0,2).join(', '):''}</div>
     </div>`).join('');
 }
@@ -15498,7 +15662,7 @@ function openNote(id) {
   document.getElementById('note-category').value = n.category||'other';
   document.getElementById('note-pin-btn').textContent = n.pinned ? '📌' : '📌';
   document.getElementById('note-pin-btn').style.opacity = n.pinned ? '1' : '0.4';
-  document.getElementById('note-saved-at').textContent = 'Ostatnio zapisano: ' + new Date(n.updatedAt).toLocaleString('pl-PL');
+  document.getElementById('note-saved-at').textContent = t('notes_last_saved') + new Date(n.updatedAt).toLocaleString(_lang==='en'?'en-US':'pl-PL');
   renderNoteScreenshots();
   document.getElementById('note-editor-empty').style.display = 'none';
   document.getElementById('note-editor-content').style.display = 'block';
@@ -15507,12 +15671,12 @@ function openNote(id) {
 
 function saveCurrentNote() {
   const title = document.getElementById('note-title')?.value?.trim();
-  if (!title && !document.getElementById('note-content')?.value?.trim()) { toast('Wpisz tytuł lub treść', 'error'); return; }
+  if (!title && !document.getElementById('note-content')?.value?.trim()) { toast(t('notes_empty_content'), 'error'); return; }
   const notes = getNotes();
   const id = _jCurrentNoteId || genId();
   const existing = notes.find(n=>n.id===id);
   const note = {
-    id, title: title||'Bez tytułu',
+    id, title: title||t('notes_untitled'),
     content: document.getElementById('note-content')?.value||'',
     category: document.getElementById('note-category')?.value||'other',
     tags: (document.getElementById('note-tags')?.value||'').split(',').map(t=>t.trim()).filter(Boolean),
@@ -15525,18 +15689,18 @@ function saveCurrentNote() {
   saveNotes(notes);
   _jCurrentNoteId = id;
   document.getElementById('note-id').value = id;
-  document.getElementById('note-saved-at').textContent = 'Zapisano: ' + new Date().toLocaleString('pl-PL');
-  renderNotesList(); toast('Notatka zapisana ✓', 'success');
+  document.getElementById('note-saved-at').textContent = t('notes_just_saved') + new Date().toLocaleString(_lang==='en'?'en-US':'pl-PL');
+  renderNotesList(); toast(t('notes_saved_toast'), 'success');
 }
 
 function deleteCurrentNote() {
   if (!_jCurrentNoteId) return;
-  showConfirm('Usunąć tę notatkę?', () => {
+  showConfirm(t('confirm_delete_note'), () => {
     saveNotes(getNotes().filter(n=>n.id!==_jCurrentNoteId));
     _jCurrentNoteId = null;
     document.getElementById('note-editor-empty').style.display = 'block';
     document.getElementById('note-editor-content').style.display = 'none';
-    renderNotesList(); toast('Notatka usunięta','success');
+    renderNotesList(); toast(t('toast_note_deleted'),'success');
   });
 }
 
@@ -15545,7 +15709,7 @@ function toggleNotePin() {
   const notes = getNotes(); const n = notes.find(x=>x.id===_jCurrentNoteId); if (!n) return;
   n.pinned = !n.pinned; saveNotes(notes);
   document.getElementById('note-pin-btn').style.opacity = n.pinned ? '1' : '0.4';
-  renderNotesList(); toast(n.pinned ? 'Notatka przypięta 📌' : 'Odpięto', 'success');
+  renderNotesList(); toast(n.pinned ? t('notes_pinned_toast') : t('notes_unpinned_toast'), 'success');
 }
 
 function noteAddScreenshots(input) {
@@ -15598,21 +15762,21 @@ function renderWeeklyTrades() {
   const trades = getTrades(state.currentAccountId).filter(t => {
     const d = new Date(t.date); return d >= monday && d <= sunday && t.status === 'closed';
   }).sort((a,b) => new Date(a.date) - new Date(b.date));
-  if (cntEl) cntEl.textContent = trades.length ? trades.length + ' transakcji' : '';
+  if (cntEl) cntEl.textContent = trades.length ? `${trades.length} ${t('weekly_trades_suffix')}` : '';
   if (!trades.length) {
-    el.innerHTML = '<div style="color:var(--text3);font-size:13px;text-align:center;padding:16px">Brak zamkniętych transakcji w tym tygodniu</div>';
+    el.innerHTML = `<div style="color:var(--text3);font-size:13px;text-align:center;padding:16px">${t('weekly_no_trades')}</div>`;
     return;
   }
   const emoColors = { 'Spokojny':'var(--green)', 'Pewny':'var(--green)', 'Podekscytowany':'var(--amber)', 'FOMO':'var(--red)', 'Revenge':'var(--red)', 'Zaniepokojony':'var(--red)', 'Zmęczony':'var(--amber)', 'Sfrustrowany':'var(--red)', 'Neutralny':'var(--text3)' };
   let html = `<div style="overflow-x:auto">
     <table style="width:100%;border-collapse:collapse;font-size:12px">
       <thead><tr style="border-bottom:1px solid var(--border)">
-        <th style="padding:6px 8px;text-align:left;color:var(--text3);font-weight:600">Data</th>
-        <th style="padding:6px 8px;text-align:left;color:var(--text3);font-weight:600">Instrument</th>
-        <th style="padding:6px 8px;text-align:center;color:var(--text3);font-weight:600">Kier.</th>
-        <th style="padding:6px 8px;text-align:left;color:var(--text3);font-weight:600">Setup</th>
-        <th style="padding:6px 8px;text-align:center;color:var(--text3);font-weight:600">Emocja ↑</th>
-        <th style="padding:6px 8px;text-align:center;color:var(--text3);font-weight:600">Emocja ↓</th>
+        <th style="padding:6px 8px;text-align:left;color:var(--text3);font-weight:600">${t('weekly_col_date')}</th>
+        <th style="padding:6px 8px;text-align:left;color:var(--text3);font-weight:600">${t('th_instrument')}</th>
+        <th style="padding:6px 8px;text-align:center;color:var(--text3);font-weight:600">${t('weekly_col_dir')}</th>
+        <th style="padding:6px 8px;text-align:left;color:var(--text3);font-weight:600">${t('trade_setup')}</th>
+        <th style="padding:6px 8px;text-align:center;color:var(--text3);font-weight:600">${t('weekly_col_emo_pre')}</th>
+        <th style="padding:6px 8px;text-align:center;color:var(--text3);font-weight:600">${t('weekly_col_emo_post')}</th>
         <th style="padding:6px 8px;text-align:right;color:var(--text3);font-weight:600">P&L</th>
       </tr></thead>
       <tbody>`;
@@ -15652,9 +15816,9 @@ function renderWeeklyAnalyses() {
     if (!raw) return false;
     const d = new Date(raw); return d >= monday && d <= sunday;
   }).sort((a,b) => new Date(a.date||a.createdAt||0) - new Date(b.date||b.createdAt||0));
-  if (cntEl) cntEl.textContent = analyses.length ? analyses.length + ' analiz' : '';
+  if (cntEl) cntEl.textContent = analyses.length ? `${analyses.length} ${t('weekly_analyses_suffix')}` : '';
   if (!analyses.length) {
-    el.innerHTML = '<div style="color:var(--text3);font-size:13px;text-align:center;padding:16px">Brak analiz zapisanych w tym tygodniu</div>';
+    el.innerHTML = `<div style="color:var(--text3);font-size:13px;text-align:center;padding:16px">${t('weekly_no_analyses')}</div>`;
     return;
   }
   const biasStyle = { bullish:'color:var(--green)', bearish:'color:var(--red)', neutral:'color:var(--amber)' };
@@ -15692,8 +15856,8 @@ function renderWeeklyGoodBad() {
   const good = [], bad = [];
 
   if (!trades.length) {
-    goodEl.innerHTML = '<div style="color:var(--text3);font-size:12px">Brak danych — dodaj transakcje</div>';
-    badEl.innerHTML  = '<div style="color:var(--text3);font-size:12px">Brak danych — dodaj transakcje</div>';
+    goodEl.innerHTML = `<div style="color:var(--text3);font-size:12px">${t('weekly_no_data')}</div>`;
+    badEl.innerHTML  = `<div style="color:var(--text3);font-size:12px">${t('weekly_no_data')}</div>`;
     return;
   }
 
@@ -15703,8 +15867,8 @@ function renderWeeklyGoodBad() {
   const totalPnl = trades.reduce((s,t) => s+(t.pnl||0), 0);
 
   // ── Dobre ──────────────────────────────────────────────────────────
-  if (parseInt(winRate) >= 50) good.push(`🎯 Win rate ${winRate}% — ponad połowa transakcji na plusie`);
-  if (totalPnl > 0) good.push(`💰 Tydzień zamknięty na plusie: +${sym}${totalPnl.toFixed(2)}`);
+  if (parseInt(winRate) >= 50) good.push(t('weekly_good_winrate').replace('{pct}', winRate));
+  if (totalPnl > 0) good.push(t('weekly_good_plus').replace('{sym}', sym).replace('{pnl}', totalPnl.toFixed(2)));
 
   // Najlepszy setup
   const bySetup = {};
@@ -15716,7 +15880,7 @@ function renderWeeklyGoodBad() {
   });
   const bestSetup = Object.entries(bySetup).filter(([,v])=>v.c>=2).sort((a,b)=>(b[1].w/b[1].c)-(a[1].w/a[1].c))[0];
   if (bestSetup && bestSetup[1].c >= 2 && bestSetup[1].w/bestSetup[1].c >= 0.6)
-    good.push(`📐 Setup "${bestSetup[0]}" — ${((bestSetup[1].w/bestSetup[1].c)*100).toFixed(0)}% WR w tym tygodniu`);
+    good.push(t('weekly_good_setup').replace('{s}', bestSetup[0]).replace('{pct}', ((bestSetup[1].w/bestSetup[1].c)*100).toFixed(0)));
 
   // Najlepsza emocja
   const byEmo = {};
@@ -15729,7 +15893,7 @@ function renderWeeklyGoodBad() {
   const positiveEmos = ['Spokojny','Pewny','Neutralny'];
   const bestEmo = Object.entries(byEmo).filter(([k])=>positiveEmos.includes(k)).sort((a,b)=>b[1].w/b[1].c - a[1].w/a[1].c)[0];
   if (bestEmo && bestEmo[1].c >= 2 && bestEmo[1].w/bestEmo[1].c >= 0.5)
-    good.push(`🧠 Najlepsze wyniki gdy: "${bestEmo[0]}" — ${((bestEmo[1].w/bestEmo[1].c)*100).toFixed(0)}% WR`);
+    good.push(t('weekly_good_emo').replace('{e}', bestEmo[0]).replace('{pct}', ((bestEmo[1].w/bestEmo[1].c)*100).toFixed(0)));
 
   // Najlepszy instrument
   const byInstr = {};
@@ -15741,7 +15905,7 @@ function renderWeeklyGoodBad() {
   });
   const bestInstr = Object.entries(byInstr).filter(([,v])=>v.c>=2).sort((a,b)=>b[1].pnl-a[1].pnl)[0];
   if (bestInstr && bestInstr[1].pnl > 0)
-    good.push(`💹 ${bestInstr[0]} — najlepszy instrument: +${sym}${bestInstr[1].pnl.toFixed(2)}`);
+    good.push(t('weekly_good_instr').replace('{s}', bestInstr[0]).replace('{sym}', sym).replace('{pnl}', bestInstr[1].pnl.toFixed(2)));
 
   // Dziennik
   let journalDays = 0;
@@ -15749,25 +15913,25 @@ function renderWeeklyGoodBad() {
     const ds = new Date(monday.getTime()+i*86400000).toISOString().slice(0,10);
     if (getJournalEntry(ds)?.prePlan) journalDays++;
   }
-  if (journalDays >= 3) good.push(`📓 Dziennik wypełniony ${journalDays}/7 dni — dobry nawyk!`);
+  if (journalDays >= 3) good.push(t('weekly_good_journal').replace('{n}', journalDays));
 
   // ── Złe ───────────────────────────────────────────────────────────
-  if (parseInt(winRate) < 40) bad.push(`📉 Win rate tylko ${winRate}% — przeanalizuj warunki wejść`);
-  if (totalPnl < 0) bad.push(`🔴 Tydzień na minusie: ${sym}${totalPnl.toFixed(2)} — sprawdź zarządzanie ryzykiem`);
+  if (parseInt(winRate) < 40) bad.push(t('weekly_bad_winrate').replace('{pct}', winRate));
+  if (totalPnl < 0) bad.push(t('weekly_bad_minus').replace('{sym}', sym).replace('{pnl}', totalPnl.toFixed(2)));
 
   // Najgorszy setup
   const worstSetup = Object.entries(bySetup).filter(([,v])=>v.c>=2).sort((a,b)=>a[1].pnl-b[1].pnl)[0];
   if (worstSetup && worstSetup[1].pnl < 0)
-    bad.push(`📐 Setup "${worstSetup[0]}" — ${sym}${worstSetup[1].pnl.toFixed(2)} łącznie, rozważ jego pominięcie`);
+    bad.push(t('weekly_bad_setup').replace('{s}', worstSetup[0]).replace('{sym}', sym).replace('{pnl}', worstSetup[1].pnl.toFixed(2)));
 
   // Negatywne emocje
   const negEmos = ['FOMO','Revenge','Zaniepokojony','Sfrustrowany'];
   const negTrades = trades.filter(t => negEmos.includes(t.emotionPre));
-  if (negTrades.length) bad.push(`😤 ${negTrades.length}× trading z negatywnymi emocjami — work in progress`);
+  if (negTrades.length) bad.push(t('weekly_bad_emo').replace('{n}', negTrades.length));
 
   // Brak emocji
   const noEmoTrades = trades.filter(t => !t.emotionPre);
-  if (noEmoTrades.length) bad.push(`🧠 ${noEmoTrades.length} transakcji bez oznaczenia emocji — uzupełnij dane`);
+  if (noEmoTrades.length) bad.push(t('weekly_bad_no_emo').replace('{n}', noEmoTrades.length));
 
   // Brak dziennika w dni z handlem
   let noDiaryCount = 0;
@@ -15778,11 +15942,11 @@ function renderWeeklyGoodBad() {
     const cnt = trades.filter(t=>(t.date||'').startsWith(ds)).length;
     if (cnt && !hasPre) noDiaryCount++;
   }
-  if (noDiaryCount) bad.push(`📓 ${noDiaryCount}× handlowałeś bez planu w dzienniku — zacznij sesję od wpisu`);
+  if (noDiaryCount) bad.push(t('weekly_bad_no_diary').replace('{n}', noDiaryCount));
 
   const mkItem = txt => `<div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:6px"><span>${txt}</span></div>`;
-  goodEl.innerHTML = good.length ? good.map(mkItem).join('') : '<div style="color:var(--text3);font-size:12px">Kontynuuj analizę — więcej danych pokaże mocne strony</div>';
-  badEl.innerHTML  = bad.length  ? bad.map(mkItem).join('')  : '<div style="color:var(--green);font-size:12px">✅ Brak wyraźnych słabości w danych tego tygodnia</div>';
+  goodEl.innerHTML = good.length ? good.map(mkItem).join('') : `<div style="color:var(--text3);font-size:12px">${t('weekly_continue')}</div>`;
+  badEl.innerHTML  = bad.length  ? bad.map(mkItem).join('')  : `<div style="color:var(--green);font-size:12px">${t('weekly_no_weaknesses')}</div>`;
 }
 
 function weeklyNav(dir) {
@@ -15795,8 +15959,8 @@ function weeklyNav(dir) {
 function renderWeeklyLabel() {
   const el = document.getElementById('weekly-label'); if (!el) return;
   const {monday, sunday} = getWeekDates(_weeklyKey);
-  const fmt = d => d.toLocaleDateString('pl-PL',{day:'numeric',month:'short'});
-  el.textContent = `Tydzień ${_weeklyKey.split('-W')[1]} · ${fmt(monday)} – ${fmt(sunday)} ${monday.getFullYear()}`;
+  const fmt = d => d.toLocaleDateString(_lang==='en'?'en-US':'pl-PL',{day:'numeric',month:'short'});
+  el.textContent = `${t('weekly_week')} ${_weeklyKey.split('-W')[1]} · ${fmt(monday)} – ${fmt(sunday)} ${monday.getFullYear()}`;
 }
 
 function renderWeeklyStats() {
@@ -15805,7 +15969,7 @@ function renderWeeklyStats() {
   const trades = getTrades(state.currentAccountId).filter(t => {
     const d = new Date(t.date); return d >= monday && d <= sunday && t.status==='closed';
   });
-  if (!trades.length) { el.innerHTML = '<div style="color:var(--text3);font-size:13px">Brak zamkniętych transakcji w tym tygodniu</div>'; return; }
+  if (!trades.length) { el.innerHTML = `<div style="color:var(--text3);font-size:13px">${t('weekly_no_trades')}</div>`; return; }
   const wins = trades.filter(t=>(t.pnl||0)>0).length;
   const totalPnl = trades.reduce((s,t)=>s+(t.pnl||0),0);
   const winRate = trades.length ? ((wins/trades.length)*100).toFixed(0) : 0;
@@ -15823,11 +15987,11 @@ function renderWeeklyStats() {
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
       <div style="text-align:center;padding:12px;background:var(--bg3);border-radius:10px;border:1px solid var(--border)">
         <div style="font-size:22px;font-weight:800;color:${pnlColor};font-family:var(--font-mono)">${pnlSign}${sym}${Math.abs(totalPnl).toFixed(2)}</div>
-        <div style="font-size:11px;color:var(--text3);margin-top:4px">P&L tygodnia</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">${t('weekly_pnl')}</div>
       </div>
       <div style="text-align:center;padding:12px;background:var(--bg3);border-radius:10px;border:1px solid var(--border)">
         <div style="font-size:22px;font-weight:800;font-family:var(--font-mono)">${trades.length}</div>
-        <div style="font-size:11px;color:var(--text3);margin-top:4px">Transakcji</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">${t('weekly_trades')}</div>
       </div>
       <div style="text-align:center;padding:12px;background:var(--bg3);border-radius:10px;border:1px solid var(--border)">
         <div style="font-size:22px;font-weight:800;font-family:var(--font-mono);color:var(--accent)">${winRate}%</div>
@@ -15835,7 +15999,7 @@ function renderWeeklyStats() {
       </div>
       <div style="text-align:center;padding:12px;background:var(--bg3);border-radius:10px;border:1px solid var(--border)">
         <div style="font-size:22px;font-weight:800;font-family:var(--font-mono);color:var(--amber)">${journalDays}/${totalDays}</div>
-        <div style="font-size:11px;color:var(--text3);margin-top:4px">Dni z dziennikiem</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">${t('weekly_journal_days')}</div>
       </div>
     </div>`;
 }
@@ -15873,13 +16037,15 @@ function saveWeeklyReview() {
   };
   saveWeeklyReviewData(_weeklyKey, data);
   renderWeeklyMotivation();
-  toast('Przegląd tygodniowy zapisany ✓', 'success');
+  toast(t('weekly_saved'), 'success');
 }
 
 function renderWeeklyDays() {
   const el = document.getElementById('weekly-days-content'); if (!el) return;
   const {monday} = getWeekDates(_weeklyKey);
-  const dayNames = ['Poniedziałek','Wtorek','Środa','Czwartek','Piątek','Sobota','Niedziela'];
+  const dayNames = _lang==='en'
+    ? ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']
+    : ['Poniedziałek','Wtorek','Środa','Czwartek','Piątek','Sobota','Niedziela'];
   const moodEmoji = ['','😤','😕','😐','😊','😄'];
   const trades = getTrades(state.currentAccountId);
 
@@ -15903,13 +16069,13 @@ function renderWeeklyDays() {
     else if (!hasPre && dayTrades.length) { rowColor = 'rgba(255,80,80,.07)'; statusIcon = '⚠️'; }
 
     const pnlStr  = dayTrades.length ? `<span style="color:${dayPnl>=0?'var(--green)':'var(--red)'};font-weight:700;font-size:11px">${dayPnl>=0?'+':''}${dayPnl.toFixed(2)}</span>` : '<span style="font-size:11px;color:var(--text3)">—</span>';
-    const moodStr = mood ? `<span title="Nastrój przed sesją">${moodEmoji[mood]||''}</span>` : '<span style="color:var(--text3);font-size:11px">—</span>';
+    const moodStr = mood ? `<span title="${t('weekly_day_mood')}">${moodEmoji[mood]||''}</span>` : '<span style="color:var(--text3);font-size:11px">—</span>';
     const focStr  = focus ? `<span style="font-size:11px;color:${focus<=3?'var(--red)':focus<=6?'var(--amber)':'var(--green)'}">🎯${focus}/10</span>` : '<span style="font-size:11px;color:var(--text3)">—</span>';
 
     html += `<div style="display:grid;grid-template-columns:24px 90px 1fr auto auto auto auto;align-items:center;gap:8px;padding:8px 10px;background:${rowColor};border-radius:8px;border:1px solid var(--border)">
       <span style="font-size:14px">${statusIcon}</span>
       <span style="font-size:12px;font-weight:600;color:var(--text2)">${dayNames[i]}</span>
-      <span style="font-size:11px;color:var(--text3)">${hasPre?(entry.prePlan||entry.preGoal||'plan zapisany').slice(0,60)+'…':'<em>brak wpisu rano</em>'}</span>
+      <span style="font-size:11px;color:var(--text3)">${hasPre?(entry.prePlan||entry.preGoal||t('weekly_plan_saved')).slice(0,60)+'…':'<em>'+t('weekly_no_entry')+'</em>'}</span>
       <span style="font-size:11px;color:var(--text3)">${dayTrades.length?dayTrades.length+' tr.':'—'}</span>
       ${pnlStr}
       ${moodStr}
@@ -16661,7 +16827,7 @@ async function addLibraryFile() {
 }
 
 function deleteLibraryFile(id) {
-  showConfirm('Usunąć ten materiał z biblioteki?', async () => {
+  showConfirm(t('confirm_delete_library'), async () => {
     const f = getLibraryFiles().find(x => x.id === id);
     if (f?.storagePath) {
       await _sb.storage.from('library').remove([f.storagePath]);
