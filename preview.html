@@ -9098,6 +9098,14 @@ const T = {
     err_emotion_pre:         'Zaznacz emocję PRZED wejściem — wymagane do zapisu',
     err_emotion_post:        'Zaznacz emocję PO zamknięciu — wymagane dla zamkniętej transakcji',
     toast_profile_saved:     'Profil zapisany ✓',
+    toast_library_added:     'Materiał dodany do biblioteki ✓',
+    toast_library_deleted:   'Materiał usunięty',
+    err_library_title:       'Podaj tytuł materiału',
+    err_library_size:        'Plik zbyt duży. Limit: 50 MB',
+    err_library_upload:      'Błąd uploadu: {msg}',
+    err_library_no_file:     'Dodaj plik lub podaj URL',
+    err_library_download:    'Błąd pobierania',
+    err_library_no_src:      'Brak pliku ani URL do pobrania',
     // Confirm dialogs
     confirm_logout:          'Wylogować się?',
     confirm_delete_trade:    'Usunąć tę transakcję?',
@@ -9534,6 +9542,14 @@ const T = {
     err_emotion_pre:         'Select emotion BEFORE entry — required to save',
     err_emotion_post:        'Select emotion AFTER close — required for closed trade',
     toast_profile_saved:     'Profile saved ✓',
+    toast_library_added:     'Material added to library ✓',
+    toast_library_deleted:   'Material deleted',
+    err_library_title:       'Enter material title',
+    err_library_size:        'File too large. Limit: 50 MB',
+    err_library_upload:      'Upload error: {msg}',
+    err_library_no_file:     'Add a file or enter a URL',
+    err_library_download:    'Download error',
+    err_library_no_src:      'No file or URL to download',
     // Confirm dialogs
     confirm_logout:          'Sign out?',
     confirm_delete_trade:    'Delete this trade?',
@@ -16850,7 +16866,7 @@ async function addLibraryFile() {
   const desc  = document.getElementById('lib-desc')?.value?.trim() || '';
   const url   = document.getElementById('lib-url')?.value?.trim() || '';
   const fileInput = document.getElementById('lib-file');
-  if (!title) return toast('Podaj tytuł materiału', 'error');
+  if (!title) return toast(t('err_library_title'), 'error');
   const statusEl = document.getElementById('lib-upload-status');
   const addBtn = document.getElementById('lib-add-btn');
   const newFile = {
@@ -16863,14 +16879,14 @@ async function addLibraryFile() {
   };
   if (fileInput && fileInput.files.length) {
     const f = fileInput.files[0];
-    if (f.size > _LIB_MAX_BYTES) return toast('Plik zbyt duży. Limit: 50 MB', 'error');
+    if (f.size > _LIB_MAX_BYTES) return toast(t('err_library_size'), 'error');
     if (addBtn) addBtn.disabled = true;
     if (statusEl) statusEl.textContent = 'Wysyłanie...';
     const ext = f.name.split('.').pop();
     const path = (state.currentUser||'anon') + '/' + genId() + '.' + ext;
     const { error } = await _sb.storage.from('library').upload(path, f);
     if (error) {
-      toast('Błąd uploadu: ' + error.message, 'error');
+      toast(t('err_library_upload').replace('{msg}', error.message), 'error');
       if (addBtn) addBtn.disabled = false;
       if (statusEl) statusEl.textContent = '';
       return;
@@ -16878,7 +16894,7 @@ async function addLibraryFile() {
     newFile.storagePath = path;
     newFile.filename = f.name;
   } else if (!url) {
-    return toast('Dodaj plik lub podaj URL', 'error');
+    return toast(t('err_library_no_file'), 'error');
   }
   const files = getLibraryFiles();
   files.unshift(newFile);
@@ -16889,7 +16905,7 @@ async function addLibraryFile() {
   if (statusEl) statusEl.textContent = '';
   if (addBtn) addBtn.disabled = false;
   renderLibrary();
-  toast('Materiał dodany do biblioteki ✓', 'success');
+  toast(t('toast_library_added'), 'success');
 }
 
 function deleteLibraryFile(id) {
@@ -16900,7 +16916,7 @@ function deleteLibraryFile(id) {
     }
     saveLibraryFiles(getLibraryFiles().filter(x => x.id !== id));
     filterLibrary(_libFilter);
-    toast('Materiał usunięty', 'success');
+    toast(t('toast_library_deleted'), 'success');
   });
 }
 
@@ -16909,7 +16925,7 @@ async function downloadLibraryFile(id) {
   if (!f) return toast('Nie znaleziono pliku', 'error');
   if (f.storagePath) {
     const { data, error } = await _sb.storage.from('library').createSignedUrl(f.storagePath, 3600);
-    if (error) { toast('Błąd pobierania', 'error'); return; }
+    if (error) { toast(t('err_library_download'), 'error'); return; }
     window.open(data.signedUrl, '_blank');
   } else if (f.base64) {
     // fallback dla starych plików base64
@@ -16922,7 +16938,7 @@ async function downloadLibraryFile(id) {
   } else if (f.url) {
     window.open(f.url, '_blank');
   } else {
-    toast('Brak pliku ani URL do pobrania', 'error');
+    toast(t('err_library_no_src'), 'error');
   }
 }
 
