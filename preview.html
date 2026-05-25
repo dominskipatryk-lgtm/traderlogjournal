@@ -385,12 +385,14 @@ body.light-mode tr:nth-child(even) { background: rgba(0,0,0,.02); }
 .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
 .section-title { font-family: var(--font-head); font-size: 18px; font-weight: 700; }
 .table-wrap { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow-x: auto; overflow-y: hidden; }
+#trades-table { overflow-y: auto; max-height: 570px; }
 .trades-table { width: 100%; border-collapse: collapse; font-size: 12px; }
 .trades-table th {
   padding: 8px 12px; text-align: left; font-size: 10px; font-weight: 500;
   color: var(--text3); text-transform: uppercase; letter-spacing: .6px;
   border-bottom: 1px solid var(--border); background: var(--bg3);
   font-family: var(--font-mono); white-space: nowrap;
+  position: sticky; top: 0; z-index: 2;
 }
 .trades-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; white-space: nowrap; }
 .trades-table tr:last-child td { border-bottom: none; }
