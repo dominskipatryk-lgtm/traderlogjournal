@@ -1330,6 +1330,67 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
         </div>
       </div>
       <div class="stats-grid" id="dash-stats"></div>
+
+      <!-- POSITION CALCULATOR -->
+      <div class="summary-card" id="dash-pos-calc" style="margin-bottom:20px;display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:18px">📐</span>
+            <div class="summary-card-title" style="margin-bottom:0">Kalkulator Pozycji</div>
+          </div>
+          <div style="display:flex;gap:18px;font-family:var(--font-mono);font-size:12px">
+            <span style="color:var(--text3)">Balans: <span id="calc-bal-disp" style="color:var(--text);font-weight:700">—</span></span>
+            <span style="color:var(--text3)">Equity: <span id="calc-eq-disp" style="color:var(--accent);font-weight:700">—</span></span>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 2fr;gap:10px;align-items:end;margin-bottom:10px">
+          <div>
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Ryzyko %</div>
+            <input type="number" id="calc-risk" value="1" min="0.1" max="20" step="0.1" oninput="calcPosition()"
+              style="width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:8px 10px;font-size:18px;font-weight:800;font-family:var(--font-mono);text-align:center">
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">SL (pipy)</div>
+            <input type="number" id="calc-sl" value="20" min="1" step="1" oninput="calcPosition()"
+              style="width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:8px 10px;font-size:18px;font-weight:800;font-family:var(--font-mono);text-align:center">
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">R:R</div>
+            <input type="number" id="calc-rr" value="2" min="0.1" step="0.1" oninput="calcPosition()"
+              style="width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:8px 10px;font-size:18px;font-weight:800;font-family:var(--font-mono);text-align:center">
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Instrument / wartość pipy</div>
+            <select id="calc-pipval" onchange="calcPosition()"
+              style="width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:8px 10px;font-size:12px">
+              <option value="10">Forex majors — EURUSD, GBPUSD, XAUUSD ($10/pip/lot)</option>
+              <option value="7">JPY pairs — USDJPY, EURJPY ($7/pip/lot)</option>
+              <option value="1">US Indices — US30, NAS100 ($1/pt/lot)</option>
+              <option value="5">Crypto — BTCUSD ($5/pip/lot)</option>
+              <option value="custom">✏️ Własna wartość pipy</option>
+            </select>
+          </div>
+        </div>
+        <div id="calc-custom-wrap" style="display:none;margin-bottom:10px">
+          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Własna wartość pipy (USD/pip/lot)</div>
+          <input type="number" id="calc-custom-pip" value="10" min="0.01" step="0.01" oninput="calcPosition()"
+            style="width:160px;background:var(--bg3);border:1px solid var(--accent);color:var(--text);border-radius:7px;padding:7px 10px;font-size:14px;font-family:var(--font-mono)">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px" id="calc-results"></div>
+        <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <div style="font-size:10px;color:var(--text3)">Break Even przy</div>
+          <input type="number" id="calc-be-pips" value="10" min="1" step="1" oninput="calcPosition()"
+            style="width:70px;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:4px 8px;font-size:12px;font-family:var(--font-mono);text-align:center">
+          <div style="font-size:10px;color:var(--text3)">pipach zysku →</div>
+          <div id="calc-be-result" style="font-size:12px;font-family:var(--font-mono);color:var(--amber);font-weight:700"></div>
+          <div style="margin-left:auto;font-size:11px;color:var(--text3)">Trailing stop:</div>
+          <input type="number" id="calc-trail-pips" value="15" min="1" step="1" oninput="calcPosition()"
+            style="width:70px;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:4px 8px;font-size:12px;font-family:var(--font-mono);text-align:center">
+          <div style="font-size:10px;color:var(--text3)">pipów</div>
+          <div id="calc-trail-result" style="font-size:12px;font-family:var(--font-mono);color:var(--blue,#4f9eff);font-weight:700"></div>
+        </div>
+      </div>
+
       <div class="equity-chart-wrap">
         <div class="chart-title" data-i18n="dash_equity_curve">Krzywa kapitału</div>
         <div class="chart-area">
@@ -4478,6 +4539,15 @@ function renderDashboard() {
     <div class="stat-card"><div class="stat-label">Wszystkich</div><div class="stat-value">${trades.length}</div><div class="stat-sub">Transakcji łącznie</div></div>
   `;
 
+  // Position calculator — show and update balance
+  const calcCard = document.getElementById('dash-pos-calc');
+  if (calcCard) calcCard.style.display = '';
+  const calcBal = document.getElementById('calc-bal-disp');
+  const calcEq  = document.getElementById('calc-eq-disp');
+  if (calcBal) calcBal.textContent = fmt(acc.capital) + ' ' + curr;
+  if (calcEq)  calcEq.textContent  = fmt(equity) + ' ' + curr;
+  calcPosition();
+
   // Equity curve
   drawEquityCurve(acc.capital, closed);
 
@@ -4486,6 +4556,64 @@ function renderDashboard() {
   document.getElementById('dash-recent-table').innerHTML = buildTradesTable(recent);
 }
 
+function calcPosition() {
+  const acc = getAccounts().find(a => a.id === state.currentAccountId);
+  if (!acc) return;
+  const closedPnl = getTrades(acc.id).filter(t => t.status === 'closed').reduce((s,t) => s + (t.pnl||0), 0);
+  const balance = (acc.capital || 0) + closedPnl;
+  const curr = getCurrSym(acc.id);
+
+  const riskPct  = parseFloat(document.getElementById('calc-risk')?.value) || 1;
+  const slPips   = parseFloat(document.getElementById('calc-sl')?.value)   || 20;
+  const rr       = parseFloat(document.getElementById('calc-rr')?.value)   || 2;
+  const bePips   = parseFloat(document.getElementById('calc-be-pips')?.value) || 10;
+  const trailP   = parseFloat(document.getElementById('calc-trail-pips')?.value) || 15;
+
+  const pipValSel  = document.getElementById('calc-pipval')?.value;
+  const customWrap = document.getElementById('calc-custom-wrap');
+  let pipVal;
+  if (pipValSel === 'custom') {
+    if (customWrap) customWrap.style.display = '';
+    pipVal = parseFloat(document.getElementById('calc-custom-pip')?.value) || 10;
+  } else {
+    if (customWrap) customWrap.style.display = 'none';
+    pipVal = parseFloat(pipValSel) || 10;
+  }
+
+  const riskAmt  = balance * riskPct / 100;
+  const lot      = riskAmt / (slPips * pipVal);
+  const tpPips   = slPips * rr;
+  const tpAmt    = riskAmt * rr;
+  const lotStr   = lot < 0.001 ? '—' : lot < 0.01 ? lot.toFixed(4) : lot.toFixed(2);
+
+  const res = document.getElementById('calc-results');
+  if (res) res.innerHTML = `
+    <div style="background:var(--bg3);border-radius:8px;padding:10px 14px;text-align:center;border:1px solid var(--accent)">
+      <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Lot</div>
+      <div style="font-size:26px;font-weight:800;color:var(--accent);font-family:var(--font-mono);line-height:1">${lotStr}</div>
+    </div>
+    <div style="background:var(--bg3);border-radius:8px;padding:10px 14px;text-align:center;border:1px solid var(--border)">
+      <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Ryzyko</div>
+      <div style="font-size:20px;font-weight:700;color:var(--red);font-family:var(--font-mono);line-height:1">${curr}${fmt(riskAmt)}</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:3px">${riskPct}% kapitału</div>
+    </div>
+    <div style="background:var(--bg3);border-radius:8px;padding:10px 14px;text-align:center;border:1px solid var(--border)">
+      <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">TP (pipy)</div>
+      <div style="font-size:20px;font-weight:700;color:var(--text);font-family:var(--font-mono);line-height:1">${tpPips.toFixed(0)}</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:3px">R:R ${rr.toFixed(1)}</div>
+    </div>
+    <div style="background:var(--bg3);border-radius:8px;padding:10px 14px;text-align:center;border:1px solid var(--green)">
+      <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Potencjał</div>
+      <div style="font-size:20px;font-weight:700;color:var(--green);font-family:var(--font-mono);line-height:1">+${curr}${fmt(tpAmt)}</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:3px">${(riskPct * rr).toFixed(2)}% kapitału</div>
+    </div>
+  `;
+
+  const beEl = document.getElementById('calc-be-result');
+  if (beEl) beEl.textContent = bePips + ' pip zysku → przesuń SL na wejście (BE)';
+  const trEl = document.getElementById('calc-trail-result');
+  if (trEl) trEl.textContent = 'SL podąża co ' + trailP + ' pip';
+}
 function drawEquityCurve(startCapital, closedTrades) {
   const svg = document.getElementById('equity-svg');
   if (!closedTrades.length) { svg.innerHTML = '<text x="400" y="90" text-anchor="middle" fill="#5a6475" font-size="13" font-family="DM Sans">Brak zamkniętych transakcji</text>'; return; }
