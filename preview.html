@@ -384,15 +384,15 @@ body.light-mode tr:nth-child(even) { background: rgba(0,0,0,.02); }
 /* Trades table */
 .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
 .section-title { font-family: var(--font-head); font-size: 18px; font-weight: 700; }
-.table-wrap { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
-.trades-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.table-wrap { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow-x: auto; overflow-y: hidden; }
+.trades-table { width: 100%; border-collapse: collapse; font-size: 12px; }
 .trades-table th {
-  padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 500;
+  padding: 8px 12px; text-align: left; font-size: 10px; font-weight: 500;
   color: var(--text3); text-transform: uppercase; letter-spacing: .6px;
   border-bottom: 1px solid var(--border); background: var(--bg3);
-  font-family: var(--font-mono);
+  font-family: var(--font-mono); white-space: nowrap;
 }
-.trades-table td { padding: 13px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.trades-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; white-space: nowrap; }
 .trades-table tr:last-child td { border-bottom: none; }
 .trades-table tr:hover td { background: var(--bg3); }
 .badge {
@@ -1186,34 +1186,34 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
       <button class="nav-btn" onclick="showPage('trades')" data-i18n="nav_trades">
         <span class="nav-icon">📋</span><span class="nav-label">Transakcje</span>
       </button>
-      <button class="nav-btn" onclick="showPage('journal')" id="nav-journal">
+      <button class="nav-btn" onclick="showPage('journal')" id="nav-journal" data-i18n="nav_journal">
         <span class="nav-icon">📔</span><span class="nav-label">Rutyna dnia</span>
       </button>
       <button class="nav-btn" onclick="showPage('analysis')" data-i18n="nav_analysis">
         <span class="nav-icon">🔍</span><span class="nav-label">Analiza</span>
       </button>
 
-      <div class="sidebar-section-label">Statystyki</div>
+      <div class="sidebar-section-label" data-i18n="sec_stats">Statystyki</div>
       <button class="nav-btn" onclick="showPage('summary')" data-i18n="nav_summary">
         <span class="nav-icon">📈</span><span class="nav-label">Statystyki</span>
       </button>
-      <button class="nav-btn" onclick="showPage('emotions')" id="nav-emotions">
+      <button class="nav-btn" onclick="showPage('emotions')" id="nav-emotions" data-i18n="nav_emotions">
         <span class="nav-icon">🧠</span><span class="nav-label">Emocje & Psychologia</span>
       </button>
 
-      <div class="sidebar-section-label">Zasoby</div>
-      <button class="nav-btn" onclick="showPage('library')" id="nav-library">
+      <div class="sidebar-section-label" data-i18n="sec_resources">Zasoby</div>
+      <button class="nav-btn" onclick="showPage('library')" id="nav-library" data-i18n="nav_library">
         <span class="nav-icon">📚</span><span class="nav-label">Biblioteka</span>
       </button>
-      <button class="nav-btn" onclick="showPage('tools')" id="nav-tools">
+      <button class="nav-btn" onclick="showPage('tools')" id="nav-tools" data-i18n="nav_tools">
         <span class="nav-icon">🛠</span><span class="nav-label">Narzędzia</span>
       </button>
 
-      <div class="sidebar-section-label">Konto</div>
+      <div class="sidebar-section-label" data-i18n="sec_account">Konto</div>
       <button class="nav-btn" onclick="showPage('accounts')" data-i18n="nav_accounts">
         <span class="nav-icon">🏦</span><span class="nav-label">Konta</span>
       </button>
-      <button class="nav-btn" onclick="showPage('drafts')" id="nav-drafts">
+      <button class="nav-btn" onclick="showPage('drafts')" id="nav-drafts" data-i18n="nav_drafts">
         <span class="nav-icon">📝</span>
         <span class="nav-label">Szkice</span>
         <span id="nav-draft-badge" style="display:none;background:var(--amber);color:#000;border-radius:10px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:auto"></span>
@@ -1221,7 +1221,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
       <button class="nav-btn" onclick="showPage('settings')" id="nav-settings" data-i18n="nav_settings">
         <span class="nav-icon">⚙️</span><span class="nav-label">Ustawienia</span>
       </button>
-      <button class="nav-btn" onclick="showPage('admin')" id="nav-admin" style="display:none">
+      <button class="nav-btn" onclick="showPage('admin')" id="nav-admin" style="display:none" data-i18n="nav_admin">
         <span class="nav-icon">🔧</span><span class="nav-label">Admin</span>
       </button>
     </nav>
@@ -2770,14 +2770,14 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 
     <!-- EMOTIONS PAGE (placeholder — pełna implementacja w Task 7) -->
     <div id="page-emotions" class="page">
-      <div class="page-title">🧠 Emocje & Psychologia</div>
+      <div class="page-title" data-i18n="page_emotions">🧠 Emocje & Psychologia</div>
       <div class="page-subtitle" id="emotions-subtitle">Analiza emocjonalna — emocje vs. P&L</div>
       <div id="emotions-content"></div>
     </div>
 
     <!-- LIBRARY PAGE (placeholder — pełna implementacja w Task 8) -->
     <div id="page-library" class="page">
-      <div class="page-title">📚 Biblioteka strategii</div>
+      <div class="page-title" data-i18n="page_library">📚 Biblioteka strategii</div>
       <div class="page-subtitle">Materiały od admina — strategie, wskaźniki i screenshoty do pobrania</div>
 
       <!-- Admin: sekcja dodawania -->
@@ -4185,10 +4185,19 @@ function showPage(page) {
   if (page === 'library') { if(typeof renderLibrary==='function') renderLibrary(); }
   // Aktualizuj tytuł w topstrip
   const PAGE_TITLES = {
-    dashboard:'Dashboard', trades:'Transakcje', journal:'Rutyna dnia', analysis:'Analiza',
-    summary:'Statystyki', emotions:'Emocje & Psychologia', library:'Biblioteka',
-    tools:'Narzędzia', accounts:'Konta', drafts:'Szkice', settings:'Ustawienia',
-    admin:'Admin', calendar:'Kalendarz'
+    dashboard:'Dashboard',
+    trades:    t('nav_trades'),
+    journal:   t('nav_journal'),
+    analysis:  t('nav_analysis').replace(/^\S+\s/,''),
+    summary:   t('nav_summary'),
+    emotions:  t('nav_emotions'),
+    library:   t('nav_library'),
+    tools:     t('nav_tools'),
+    accounts:  t('nav_accounts'),
+    drafts:    t('nav_drafts'),
+    settings:  t('nav_settings').replace(/^\S+\s/,''),
+    admin:     t('nav_admin'),
+    calendar:  t('nav_calendar').replace(/^\S+\s/,'')
   };
   const topstripTitle = document.getElementById('topstrip-title');
   if (topstripTitle) topstripTitle.textContent = PAGE_TITLES[page] || page;
@@ -4317,32 +4326,32 @@ function buildTradesTable(trades) {
   if (!trades.length) return emptyState('📭','Brak transakcji','Dodaj pierwszą transakcję klikając + Nowa transakcja');
   return `<table class="trades-table">
     <thead><tr>
-      <th>Instrument</th><th>Kierunek</th><th>Data</th>
-      <th>Wejście</th><th>Wyjście</th><th>Wolumen</th>
-      <th>P&L</th><th>Setup</th><th>Status</th><th>Akcje</th>
+      <th>${t('th_instrument')}</th><th>${t('th_dir')}</th><th>${t('th_date')}</th>
+      <th>${t('th_entry')}</th><th>${t('th_exit')}</th><th>${t('th_size')}</th>
+      <th>${t('th_pnl')}</th><th>${t('th_setup')}</th><th>${t('th_status')}</th><th>${t('th_actions')}</th>
     </tr></thead>
     <tbody>
-    ${trades.map(t => {
-      const linkedAnalysis = (t.linkedAnalysisId && t.linkedAnalysisId.length > 5)
-        ? getAnalyses().find(a => a.id === t.linkedAnalysisId)
+    ${trades.map(trade => {
+      const linkedAnalysis = (trade.linkedAnalysisId && trade.linkedAnalysisId.length > 5)
+        ? getAnalyses().find(a => a.id === trade.linkedAnalysisId)
         : null;
-      return `<tr style="cursor:pointer" onclick="openDetailModal('${t.id}')">
-      <td><strong class="mono">${t.symbol}</strong></td>
-      <td><span class="badge badge-${t.dir.toLowerCase()}">${t.dir}</span></td>
-      <td class="mono" style="font-size:12px">${formatDate(t.date)}</td>
-      <td class="mono">${t.entry ?? '—'}</td>
-      <td class="mono">${t.exit ?? '—'}</td>
-      <td class="mono">${t.size ?? '—'}</td>
-      <td class="${t.pnl > 0 ? 'pnl-pos' : t.pnl < 0 ? 'pnl-neg' : ''}">${t.pnl != null ? (t.pnl > 0 ? '+' : '') + fmt(t.pnl) : '—'}</td>
+      return `<tr style="cursor:pointer" onclick="openDetailModal('${trade.id}')">
+      <td><strong class="mono">${trade.symbol}</strong></td>
+      <td><span class="badge badge-${trade.dir.toLowerCase()}">${trade.dir}</span></td>
+      <td class="mono" style="font-size:11px">${formatDate(trade.date)}</td>
+      <td class="mono">${trade.entry ?? '—'}</td>
+      <td class="mono">${trade.exit ?? '—'}</td>
+      <td class="mono">${trade.size ?? '—'}</td>
+      <td class="${trade.pnl > 0 ? 'pnl-pos' : trade.pnl < 0 ? 'pnl-neg' : ''}">${trade.pnl != null ? (trade.pnl > 0 ? '+' : '') + fmt(trade.pnl) : '—'}</td>
       <td>
-        <span class="tag">${t.setup || '—'}</span>
+        <span class="tag">${trade.setup || '—'}</span>
         ${linkedAnalysis ? `<span onclick="event.stopPropagation();openEditAnalysis('${linkedAnalysis.id}')" title="${linkedAnalysis.title}" style="display:inline-flex;align-items:center;gap:3px;font-size:10px;padding:2px 6px;border-radius:4px;background:var(--blue-dim);color:var(--blue);cursor:pointer;margin-left:4px">🔗 Analiza</span>` : ''}
       </td>
-      <td><span class="badge badge-${t.status}">${t.status === 'open' ? 'Otwarta' : 'Zamknięta'}</span>${t.rulesBroken && t.rulesBroken.length ? `<span style="display:inline-block;margin-left:4px;font-size:10px;padding:1px 5px;border-radius:4px;background:rgba(255,79,107,.15);color:var(--red);border:1px solid rgba(255,79,107,.3)" title="${t.rulesBroken.join(', ')}">❌ Reguła złamana</span>` : ''}</td>
+      <td><span class="badge badge-${trade.status}">${trade.status === 'open' ? t('status_open') : t('status_closed')}</span>${trade.rulesBroken && trade.rulesBroken.length ? `<span style="display:inline-block;margin-left:4px;font-size:10px;padding:1px 5px;border-radius:4px;background:rgba(255,79,107,.15);color:var(--red);border:1px solid rgba(255,79,107,.3)" title="${trade.rulesBroken.join(', ')}">❌ Reguła złamana</span>` : ''}</td>
       <td><div class="action-btns" onclick="event.stopPropagation()">
-        <button class="icon-btn" onclick="openDetailModal('${t.id}')" title="Szczegóły">👁</button>
-        <button class="icon-btn" onclick="openEditModal('${t.id}')" title="Edytuj">✏️</button>
-        <button class="icon-btn del" onclick="deleteTrade('${t.id}')" title="Usuń">🗑</button>
+        <button class="icon-btn" onclick="openDetailModal('${trade.id}')" title="Szczegóły">👁</button>
+        <button class="icon-btn" onclick="openEditModal('${trade.id}')" title="Edytuj">✏️</button>
+        <button class="icon-btn del" onclick="deleteTrade('${trade.id}')" title="Usuń">🗑</button>
       </div></td>
     </tr>`;
     }).join('')}
@@ -4511,13 +4520,13 @@ function renderStatsStrategies() {
     </div>
   </div>
   <div class="summary-card"><div class="summary-card-title">📋 R:R każdej transakcji (${closed.length})</div>
-    <div style="overflow-x:auto"><table style="width:100%;font-size:12px;border-collapse:collapse">
-      <thead><tr style="color:var(--text3);font-size:10px;border-bottom:1px solid var(--border)">
-        <th style="text-align:left;padding:5px 8px">Data</th><th style="text-align:left;padding:5px 8px">Symbol</th>
-        <th style="text-align:center;padding:5px 8px">Dir</th><th style="text-align:center;padding:5px 8px">TF</th>
-        <th style="text-align:center;padding:5px 8px">Setup</th><th style="text-align:center;padding:5px 8px">Ryzyko</th>
-        <th style="text-align:center;padding:5px 8px">Reward</th><th style="text-align:center;padding:5px 8px">R:R</th>
-        <th style="text-align:right;padding:5px 8px">P&L</th>
+    <div style="overflow-x:auto;max-height:420px;overflow-y:auto"><table style="width:100%;font-size:12px;border-collapse:collapse">
+      <thead style="position:sticky;top:0;z-index:1;background:var(--bg3)"><tr style="color:var(--text3);font-size:10px;border-bottom:1px solid var(--border)">
+        <th style="text-align:left;padding:5px 8px;white-space:nowrap">${t('th_date')}</th><th style="text-align:left;padding:5px 8px;white-space:nowrap">${t('th_instrument')}</th>
+        <th style="text-align:center;padding:5px 8px;white-space:nowrap">${t('th_dir')}</th><th style="text-align:center;padding:5px 8px;white-space:nowrap">TF</th>
+        <th style="text-align:center;padding:5px 8px;white-space:nowrap">${t('th_setup')}</th><th style="text-align:center;padding:5px 8px;white-space:nowrap">${t('th_risk')}</th>
+        <th style="text-align:center;padding:5px 8px;white-space:nowrap">${t('th_reward')}</th><th style="text-align:center;padding:5px 8px;white-space:nowrap">R:R</th>
+        <th style="text-align:right;padding:5px 8px;white-space:nowrap">${t('th_pnl')}</th>
       </tr></thead>
       <tbody>${rrRows}</tbody>
     </table></div>
@@ -8598,14 +8607,14 @@ const T = {
     // Nav
     nav_dashboard:   'Dashboard',
     nav_trades:      'Transakcje',
-    nav_summary:     'Podsumowanie',
+    nav_summary:     'Statystyki',
     nav_accounts:    'Konta',
     nav_drafts:      'Szkice',
-    nav_analysis:    '🔍 Analiza',
-    nav_calendar:    '📅 Kalendarz',
-    nav_calculator:  '🔢 Kalkulator',
-    nav_admin:       '⚙️ Admin',
-    nav_settings:    '⚙️ Ustawienia',
+    nav_analysis:    'Analiza',
+    nav_calendar:    'Kalendarz',
+    nav_calculator:  'Kalkulator',
+    nav_admin:       'Admin',
+    nav_settings:    'Ustawienia',
     // Auth
     auth_login_tab:  'Logowanie',
     auth_reg_tab:    'Rejestracja',
@@ -8828,19 +8837,39 @@ const T = {
     btn_new_trade:   '+ Nowa transakcja',
     btn_new_analysis:'+ Nowa analiza',
     btn_add_account: 'Dodaj konto',
+    // New nav items
+    nav_journal:     'Rutyna dnia',
+    nav_emotions:    'Emocje & Psychologia',
+    nav_library:     'Biblioteka',
+    nav_tools:       'Narzędzia',
+    nav_admin:       'Admin',
+    // Sidebar section labels
+    sec_stats:       'Statystyki',
+    sec_resources:   'Zasoby',
+    sec_account:     'Konto',
+    // R:R table extra headers
+    th_risk:         'Ryzyko',
+    th_reward:       'Reward',
+    // Page titles for new sections
+    page_emotions:   '🧠 Emocje & Psychologia',
+    page_library:    '📚 Biblioteka strategii',
+    page_tools:      '🛠 Narzędzia',
+    page_journal:    '📔 Rutyna dnia',
+    // Filter
+    filter_all_emotions: '🧠 Emocje: Wszystkie',
   },
   en: {
     // Nav
     nav_dashboard:   'Dashboard',
     nav_trades:      'Trades',
-    nav_summary:     'Summary',
+    nav_summary:     'Statistics',
     nav_accounts:    'Accounts',
     nav_drafts:      'Drafts',
-    nav_analysis:    '🔍 Analysis',
-    nav_calendar:    '📅 Calendar',
-    nav_calculator:  '🔢 Calculator',
-    nav_admin:       '⚙️ Admin',
-    nav_settings:    '⚙️ Settings',
+    nav_analysis:    'Analysis',
+    nav_calendar:    'Calendar',
+    nav_calculator:  'Calculator',
+    nav_admin:       'Admin',
+    nav_settings:    'Settings',
     // Auth
     auth_login_tab:  'Login',
     auth_reg_tab:    'Register',
@@ -9063,6 +9092,26 @@ const T = {
     btn_new_trade:   '+ New trade',
     btn_new_analysis:'+ New analysis',
     btn_add_account: 'Add account',
+    // New nav items
+    nav_journal:     'Daily Routine',
+    nav_emotions:    'Emotions & Psychology',
+    nav_library:     'Library',
+    nav_tools:       'Tools',
+    nav_admin:       'Admin',
+    // Sidebar section labels
+    sec_stats:       'Statistics',
+    sec_resources:   'Resources',
+    sec_account:     'Account',
+    // R:R table extra headers
+    th_risk:         'Risk',
+    th_reward:       'Reward',
+    // Page titles
+    page_emotions:   '🧠 Emotions & Psychology',
+    page_library:    '📚 Strategy Library',
+    page_tools:      '🛠 Tools',
+    page_journal:    '📔 Daily Routine',
+    // Filter
+    filter_all_emotions: '🧠 Emotions: All',
   }
 };
 
@@ -9077,7 +9126,7 @@ function setLang(lang) {
   // Re-render UI
   applyLangToStatic();
   // Re-render current page
-  const pages = ['dashboard','trades','summary','accounts','drafts','calendar','calculator','admin','settings'];
+  const pages = ['dashboard','trades','summary','accounts','drafts','calendar','calculator','admin','settings','emotions','library','tools','journal'];
   const activePage = pages.find(p => document.getElementById('page-'+p)?.classList.contains('active'));
   if (activePage) {
     if (activePage === 'dashboard') renderDashboard();
@@ -9088,6 +9137,10 @@ function setLang(lang) {
     if (activePage === 'calendar') renderCalendar();
     if (activePage === 'admin') renderAdmin();
     if (activePage === 'settings') renderSettings();
+    if (activePage === 'emotions') renderEmotions();
+    if (activePage === 'library') renderLibrary();
+    if (activePage === 'tools') renderTools && renderTools();
+    if (activePage === 'journal') renderJournal && renderJournal();
   }
 }
 
