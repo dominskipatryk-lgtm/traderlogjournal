@@ -1335,7 +1335,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
       <div class="page-title" data-i18n="nav_trades">Transakcje</div>
       <div class="page-subtitle" data-i18n="trades_subtitle">Wszystkie transakcje aktywnego konta</div>
       <div class="filter-bar">
-        <input class="search-input" id="search-input" placeholder="🔍 szukaj instrumentu..." oninput="renderTrades()">
+        <input class="search-input" id="search-input" data-i18n-placeholder="ph_search_trades" placeholder="🔍 szukaj instrumentu..." oninput="renderTrades()">
         <select class="filter-select" id="filter-dir" onchange="renderTrades()">
           <option value="">Kierunek: Wszystkie</option>
           <option value="LONG">LONG</option>
@@ -1645,7 +1645,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
               </div>
               <div>
                 <label class="form-label-modal" id="rule-value-label" style="font-size:11px">Wartość / opis</label>
-                <input class="form-input-modal" id="rule-value" placeholder="np. 2 (dla %) lub opis zasady" style="font-size:13px">
+                <input class="form-input-modal" id="rule-value" data-i18n-placeholder="ph_rule_label" placeholder="np. 2 (dla %) lub opis zasady" style="font-size:13px">
               </div>
               <button class="btn-sm btn-accent" onclick="addRule()" style="width:100%">+ Dodaj regułę</button>
             </div>
@@ -1674,7 +1674,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
           </div>
           <div class="form-group-modal" style="margin-bottom:14px">
             <label class="form-label-modal">Imię / Nazwa wyświetlana</label>
-            <input class="form-input-modal" id="sett-name" placeholder="Twoja nazwa">
+            <input class="form-input-modal" id="sett-name" data-i18n-placeholder="ph_sett_name" placeholder="Twoja nazwa wyświetlana">
           </div>
           <div class="form-group-modal" style="margin-bottom:18px">
             <label class="form-label-modal">E-mail</label>
@@ -1868,7 +1868,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
       </div>
       <!-- Filters -->
       <div class="filter-bar" style="margin-bottom:16px">
-        <input class="search-input" id="analysis-search" placeholder="🔍 szukaj..." oninput="renderAnalysisList()">
+        <input class="search-input" id="analysis-search" data-i18n-placeholder="ph_search_analysis" placeholder="🔍 szukaj..." oninput="renderAnalysisList()">
         <select class="filter-select" id="analysis-filter-instr" onchange="renderAnalysisList()">
           <option value="">Wszystkie instrumenty</option>
         </select>
@@ -2607,7 +2607,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
             <div style="display:flex;gap:6px;margin-bottom:12px">
               <button class="btn-sm btn-accent" onclick="openNewNote()" style="flex:1;font-size:12px">+ Nowa notatka</button>
             </div>
-            <input class="form-input-modal" id="notes-search" placeholder="🔍 szukaj notatek..." oninput="renderNotesList()" style="margin-bottom:10px;font-size:12px">
+            <input class="form-input-modal" id="notes-search" data-i18n-placeholder="ph_search_notes" placeholder="🔍 szukaj notatek..." oninput="renderNotesList()" style="margin-bottom:10px;font-size:12px">
             <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px" id="notes-category-filters">
               <button class="notes-cat-btn active" data-cat="" onclick="setNotesCat(this,'')" style="padding:3px 8px;border-radius:6px;font-size:11px;border:1px solid var(--border);background:var(--accent-dim);color:var(--accent);cursor:pointer">Wszystkie</button>
               <button class="notes-cat-btn" data-cat="strategy" onclick="setNotesCat(this,'strategy')" style="padding:3px 8px;border-radius:6px;font-size:11px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);cursor:pointer">🎯 Strategie</button>
@@ -2629,7 +2629,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
             <div id="note-editor-content" style="display:none">
               <input type="hidden" id="note-id">
               <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
-                <input id="note-title" class="form-input-modal" placeholder="Tytuł notatki..." style="flex:1;font-size:15px;font-weight:600">
+                <input id="note-title" class="form-input-modal" data-i18n-placeholder="ph_note_title" placeholder="Tytuł notatki…" style="flex:1;font-size:15px;font-weight:600">
                 <select id="note-category" class="form-select-modal" style="font-size:12px;width:auto">
                   <option value="strategy">🎯 Strategie</option>
                   <option value="setup">📐 Setupy</option>
@@ -2645,8 +2645,8 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
               <div style="margin-bottom:8px">
                 <input id="note-tags" class="form-input-modal" placeholder="Tagi: oddziel przecinkiem (np. XAUUSD, SMC, setup)" style="font-size:12px">
               </div>
-              <textarea id="note-content" class="form-input-modal" style="min-height:340px;line-height:1.8;font-size:14px"
-                placeholder="Pisz swoje notatki... Możesz używać # nagłówków, - list, **pogrubienia**"></textarea>
+              <textarea id="note-content" class="form-input-modal" data-i18n-placeholder="ph_note_content" style="min-height:340px;line-height:1.8;font-size:14px"
+                placeholder="Pisz swoje notatki tutaj…"></textarea>
               <div style="margin-top:10px">
                 <div style="font-size:11px;color:var(--text3);margin-bottom:6px">Screenshoty</div>
                 <div id="note-screenshots-preview" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
@@ -2728,15 +2728,15 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
             <div style="display:flex;flex-direction:column;gap:16px">
               <div>
                 <label style="font-size:12px;font-weight:700;color:var(--text);display:block;margin-bottom:6px">✅ Co poszło dobrze? (Twoja ocena)</label>
-                <textarea id="weekly-q1" class="form-input-modal" style="min-height:70px;line-height:1.7" placeholder="Które transakcje i decyzje były naprawdę dobre? Dlaczego?"></textarea>
+                <textarea id="weekly-q1" class="form-input-modal" data-i18n-placeholder="ph_weekly_strengths" style="min-height:70px;line-height:1.7" placeholder="Które transakcje i decyzje były naprawdę dobre? Dlaczego?"></textarea>
               </div>
               <div>
                 <label style="font-size:12px;font-weight:700;color:var(--text);display:block;margin-bottom:6px">❌ Co poszło źle i co byś zmienił?</label>
-                <textarea id="weekly-q2" class="form-input-modal" style="min-height:70px;line-height:1.7" placeholder="Konkretne błędy, złamane zasady, emocjonalne decyzje..."></textarea>
+                <textarea id="weekly-q2" class="form-input-modal" data-i18n-placeholder="ph_weekly_weaknesses" style="min-height:70px;line-height:1.7" placeholder="Konkretne błędy, złamane zasady, emocjonalne decyzje..."></textarea>
               </div>
               <div>
                 <label style="font-size:12px;font-weight:700;color:var(--text);display:block;margin-bottom:6px">📌 Jedna konkretna zmiana na przyszły tydzień</label>
-                <textarea id="weekly-q3" class="form-input-modal" style="min-height:60px;line-height:1.7" placeholder="Np. 'Nie wchodzę po 3 stratach z rzędu' albo 'Sprawdzam NFP przed otwarciem'"></textarea>
+                <textarea id="weekly-q3" class="form-input-modal" data-i18n-placeholder="ph_weekly_plan" style="min-height:60px;line-height:1.7" placeholder="Np. 'Nie wchodzę po 3 stratach z rzędu' albo 'Sprawdzam NFP przed otwarciem'"></textarea>
               </div>
               <div>
                 <label style="font-size:12px;font-weight:700;color:var(--text);display:block;margin-bottom:8px">🎯 Czy trzymałeś swój plan tradingowy?</label>
@@ -2787,7 +2787,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px">
             <div>
               <label class="form-label-modal" style="font-size:11px">Tytuł</label>
-              <input class="form-input-modal" id="lib-title" placeholder="np. Strategia ICT Orderblock" style="font-size:13px">
+              <input class="form-input-modal" id="lib-title" data-i18n-placeholder="ph_lib_title" placeholder="np. Strategia ICT Orderblock" style="font-size:13px">
             </div>
             <div>
               <label class="form-label-modal" style="font-size:11px">Typ materiału</label>
@@ -2810,7 +2810,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
             </div>
             <div>
               <label class="form-label-modal" style="font-size:11px">Lub URL do pliku</label>
-              <input class="form-input-modal" id="lib-url" placeholder="https://..." style="font-size:13px">
+              <input class="form-input-modal" id="lib-url" data-i18n-placeholder="ph_lib_url" placeholder="https://..." style="font-size:13px">
             </div>
           </div>
           <div style="margin-top:14px;display:flex;gap:10px">
@@ -3098,7 +3098,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
               <span style="font-size:10px;color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">auto z cen · edytowalne</span>
             </label>
             <div style="position:relative">
-              <input class="form-input-modal" id="t-pnl" type="number" step="any" placeholder="wylicza się automatycznie" oninput="pnlManualEdit()" style="padding-right:80px">
+              <input class="form-input-modal" id="t-pnl" type="number" step="any" data-i18n-placeholder="ph_pnl_auto" placeholder="wylicza się automatycznie" oninput="pnlManualEdit()" style="padding-right:80px">
               <button onclick="autoPnl(true)" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:var(--bg4);border:1px solid var(--border2);border-radius:5px;color:var(--accent);font-size:10px;padding:3px 8px;cursor:pointer;font-family:var(--font-head);font-weight:600" title="Przelicz ponownie">↻ auto</button>
             </div>
           </div>
@@ -3150,11 +3150,11 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
         </div>
         <div class="form-group-modal full">
           <label class="form-label-modal">Analiza przed wejściem</label>
-          <textarea class="form-input-modal" id="t-pre" placeholder="Opisz swoją analizę przed otwarciem pozycji..."></textarea>
+          <textarea class="form-input-modal" id="t-pre" data-i18n-placeholder="ph_trade_pre" placeholder="Opisz swoją analizę przed otwarciem pozycji…"></textarea>
         </div>
         <div class="form-group-modal full">
           <label class="form-label-modal">Wnioski po zamknięciu</label>
-          <textarea class="form-input-modal" id="t-post" placeholder="Co poszło dobrze? Co można było zrobić lepiej?"></textarea>
+          <textarea class="form-input-modal" id="t-post" data-i18n-placeholder="ph_trade_post" placeholder="Co poszło dobrze? Co można było zrobić lepiej?"></textarea>
         </div>
         <div class="form-group-modal full">
           <label class="form-label-modal" style="margin-bottom:8px">🧠 Stan emocjonalny <span style="font-size:10px;color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">— przed wejściem</span></label>
@@ -9127,6 +9127,22 @@ const T = {
     confirm_delete_note:     'Usunąć tę notatkę?',
     confirm_delete_library:  'Usunąć ten materiał z biblioteki?',
     confirm_clear_symbols:   'Usunąć wszystkie zapisane instrumenty?',
+    // Placeholders
+    ph_trade_pre:            'Opisz swoją analizę przed otwarciem pozycji…',
+    ph_trade_post:           'Co poszło dobrze? Co można było zrobić lepiej?',
+    ph_note_title:           'Tytuł notatki…',
+    ph_note_content:         'Pisz swoje notatki tutaj…',
+    ph_pnl_auto:             'wylicza się automatycznie',
+    ph_sett_name:            'Twoja nazwa wyświetlana',
+    ph_search_trades:        'Szukaj po instrumencie lub setupie…',
+    ph_search_analysis:      'Szukaj po instrumencie, opisie…',
+    ph_search_notes:         'Szukaj w notatkach…',
+    ph_weekly_strengths:     'Co poszło dobrze w tym tygodniu?',
+    ph_weekly_weaknesses:    'Co wymaga poprawy?',
+    ph_weekly_plan:          'Plan na następny tydzień…',
+    ph_rule_label:           'Opis reguły…',
+    ph_lib_title:            'Tytuł materiału…',
+    ph_lib_url:              'https://… (YouTube, artykuł, strona)',
   },
   en: {
     // Nav
@@ -9575,6 +9591,22 @@ const T = {
     confirm_delete_note:     'Delete this note?',
     confirm_delete_library:  'Delete this material from the library?',
     confirm_clear_symbols:   'Delete all saved instruments?',
+    // Placeholders
+    ph_trade_pre:            'Describe your pre-trade analysis…',
+    ph_trade_post:           'What went well? What could be improved?',
+    ph_note_title:           'Note title…',
+    ph_note_content:         'Write your notes here…',
+    ph_pnl_auto:             'calculated automatically',
+    ph_sett_name:            'Your display name',
+    ph_search_trades:        'Search by instrument or setup…',
+    ph_search_analysis:      'Search by instrument, description…',
+    ph_search_notes:         'Search notes…',
+    ph_weekly_strengths:     'What went well this week?',
+    ph_weekly_weaknesses:    'What needs improvement?',
+    ph_weekly_plan:          'Plan for next week…',
+    ph_rule_label:           'Rule description…',
+    ph_lib_title:            'Material title…',
+    ph_lib_url:              'https://… (YouTube, article, website)',
   }
 };
 
@@ -9784,7 +9816,13 @@ function applyLangToStatic() {
   const filterEmotion = document.getElementById('filter-emotion');
   if (filterEmotion?.options[0]) filterEmotion.options[0].text = lang==='en'?'🧠 Emotions: All':'🧠 Emocje: Wszystkie';
 
-  // ── 13. Re-render active page to apply translations to dynamic content ─────
+  // ── 13. Placeholder translations ──────────────────────────────────────────
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const key = el.getAttribute('data-i18n-placeholder');
+    el.placeholder = t(key);
+  });
+
+  // ── 14. Re-render active page to apply translations to dynamic content ─────
   const pages = ['dashboard','trades','summary','accounts','drafts','analysis','calendar','calculator','admin','settings','emotions','library'];
   const activePage = pages.find(p => document.getElementById('page-'+p)?.classList.contains('active'));
   // Don't re-render if a modal is open (would reset form fields!)
