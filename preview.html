@@ -2803,9 +2803,10 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
               <textarea class="form-input-modal" id="lib-desc" rows="2" placeholder="Krótki opis materiału..." style="font-size:13px;resize:vertical"></textarea>
             </div>
             <div>
-              <label class="form-label-modal" style="font-size:11px">Plik (PDF, MQ4, MQ5, PNG, JPG)</label>
+              <label class="form-label-modal" style="font-size:11px">Plik (PDF, MQ4, MQ5, PNG, JPG) <span style="color:var(--amber)">— maks. 400 KB</span></label>
               <input type="file" id="lib-file" accept=".pdf,.mq4,.mq5,.png,.jpg,.jpeg" class="form-input-modal" style="font-size:12px;padding:6px" onchange="libPreviewFile()">
               <div id="lib-file-info" style="font-size:11px;color:var(--text3);margin-top:4px"></div>
+              <div style="font-size:11px;color:var(--text3);margin-top:2px">Większe pliki → wgraj na Google Drive/Dropbox i podaj URL poniżej</div>
             </div>
             <div>
               <label class="form-label-modal" style="font-size:11px">Lub URL do pliku</label>
@@ -3988,7 +3989,7 @@ function seedDemoData() {
 
   const trades = [], analyses = [], journalMap = {}, weeklyMap = {};
 
-  const today = new Date('2026-05-25');
+  const today = new Date(); // użyj dzisiejszej daty żeby overtrading alert działał z demo
   const start = new Date(today); start.setDate(start.getDate() - 60);
 
   for (let d = new Date(start); d <= today; d.setDate(d.getDate() + 1)) {
@@ -4649,13 +4650,14 @@ function renderEmotions() {
 
   ${(()=>{
     // --- Heatmapa godzin handlu ---
+    // Wymaga dat z czasem (YYYY-MM-DDTHH:MM) — daty bez czasu mają getHours()=2 (UTC offset)
+    const tradesWithTime = closed.filter(t => t.date && t.date.length >= 13); // 'YYYY-MM-DDTHH:MM'
     const days = ['Pn','Wt','Śr','Cz','Pt'];
     const hours = [7,8,9,10,11,12,13,14,15,16,17,18];
     const grid = {};
     days.forEach(d => { grid[d]={}; hours.forEach(h => { grid[d][h]={pnl:0,c:0}; }); });
     const dowMap = {1:'Pn',2:'Wt',3:'Śr',4:'Cz',5:'Pt'};
-    closed.forEach(t => {
-      if (!t.date) return;
+    tradesWithTime.forEach(t => {
       const dt = new Date(t.date);
       const dow = dowMap[dt.getDay()];
       const h = dt.getHours();
@@ -4665,6 +4667,10 @@ function renderEmotions() {
       grid[dow][hk].c++;
       grid[dow][hk].pnl += t.pnl||0;
     });
+    if (!tradesWithTime.length) return `<div class="summary-card" style="margin-top:16px;border-color:rgba(255,255,255,.08)">
+      <div class="summary-card-title" style="color:var(--text3)">⏰ Heatmapa godzin</div>
+      <div style="font-size:12px;color:var(--text3);padding:8px 0">Brak transakcji z zapisanym czasem — wprowadzaj transakcje z polem daty i godziny (format: data + czas).</div>
+    </div>`;
     const allPnls = days.flatMap(d=>hours.map(h=>grid[d][h].pnl)).filter(v=>v!==0);
     const maxAbs = allPnls.length ? Math.max(...allPnls.map(Math.abs), 0.001) : 1;
     const cellStyle = (pnl, c) => {
@@ -5187,7 +5193,17 @@ function renderSummary() {
       const energy = parseFloat(entry.preEnergy);
       dayData.push({ ds, dayPnl, dayW, dayC: dayTrades.length, sleep: isNaN(sleep)?null:sleep, energy: isNaN(energy)?null:energy });
     });
-    if (dayData.length < 5) return '';
+    if (dayData.length < 5) return `<div class="summary-card" style="margin-top:16px;border-color:rgba(255,255,255,.08)">
+      <div class="summary-card-title" style="color:var(--text3)">😴 Sen i energia vs wyniki</div>
+      <div style="display:flex;align-items:center;gap:12px;padding:8px 0">
+        <span style="font-size:32px">🔒</span>
+        <div>
+          <div style="font-size:13px;color:var(--text2);font-weight:600">Za mało danych — uzupełnij Rutynę dnia</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:3px">Potrzeba min. 5 dni z wpisem dziennika i transakcjami. Aktualnie: <strong style="color:var(--amber)">${dayData.length}</strong> dni.</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px">Dodaj sen i poziom energii w Rutynie dnia → dane pojawią się tutaj automatycznie.</div>
+        </div>
+      </div>
+    </div>`;
 
     // Sen grouping
     const sleepGroups = {'< 6h': [], '6-7h': [], '7h+': []};
@@ -5530,8 +5546,32 @@ function saveTrade() {
   // Reguły osobiste tradera
   const _rulesCheck = checkRulesBeforeSave();
   if (_rulesCheck.broken) {
-    const msg = 'Łamiesz regułę:\n' + _rulesCheck.messages.join('\n') + '\n\nCzy na pewno chcesz zapisać?';
+    const msg = '⚠️ Łamiesz regułę:\n' + _rulesCheck.messages.join('\n') + '\n\nCzy na pewno chcesz zapisać?';
     if (!confirm(msg)) return;
+  }
+
+  // Overtrading check PRZED zapisem (blokuje zanim transakcja trafi do bazy)
+  if (state.currentUser && state.currentAccountId) {
+    const _otDb = getDB();
+    const _otLims = _otDb['ot-limits_'+state.currentUser] || {maxDaily:5, maxLosses:3};
+    const _otToday = new Date().toISOString().slice(0,10);
+    const _otTrades = getTrades(state.currentAccountId);
+    const _isNewTrade = !document.getElementById('trade-id')?.value;
+    if (_isNewTrade) {
+      const _otTodayCount = _otTrades.filter(t => (t.date||'').slice(0,10) === _otToday).length;
+      if (_otTodayCount + 1 > _otLims.maxDaily) {
+        if (!confirm('⚠️ Przekroczysz dzienny limit ' + _otLims.maxDaily + ' transakcji!\n(Masz już ' + _otTodayCount + ')\n\nCzy mimo to zapisać?')) return;
+      }
+      const _otSorted = [..._otTrades].sort((a,b)=>new Date(a.date)-new Date(b.date));
+      let _otStreak = 0;
+      for (let i = _otSorted.length-1; i >= 0; i--) {
+        if (_otSorted[i].pnl !== null && _otSorted[i].pnl < 0) _otStreak++;
+        else break;
+      }
+      if (_otStreak >= _otLims.maxLosses) {
+        if (!confirm('⚠️ Masz ' + _otStreak + ' strat z rzędu!\nLimit: ' + _otLims.maxLosses + '\n\nCzy na pewno chcesz wejść?')) return;
+      }
+    }
   }
   const symbol = document.getElementById('t-symbol').value.trim().toUpperCase();
   if (!symbol) return toast('Podaj instrument', 'error');
@@ -5625,8 +5665,6 @@ function saveTrade() {
   renderTrades();
   renderSummary();
   toast('Transakcja zapisana ✓', 'success');
-  // Overtrading check
-  checkOvertradingAlert(state.currentAccountId);
 }
 
 function deleteTrade(id) {
@@ -6026,9 +6064,7 @@ function detailSaveEdit() {
   renderDashboard();
   renderTrades();
   renderSummary();
-  toast('Transakcja zapisana ✓', 'success');
-  // Overtrading check
-  checkOvertradingAlert(state.currentAccountId);
+  toast('Transakcja zaktualizowana ✓', 'success');
 }
 
 // ── delete from detail ──
@@ -9124,24 +9160,7 @@ function setLang(lang) {
   document.querySelectorAll('[id^="lang-pl"]').forEach(b => b.classList.toggle('active', lang==='pl'));
   document.querySelectorAll('[id^="lang-en"]').forEach(b => b.classList.toggle('active', lang==='en'));
   // Re-render UI
-  applyLangToStatic();
-  // Re-render current page
-  const pages = ['dashboard','trades','summary','accounts','drafts','calendar','calculator','admin','settings','emotions','library','tools','journal'];
-  const activePage = pages.find(p => document.getElementById('page-'+p)?.classList.contains('active'));
-  if (activePage) {
-    if (activePage === 'dashboard') renderDashboard();
-    if (activePage === 'trades') renderTrades();
-    if (activePage === 'summary') renderSummary();
-    if (activePage === 'accounts') renderAccounts();
-    if (activePage === 'drafts') renderDraftsPage();
-    if (activePage === 'calendar') renderCalendar();
-    if (activePage === 'admin') renderAdmin();
-    if (activePage === 'settings') renderSettings();
-    if (activePage === 'emotions') renderEmotions();
-    if (activePage === 'library') renderLibrary();
-    if (activePage === 'tools') renderTools && renderTools();
-    if (activePage === 'journal') renderJournal && renderJournal();
-  }
+  applyLangToStatic(); // applyLangToStatic handles re-render internally
 }
 
 function applyLangToStatic() {
@@ -9324,8 +9343,22 @@ function applyLangToStatic() {
     });
   }
 
-  // ── 12. Re-render active page to apply translations to dynamic content ─────
-  const pages = ['dashboard','trades','summary','accounts','drafts','analysis','calendar','calculator','admin','settings'];
+  // ── 12. Filter selects ────────────────────────────────────────────────────
+  const filterDir = document.getElementById('filter-dir');
+  if (filterDir?.options[0]) filterDir.options[0].text = lang==='en'?'Direction: All':'Kierunek: Wszystkie';
+  const filterStatus = document.getElementById('filter-status');
+  if (filterStatus) {
+    if (filterStatus.options[0]) filterStatus.options[0].text = lang==='en'?'Status: All':'Status: Wszystkie';
+    if (filterStatus.options[1]) filterStatus.options[1].text = lang==='en'?'Open':'Otwarte';
+    if (filterStatus.options[2]) filterStatus.options[2].text = lang==='en'?'Closed':'Zamknięte';
+  }
+  const filterResult = document.getElementById('filter-result');
+  if (filterResult?.options[0]) filterResult.options[0].text = lang==='en'?'Result: All':'Wynik: Wszystkie';
+  const filterEmotion = document.getElementById('filter-emotion');
+  if (filterEmotion?.options[0]) filterEmotion.options[0].text = lang==='en'?'🧠 Emotions: All':'🧠 Emocje: Wszystkie';
+
+  // ── 13. Re-render active page to apply translations to dynamic content ─────
+  const pages = ['dashboard','trades','summary','accounts','drafts','analysis','calendar','calculator','admin','settings','emotions','library'];
   const activePage = pages.find(p => document.getElementById('page-'+p)?.classList.contains('active'));
   // Don't re-render if a modal is open (would reset form fields!)
   const anyModalOpen = document.querySelector('.modal-overlay.open');
@@ -9341,6 +9374,8 @@ function applyLangToStatic() {
       else if (activePage === 'calendar') renderCalendar();
       else if (activePage === 'admin') renderAdmin();
       else if (activePage === 'settings') renderSettings();
+      else if (activePage === 'emotions') renderEmotions();
+      else if (activePage === 'library') renderLibrary();
     }, 50);
   }
   } catch(e) { console.warn('applyLangToStatic error:', e); }
@@ -14200,13 +14235,14 @@ function renderRules() {
   el.innerHTML = rules.map(r => {
     const typeIcons = {'max-risk':'💰','max-losses':'🛑','stop-hour':'🕐','max-daily':'📊','custom':'📝'};
     const icon = typeIcons[r.type] || '📝';
+    const isCustom = r.type === 'custom';
     const descEl = document.createElement('span');
     descEl.textContent = r.value;
     const desc = descEl.textContent;
     return `<div class="summary-card" style="margin-bottom:8px;display:flex;align-items:center;gap:12px;padding:10px 14px">
       <span style="font-size:20px">${icon}</span>
       <div style="flex:1;min-width:0">
-        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px">${r.label}</div>
+        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px">${r.label}${isCustom ? '<span style="margin-left:6px;color:var(--amber);font-size:10px;text-transform:none;letter-spacing:0">(tylko przypomnienie — nie blokuje)</span>' : ''}</div>
         <div style="font-size:13px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${desc}">${desc}</div>
       </div>
       <button class="icon-btn del" onclick="deleteRule('${r.id}')" title="Usuń regułę" style="flex-shrink:0">🗑</button>
@@ -14243,6 +14279,20 @@ function checkRulesBeforeSave() {
       const stopH = parseInt(r.value);
       if (!isNaN(stopH) && nowHour >= stopH) {
         broken.push(r); messages.push('Stop trading o ' + r.value + ':00 — jest ' + nowHour + ':' + String(new Date().getMinutes()).padStart(2,'0'));
+      }
+    } else if (r.type === 'max-risk') {
+      const limitPct = parseFloat(r.value);
+      const entry = parseFloat(document.getElementById('t-entry')?.value);
+      const sl    = parseFloat(document.getElementById('t-sl')?.value);
+      const size  = parseFloat(document.getElementById('t-size')?.value);
+      const acc   = accId ? getAccounts().find(a=>a.id===accId) : null;
+      const cap   = acc ? ((acc.capital||0) + trades.filter(t=>t.status==='closed').reduce((s,t)=>s+(t.pnl||0),0)) : 0;
+      if (!isNaN(limitPct) && entry && sl && size && cap > 0) {
+        const riskAmount = Math.abs(entry - sl) * size;
+        const riskPct = (riskAmount / cap) * 100;
+        if (riskPct > limitPct) {
+          broken.push(r); messages.push('Ryzyko ' + riskPct.toFixed(1) + '% przekracza limit ' + limitPct + '%');
+        }
       }
     }
   });
@@ -16359,15 +16409,21 @@ function filterLibrary(type) {
   }).join('')}</div>`;
 }
 
+const _LIB_MAX_BYTES = 400 * 1024; // 400 KB — localStorage limit protection
 function libPreviewFile() {
   const input = document.getElementById('lib-file');
   const info = document.getElementById('lib-file-info');
   if (!input || !input.files.length) { if(info) info.textContent = ''; return; }
   const file = input.files[0];
-  const sizeMB = (file.size / 1048576).toFixed(2);
-  if (info) info.textContent = file.name + ' (' + sizeMB + ' MB)';
-  if (file.size > 5 * 1048576) {
-    toast('Plik większy niż 5MB — rozważ podanie URL zamiast uploadu base64', 'warning');
+  const sizeKB = (file.size / 1024).toFixed(0);
+  if (info) {
+    if (file.size > _LIB_MAX_BYTES) {
+      info.textContent = file.name + ' (' + sizeKB + ' KB) — ZA DUŻY!';
+      info.style.color = 'var(--red)';
+    } else {
+      info.textContent = file.name + ' (' + sizeKB + ' KB)';
+      info.style.color = 'var(--green)';
+    }
   }
 }
 
@@ -16401,12 +16457,16 @@ function addLibraryFile() {
     toast('Materiał dodany do biblioteki ✓', 'success');
   };
   if (fileInput && fileInput.files.length) {
+    const f = fileInput.files[0];
+    if (f.size > _LIB_MAX_BYTES) {
+      return toast('Plik zbyt duży (' + (f.size/1024).toFixed(0) + ' KB). Limit: ' + (_LIB_MAX_BYTES/1024) + ' KB.\nPodaj URL pliku zamiast uploadu — localStorage nie udźwignie dużych plików.', 'error');
+    }
     if (addBtn) addBtn.disabled = true;
     if (statusEl) statusEl.textContent = 'Konwertowanie pliku...';
     const reader = new FileReader();
     reader.onload = e => doAdd(e.target.result);
     reader.onerror = () => { toast('Błąd odczytu pliku', 'error'); if(addBtn) addBtn.disabled=false; if(statusEl) statusEl.textContent=''; };
-    reader.readAsDataURL(fileInput.files[0]);
+    reader.readAsDataURL(f);
   } else if (url) {
     doAdd(null);
   } else {
