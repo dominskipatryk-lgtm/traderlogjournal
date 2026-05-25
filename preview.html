@@ -5929,13 +5929,20 @@ function saveAccount() {
 }
 
 function deleteAccount(id) {
-  showConfirm(t('confirm_delete_account'), () => {
+  showConfirm(t('confirm_delete_account'), async () => {
     const accounts = getAccounts().filter(a => a.id !== id);
     saveAccounts(accounts);
     if (state.currentAccountId === id) state.currentAccountId = accounts[0]?.id || null;
     refreshTopbarAccount();
     renderAccounts();
     toast(t('toast_account_deleted'), 'success');
+    // Usuń z Supabase — bez tego sync przy odświeżeniu przywraca stare konto
+    if (_sb) {
+      try {
+        await _sb.from('trades').delete().eq('account_id', id);
+        await _sb.from('accounts').delete().eq('id', id);
+      } catch(e) { console.warn('deleteAccount Supabase:', e); }
+    }
   });
 }
 

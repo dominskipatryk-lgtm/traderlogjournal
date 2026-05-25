@@ -1267,6 +1267,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
         <span id="sync-indicator" style="font-size:10px;color:var(--text3);font-family:var(--font-mono);display:none"></span>
         <button id="sync-refresh-btn" onclick="manualSync()" style="display:none;background:none;border:1px solid var(--border);border-radius:6px;padding:3px 7px;font-size:11px;color:var(--text2);cursor:pointer" title="Odśwież">🔄</button>
       </div>
+      <a href="help.html" target="_blank" style="display:block;text-align:center;font-size:11px;color:var(--text3);text-decoration:none;padding:8px 0 2px;border-top:1px solid var(--border2);margin-top:8px;transition:color .15s" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text3)'">❓ <span data-i18n="help_link">Instrukcja obsługi</span></a>
     </div>
   </aside>
 
@@ -5928,13 +5929,20 @@ function saveAccount() {
 }
 
 function deleteAccount(id) {
-  showConfirm(t('confirm_delete_account'), () => {
+  showConfirm(t('confirm_delete_account'), async () => {
     const accounts = getAccounts().filter(a => a.id !== id);
     saveAccounts(accounts);
     if (state.currentAccountId === id) state.currentAccountId = accounts[0]?.id || null;
     refreshTopbarAccount();
     renderAccounts();
     toast(t('toast_account_deleted'), 'success');
+    // Usuń z Supabase — bez tego sync przy odświeżeniu przywraca stare konto
+    if (_sb) {
+      try {
+        await _sb.from('trades').delete().eq('account_id', id);
+        await _sb.from('accounts').delete().eq('id', id);
+      } catch(e) { console.warn('deleteAccount Supabase:', e); }
+    }
   });
 }
 
@@ -6025,29 +6033,29 @@ function openTradeModal() {
 
 function openEditModal(id) {
   const trades = getTrades(state.currentAccountId);
-  const t = trades.find(x => x.id === id);
-  if (!t) return;
+  const tr = trades.find(x => x.id === id);
+  if (!tr) return;
   state.editTradeId = id;
-  state.tempScreenshots = (t.screenshots || []).map(s => ({id: genId(), dataUrl: s}));
-  document.getElementById('trade-id').value = t.id;
-  document.getElementById('t-symbol').value = t.symbol || '';
-  document.getElementById('t-date').value = t.date ? t.date.slice(0,16) : '';
-  document.getElementById('t-dir').value = t.dir || 'LONG';
-  document.getElementById('t-status').value = t.status || 'open';
-  document.getElementById('t-entry').value = t.entry ?? '';
-  document.getElementById('t-size').value = t.size ?? '';
-  document.getElementById('t-sl').value = t.sl ?? '';
-  document.getElementById('t-tp').value = t.tp ?? '';
-  setTpData(t.tps || t.tp || null);
-  document.getElementById('t-exit').value = t.exit ?? '';
-  document.getElementById('t-pnl').value = t.pnl ?? '';
-  setTfFromValue(t.tf || 'H1');
-  document.getElementById('t-pre').value = t.pre || '';
-  document.getElementById('t-post').value = t.post || '';
-  setEmotionUI('pre', t.emotionPre || '');
-  setEmotionUI('post', t.emotionPost || '');
+  state.tempScreenshots = (tr.screenshots || []).map(s => ({id: genId(), dataUrl: s}));
+  document.getElementById('trade-id').value = tr.id;
+  document.getElementById('t-symbol').value = tr.symbol || '';
+  document.getElementById('t-date').value = tr.date ? tr.date.slice(0,16) : '';
+  document.getElementById('t-dir').value = tr.dir || 'LONG';
+  document.getElementById('t-status').value = tr.status || 'open';
+  document.getElementById('t-entry').value = tr.entry ?? '';
+  document.getElementById('t-size').value = tr.size ?? '';
+  document.getElementById('t-sl').value = tr.sl ?? '';
+  document.getElementById('t-tp').value = tr.tp ?? '';
+  setTpData(tr.tps || tr.tp || null);
+  document.getElementById('t-exit').value = tr.exit ?? '';
+  document.getElementById('t-pnl').value = tr.pnl ?? '';
+  setTfFromValue(tr.tf || 'H1');
+  document.getElementById('t-pre').value = tr.pre || '';
+  document.getElementById('t-post').value = tr.post || '';
+  setEmotionUI('pre', tr.emotionPre || '');
+  setEmotionUI('post', tr.emotionPost || '');
   const _pclEdit = document.getElementById('pnl-currency-label'); if (_pclEdit) _pclEdit.textContent = 'P&L (' + getCurrSym() + ')';
-  document.getElementById('modal-title').textContent = t('trade_edit_title') + ': ' + t.symbol;
+  document.getElementById('modal-title').textContent = t('trade_edit_title') + ': ' + tr.symbol;
   _draftKey = 'edit_' + id;
   _pnlManual = false;
   const _pp2 = document.getElementById('pnl-preview'); if(_pp2) { _pp2.textContent=''; }
@@ -6058,11 +6066,9 @@ function openEditModal(id) {
   setTimeout(() => {
     populateStrategySelects();
     document.getElementById('trade-checklist-score').textContent='';
-    // [v1.7] FIX: zawsze resetuj pole — jeśli brak powiązania wyczyść stare
-    populateLinkedAnalysisSelect(t.symbol || '', t.linkedAnalysisId || '');
-    // Wyczyść hidden field jeśli brak powiązania
+    populateLinkedAnalysisSelect(tr.symbol || '', tr.linkedAnalysisId || '');
     const lf = document.getElementById('t-linked-analysis-id');
-    if (lf) lf.value = t.linkedAnalysisId || '';
+    if (lf) lf.value = tr.linkedAnalysisId || '';
   }, 50);
   renderModalRulesChecklist('trade');
   openModal('trade-modal');
@@ -6692,7 +6698,7 @@ function dvAddFiles(files) {
     if (!f.type.startsWith('image/')) return;
     const r = new FileReader();
     r.onload = async e => {
-      const compressed = await compressImage(e.target.result, 800, 0.7);
+      const compressed = await compressImage(e.target.result, 1920, 0.88);
       const id = genId();
       const tradeId = _detailId;
       const idx = _detailScreenshots.length;
@@ -6735,7 +6741,9 @@ const _SB_SCREENSHOTS_BUCKET = 'screenshots';
 async function uploadScreenshotToStorage(dataUrl, prefix) {
   if (!_sb) return null;
   try {
-    const userId = getUsers()[state.currentUser]?.supabaseId || state.currentUser || 'anon';
+    const { data: { session } } = await _sb.auth.getSession();
+    if (!session) { console.warn('Screenshot upload: brak aktywnej sesji'); return null; }
+    const userId = session.user.id; // zawsze UUID, nigdy email
     const base64 = dataUrl.split(',')[1];
     const binaryStr = atob(base64);
     const bytes = new Uint8Array(binaryStr.length);
@@ -6800,7 +6808,7 @@ function handleFiles(files) {
     if (!f.type.startsWith('image/')) return;
     const reader = new FileReader();
     reader.onload = async e => {
-      const compressed = await compressImage(e.target.result, 800, 0.7);
+      const compressed = await compressImage(e.target.result, 1920, 0.88);
       const id = genId();
       const tradeId = state.editTradeId || document.getElementById('trade-id')?.value || 'new';
       state.tempScreenshots.push({ id, dataUrl: null, uploading: true });
@@ -6937,6 +6945,8 @@ async function openLightboxSmart(urlOrId, id) {
       _driveScreenCache[driveId] = url;
       openLightbox(url);
     }
+  } else if (urlOrId && urlOrId.startsWith('sb://')) {
+    openLightbox(sbScreenshotPublicUrl(urlOrId));
   } else {
     openLightbox(urlOrId);
   }
@@ -9345,6 +9355,7 @@ const T = {
     acc_type:        'Typ',
     acc_color:       'Kolor konta',
     acc_save:        'Zapisz konto',
+    help_link:       'Instrukcja obsługi',
     // Settings
     sett_title:      'Ustawienia konta',
     sett_profile:    '👤 Profil',
@@ -9835,6 +9846,7 @@ const T = {
     acc_type:        'Type',
     acc_color:       'Account color',
     acc_save:        'Save account',
+    help_link:       'User guide',
     // Settings
     sett_title:      'Account settings',
     sett_profile:    '👤 Profile',
@@ -11663,7 +11675,7 @@ function anHandleFiles(files) {
     if (!f.type.startsWith('image/')) return;
     const r = new FileReader();
     r.onload = async e => {
-      const compressed = await compressImage(e.target.result, 800, 0.7);
+      const compressed = await compressImage(e.target.result, 1920, 0.88);
       const id = genId();
       const analysisId = document.getElementById('an-id')?.value || 'new';
       _anScreenshots.push({ id, dataUrl: null, uploading: true });
@@ -14874,8 +14886,10 @@ function addStrategyPoint(text, screenshot) {
   div.style.cssText = 'display:flex;gap:6px;align-items:center;margin-bottom:4px';
   const scrId = 'spt_' + Date.now() + '_' + idx;
   const hasSrc = screenshot && screenshot.length > 5;
+  const isSbShot = hasSrc && screenshot.startsWith('sb://');
   const thumbSrc = hasSrc && isDriveScreenshot(screenshot)
     ? (_driveScreenCache[screenshot.replace('drive://','')] || '')
+    : isSbShot ? (sbScreenshotPublicUrl(screenshot) || '')
     : (screenshot || '');
   div.innerHTML = `
     <span style="color:var(--text3);font-size:12px;min-width:18px">${idx+1}.</span>
@@ -14908,7 +14922,7 @@ async function addPointScreenshot(input, scrId, event) {
   if (label) label.style.opacity = '0.5';
   const reader = new FileReader();
   reader.onload = async e => {
-    const compressed = await compressImage(e.target.result, 800, 0.7);
+    const compressed = await compressImage(e.target.result, 1920, 0.88);
     const sbUrl = await uploadScreenshotToStorage(compressed, 'strat_' + scrId);
     if (!sbUrl) { toast(t('err_drive_upload'), 'error'); if (label) label.style.opacity = '1'; return; }
     const displayUrl = sbScreenshotPublicUrl(sbUrl) || compressed;
@@ -15213,7 +15227,7 @@ function addSetupRefScreenshots(input) {
   files.forEach(file => {
     const reader = new FileReader();
     reader.onload = async e => {
-      const compressed = await compressImage(e.target.result, 800, 0.7);
+      const compressed = await compressImage(e.target.result, 1920, 0.88);
       const id = 'ss_' + Date.now() + Math.random();
       _currentSetupScreenshots.push({ id, dataUrl: null, uploading: true });
       renderSetupRefScreenshots();
@@ -15424,7 +15438,7 @@ function addSetupScreenshots(prefix, input) {
   files.forEach(file => {
     const reader = new FileReader();
     reader.onload = async e => {
-      const compressed = await compressImage(e.target.result, 800, 0.7);
+      const compressed = await compressImage(e.target.result, 1920, 0.88);
       const id = genId();
       const setupId = document.getElementById('setup-id')?.value || prefix;
       const idx = _setupSessionScreenshots[prefix].length;
