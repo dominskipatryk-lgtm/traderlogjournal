@@ -6045,6 +6045,27 @@ function saveTrade() {
   renderTrades();
   renderSummary();
   toast(t('toast_trade_saved'), 'success');
+  // Auto-sync to Supabase in background (non-blocking)
+  if (_sb && _isOnline) {
+    (async () => {
+      try {
+        const _syncAcc = getAccounts().find(a => a.id === state.currentAccountId);
+        if (_syncAcc) {
+          const sbAccId = _syncAcc.sbId || await sbSyncAccount(_syncAcc);
+          if (sbAccId) {
+            await sbSyncTrade(trade, sbAccId);
+            if (trade.sbId) {
+              const _st = getTrades(state.currentAccountId);
+              const _si = _st.findIndex(x => x.id === trade.id);
+              if (_si >= 0 && !_st[_si].sbId) { _st[_si].sbId = trade.sbId; saveTrades(state.currentAccountId, _st); }
+            }
+            _lastSyncTime = Date.now();
+            updateSyncIndicator();
+          }
+        }
+      } catch(e) { console.warn('Auto-sync trade:', e); }
+    })();
+  }
   } // end _doSave
 
   function _afterDailyCheck() {
@@ -6540,6 +6561,31 @@ document.addEventListener('paste', e => {
 
 // ===== SCREENSHOTS =====
 
+// Supabase Storage — bucket 'screenshots' (public)
+const _SB_SCREENSHOTS_BUCKET = 'screenshots';
+
+async function uploadScreenshotToStorage(dataUrl, prefix) {
+  if (!_sb) return null;
+  try {
+    const userId = getUsers()[state.currentUser]?.supabaseId || state.currentUser || 'anon';
+    const base64 = dataUrl.split(',')[1];
+    const binaryStr = atob(base64);
+    const bytes = new Uint8Array(binaryStr.length);
+    for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i);
+    const path = userId + '/' + (prefix || 's') + '_' + genId() + '.jpg';
+    const { error } = await _sb.storage.from(_SB_SCREENSHOTS_BUCKET).upload(path, bytes, {
+      contentType: 'image/jpeg', upsert: false
+    });
+    if (error) { console.warn('Screenshot upload error:', error.message); return null; }
+    return 'sb://' + path;
+  } catch(e) { console.warn('uploadScreenshotToStorage:', e); return null; }
+}
+
+function sbScreenshotPublicUrl(sbUrl) {
+  if (!sbUrl || !sbUrl.startsWith('sb://')) return null;
+  return _SB_URL + '/storage/v1/object/public/' + _SB_SCREENSHOTS_BUCKET + '/' + sbUrl.slice(5);
+}
+
 // [v1.7] Kompresja obrazu przed zapisem — max 800px, JPG 70%
 function compressImage(dataUrl, maxWidth, quality) {
   return new Promise(resolve => {
@@ -6581,27 +6627,20 @@ async function autoUploadScreenToDrive(dataUrl, tradeId, idx) {
 
 
 function handleFiles(files) {
-  if (!_gapiLoaded || !_gapiAccessToken) {
-    toast(t('err_drive_required'), 'error');
-    connectGoogleDrive();
-    return;
-  }
+  if (!_sb) { toast(t('err_login_first'), 'error'); return; }
   Array.from(files).forEach(f => {
     if (!f.type.startsWith('image/')) return;
     const reader = new FileReader();
     reader.onload = async e => {
       const compressed = await compressImage(e.target.result, 800, 0.7);
       const id = genId();
-      const tradeId = state.editTradeId || document.getElementById('trade-id')?.value;
-      const idx = state.tempScreenshots.length;
-      // Dodaj placeholder "wgrywanie..." natychmiast
+      const tradeId = state.editTradeId || document.getElementById('trade-id')?.value || 'new';
       state.tempScreenshots.push({ id, dataUrl: null, uploading: true });
       renderScreenshotPreviews();
-      const driveUrl = await autoUploadScreenToDrive(compressed, tradeId, idx);
-      if (driveUrl) {
-        _driveScreenCache[driveUrl.replace('drive://','')] = compressed;
+      const sbUrl = await uploadScreenshotToStorage(compressed, 'trade_' + tradeId);
+      if (sbUrl) {
         const s = state.tempScreenshots.find(s => s.id === id);
-        if (s) { s.dataUrl = driveUrl; s.uploading = false; }
+        if (s) { s.dataUrl = sbUrl; s.uploading = false; }
       } else {
         state.tempScreenshots = state.tempScreenshots.filter(s => s.id !== id);
         toast(t('err_drive_upload'), 'error');
@@ -6649,6 +6688,10 @@ async function loadDriveScreenshot(driveId, imgEl) {
 // Renderuj screenshot — obsługuje Drive ID (chmurka gdy nie połączony) i base64
 function renderScreenImg(url, onclick = '', sid = '') {
   if (!url) return `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--bg3)"><span style="font-size:10px;color:var(--text3)">⏳</span></div>`;
+  if (url.startsWith('sb://')) {
+    const publicUrl = sbScreenshotPublicUrl(url);
+    return `<img src="${publicUrl}" style="width:100%;height:100%;object-fit:cover" loading="lazy" ${onclick ? `onclick="${onclick}"` : ''}>`;
+  }
   if (isDriveScreenshot(url)) {
     const driveId = url.replace('drive://', '').replace('gdrive://', '');
     const imgId = 'driveimg_' + driveId.slice(0, 8) + (sid ? '_' + sid.slice(0, 4) : '');
@@ -11447,26 +11490,20 @@ document.addEventListener('click', e => {
 
 // ── Screenshots in analysis ───────────────────────────────────────────────────
 function anHandleFiles(files) {
-  if (!_gapiLoaded || !_gapiAccessToken) {
-    toast(t('err_drive_required'), 'error');
-    connectGoogleDrive();
-    return;
-  }
+  if (!_sb) { toast(t('err_login_first'), 'error'); return; }
   Array.from(files).forEach(f => {
     if (!f.type.startsWith('image/')) return;
     const r = new FileReader();
     r.onload = async e => {
       const compressed = await compressImage(e.target.result, 800, 0.7);
       const id = genId();
-      const analysisId = document.getElementById('an-id')?.value;
-      const idx = _anScreenshots.length;
+      const analysisId = document.getElementById('an-id')?.value || 'new';
       _anScreenshots.push({ id, dataUrl: null, uploading: true });
       renderAnScreenshots();
-      const driveUrl = await autoUploadScreenToDrive(compressed, analysisId, idx);
-      if (driveUrl) {
-        _driveScreenCache[driveUrl.replace('drive://','')] = compressed;
+      const sbUrl = await uploadScreenshotToStorage(compressed, 'an_' + analysisId);
+      if (sbUrl) {
         const s = _anScreenshots.find(s => s.id === id);
-        if (s) { s.dataUrl = driveUrl; s.uploading = false; }
+        if (s) { s.dataUrl = sbUrl; s.uploading = false; }
       } else {
         _anScreenshots = _anScreenshots.filter(s => s.id !== id);
         toast(t('err_drive_upload'), 'error');
@@ -13018,6 +13055,9 @@ async function sbSyncDown(userId, userLogin) {
       saveDB(db);
     }
 
+    // Sync user settings (rules, journal, notes)
+    await sbLoadUserSettings();
+
     // Sync listy użytkowników dla admina
     const localUsers = getUsers();
     if (localUsers[loginKey]?.role === 'admin') {
@@ -13444,6 +13484,46 @@ async function sbFullSyncUp() {
   toast('✓ Zsynchronizowano ' + synced + ' transakcji z ' + accounts.length + ' kont', 'success');
 }
 
+async function sbSaveUserSetting(key, value) {
+  if (!_sb || !state.currentUser) return;
+  const userId = getUsers()[state.currentUser]?.supabaseId;
+  if (!userId) return;
+  try {
+    await _sb.from('user_settings').upsert(
+      { user_id: userId, key, value, updated_at: new Date().toISOString() },
+      { onConflict: 'user_id,key' }
+    );
+  } catch(e) { console.warn('sbSaveUserSetting', key, e.message); }
+}
+
+async function sbLoadUserSettings() {
+  if (!_sb || !state.currentUser) return;
+  const userId = getUsers()[state.currentUser]?.supabaseId;
+  if (!userId) return;
+  try {
+    const { data } = await _sb.from('user_settings').select('key,value,updated_at').eq('user_id', userId);
+    if (!data?.length) return;
+    const db = getDB();
+    const user = state.currentUser;
+    data.forEach(row => {
+      if (!row.key || row.value === undefined) return;
+      if (row.key === 'rules') {
+        const localKey = 'rules_' + user;
+        const localTs = db['_rules_updatedAt_' + user] ? new Date(db['_rules_updatedAt_' + user]) : new Date(0);
+        const remoteTs = row.updated_at ? new Date(row.updated_at) : new Date(0);
+        if (!db[localKey] || remoteTs > localTs) db[localKey] = row.value;
+      } else if (row.key === 'notes') {
+        if (!db['notes_' + user]?.length) db['notes_' + user] = row.value;
+      } else if (row.key.startsWith('journal_')) {
+        const ds = row.key.slice(8);
+        const localKey = 'journal_' + user + '_' + ds;
+        if (!db[localKey]) db[localKey] = row.value;
+      }
+    });
+    saveDB(db);
+  } catch(e) { console.warn('sbLoadUserSettings:', e.message); }
+}
+
 async function sbSyncTrade(trade, accountId) {
   if (!_sb || !state.currentUser) return;
   const userId = getUsers()[state.currentUser]?.supabaseId;
@@ -13460,7 +13540,7 @@ async function sbSyncTrade(trade, accountId) {
     pre_analysis: trade.pre || null, post_notes: trade.post || null,
     trade_date: trade.date || new Date().toISOString(),
     updated_at: new Date().toISOString(),
-    screenshots: (trade.screenshots || []).filter(s => typeof s === 'string' && s.startsWith('drive://')),
+    screenshots: (trade.screenshots || []).filter(s => typeof s === 'string' && (s.startsWith('drive://') || s.startsWith('sb://'))),
     emotion_pre: trade.emotionPre || null,
     emotion_post: trade.emotionPost || null,
     linked_analysis_id: trade.linkedAnalysisId || null,
@@ -14652,21 +14732,20 @@ function addStrategyPoint(text, screenshot) {
 async function addPointScreenshot(input, scrId, event) {
   const file = input.files[0];
   if (!file) return;
-  if (!_gapiLoaded || !_gapiAccessToken) { toast('Połącz z Google Drive aby dodać screenshoty ☁️', 'error'); connectGoogleDrive(); input.value=''; return; }
+  if (!_sb) { toast(t('err_login_first'), 'error'); input.value=''; return; }
   const label = input.closest('label');
   if (label) label.style.opacity = '0.5';
   const reader = new FileReader();
   reader.onload = async e => {
     const compressed = await compressImage(e.target.result, 800, 0.7);
-    const driveUrl = await autoUploadScreenToDrive(compressed, 'strat_' + scrId, 0);
-    const dataUrl = driveUrl || null;
-    if (!dataUrl) { toast(t('err_drive_upload'), 'error'); if (label) label.style.opacity = '1'; return; }
-    _driveScreenCache[driveUrl.replace('drive://','')] = compressed;
+    const sbUrl = await uploadScreenshotToStorage(compressed, 'strat_' + scrId);
+    if (!sbUrl) { toast(t('err_drive_upload'), 'error'); if (label) label.style.opacity = '1'; return; }
+    const displayUrl = sbScreenshotPublicUrl(sbUrl) || compressed;
     const hidden = document.getElementById(scrId + '_data');
-    if (hidden) hidden.value = dataUrl;
+    if (hidden) hidden.value = sbUrl;
     if (label) {
       label.style.opacity = '1';
-      label.innerHTML = `<img src="${compressed}" id="${scrId}_img" style="width:30px;height:30px;object-fit:cover;border-radius:5px" onclick="event.preventDefault();openLightbox('${compressed}')">
+      label.innerHTML = `<img src="${displayUrl}" id="${scrId}_img" style="width:30px;height:30px;object-fit:cover;border-radius:5px" onclick="event.preventDefault();openLightbox('${displayUrl}')">
         <input type="file" accept="image/*" style="display:none" onchange="addPointScreenshot(this,'${scrId}',event)">`;
     }
   };
@@ -15283,8 +15362,11 @@ function getRules() {
 }
 function saveRules(arr) {
   const db = getDB();
-  db['rules_'+(state.currentUser||'')] = arr;
+  const user = state.currentUser || '';
+  db['rules_' + user] = arr;
+  db['_rules_updatedAt_' + user] = new Date().toISOString();
   saveDB(db);
+  if (_sb && _isOnline) sbSaveUserSetting('rules', arr).catch(e => console.warn('rules sync:', e));
 }
 function updateRuleValueHint() {
   const type = document.getElementById('rule-type')?.value;
@@ -15952,6 +16034,7 @@ function getJournalEntry(dateStr) {
 function saveJournalEntryData(dateStr, entry) {
   if (!state.currentUser) return;
   const db = getDB(); db['journal_' + state.currentUser + '_' + dateStr] = entry; saveDB(db);
+  if (_sb && _isOnline) sbSaveUserSetting('journal_' + dateStr, entry).catch(e => console.warn('journal sync:', e));
 }
 function getNotes() {
   const db = getDB();
@@ -15959,6 +16042,7 @@ function getNotes() {
 }
 function saveNotes(arr) {
   const db = getDB(); db['notes_' + (state.currentUser||'')] = arr; saveDB(db);
+  if (_sb && _isOnline) sbSaveUserSetting('notes', arr).catch(e => console.warn('notes sync:', e));
 }
 function getWeeklyReview(weekKey) {
   if (!state.currentUser) return null;
