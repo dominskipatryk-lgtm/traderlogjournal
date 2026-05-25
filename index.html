@@ -2774,6 +2774,12 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
             <div class="summary-card-title" style="color:var(--blue)">ℹ️ Informacje</div>
             <div style="font-size:12px;color:var(--text2);line-height:2" id="admin-info-box"></div>
           </div>
+          <div class="summary-card" style="border-color:var(--accent)">
+            <div class="summary-card-title" style="color:var(--accent)">🧪 Dane Demo</div>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:12px">Generuje ~150 transakcji, wpisy dziennika, analizy i weekly reviews dla 60 dni na osobnym koncie demo. Twoje prawdziwe dane są bezpieczne.</div>
+            <button class="btn-sm btn-accent" onclick="seedDemoData()" style="width:100%;margin-bottom:8px">🎲 Generuj dane demo</button>
+            <button class="btn-sm" onclick="clearDemoData()" style="width:100%;color:var(--amber);border-color:var(--amber)">🗑 Usuń konto demo</button>
+          </div>
           <div class="summary-card" style="border-color:var(--red)">
             <div class="summary-card-title" style="color:var(--red)">⚠️ Strefa niebezpieczna</div>
             <div style="font-size:12px;color:var(--text2);margin-bottom:12px">Usuwa wszystkie dane wszystkich użytkowników. Nieodwracalne!</div>
@@ -3837,7 +3843,221 @@ function _executeLogout() {
 }
 
 // ===== DEMO DATA =====
-// seedDemoData removed
+function seedDemoData() {
+  const user = state.currentUser;
+  if (!user) { toast('Zaloguj się najpierw', 'error'); return; }
+  if (!confirm('Wygenerować 60 dni danych demo?\n\nZostaną dodane:\n• Konto "📊 Demo — 60 dni"\n• ~150 transakcji\n• Wpisy dziennika\n• Analizy rynkowe\n• Weekly reviews\n\nTwoje prawdziwe konta NIE zostaną zmienione.')) return;
+
+  const DEMO_ID = 'demo-seed-001';
+
+  // deterministic RNG
+  let _seed = 12345;
+  function rng() { _seed = (_seed * 1664525 + 1013904223) >>> 0; return _seed / 0xFFFFFFFF; }
+  function pick(arr) { return arr[Math.floor(rng() * arr.length)]; }
+  function rInt(a, b) { return a + Math.floor(rng() * (b - a + 1)); }
+  function rnd(v, d) { const f = Math.pow(10, d); return Math.round(v * f) / f; }
+
+  // Instruments
+  const instrs = [
+    { sym:'XAUUSD', p:2340, cs:100, sl:[4,14],  drift:3,    dec:2 },
+    { sym:'EURUSD', p:1.085, cs:100000, sl:[0.001,0.004], drift:0.0004, dec:5 },
+    { sym:'NAS100', p:19500, cs:10, sl:[30,90],  drift:60,   dec:1 },
+    { sym:'GBPUSD', p:1.275, cs:100000, sl:[0.001,0.005], drift:0.0005, dec:5 },
+    { sym:'USOIL',  p:78,   cs:1000, sl:[0.3,1.2], drift:0.5, dec:2 },
+  ];
+  const prices = {}; instrs.forEach(i => { prices[i.sym] = i.p; });
+
+  const setups = ['SMC — Order Block','SMC — BOS Retest','SR — Key Level','SR — Volume Zone','Trend — EMA Pullback','ICT — Fair Value Gap'];
+  const tfs = ['M15','H1','H1','H4','H4','D1'];
+  const emotPre  = ['focused','calm','confident','anxious','disciplined','patient','fomo'];
+  const emotPost = ['satisfied','disciplined','regret','neutral','frustrated','proud','calm'];
+  const preTxts  = [
+    'Rynek w trendzie — szukam pullbacku na OB.',
+    'Poziomy zaznaczone, plan gotowy. Czekam na setup.',
+    'Trend boczny — tylko odbicia od kluczowych stref.',
+    'Po wczorajszej stracie — mniejszy wolumen, spokojne podejście.',
+    'Dane makro o 14:30. Wchodzę tylko rano przed newsem.',
+    'Silny trend wzrostowy. Wejście po korekcie do 50% Fib.',
+    'BOS na H4 — struktura bullish, target wyższy szczyt.',
+  ];
+  const postTxts = [
+    'Trzymałem się planu. Setup zadziałał zgodnie z analizą.',
+    'Strata akceptowalna — rynek się odwrócił, SL wykonał rolę.',
+    'Zbyt wcześnie wyszedłem — strach zabrał część zysku.',
+    'Dwa trafienia z rzędu. Dyscyplina przynosi efekty.',
+    'Nie powinienem był wchodzić — brak klarownego setupu.',
+    'TP osiągnięte. Dobra sesja — trzymałem się zasad.',
+    'Rynek zbyt zmienny. Następnym razem czekam na potwierdzenie.',
+  ];
+  const preGoals = ['Maks. 2 transakcje.','Tylko setupy A+.','RR min 2:1.','Nie handluję na newsach.','Stop o 17:00.'];
+  const intentions = ['Dyscyplina ponad zysk.','Czekam na setup — nie forsuje.','Trzymam SL bez ruszania.','Spokój niezależnie od wyniku.'];
+  const learnings = ['Rynek potrzebuje potwierdzenia.','Impulsywne wejścia kończą się stratą.','Cierpliwość popłaca.','Jeden dobry setup lepszy niż trzy wątpliwe.'];
+  const changes = ['Zwiększyć odstęp do TP.','Nie ruszać SL.','Handlować tylko rano.','Zmniejszyć wolumen przy złej passie.'];
+  const tomorrows = ['Skupiam się na Gold.','Dzień wolny.','Tylko 1 trade jeśli setup jasny.','Pełna analiza przed otwarciem.'];
+  const wq1s = ['Dobry tydzień — trzymałem planu przez większość sesji.','Tydzień mieszany. Dwa dobre dni, jeden impulsywny.','Silny tydzień — konsekwentny w setupach.','Słabo. Za dużo wejść bez jasnego setupu.'];
+  const wq2s = ['Impulsywne wejście w środę — powtórzyć schemat myślenia.','Nie handlować gdy rynek zbyt zmienny.','Lepiej analizować D1 przed wejściem H1.','Zbyt wczesne wyjście z TP — pracuję nad tym.'];
+  const wq3s = ['Kontynuować review dzienny każdego wieczoru.','Zmniejszyć wolumen do 0.1 przy złej passie.','Nie nadrabiać w piątek.','Więcej czasu na analizę makro przed tygodniem.'];
+
+  const trades = [], analyses = [], journalMap = {}, weeklyMap = {};
+
+  const today = new Date('2026-05-25');
+  const start = new Date(today); start.setDate(start.getDate() - 60);
+
+  for (let d = new Date(start); d <= today; d.setDate(d.getDate() + 1)) {
+    const dow = d.getDay();
+    const ds  = d.toISOString().slice(0,10);
+    if (dow === 0 || dow === 6) continue; // skip weekends
+
+    // drift prices
+    instrs.forEach(i => {
+      prices[i.sym] = rnd(Math.max(i.p * 0.9, Math.min(i.p * 1.1, prices[i.sym] + (rng()-0.48)*i.drift)), i.dec);
+    });
+
+    // 2-5 trades per day
+    const n = rInt(2,5);
+    for (let t = 0; t < n; t++) {
+      const ins = pick(instrs);
+      const dir = rng() > 0.5 ? 'LONG' : 'SHORT';
+      const isWin = rng() < 0.60;
+      const sz  = rnd(0.05 + rng()*0.25, 2);
+      const entry = prices[ins.sym];
+      const slD = rnd(ins.sl[0] + rng()*(ins.sl[1]-ins.sl[0]), ins.dec);
+      const tpR = 1.5 + rng()*1.5;
+      const tpD = rnd(slD * tpR, ins.dec);
+
+      let exitP;
+      if (dir === 'LONG')  exitP = isWin ? rnd(entry + tpD, ins.dec) : rnd(entry - slD, ins.dec);
+      else                  exitP = isWin ? rnd(entry - tpD, ins.dec) : rnd(entry + slD, ins.dec);
+
+      const diff = dir === 'LONG' ? (exitP - entry) : (entry - exitP);
+      const pnl  = rnd(diff * sz * ins.cs, 2);
+
+      const hh = String(rInt(8,17)).padStart(2,'0');
+      const mm = String(rInt(0,59)).padStart(2,'0');
+      const dt = `${ds}T${hh}:${mm}`;
+
+      trades.push({
+        id: `dm-${ds.replace(/-/g,'')}-${t}`,
+        symbol: ins.sym, date: dt, dir, status:'closed',
+        entry, size: sz,
+        sl: dir==='LONG' ? rnd(entry-slD,ins.dec) : rnd(entry+slD,ins.dec),
+        tp: dir==='LONG' ? rnd(entry+tpD,ins.dec) : rnd(entry-tpD,ins.dec),
+        tps:[], exit: exitP, pnl,
+        tf: pick(tfs), setup: pick(setups),
+        pre: pick(preTxts), post: pick(postTxts),
+        emotionPre:  pick(emotPre)+','+pick(emotPre),
+        emotionPost: pick(emotPost),
+        screenshots:[], mt4Ticket:null, linkedAnalysisId:null,
+        updatedAt: new Date(dt).getTime(),
+      });
+    }
+
+    // journal entry
+    journalMap[ds] = {
+      date: ds,
+      preMood: pick(['','calm','focused','anxious','excited','tired']),
+      preSleep: String(rInt(5,8)), preEnergy: String(rInt(2,5)),
+      preExercise: rng()>0.55?'yes':'no',
+      preCalendar: rng()>0.4?'yes':'no',
+      preCalendarNotes: rng()>0.5?'NFP o 14:30, CPI środa':'',
+      preInstruments: pick(['XAUUSD, NAS100','EURUSD, GBPUSD','XAUUSD, USOIL','NAS100, EURUSD']),
+      preLevels: pick(['2320, 2350, 2380','1.085, 1.090, 1.095','19500, 20000','']),
+      preBias: pick(['bullish','bearish','neutral','bullish','bullish']),
+      preFocus: rInt(3,5), prePlan: pick(preTxts),
+      preGoal: pick(preGoals), preLossLimit: rInt(80,200),
+      preReadiness: rng()>0.25?'yes':'no',
+      preIntention: pick(intentions),
+      postMood: pick(['','satisfied','frustrated','neutral','proud','calm']),
+      'post-plan-followed': rng()>0.35?'yes':'no',
+      'post-limit-broken': rng()>0.82?'yes':'no',
+      'post-impulsive': rng()>0.78?'yes':'no',
+      postReview: pick(postTxts), postLearning: pick(learnings),
+      postChange: pick(changes),
+      postDecisionRating: rInt(4,5), postRating: rInt(3,5),
+      postTomorrow: pick(tomorrows),
+      updatedAt: new Date(ds+'T22:00:00').getTime(),
+    };
+
+    // weekly review (one per week)
+    const wk = getWeekKey(d);
+    if (!weeklyMap[wk]) {
+      weeklyMap[wk] = {
+        weekKey: wk,
+        q1: pick(wq1s), q2: pick(wq2s), q3: pick(wq3s),
+        rating: rInt(3,5),
+        planVal: rng()>0.35 ? 'yes' : 'partial',
+        savedAt: new Date(ds+'T20:00:00').getTime(),
+      };
+    }
+  }
+
+  // 15 analyses
+  const anSyms = ['XAUUSD','EURUSD','NAS100','GBPUSD'];
+  const anTFs  = ['D1','H4','H1'];
+  const anTitles = ['Analiza tygodniowa','Setup H4','Review dzienny','Bias sesji','Kluczowe poziomy'];
+  const anDescs = [
+    'Gold w strefie kumulacji OB. Oczekuję ruchu bullish po teście 2320.',
+    'EUR/USD na poziomie 1.085 — kluczowy support HTF. Bias bullish na tydzień.',
+    'NAS100 po BOS — szukam pullbacku do FVG na H1.',
+    'Pound testuje resistance 1.285 — jeśli odbicie: target 1.295.',
+    'Gold — HVB na 2340. Strefa z dużym volume — silna obrona.',
+    'Indeks w trendzie wzrostowym. EMA21 działa jako dynamiczny support.',
+    'EUR/USD konsolidacja przed CPI. Czekam na wybicie strefy 1.087-1.090.',
+  ];
+  for (let i = 0; i < 15; i++) {
+    const sym = pick(anSyms);
+    const dAgo = rInt(1,55);
+    const ad = new Date(today); ad.setDate(ad.getDate()-dAgo);
+    const ads = ad.toISOString().slice(0,10);
+    analyses.push({
+      id: `dm-an-${i}`,
+      symbol: sym, tf: pick(anTFs), date: ads,
+      title: sym+' — '+pick(anTitles),
+      description: pick(anDescs),
+      bias: pick(['bullish','bearish','neutral']),
+      keyLevels: pick(['2320, 2350, 2380','1.085, 1.090','19500, 20000','1.280, 1.290','']),
+      screenshots:[], linkedTradeId:null, strategyId:null, setupId:null,
+      updatedAt: new Date(ads+'T10:00:00').getTime(),
+    });
+  }
+
+  // Save to DB
+  const db = getDB();
+  if (!db.accounts) db.accounts = {};
+  const accs = (db.accounts[user]||[]).filter(a => a.id !== DEMO_ID);
+  accs.unshift({ id:DEMO_ID, name:'📊 Demo — 60 dni', capital:10000, currency:'USD', broker:'IC Markets', mt4Login:'', isBot:false, isDemo:true, createdAt:Date.now() });
+  db.accounts[user] = accs;
+  if (!db.trades) db.trades = {};
+  db.trades[user+'_'+DEMO_ID] = trades;
+  db['analyses_'+user+'_'+DEMO_ID] = analyses;
+  Object.entries(journalMap).forEach(([ds,entry]) => { db['journal_'+user+'_'+ds] = entry; });
+  Object.entries(weeklyMap).forEach(([wk,rev])   => { db['weekly_'+user+'_'+wk]   = rev; });
+  saveDB(db);
+
+  // Switch to demo account
+  state.currentAccountId = DEMO_ID;
+  renderDashboard(); renderTrades(); renderSummary();
+  toast(`✅ Dane demo wygenerowane — ${trades.length} transakcji, ${analyses.length} analiz, ${Object.keys(journalMap).length} wpisów dziennika`, 'success');
+  showPage('dashboard');
+}
+
+function clearDemoData() {
+  const DEMO_ID = 'demo-seed-001';
+  const user = state.currentUser;
+  if (!user) return;
+  if (!confirm('Usunąć konto demo i wszystkie jego dane?')) return;
+  const db = getDB();
+  if (db.accounts) db.accounts[user] = (db.accounts[user]||[]).filter(a => a.id !== DEMO_ID);
+  if (db.trades) delete db.trades[user+'_'+DEMO_ID];
+  delete db['analyses_'+user+'_'+DEMO_ID];
+  saveDB(db);
+  if (state.currentAccountId === DEMO_ID) {
+    const remaining = getAccounts();
+    state.currentAccountId = remaining[0]?.id || null;
+  }
+  renderDashboard(); renderTrades();
+  toast('Konto demo usunięte', 'success');
+}
 
 // ===== NAVIGATION =====
 function showPage(page) {
