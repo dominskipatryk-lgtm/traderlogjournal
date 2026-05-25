@@ -385,12 +385,14 @@ body.light-mode tr:nth-child(even) { background: rgba(0,0,0,.02); }
 .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
 .section-title { font-family: var(--font-head); font-size: 18px; font-weight: 700; }
 .table-wrap { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow-x: auto; overflow-y: hidden; }
+#trades-table { overflow-y: auto; max-height: 570px; }
 .trades-table { width: 100%; border-collapse: collapse; font-size: 12px; }
 .trades-table th {
   padding: 8px 12px; text-align: left; font-size: 10px; font-weight: 500;
   color: var(--text3); text-transform: uppercase; letter-spacing: .6px;
   border-bottom: 1px solid var(--border); background: var(--bg3);
   font-family: var(--font-mono); white-space: nowrap;
+  position: sticky; top: 0; z-index: 2;
 }
 .trades-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; white-space: nowrap; }
 .trades-table tr:last-child td { border-bottom: none; }
@@ -1503,6 +1505,76 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 
       <div class="page-title" data-i18n="page_calc">Kalkulator Pozycji</div>
       <div class="page-subtitle" data-i18n="calc_subtitle">Przeliczaj jednostki TradingView na loty · zarządzaj ryzykiem i R:R</div>
+
+      <!-- QUICK MODE — Trade Manager style -->
+      <div class="summary-card" style="margin-bottom:20px;max-width:960px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:16px">⚡</span>
+            <div class="summary-card-title" style="margin-bottom:0">Quick Mode — Pipy</div>
+            <span style="font-size:11px;background:var(--accent-dim);color:var(--accent);padding:2px 8px;border-radius:10px;font-weight:700">Trade Manager</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="font-family:var(--font-mono);font-size:12px;color:var(--text3)">
+              Balans: <span id="calc-bal-disp" style="color:var(--text);font-weight:700">—</span>
+              &nbsp;·&nbsp;Equity: <span id="calc-eq-disp" style="color:var(--accent);font-weight:700">—</span>
+            </div>
+            <button class="btn-sm" onclick="calcFillFromAccount()" style="font-size:11px">⬇ Z konta</button>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 2fr;gap:10px;align-items:end;margin-bottom:10px">
+          <div>
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Ryzyko %</div>
+            <input type="number" id="calc-risk" value="1" min="0.1" max="20" step="0.1" oninput="calcPosition()"
+              style="width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:8px 10px;font-size:20px;font-weight:800;font-family:var(--font-mono);text-align:center">
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">SL (pipy)</div>
+            <input type="number" id="calc-sl" value="20" min="1" step="1" oninput="calcPosition()"
+              style="width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:8px 10px;font-size:20px;font-weight:800;font-family:var(--font-mono);text-align:center">
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">R:R</div>
+            <input type="number" id="calc-rr" value="2" min="0.1" step="0.1" oninput="calcPosition()"
+              style="width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:8px 10px;font-size:20px;font-weight:800;font-family:var(--font-mono);text-align:center">
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Instrument / wartość pipy</div>
+            <select id="calc-pipval" onchange="calcPosition()"
+              style="width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:9px 10px;font-size:12px">
+              <option value="10">Forex majors — EURUSD, GBPUSD, XAUUSD ($10/pip/lot)</option>
+              <option value="7">JPY pairs — USDJPY, EURJPY (~$7/pip/lot)</option>
+              <option value="1">US Indices — US30, NAS100 ($1/pt/lot)</option>
+              <option value="5">Crypto — BTCUSD (~$5/pip/lot)</option>
+              <option value="custom">✏️ Własna wartość pipy</option>
+            </select>
+          </div>
+        </div>
+        <div id="calc-custom-wrap" style="display:none;margin-bottom:10px">
+          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Własna wartość pipy (USD/pip/lot)</div>
+          <input type="number" id="calc-custom-pip" value="10" min="0.01" step="0.01" oninput="calcPosition()"
+            style="width:160px;background:var(--bg3);border:1px solid var(--accent);color:var(--text);border-radius:7px;padding:7px 10px;font-size:14px;font-family:var(--font-mono)">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:10px" id="calc-results"></div>
+        <div style="padding:10px 12px;background:var(--bg3);border-radius:8px;border:1px solid var(--border);display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:11px;color:var(--text3);white-space:nowrap">Break Even po</span>
+            <input type="number" id="calc-be-pips" value="10" min="1" step="1" oninput="calcPosition()"
+              style="width:64px;background:var(--bg4);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:3px 6px;font-size:12px;font-family:var(--font-mono);text-align:center">
+            <span style="font-size:11px;color:var(--text3)">pip zysku →</span>
+            <span id="calc-be-result" style="font-size:12px;font-family:var(--font-mono);color:var(--amber);font-weight:700"></span>
+          </div>
+          <div style="width:1px;height:20px;background:var(--border)"></div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:11px;color:var(--text3);white-space:nowrap">Trailing Stop</span>
+            <input type="number" id="calc-trail-pips" value="15" min="1" step="1" oninput="calcPosition()"
+              style="width:64px;background:var(--bg4);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:3px 6px;font-size:12px;font-family:var(--font-mono);text-align:center">
+            <span style="font-size:11px;color:var(--text3)">pip →</span>
+            <span id="calc-trail-result" style="font-size:12px;font-family:var(--font-mono);color:var(--blue,#4f9eff);font-weight:700"></span>
+          </div>
+        </div>
+      </div>
+
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:960px">
         <div class="summary-card" style="grid-column:1/-1">
           <div class="summary-card-title" style="color:var(--accent)">⇄ Przelicznik: Jednostki TradingView ↔ Loty</div>
@@ -1559,9 +1631,6 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
         </div>
       </div>
     </div>
-
-    
-      </div>
 
       <!-- TAB: Strategie i Setupy -->
       <div id="tools-tab-strategies" style="display:none">
@@ -1676,6 +1745,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
           </div>
         </div>
       </div>
+    </div><!-- /page-tools -->
 
     <!-- SETTINGS PAGE -->
     <div id="page-settings" class="page">
@@ -2189,6 +2259,12 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
             <div class="form-group-modal full">
               <label class="form-label-modal">Ostatnie transakcje z tego instrumentu</label>
               <div id="an-linked-trades" style="font-size:12px;color:var(--text3)">Brak powiązanych transakcji</div>
+            </div>
+
+            <!-- ROW 12: Moje reguły -->
+            <div class="form-group-modal full" id="analysis-rules-section" style="display:none">
+              <label class="form-label-modal">📏 Moje reguły — sprawdź przed analizą</label>
+              <div id="analysis-rules-checklist" style="display:flex;flex-direction:column;gap:5px"></div>
             </div>
 
           </div>
@@ -3303,6 +3379,13 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
           </div>
           <div class="screenshots-preview" id="screenshots-preview"></div>
         </div>
+
+        <!-- Moje reguły — przed zapisem transakcji -->
+        <div id="trade-rules-section" style="display:none;padding:12px 0 4px">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:8px">📏 Moje reguły — sprawdź przed zapisem</div>
+          <div id="trade-rules-checklist" style="display:flex;flex-direction:column;gap:5px"></div>
+        </div>
+
       </div>
     </div>
     <div class="modal-footer">
@@ -3732,6 +3815,15 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
               </div>
             </div>
           </div>
+        </div>
+
+        <!-- Moje reguły osobiste -->
+        <div id="routine-rules-section" style="display:none;padding:0 24px 16px;border-top:1px solid var(--border)">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin:14px 0 10px">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--text3)">📏 Moje Reguły</div>
+            <button onclick="showPage('tools');showToolsTab('rules');closeRoutineModal()" style="background:none;border:none;color:var(--text3);font-size:11px;cursor:pointer;padding:2px 6px;border-radius:4px;border:1px solid var(--border)">✏️ Edytuj</button>
+          </div>
+          <div id="routine-rules-list" style="display:flex;flex-direction:column;gap:4px"></div>
         </div>
 
         <!-- Footer -->
@@ -4454,6 +4546,7 @@ function renderDashboard() {
     <div class="stat-card"><div class="stat-label">Wszystkich</div><div class="stat-value">${trades.length}</div><div class="stat-sub">Transakcji łącznie</div></div>
   `;
 
+
   // Equity curve
   drawEquityCurve(acc.capital, closed);
 
@@ -4462,6 +4555,79 @@ function renderDashboard() {
   document.getElementById('dash-recent-table').innerHTML = buildTradesTable(recent);
 }
 
+function calcFillFromAccount() {
+  const acc = getAccounts().find(a => a.id === state.currentAccountId);
+  if (!acc) { toast(t('err_account_required'), 'error'); return; }
+  const closedPnl = getTrades(acc.id).filter(t => t.status === 'closed').reduce((s,t) => s+(t.pnl||0), 0);
+  const balance = (acc.capital||0) + closedPnl;
+  const curr = getCurrSym(acc.id);
+  const balEl = document.getElementById('calc-bal-disp');
+  const eqEl  = document.getElementById('calc-eq-disp');
+  if (balEl) balEl.textContent = fmt(acc.capital) + ' ' + curr;
+  if (eqEl)  eqEl.textContent  = fmt(balance) + ' ' + curr;
+  // Also sync to detailed calculator
+  const capEl = document.getElementById('u-capital');
+  if (capEl) { capEl.value = balance.toFixed(2); calcUnifiedRisk(); }
+  calcPosition();
+  toast(t('toast_capital_filled').replace('{name}', acc.name), 'success');
+}
+function calcPosition() {
+  const acc = getAccounts().find(a => a.id === state.currentAccountId);
+  const curr = acc ? getCurrSym(acc.id) : '$';
+  const closedPnl = acc ? getTrades(acc.id).filter(t => t.status === 'closed').reduce((s,t) => s+(t.pnl||0), 0) : 0;
+  const balance = acc ? (acc.capital||0) + closedPnl : 0;
+
+  const riskPct  = parseFloat(document.getElementById('calc-risk')?.value) || 1;
+  const slPips   = parseFloat(document.getElementById('calc-sl')?.value)   || 20;
+  const rr       = parseFloat(document.getElementById('calc-rr')?.value)   || 2;
+  const bePips   = parseFloat(document.getElementById('calc-be-pips')?.value) || 10;
+  const trailP   = parseFloat(document.getElementById('calc-trail-pips')?.value) || 15;
+
+  const pipValSel  = document.getElementById('calc-pipval')?.value;
+  const customWrap = document.getElementById('calc-custom-wrap');
+  let pipVal;
+  if (pipValSel === 'custom') {
+    if (customWrap) customWrap.style.display = '';
+    pipVal = parseFloat(document.getElementById('calc-custom-pip')?.value) || 10;
+  } else {
+    if (customWrap) customWrap.style.display = 'none';
+    pipVal = parseFloat(pipValSel) || 10;
+  }
+
+  const riskAmt = balance * riskPct / 100;
+  const lot     = riskAmt / (slPips * pipVal);
+  const tpPips  = slPips * rr;
+  const tpAmt   = riskAmt * rr;
+  const lotStr  = !balance || lot < 0.0001 ? '—' : lot < 0.01 ? lot.toFixed(4) : lot.toFixed(2);
+
+  const res = document.getElementById('calc-results');
+  if (res) res.innerHTML = `
+    <div style="background:var(--bg3);border-radius:8px;padding:10px 14px;text-align:center;border:1px solid var(--accent)">
+      <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Lot</div>
+      <div style="font-size:26px;font-weight:800;color:var(--accent);font-family:var(--font-mono);line-height:1">${lotStr}</div>
+    </div>
+    <div style="background:var(--bg3);border-radius:8px;padding:10px 14px;text-align:center;border:1px solid var(--border)">
+      <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Ryzyko</div>
+      <div style="font-size:20px;font-weight:700;color:var(--red);font-family:var(--font-mono);line-height:1">${balance ? curr + fmt(riskAmt) : '—'}</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:3px">${riskPct}% kapitału</div>
+    </div>
+    <div style="background:var(--bg3);border-radius:8px;padding:10px 14px;text-align:center;border:1px solid var(--border)">
+      <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">TP (pipy)</div>
+      <div style="font-size:20px;font-weight:700;color:var(--text);font-family:var(--font-mono);line-height:1">${tpPips.toFixed(0)}</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:3px">R:R ${rr.toFixed(1)}</div>
+    </div>
+    <div style="background:var(--bg3);border-radius:8px;padding:10px 14px;text-align:center;border:1px solid var(--green)">
+      <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Potencjał</div>
+      <div style="font-size:20px;font-weight:700;color:var(--green);font-family:var(--font-mono);line-height:1">${balance ? '+' + curr + fmt(tpAmt) : '—'}</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:3px">${(riskPct * rr).toFixed(2)}% kapitału</div>
+    </div>
+  `;
+
+  const beEl = document.getElementById('calc-be-result');
+  if (beEl) beEl.textContent = `przesuń SL na entry — zabezpieczasz ${curr}${balance ? fmt(bePips * pipVal * (lot||0)) : '0'}`;
+  const trEl = document.getElementById('calc-trail-result');
+  if (trEl) trEl.textContent = `SL podąża co ${trailP} pip (${curr}${balance ? fmt(trailP * pipVal * (lot||0)) : '0'}/krok)`;
+}
 function drawEquityCurve(startCapital, closedTrades) {
   const svg = document.getElementById('equity-svg');
   if (!closedTrades.length) { svg.innerHTML = '<text x="400" y="90" text-anchor="middle" fill="#5a6475" font-size="13" font-family="DM Sans">Brak zamkniętych transakcji</text>'; return; }
@@ -5851,6 +6017,7 @@ function openTradeModal() {
     document.getElementById('trade-checklist-score').textContent='';
     populateLinkedAnalysisSelect('', '');
   }, 50);
+  renderModalRulesChecklist('trade');
   openModal('trade-modal');
   applyTfModeUI();
   hookFormAutoSave();
@@ -5897,6 +6064,7 @@ function openEditModal(id) {
     const lf = document.getElementById('t-linked-analysis-id');
     if (lf) lf.value = t.linkedAnalysisId || '';
   }, 50);
+  renderModalRulesChecklist('trade');
   openModal('trade-modal');
   applyTfModeUI();
   hookFormAutoSave();
@@ -11722,6 +11890,7 @@ function openNewAnalysis() {
   populateLinkedTradeSelect('', '');
   anSetAutosaveDot('idle');
   setTimeout(() => { populateStrategySelects(); document.getElementById('an-checklist-score').textContent=''; }, 50);
+  renderModalRulesChecklist('analysis');
   openModal('analysis-modal');
 }
 
@@ -11766,6 +11935,7 @@ function openEditAnalysis(id) {
     }
     document.getElementById('an-checklist-score').textContent = '';
   }, 50);
+  renderModalRulesChecklist('analysis');
   openModal('analysis-modal');
 }
 
@@ -13802,6 +13972,7 @@ function showRoutineModal(mode) {
   document.querySelectorAll('.routine-item').forEach(el => el.classList.remove('done'));
   const noShowCb = document.getElementById('routine-no-show-today');
   if (noShowCb) noShowCb.checked = false;
+  renderRoutineRules();
   updateRoutineProgress();
 
   // Pokaż modal
@@ -15393,7 +15564,7 @@ function addRule() {
     'max-risk': 'Maks. ryzyko %', 'max-losses': 'Stop po X stratach',
     'stop-hour': 'Stop o godzinie', 'max-daily': 'Maks. transakcji/dzień', 'custom': 'Własna zasada'
   };
-  const rule = { id: genId(), type, value, label: typeLabels[type]||type, createdAt: Date.now() };
+  const rule = { id: genId(), type, value, label: typeLabels[type]||type, enabled: true, createdAt: Date.now() };
   const rules = getRules();
   rules.push(rule);
   saveRules(rules);
@@ -15420,18 +15591,60 @@ function renderRules() {
     const typeIcons = {'max-risk':'💰','max-losses':'🛑','stop-hour':'🕐','max-daily':'📊','custom':'📝'};
     const icon = typeIcons[r.type] || '📝';
     const isCustom = r.type === 'custom';
+    const enabled = r.enabled !== false;
     const descEl = document.createElement('span');
     descEl.textContent = r.value;
     const desc = descEl.textContent;
-    return `<div class="summary-card" style="margin-bottom:8px;display:flex;align-items:center;gap:12px;padding:10px 14px">
+    return `<div class="summary-card" style="margin-bottom:8px;display:flex;align-items:center;gap:12px;padding:10px 14px;opacity:${enabled ? 1 : 0.45}">
       <span style="font-size:20px">${icon}</span>
       <div style="flex:1;min-width:0">
-        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px">${r.label}${isCustom ? `<span style="margin-left:6px;color:var(--amber);font-size:10px;text-transform:none;letter-spacing:0">${t('rules_reminder_label')}</span>` : ''}</div>
-        <div style="font-size:13px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${desc}">${desc}</div>
+        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px">${r.label}${isCustom ? `<span style="margin-left:6px;color:var(--amber);font-size:10px;text-transform:none;letter-spacing:0">${t('rules_reminder_label')}</span>` : ''}
+          <span style="margin-left:8px;font-size:10px;padding:1px 6px;border-radius:10px;font-weight:700;${enabled ? 'background:rgba(0,255,163,.15);color:var(--accent)' : 'background:var(--bg4);color:var(--text3)'}">${enabled ? 'Aktywna' : 'Nieaktywna'}</span>
+        </div>
+        <div style="font-size:13px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${enabled ? '' : 'text-decoration:line-through'}" title="${desc}">${desc}</div>
       </div>
+      <button onclick="toggleRuleEnabled('${r.id}')" title="${enabled ? 'Dezaktywuj' : 'Aktywuj'}" style="background:${enabled ? 'rgba(0,255,163,.12)' : 'var(--bg4)'};border:1px solid ${enabled ? 'var(--accent)' : 'var(--border)'};color:${enabled ? 'var(--accent)' : 'var(--text3)'};border-radius:5px;padding:3px 8px;font-size:11px;cursor:pointer;flex-shrink:0">${enabled ? '✓ Aktywna' : '○ Włącz'}</button>
       <button class="icon-btn del" onclick="deleteRule('${r.id}')" title="${t('delete')}" style="flex-shrink:0">🗑</button>
     </div>`;
   }).join('');
+}
+function toggleRuleEnabled(id) {
+  const rules = getRules().map(r => r.id === id ? {...r, enabled: r.enabled === false ? true : false} : r);
+  saveRules(rules);
+  renderRules();
+  renderModalRulesChecklist('trade');
+  renderModalRulesChecklist('analysis');
+  renderRoutineRules();
+}
+function renderModalRulesChecklist(prefix) {
+  const section = document.getElementById(prefix + '-rules-section');
+  const list    = document.getElementById(prefix + '-rules-checklist');
+  if (!section || !list) return;
+  const rules = (getRules() || []).filter(r => r.enabled !== false);
+  if (!rules.length) { section.style.display = 'none'; return; }
+  section.style.display = '';
+  const typeIcons = {'max-risk':'💰','max-losses':'🛑','stop-hour':'🕐','max-daily':'📊','custom':'📝'};
+  list.innerHTML = rules.map(r => `<label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;padding:6px 10px;background:var(--bg3);border-radius:6px;border:1px solid var(--border)">
+    <input type="checkbox" id="rule-chk-${prefix}-${r.id}" style="width:14px;height:14px;accent-color:var(--accent);cursor:pointer">
+    <span>${typeIcons[r.type]||'📝'} <strong>${r.label}:</strong> ${r.value}</span>
+  </label>`).join('');
+}
+function renderRoutineRules() {
+  const section = document.getElementById('routine-rules-section');
+  const list    = document.getElementById('routine-rules-list');
+  if (!section || !list) return;
+  const rules = (getRules() || []).filter(r => r.enabled !== false);
+  if (!rules.length) { section.style.display = 'none'; return; }
+  section.style.display = '';
+  const typeIcons = {'max-risk':'💰','max-losses':'🛑','stop-hour':'🕐','max-daily':'📊','custom':'📝'};
+  list.innerHTML = rules.map(r => `<div class="routine-item" onclick="toggleRoutine(this)" style="margin-bottom:2px">
+    <div class="routine-icon" style="font-size:16px">${typeIcons[r.type]||'📝'}</div>
+    <div>
+      <div class="routine-title">${r.label}</div>
+      <div class="routine-sub">${r.value}</div>
+    </div>
+  </div>`).join('');
+  updateRoutineProgress();
 }
 function checkRulesBeforeSave() {
   const rules = getRules();
@@ -15505,7 +15718,14 @@ function switchToolsTab(tab) {
       const uCap = document.getElementById('u-capital');
       if (uCap && !uCap.value) uCap.value = capital.toFixed(2);
       if (typeof calcUnifiedRisk === 'function') calcUnifiedRisk();
+      // sync balance display in Quick Mode
+      const curr = getCurrSym(acc.id);
+      const balEl = document.getElementById('calc-bal-disp');
+      const eqEl  = document.getElementById('calc-eq-disp');
+      if (balEl) balEl.textContent = fmt(acc.capital) + ' ' + curr;
+      if (eqEl)  eqEl.textContent  = fmt(capital) + ' ' + curr;
     }
+    calcPosition();
   }
 }
 
