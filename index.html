@@ -12734,10 +12734,9 @@ let _sbListenersSet = false;
 let _inPasswordRecovery = (function() {
   const qp = new URLSearchParams(window.location.search);
   const hp = new URLSearchParams((window.location.hash || '').replace('#', ''));
-  // ?code= w URL oznacza recovery (ta aplikacja nie używa magic link login)
-  // ?type=recovery — nasz własny znacznik w redirectTo
-  // #access_token...type=recovery — stary implicit flow
-  return qp.has('code') || qp.get('type') === 'recovery' || hp.get('type') === 'recovery';
+  // TYLKO ?type=recovery (nasz własny znacznik w redirectTo resetowania hasła)
+  // NIE wykrywamy ?code= ogólnie — to samo używają emaile potwierdzające konto (signup)
+  return qp.get('type') === 'recovery' || hp.get('type') === 'recovery';
 })();
 
 function _createSbClient(lib) {
