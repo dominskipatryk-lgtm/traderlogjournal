@@ -1022,6 +1022,39 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
   .modal-body { padding: 14px 16px; }
   .btn-sm { padding: 5px 10px; font-size: 12px; }
 }
+
+/* ===== PORTFOLIO ===== */
+.portfolio-stat-card { background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:16px 18px; }
+.portfolio-stat-label { font-size:11px; color:var(--text3); text-transform:uppercase; letter-spacing:.5px; margin-bottom:4px; }
+.portfolio-stat-value { font-size:22px; font-weight:700; color:var(--text); line-height:1.2; }
+.portfolio-stat-sub { font-size:11px; color:var(--text3); margin-top:2px; }
+.portfolio-tbl { width:100%; border-collapse:collapse; }
+.portfolio-tbl th { font-size:11px; color:var(--text3); text-transform:uppercase; letter-spacing:.4px; font-weight:600; padding:8px 10px; border-bottom:2px solid var(--border); white-space:nowrap; text-align:left; }
+.portfolio-tbl td { font-size:13px; padding:10px; border-bottom:1px solid var(--border); vertical-align:middle; }
+.portfolio-tbl tr:hover td { background:var(--bg3); }
+.portfolio-tbl td.num { text-align:right; font-variant-numeric:tabular-nums; }
+.portfolio-tbl th.num { text-align:right; }
+.pf-type-badge { display:inline-block; padding:2px 7px; border-radius:10px; font-size:10px; font-weight:700; letter-spacing:.3px; }
+.pf-type-ETF     { background:#1a3a5c; color:#4da6ff; }
+.pf-type-Akcja   { background:#1a3d1a; color:#4caf50; }
+.pf-type-Obligacja { background:#2d2a1a; color:#ffc107; }
+.pf-type-Krypto  { background:#2d1a2d; color:#ce93d8; }
+.pf-type-Złoto   { background:#2d2510; color:#ffb300; }
+.pf-type-REIT    { background:#1a2d2d; color:#26c6da; }
+.pf-type-Inne    { background:var(--bg3); color:var(--text2); }
+.pf-acc-badge { display:inline-block; padding:2px 6px; border-radius:6px; font-size:10px; font-weight:600; }
+.pf-acc-IKE  { background:#0d2a0d; color:#66bb6a; border:1px solid #2e7d32; }
+.pf-acc-IKZE { background:#0d1f2a; color:#42a5f5; border:1px solid #1565c0; }
+.pf-acc-zwykłe { background:var(--bg3); color:var(--text3); border:1px solid var(--border); }
+.alloc-chart { width:140px; height:140px; border-radius:50%; flex-shrink:0; }
+.alloc-legend-row { display:flex; align-items:center; gap:8px; font-size:12px; padding:4px 0; }
+.alloc-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+.pf-dca-row { background:var(--bg3); font-size:12px; color:var(--text2); }
+.pf-dca-row td { padding:6px 10px 6px 28px; border-bottom:1px solid var(--border); }
+@media (max-width:700px) {
+  .portfolio-tbl td.hide-sm, .portfolio-tbl th.hide-sm { display:none; }
+  .portfolio-stat-value { font-size:18px; }
+}
 </style>
 </head>
 <body>
@@ -1211,6 +1244,9 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
       </button>
       <button class="nav-btn" onclick="showPage('emotions')" id="nav-emotions" data-i18n="nav_emotions">
         <span class="nav-icon">🧠</span><span class="nav-label">Emocje & Psychologia</span>
+      </button>
+      <button class="nav-btn" onclick="showPage('portfolio')" id="nav-portfolio">
+        <span class="nav-icon">💼</span><span class="nav-label">Portfel</span>
       </button>
 
       <div class="sidebar-section-label" data-i18n="sec_resources">Zasoby</div>
@@ -3142,9 +3178,156 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
       </div>
     </div>
 
+    <!-- PAGE: Portfel Inwestycyjny -->
+    <div id="page-portfolio" class="page">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:20px">
+        <div>
+          <div class="page-title" style="margin-bottom:2px">💼 Portfel Inwestycyjny</div>
+          <div class="page-subtitle">Długoterminowe inwestycje — ETF, akcje, obligacje, krypto</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn-sm" onclick="exportPortfolioCSV()" style="font-size:12px">📥 Eksport CSV</button>
+          <button class="btn-sm btn-accent" onclick="openPortfolioModal()" style="font-size:13px">+ Dodaj pozycję</button>
+        </div>
+      </div>
+
+      <!-- Karty podsumowania -->
+      <div id="pf-summary-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:24px"></div>
+
+      <!-- Alokacja + legenda -->
+      <div style="display:grid;grid-template-columns:auto 1fr;gap:24px;align-items:center;margin-bottom:24px;padding:18px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;flex-wrap:wrap" id="pf-alloc-section">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+          <div style="font-size:12px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.5px">Alokacja</div>
+          <canvas id="pf-alloc-chart" class="alloc-chart" width="140" height="140"></canvas>
+        </div>
+        <div id="pf-alloc-legend" style="display:flex;flex-direction:column;gap:2px"></div>
+      </div>
+
+      <!-- Tabela pozycji -->
+      <div class="table-wrap">
+        <table class="portfolio-tbl" id="pf-table">
+          <thead>
+            <tr>
+              <th>Instrument</th>
+              <th>Typ</th>
+              <th class="hide-sm">Konto</th>
+              <th class="num">Ilość</th>
+              <th class="num">Śr. cena zakupu</th>
+              <th class="num">Bieżąca cena</th>
+              <th class="num hide-sm">Koszt</th>
+              <th class="num">Wartość</th>
+              <th class="num">P&amp;L</th>
+              <th class="num">P&amp;L %</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="pf-tbody"></tbody>
+        </table>
+        <div id="pf-empty" style="display:none;text-align:center;padding:60px 20px;color:var(--text3)">
+          <div style="font-size:40px;margin-bottom:12px">💼</div>
+          <div style="font-size:15px;font-weight:600;margin-bottom:6px">Brak pozycji w portfelu</div>
+          <div style="font-size:13px;margin-bottom:20px">Dodaj pierwszą inwestycję — ETF, akcję, obligację lub krypto</div>
+          <button class="btn-sm btn-accent" onclick="openPortfolioModal()">+ Dodaj pozycję</button>
+        </div>
+      </div>
+    </div><!-- /page-portfolio -->
+
   </main>
   </div><!-- /app-main -->
 </div><!-- /app -->
+
+<!-- PORTFOLIO MODAL -->
+<div class="modal-overlay" id="portfolio-modal" role="dialog" aria-modal="true" aria-label="Pozycja portfela">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <div class="modal-title" id="pf-modal-title">Dodaj pozycję</div>
+      <button class="modal-close" onclick="closePortfolioModal()" aria-label="Zamknij">✕</button>
+    </div>
+    <div class="modal-body" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <input type="hidden" id="pf-edit-id">
+      <div style="grid-column:1/-1;display:grid;grid-template-columns:1fr 2fr;gap:12px">
+        <div>
+          <label class="field-label">Symbol / Ticker</label>
+          <input class="field-input" id="pf-symbol" placeholder="np. CSPX, KGHM, BTC" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
+        </div>
+        <div>
+          <label class="field-label">Nazwa instrumentu</label>
+          <input class="field-input" id="pf-name" placeholder="np. iShares Core S&P 500 UCITS ETF">
+        </div>
+      </div>
+      <div>
+        <label class="field-label">Typ instrumentu</label>
+        <select class="field-input" id="pf-type">
+          <option value="ETF">ETF</option>
+          <option value="Akcja">Akcja</option>
+          <option value="Obligacja">Obligacja</option>
+          <option value="Krypto">Krypto</option>
+          <option value="Złoto">Złoto / Surowiec</option>
+          <option value="REIT">REIT / Nieruchomość</option>
+          <option value="Inne">Inne</option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label">Typ konta</label>
+        <select class="field-input" id="pf-account-type">
+          <option value="zwykłe">Zwykłe (opodatkowane)</option>
+          <option value="IKE">IKE (zwolnienie z podatku)</option>
+          <option value="IKZE">IKZE (odliczenie od dochodu)</option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label">Broker / Platforma</label>
+        <input class="field-input" id="pf-broker" placeholder="np. XTB, DEGIRO, Binance">
+      </div>
+      <div>
+        <label class="field-label">Waluta</label>
+        <select class="field-input" id="pf-currency">
+          <option value="PLN">PLN</option>
+          <option value="USD">USD</option>
+          <option value="EUR">EUR</option>
+          <option value="GBP">GBP</option>
+          <option value="CHF">CHF</option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label">Ilość (sztuk / jednostek)</label>
+        <input class="field-input" id="pf-qty" type="number" step="any" placeholder="0">
+      </div>
+      <div>
+        <label class="field-label">Cena zakupu (avg)</label>
+        <input class="field-input" id="pf-buy-price" type="number" step="any" placeholder="0.00">
+      </div>
+      <div>
+        <label class="field-label">Data zakupu</label>
+        <input class="field-input" id="pf-buy-date" type="date">
+      </div>
+      <div>
+        <label class="field-label">Prowizja (opcjonalnie)</label>
+        <input class="field-input" id="pf-fee" type="number" step="any" placeholder="0.00">
+      </div>
+      <div>
+        <label class="field-label">Bieżąca cena rynkowa</label>
+        <input class="field-input" id="pf-current-price" type="number" step="any" placeholder="0.00" oninput="pfUpdateLiveCalc()">
+      </div>
+      <div style="grid-column:1/-1">
+        <label class="field-label">Notatka</label>
+        <textarea class="field-input" id="pf-note" rows="2" placeholder="Strategia, cel, horyzont..."></textarea>
+      </div>
+      <!-- Live P&L preview -->
+      <div id="pf-live-calc" style="grid-column:1/-1;display:none;background:var(--bg3);border-radius:8px;padding:12px;font-size:13px">
+        <div style="display:flex;gap:20px;flex-wrap:wrap">
+          <div><span style="color:var(--text3)">Koszt całkowity: </span><span id="pf-calc-cost" style="font-weight:600"></span></div>
+          <div><span style="color:var(--text3)">Wartość rynkowa: </span><span id="pf-calc-value" style="font-weight:600"></span></div>
+          <div><span style="color:var(--text3)">P&amp;L: </span><span id="pf-calc-pnl" style="font-weight:700"></span></div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:10px;padding:16px 20px;border-top:1px solid var(--border)">
+      <button class="btn-sm" onclick="closePortfolioModal()">Anuluj</button>
+      <button class="btn-sm btn-accent" onclick="savePortfolioPosition()">Zapisz</button>
+    </div>
+  </div>
+</div>
 
 <!-- CONFIRM MODAL -->
 <div class="modal-overlay" id="confirm-modal" role="dialog" aria-modal="true" aria-label="Potwierdzenie">
@@ -4564,6 +4747,7 @@ function showPage(page) {
   if (page === 'library') { if(typeof renderLibrary==='function') renderLibrary(); }
   if (page === 'ideas')   { if(typeof renderIdeasPage==='function') renderIdeasPage(); }
   if (page === 'macro')   { if(typeof renderMacroCalendar==='function') renderMacroCalendar(); }
+  if (page === 'portfolio') { if(typeof renderPortfolio==='function') renderPortfolio(); }
   // Aktualizuj tytuł w topstrip
   const PAGE_TITLES = {
     dashboard:'Dashboard',
@@ -4580,7 +4764,8 @@ function showPage(page) {
     drafts:    t('nav_drafts'),
     settings:  t('nav_settings').replace(/^\S+\s/,''),
     admin:     t('nav_admin'),
-    calendar:  t('nav_calendar').replace(/^\S+\s/,'')
+    calendar:  t('nav_calendar').replace(/^\S+\s/,''),
+    portfolio: '💼 Portfel'
   };
   const topstripTitle = document.getElementById('topstrip-title');
   if (topstripTitle) topstripTitle.textContent = PAGE_TITLES[page] || page;
@@ -18455,6 +18640,325 @@ function deleteMyIdea(id) {
       await renderIdeasPage();
     } catch(e) { toast('Błąd: ' + e.message, 'error'); }
   });
+}
+
+// ===== PORTFOLIO INWESTYCYJNY =====
+
+const _PF_COLORS = {
+  'ETF':       '#4da6ff',
+  'Akcja':     '#4caf50',
+  'Obligacja': '#ffc107',
+  'Krypto':    '#ce93d8',
+  'Złoto':     '#ffb300',
+  'REIT':      '#26c6da',
+  'Inne':      '#90a4ae'
+};
+
+function getPortfolio() {
+  const db = getDB();
+  return db['portfolio_' + state.currentUser] || [];
+}
+
+function savePortfolio(positions) {
+  const db = getDB();
+  db['portfolio_' + state.currentUser] = positions;
+  saveDB(db);
+}
+
+function openPortfolioModal(editId) {
+  const modal = document.getElementById('portfolio-modal');
+  if (!modal) return;
+  document.getElementById('pf-edit-id').value = editId || '';
+  document.getElementById('pf-modal-title').textContent = editId ? 'Edytuj pozycję' : 'Dodaj pozycję';
+  if (editId) {
+    const pos = getPortfolio().find(p => p.id === editId);
+    if (!pos) return;
+    document.getElementById('pf-symbol').value       = pos.symbol || '';
+    document.getElementById('pf-name').value         = pos.name || '';
+    document.getElementById('pf-type').value         = pos.type || 'ETF';
+    document.getElementById('pf-account-type').value = pos.account_type || 'zwykłe';
+    document.getElementById('pf-broker').value       = pos.broker || '';
+    document.getElementById('pf-currency').value     = pos.currency || 'PLN';
+    document.getElementById('pf-qty').value          = pos.qty || '';
+    document.getElementById('pf-buy-price').value    = pos.avg_price || '';
+    document.getElementById('pf-buy-date').value     = pos.buy_date || '';
+    document.getElementById('pf-fee').value          = pos.fee || '';
+    document.getElementById('pf-current-price').value = pos.current_price || '';
+    document.getElementById('pf-note').value         = pos.note || '';
+  } else {
+    ['pf-symbol','pf-name','pf-broker','pf-qty','pf-buy-price','pf-buy-date','pf-fee','pf-current-price','pf-note'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.value = '';
+    });
+    document.getElementById('pf-type').value = 'ETF';
+    document.getElementById('pf-account-type').value = 'zwykłe';
+    document.getElementById('pf-currency').value = 'PLN';
+    document.getElementById('pf-buy-date').value = new Date().toISOString().slice(0,10);
+  }
+  pfUpdateLiveCalc();
+  modal.classList.add('open');
+}
+
+function closePortfolioModal() {
+  document.getElementById('portfolio-modal')?.classList.remove('open');
+}
+
+function pfUpdateLiveCalc() {
+  const qty   = parseFloat(document.getElementById('pf-qty')?.value);
+  const buy   = parseFloat(document.getElementById('pf-buy-price')?.value);
+  const cur   = parseFloat(document.getElementById('pf-current-price')?.value);
+  const fee   = parseFloat(document.getElementById('pf-fee')?.value) || 0;
+  const curr  = document.getElementById('pf-currency')?.value || 'PLN';
+  const lc    = document.getElementById('pf-live-calc');
+  if (!lc) return;
+  if (isNaN(qty) || isNaN(buy) || isNaN(cur)) { lc.style.display = 'none'; return; }
+  const cost  = qty * buy + fee;
+  const val   = qty * cur;
+  const pnl   = val - cost;
+  const pct   = cost > 0 ? (pnl / cost * 100) : 0;
+  const fmt   = (n) => n.toLocaleString('pl-PL', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' ' + curr;
+  document.getElementById('pf-calc-cost').textContent  = fmt(cost);
+  document.getElementById('pf-calc-value').textContent = fmt(val);
+  const pnlEl = document.getElementById('pf-calc-pnl');
+  pnlEl.textContent = (pnl >= 0 ? '+' : '') + fmt(pnl) + ' (' + (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%)';
+  pnlEl.style.color = pnl >= 0 ? 'var(--green)' : 'var(--red)';
+  lc.style.display = 'block';
+}
+
+function savePortfolioPosition() {
+  const symbol = document.getElementById('pf-symbol').value.trim().toUpperCase();
+  const name   = document.getElementById('pf-name').value.trim();
+  const qty    = parseFloat(document.getElementById('pf-qty').value);
+  const buy    = parseFloat(document.getElementById('pf-buy-price').value);
+  if (!symbol) return toast('Wpisz symbol instrumentu', 'error');
+  if (isNaN(qty) || qty <= 0) return toast('Wpisz ilość > 0', 'error');
+  if (isNaN(buy) || buy <= 0) return toast('Wpisz cenę zakupu', 'error');
+
+  const editId  = document.getElementById('pf-edit-id').value;
+  const positions = getPortfolio();
+  const pos = {
+    id:           editId || ('pf_' + Date.now()),
+    symbol,
+    name:         name || symbol,
+    type:         document.getElementById('pf-type').value,
+    account_type: document.getElementById('pf-account-type').value,
+    broker:       document.getElementById('pf-broker').value.trim(),
+    currency:     document.getElementById('pf-currency').value,
+    qty,
+    avg_price:    buy,
+    buy_date:     document.getElementById('pf-buy-date').value,
+    fee:          parseFloat(document.getElementById('pf-fee').value) || 0,
+    current_price: parseFloat(document.getElementById('pf-current-price').value) || buy,
+    note:         document.getElementById('pf-note').value.trim(),
+    updated_at:   new Date().toISOString()
+  };
+
+  if (editId) {
+    const idx = positions.findIndex(p => p.id === editId);
+    if (idx >= 0) positions[idx] = pos; else positions.push(pos);
+  } else {
+    positions.push(pos);
+  }
+  savePortfolio(positions);
+  closePortfolioModal();
+  renderPortfolio();
+  toast((editId ? 'Pozycja zaktualizowana' : 'Pozycja dodana') + ' ✓', 'success');
+}
+
+function deletePortfolioPosition(id) {
+  showConfirm('Usunąć tę pozycję z portfela?', () => {
+    const positions = getPortfolio().filter(p => p.id !== id);
+    savePortfolio(positions);
+    renderPortfolio();
+    toast('Pozycja usunięta', 'success');
+  });
+}
+
+function renderPortfolioSummary(positions) {
+  const el = document.getElementById('pf-summary-cards');
+  if (!el) return;
+  if (!positions.length) { el.innerHTML = ''; return; }
+
+  let totalCost = 0, totalVal = 0;
+  positions.forEach(p => {
+    totalCost += p.qty * p.avg_price + (p.fee || 0);
+    totalVal  += p.qty * p.current_price;
+  });
+  const pnl    = totalVal - totalCost;
+  const pnlPct = totalCost > 0 ? (pnl / totalCost * 100) : 0;
+  const fmtPLN = n => n.toLocaleString('pl-PL', {minimumFractionDigits:2, maximumFractionDigits:2});
+  const pnlColor = pnl >= 0 ? 'var(--green)' : 'var(--red)';
+
+  el.innerHTML = `
+    <div class="portfolio-stat-card">
+      <div class="portfolio-stat-label">Wartość portfela</div>
+      <div class="portfolio-stat-value">${fmtPLN(totalVal)}</div>
+      <div class="portfolio-stat-sub">${positions.length} pozycji</div>
+    </div>
+    <div class="portfolio-stat-card">
+      <div class="portfolio-stat-label">Koszt zakupu</div>
+      <div class="portfolio-stat-value">${fmtPLN(totalCost)}</div>
+      <div class="portfolio-stat-sub">łącznie z prowizjami</div>
+    </div>
+    <div class="portfolio-stat-card" style="border-color:${pnlColor}">
+      <div class="portfolio-stat-label">Zysk / Strata</div>
+      <div class="portfolio-stat-value" style="color:${pnlColor}">${pnl >= 0 ? '+' : ''}${fmtPLN(pnl)}</div>
+      <div class="portfolio-stat-sub" style="color:${pnlColor}">${pnlPct >= 0 ? '+' : ''}${pnlPct.toFixed(2)}%</div>
+    </div>
+    <div class="portfolio-stat-card">
+      <div class="portfolio-stat-label">Inwestycje</div>
+      <div class="portfolio-stat-value">${positions.filter(p=>p.account_type==='IKE'||p.account_type==='IKZE').length}</div>
+      <div class="portfolio-stat-sub">pozycji IKE/IKZE</div>
+    </div>`;
+}
+
+function renderPortfolioAllocation(positions) {
+  const canvas = document.getElementById('pf-alloc-chart');
+  const legend = document.getElementById('pf-alloc-legend');
+  const section = document.getElementById('pf-alloc-section');
+  if (!canvas || !legend || !section) return;
+  if (!positions.length) { section.style.display = 'none'; return; }
+  section.style.display = '';
+
+  // Group by type
+  const groups = {};
+  positions.forEach(p => {
+    const v = p.qty * p.current_price;
+    groups[p.type] = (groups[p.type] || 0) + v;
+  });
+  const total = Object.values(groups).reduce((a,b) => a+b, 0);
+  if (total <= 0) { section.style.display = 'none'; return; }
+
+  // Draw canvas pie
+  const ctx = canvas.getContext('2d');
+  const cx = 70, cy = 70, r = 60;
+  ctx.clearRect(0, 0, 140, 140);
+  let startAngle = -Math.PI / 2;
+  Object.entries(groups).forEach(([type, val]) => {
+    const slice = (val / total) * 2 * Math.PI;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, startAngle, startAngle + slice);
+    ctx.closePath();
+    ctx.fillStyle = _PF_COLORS[type] || '#90a4ae';
+    ctx.fill();
+    startAngle += slice;
+  });
+  // Center hole (donut)
+  ctx.beginPath();
+  ctx.arc(cx, cy, 38, 0, 2 * Math.PI);
+  const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+  ctx.fillStyle = isDark ? '#141414' : '#f4f4f4';
+  ctx.fill();
+
+  // Legend
+  legend.innerHTML = Object.entries(groups)
+    .sort((a,b) => b[1] - a[1])
+    .map(([type, val]) => {
+      const pct = (val / total * 100).toFixed(1);
+      return `<div class="alloc-legend-row">
+        <span class="alloc-dot" style="background:${_PF_COLORS[type]||'#90a4ae'}"></span>
+        <span style="color:var(--text2);min-width:80px">${type}</span>
+        <span style="font-weight:600;color:var(--text)">${pct}%</span>
+        <span style="color:var(--text3);font-size:11px">${val.toLocaleString('pl-PL',{maximumFractionDigits:0})} PLN</span>
+      </div>`;
+    }).join('');
+}
+
+function renderPortfolio() {
+  const positions = getPortfolio();
+  const tbody = document.getElementById('pf-tbody');
+  const emptyEl = document.getElementById('pf-empty');
+  const tableEl = document.getElementById('pf-table');
+  if (!tbody) return;
+
+  renderPortfolioSummary(positions);
+  renderPortfolioAllocation(positions);
+
+  if (!positions.length) {
+    if (tableEl) tableEl.style.display = 'none';
+    if (emptyEl) emptyEl.style.display = 'block';
+    return;
+  }
+  if (tableEl) tableEl.style.display = '';
+  if (emptyEl) emptyEl.style.display = 'none';
+
+  const fmtN = (n, dec=2) => isNaN(n) ? '—' : n.toLocaleString('pl-PL', {minimumFractionDigits:dec, maximumFractionDigits:dec});
+
+  tbody.innerHTML = positions.map(p => {
+    const cost  = p.qty * p.avg_price + (p.fee || 0);
+    const val   = p.qty * p.current_price;
+    const pnl   = val - cost;
+    const pnlPct = cost > 0 ? (pnl / cost * 100) : 0;
+    const pnlColor = pnl >= 0 ? 'var(--green)' : 'var(--red)';
+    const typeClass = 'pf-type-' + (p.type || 'Inne').replace(/[^a-zA-ZąćęłńóśźżĄĆĘŁŃÓŚŹŻ]/g,'');
+    const accClass  = 'pf-acc-' + (p.account_type || 'zwykłe');
+    const pnlSign = pnl >= 0 ? '+' : '';
+    return `<tr>
+      <td>
+        <div style="font-weight:700;font-size:13px">${p.symbol}</div>
+        <div style="font-size:11px;color:var(--text3);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.name}">${p.name}</div>
+        ${p.broker ? `<div style="font-size:10px;color:var(--text3)">${p.broker}</div>` : ''}
+      </td>
+      <td><span class="pf-type-badge ${typeClass}">${p.type}</span></td>
+      <td class="hide-sm"><span class="pf-acc-badge ${accClass}">${p.account_type}</span></td>
+      <td class="num">${fmtN(p.qty, p.qty % 1 === 0 ? 0 : 4)}</td>
+      <td class="num">${fmtN(p.avg_price)} ${p.currency}</td>
+      <td class="num" style="cursor:pointer" onclick="pfEditCurrentPrice('${p.id}')" title="Kliknij aby zaktualizować cenę">
+        <span style="border-bottom:1px dashed var(--border)">${fmtN(p.current_price)} ${p.currency}</span>
+        <span style="font-size:10px;color:var(--text3);display:block">✏️ aktualizuj</span>
+      </td>
+      <td class="num hide-sm">${fmtN(cost)} ${p.currency}</td>
+      <td class="num" style="font-weight:600">${fmtN(val)} ${p.currency}</td>
+      <td class="num" style="color:${pnlColor};font-weight:600">${pnlSign}${fmtN(pnl)} ${p.currency}</td>
+      <td class="num" style="color:${pnlColor};font-weight:700">${pnlSign}${pnlPct.toFixed(2)}%</td>
+      <td>
+        <div style="display:flex;gap:6px;justify-content:flex-end">
+          <button class="btn-sm" onclick="openPortfolioModal('${p.id}')" style="padding:3px 8px;font-size:11px">✏️</button>
+          <button class="btn-sm" onclick="deletePortfolioPosition('${p.id}')" style="padding:3px 8px;font-size:11px;color:var(--red);border-color:var(--red)">🗑</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function pfEditCurrentPrice(id) {
+  const pos = getPortfolio().find(p => p.id === id);
+  if (!pos) return;
+  const newPrice = prompt(`Aktualizuj cenę rynkową dla ${pos.symbol}\nAktualna: ${pos.current_price} ${pos.currency}\nNowa cena:`, pos.current_price);
+  if (newPrice === null) return;
+  const parsed = parseFloat(newPrice);
+  if (isNaN(parsed) || parsed <= 0) return toast('Nieprawidłowa cena', 'error');
+  const positions = getPortfolio();
+  const idx = positions.findIndex(p => p.id === id);
+  if (idx < 0) return;
+  positions[idx].current_price = parsed;
+  positions[idx].updated_at = new Date().toISOString();
+  savePortfolio(positions);
+  renderPortfolio();
+  toast(`${pos.symbol}: cena zaktualizowana → ${parsed} ${pos.currency}`, 'success');
+}
+
+function exportPortfolioCSV() {
+  const positions = getPortfolio();
+  if (!positions.length) return toast('Brak pozycji do eksportu', 'error');
+  const headers = ['Symbol','Nazwa','Typ','Konto','Broker','Waluta','Ilosc','Sr cena zakupu','Biezaca cena','Koszt','Wartosc','PnL','PnL %','Data zakupu','Notatka'];
+  const rows = positions.map(p => {
+    const cost = p.qty * p.avg_price + (p.fee || 0);
+    const val  = p.qty * p.current_price;
+    const pnl  = val - cost;
+    const pct  = cost > 0 ? (pnl / cost * 100).toFixed(2) : '0.00';
+    return [p.symbol, p.name, p.type, p.account_type, p.broker, p.currency,
+      p.qty, p.avg_price.toFixed(4), p.current_price.toFixed(4),
+      cost.toFixed(2), val.toFixed(2), pnl.toFixed(2), pct + '%',
+      p.buy_date || '', p.note || ''].map(v => '"' + String(v).replace(/"/g,'""') + '"').join(',');
+  });
+  const csv = '﻿' + headers.join(',') + '\n' + rows.join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'portfel_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click(); URL.revokeObjectURL(url);
+  toast('✓ CSV portfela pobrany', 'success');
 }
 
 // Rejestracja Service Worker (PWA)
