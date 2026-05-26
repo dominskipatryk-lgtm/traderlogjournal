@@ -1,4 +1,3 @@
-<!-- v2026.05.26 -->
 ﻿<!DOCTYPE html>
 <html lang="pl">
 <head>
@@ -1023,6 +1022,42 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
   .modal-body { padding: 14px 16px; }
   .btn-sm { padding: 5px 10px; font-size: 12px; }
 }
+
+/* ===== IMPORT CSV ===== */
+.import-dz-hover { border-color:var(--accent) !important; background:var(--accent-dim) !important; }
+
+/* ===== PORTFOLIO ===== */
+.portfolio-stat-card { background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:16px 18px; }
+.portfolio-stat-label { font-size:11px; color:var(--text3); text-transform:uppercase; letter-spacing:.5px; margin-bottom:4px; }
+.portfolio-stat-value { font-size:22px; font-weight:700; color:var(--text); line-height:1.2; }
+.portfolio-stat-sub { font-size:11px; color:var(--text3); margin-top:2px; }
+.portfolio-tbl { width:100%; border-collapse:collapse; }
+.portfolio-tbl th { font-size:11px; color:var(--text3); text-transform:uppercase; letter-spacing:.4px; font-weight:600; padding:8px 10px; border-bottom:2px solid var(--border); white-space:nowrap; text-align:left; }
+.portfolio-tbl td { font-size:13px; padding:10px; border-bottom:1px solid var(--border); vertical-align:middle; }
+.portfolio-tbl tr:hover td { background:var(--bg3); }
+.portfolio-tbl td.num { text-align:right; font-variant-numeric:tabular-nums; }
+.portfolio-tbl th.num { text-align:right; }
+.pf-type-badge { display:inline-block; padding:2px 7px; border-radius:10px; font-size:10px; font-weight:700; letter-spacing:.3px; }
+.pf-type-ETF     { background:#1a3a5c; color:#4da6ff; }
+.pf-type-Akcja   { background:#1a3d1a; color:#4caf50; }
+.pf-type-Obligacja { background:#2d2a1a; color:#ffc107; }
+.pf-type-Krypto  { background:#2d1a2d; color:#ce93d8; }
+.pf-type-Złoto   { background:#2d2510; color:#ffb300; }
+.pf-type-REIT    { background:#1a2d2d; color:#26c6da; }
+.pf-type-Inne    { background:var(--bg3); color:var(--text2); }
+.pf-acc-badge { display:inline-block; padding:2px 6px; border-radius:6px; font-size:10px; font-weight:600; }
+.pf-acc-IKE  { background:#0d2a0d; color:#66bb6a; border:1px solid #2e7d32; }
+.pf-acc-IKZE { background:#0d1f2a; color:#42a5f5; border:1px solid #1565c0; }
+.pf-acc-zwykłe { background:var(--bg3); color:var(--text3); border:1px solid var(--border); }
+.alloc-chart { width:140px; height:140px; border-radius:50%; flex-shrink:0; }
+.alloc-legend-row { display:flex; align-items:center; gap:8px; font-size:12px; padding:4px 0; }
+.alloc-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+.pf-dca-row { background:var(--bg3); font-size:12px; color:var(--text2); }
+.pf-dca-row td { padding:6px 10px 6px 28px; border-bottom:1px solid var(--border); }
+@media (max-width:700px) {
+  .portfolio-tbl td.hide-sm, .portfolio-tbl th.hide-sm { display:none; }
+  .portfolio-stat-value { font-size:18px; }
+}
 </style>
 </head>
 <body>
@@ -1212,6 +1247,9 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
       </button>
       <button class="nav-btn" onclick="showPage('emotions')" id="nav-emotions" data-i18n="nav_emotions">
         <span class="nav-icon">🧠</span><span class="nav-label">Emocje & Psychologia</span>
+      </button>
+      <button class="nav-btn" onclick="showPage('portfolio')" id="nav-portfolio">
+        <span class="nav-icon">💼</span><span class="nav-label">Portfel</span>
       </button>
 
       <div class="sidebar-section-label" data-i18n="sec_resources">Zasoby</div>
@@ -1520,6 +1558,14 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
           style="padding:10px 20px;background:none;border:none;color:var(--text3);font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px">
           📏 Reguły
         </button>
+        <button class="tools-tab" onclick="switchToolsTab('tax')" id="ttab-tax"
+          style="padding:10px 20px;background:none;border:none;color:var(--text3);font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px">
+          🧾 Rozliczenia PIT
+        </button>
+        <button class="tools-tab" onclick="switchToolsTab('import')" id="ttab-import"
+          style="padding:10px 20px;background:none;border:none;color:var(--text3);font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px">
+          📂 Import CSV
+        </button>
       </div>
 
       <!-- TAB: Kalkulator pozycji -->
@@ -1732,6 +1778,129 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- TAB: Rozliczenia PIT -->
+      <div id="tools-tab-tax" style="display:none">
+        <div class="page-title" style="margin-bottom:4px">🧾 Rozliczenia podatkowe</div>
+        <div class="page-subtitle" style="margin-bottom:20px">Raport do PIT-38 — zyski kapitałowe z transakcji tradingowych</div>
+
+        <!-- Filtry -->
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px">
+          <div>
+            <label class="form-label" style="font-size:11px">Rok podatkowy</label>
+            <select id="tax-year" onchange="renderTaxReport()" class="filter-select" style="font-size:13px">
+            </select>
+          </div>
+          <div>
+            <label class="form-label" style="font-size:11px">Konto</label>
+            <select id="tax-account" onchange="renderTaxReport()" class="filter-select" style="font-size:13px">
+              <option value="all">Wszystkie konta</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label" style="font-size:11px">Typ instrumentu</label>
+            <select id="tax-instr" onchange="renderTaxReport()" class="filter-select" style="font-size:13px">
+              <option value="all">Wszystkie</option>
+              <option value="forex">Forex / CFD / Akcje</option>
+              <option value="crypto">Kryptowaluty</option>
+            </select>
+          </div>
+          <div style="margin-top:16px;display:flex;gap:8px">
+            <button class="btn-sm btn-accent" onclick="exportTaxCSV()" style="font-size:12px">📥 Eksport CSV (e-Deklaracje)</button>
+            <button class="btn-sm" onclick="printTaxPDF()" style="font-size:12px">🖨️ Drukuj / PDF</button>
+          </div>
+        </div>
+
+        <!-- Raport -->
+        <div id="tax-report-container"></div>
+      </div>
+
+      <!-- TAB: Import CSV -->
+      <div id="tools-tab-import" style="display:none">
+        <div class="page-title" style="margin-bottom:4px">📂 Import historii transakcji</div>
+        <div class="page-subtitle" style="margin-bottom:20px">Wgraj plik CSV lub HTML z platformy tradingowej</div>
+
+        <!-- Obsługiwane formaty -->
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">
+          <span style="background:#1a3a5c;color:#4da6ff;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600">MT4 CSV / HTML</span>
+          <span style="background:#1a3a5c;color:#4da6ff;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600">MT5 CSV</span>
+          <span style="background:#1a2d2d;color:#26c6da;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600">Bybit Futures</span>
+          <span style="background:#1a2d2d;color:#26c6da;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600">Bybit Spot</span>
+          <span style="background:#2d1a2d;color:#ce93d8;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600">MEXC Futures</span>
+          <span style="background:#2d1a2d;color:#ce93d8;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600">MEXC Spot</span>
+          <span style="background:var(--bg3);color:var(--text3);padding:4px 10px;border-radius:20px;font-size:12px;border:1px dashed var(--border)">Axi → przez MT4</span>
+        </div>
+
+        <!-- Konto docelowe -->
+        <div style="max-width:380px;margin-bottom:20px">
+          <label class="form-label-modal">Importuj do konta</label>
+          <select id="import-account-sel" class="form-select-modal"></select>
+        </div>
+
+        <!-- Dropzone -->
+        <div id="import-dropzone"
+          onclick="document.getElementById('import-file-input').click()"
+          ondragover="event.preventDefault();this.classList.add('import-dz-hover')"
+          ondragleave="this.classList.remove('import-dz-hover')"
+          ondrop="event.preventDefault();this.classList.remove('import-dz-hover');const f=event.dataTransfer.files[0];if(f)handleImportFile(f)"
+          style="border:2px dashed var(--border);border-radius:12px;padding:44px 20px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:20px;user-select:none;background:var(--bg2)">
+          <div style="font-size:36px;margin-bottom:10px">📁</div>
+          <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px">Kliknij lub przeciągnij plik</div>
+          <div style="font-size:12px;color:var(--text3)">Obsługiwane: <strong style="color:var(--text2)">.csv</strong> · <strong style="color:var(--text2)">.htm</strong> · <strong style="color:var(--text2)">.html</strong></div>
+        </div>
+        <input type="file" id="import-file-input" accept=".csv,.htm,.html" style="display:none"
+          onchange="if(this.files[0])handleImportFile(this.files[0]);this.value=''">
+
+        <!-- Status / błąd -->
+        <div id="import-status" style="display:none;margin-bottom:16px"></div>
+
+        <!-- Podgląd -->
+        <div id="import-preview-wrap" style="display:none">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+            <div id="import-summary-text" style="font-size:13px"></div>
+            <div style="display:flex;gap:8px">
+              <button class="btn-sm" onclick="resetImportTab()">↩ Anuluj</button>
+              <button class="btn-sm btn-accent" id="import-confirm-btn" onclick="confirmImportTrades()">✓ Importuj</button>
+            </div>
+          </div>
+          <div class="table-wrap" style="max-height:420px;overflow-y:auto">
+            <table style="width:100%;border-collapse:collapse">
+              <thead>
+                <tr style="position:sticky;top:0;background:var(--bg2);z-index:1">
+                  <th style="text-align:left;padding:8px 10px;font-size:11px;color:var(--text3);font-weight:600;border-bottom:2px solid var(--border)">Data</th>
+                  <th style="text-align:left;padding:8px 10px;font-size:11px;color:var(--text3);font-weight:600;border-bottom:2px solid var(--border)">Symbol</th>
+                  <th style="text-align:left;padding:8px 10px;font-size:11px;color:var(--text3);font-weight:600;border-bottom:2px solid var(--border)">Kier.</th>
+                  <th style="text-align:right;padding:8px 10px;font-size:11px;color:var(--text3);font-weight:600;border-bottom:2px solid var(--border)">Wolumen</th>
+                  <th style="text-align:right;padding:8px 10px;font-size:11px;color:var(--text3);font-weight:600;border-bottom:2px solid var(--border)">Entry</th>
+                  <th style="text-align:right;padding:8px 10px;font-size:11px;color:var(--text3);font-weight:600;border-bottom:2px solid var(--border)">Exit</th>
+                  <th style="text-align:right;padding:8px 10px;font-size:11px;color:var(--text3);font-weight:600;border-bottom:2px solid var(--border)">P&amp;L</th>
+                  <th style="text-align:center;padding:8px 10px;font-size:11px;color:var(--text3);font-weight:600;border-bottom:2px solid var(--border)">Źródło</th>
+                </tr>
+              </thead>
+              <tbody id="import-preview-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Instrukcja eksportu -->
+        <details style="margin-top:28px">
+          <summary style="cursor:pointer;font-size:13px;font-weight:600;color:var(--text2);padding:8px 0">ℹ️ Jak wyeksportować plik z platformy?</summary>
+          <div style="margin-top:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px">
+            <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px">
+              <div style="font-weight:700;margin-bottom:6px">MT4 (Axi i inni)</div>
+              <div style="font-size:12px;color:var(--text2);line-height:1.7">Terminal → Historia rachunku → PPM → Zapisz jako raport (wybierz <strong>HTML</strong> lub <strong>CSV</strong>)</div>
+            </div>
+            <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px">
+              <div style="font-weight:700;margin-bottom:6px">Bybit</div>
+              <div style="font-size:12px;color:var(--text2);line-height:1.7">Deriv. → <strong>Closed P&amp;L</strong> → Eksportuj CSV<br>lub Spot → Historia handlu → Eksportuj</div>
+            </div>
+            <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px">
+              <div style="font-weight:700;margin-bottom:6px">MEXC</div>
+              <div style="font-size:12px;color:var(--text2);line-height:1.7">Futures → Zamknięte pozycje → Eksportuj<br>lub Spot → Historia zleceń → Eksportuj CSV</div>
+            </div>
+          </div>
+        </details>
       </div>
 
       <!-- TAB: Reguły osobiste tradera -->
@@ -3103,9 +3272,176 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
       </div>
     </div>
 
+    <!-- PAGE: Portfel Inwestycyjny -->
+    <div id="page-portfolio" class="page">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:20px">
+        <div>
+          <div class="page-title" style="margin-bottom:2px">💼 Portfel Inwestycyjny</div>
+          <div class="page-subtitle">Długoterminowe inwestycje — ETF, akcje, obligacje, krypto</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn-sm" onclick="exportPortfolioCSV()" style="font-size:12px">📥 Eksport CSV</button>
+          <button class="btn-sm btn-accent" onclick="openPortfolioModal()" style="font-size:13px">+ Dodaj pozycję</button>
+        </div>
+      </div>
+
+      <!-- Karty podsumowania -->
+      <div id="pf-summary-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:24px"></div>
+
+      <!-- Alokacja + legenda -->
+      <div style="display:grid;grid-template-columns:auto 1fr;gap:24px;align-items:center;margin-bottom:24px;padding:18px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;flex-wrap:wrap" id="pf-alloc-section">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+          <div style="font-size:12px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.5px">Alokacja</div>
+          <canvas id="pf-alloc-chart" class="alloc-chart" width="140" height="140"></canvas>
+        </div>
+        <div id="pf-alloc-legend" style="display:flex;flex-direction:column;gap:2px"></div>
+      </div>
+
+      <!-- Tabela pozycji -->
+      <div class="table-wrap">
+        <table class="portfolio-tbl" id="pf-table">
+          <thead>
+            <tr>
+              <th>Instrument</th>
+              <th>Typ</th>
+              <th class="hide-sm">Konto</th>
+              <th class="num">Ilość</th>
+              <th class="num">Śr. cena zakupu</th>
+              <th class="num">Bieżąca cena</th>
+              <th class="num hide-sm">Koszt</th>
+              <th class="num">Wartość</th>
+              <th class="num">P&amp;L</th>
+              <th class="num">P&amp;L %</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="pf-tbody"></tbody>
+        </table>
+        <div id="pf-empty" style="display:none;text-align:center;padding:60px 20px;color:var(--text3)">
+          <div style="font-size:40px;margin-bottom:12px">💼</div>
+          <div style="font-size:15px;font-weight:600;margin-bottom:6px">Brak pozycji w portfelu</div>
+          <div style="font-size:13px;margin-bottom:20px">Dodaj pierwszą inwestycję — ETF, akcję, obligację lub krypto</div>
+          <button class="btn-sm btn-accent" onclick="openPortfolioModal()">+ Dodaj pozycję</button>
+        </div>
+      </div>
+    </div><!-- /page-portfolio -->
+
   </main>
   </div><!-- /app-main -->
 </div><!-- /app -->
+
+<!-- PORTFOLIO MODAL -->
+<div class="modal-overlay" id="portfolio-modal" role="dialog" aria-modal="true" aria-label="Pozycja portfela">
+  <div class="modal" style="max-width:580px">
+    <div class="modal-header">
+      <div class="modal-title" id="pf-modal-title">Dodaj pozycję</div>
+      <button class="modal-close" onclick="closePortfolioModal()" aria-label="Zamknij">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="pf-edit-id">
+      <div class="form-grid">
+        <!-- Symbol + Nazwa — full width, 1:2 split -->
+        <div class="form-group-modal full" style="display:grid;grid-template-columns:1fr 2fr;gap:12px">
+          <div>
+            <label class="form-label-modal" style="color:var(--accent)">Symbol / Ticker *</label>
+            <input class="form-input-modal" id="pf-symbol" placeholder="np. CSPX, BTC, KGHM"
+              style="border-color:var(--accent);text-transform:uppercase;font-weight:700;letter-spacing:.5px"
+              oninput="this.value=this.value.toUpperCase()">
+          </div>
+          <div>
+            <label class="form-label-modal">Nazwa instrumentu</label>
+            <input class="form-input-modal" id="pf-name" placeholder="np. iShares Core S&P 500 UCITS ETF">
+          </div>
+        </div>
+
+        <!-- Typ + Konto -->
+        <div class="form-group-modal">
+          <label class="form-label-modal">Typ instrumentu</label>
+          <select class="form-select-modal" id="pf-type">
+            <option value="ETF">ETF</option>
+            <option value="Akcja">Akcja</option>
+            <option value="Obligacja">Obligacja</option>
+            <option value="Krypto">Krypto</option>
+            <option value="Złoto">Złoto / Surowiec</option>
+            <option value="REIT">REIT / Nieruchomość</option>
+            <option value="Inne">Inne</option>
+          </select>
+        </div>
+        <div class="form-group-modal">
+          <label class="form-label-modal">Typ konta</label>
+          <select class="form-select-modal" id="pf-account-type">
+            <option value="zwykłe">Zwykłe (opodatkowane)</option>
+            <option value="IKE">IKE (zwolnienie z podatku)</option>
+            <option value="IKZE">IKZE (odliczenie od dochodu)</option>
+          </select>
+        </div>
+
+        <!-- Broker + Waluta -->
+        <div class="form-group-modal">
+          <label class="form-label-modal">Broker / Platforma</label>
+          <input class="form-input-modal" id="pf-broker" placeholder="np. XTB, DEGIRO, Binance">
+        </div>
+        <div class="form-group-modal">
+          <label class="form-label-modal">Waluta</label>
+          <select class="form-select-modal" id="pf-currency">
+            <option value="PLN">PLN</option>
+            <option value="USD">USD</option>
+            <option value="EUR">EUR</option>
+            <option value="GBP">GBP</option>
+            <option value="CHF">CHF</option>
+          </select>
+        </div>
+
+        <!-- Ilość + Data -->
+        <div class="form-group-modal">
+          <label class="form-label-modal">Ilość (sztuk / jednostek) *</label>
+          <input class="form-input-modal" id="pf-qty" type="number" step="any" placeholder="0">
+        </div>
+        <div class="form-group-modal">
+          <label class="form-label-modal">Data zakupu</label>
+          <input class="form-input-modal" id="pf-buy-date" type="date">
+        </div>
+
+        <!-- Cena zakupu + Prowizja -->
+        <div class="form-group-modal">
+          <label class="form-label-modal" style="color:var(--accent)">Cena zakupu (avg) *</label>
+          <input class="form-input-modal" id="pf-buy-price" type="number" step="any" placeholder="0.00"
+            style="border-color:var(--accent)" oninput="pfUpdateLiveCalc()">
+        </div>
+        <div class="form-group-modal">
+          <label class="form-label-modal">Prowizja</label>
+          <input class="form-input-modal" id="pf-fee" type="number" step="any" placeholder="0.00" oninput="pfUpdateLiveCalc()">
+        </div>
+
+        <!-- Bieżąca cena — full width z akcentem green -->
+        <div class="form-group-modal full">
+          <label class="form-label-modal" style="color:var(--green)">Bieżąca cena rynkowa</label>
+          <input class="form-input-modal" id="pf-current-price" type="number" step="any" placeholder="0.00"
+            style="border-color:var(--green)" oninput="pfUpdateLiveCalc()">
+        </div>
+
+        <!-- Live P&L calc -->
+        <div id="pf-live-calc" class="full" style="display:none;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px">
+          <div style="display:flex;gap:24px;flex-wrap:wrap;font-size:13px">
+            <div><span class="form-label-modal" style="display:inline">Koszt: </span><span id="pf-calc-cost" style="font-weight:700;color:var(--text)"></span></div>
+            <div><span class="form-label-modal" style="display:inline">Wartość: </span><span id="pf-calc-value" style="font-weight:700;color:var(--text)"></span></div>
+            <div><span class="form-label-modal" style="display:inline">P&amp;L: </span><span id="pf-calc-pnl" style="font-weight:700"></span></div>
+          </div>
+        </div>
+
+        <!-- Notatka -->
+        <div class="form-group-modal full">
+          <label class="form-label-modal">Notatka</label>
+          <textarea class="form-input-modal" id="pf-note" rows="2" placeholder="Strategia, cel, horyzont..."></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-sm" onclick="closePortfolioModal()">Anuluj</button>
+      <button class="btn-sm btn-accent" onclick="savePortfolioPosition()">Zapisz pozycję</button>
+    </div>
+  </div>
+</div>
 
 <!-- CONFIRM MODAL -->
 <div class="modal-overlay" id="confirm-modal" role="dialog" aria-modal="true" aria-label="Potwierdzenie">
@@ -4294,8 +4630,8 @@ function seedDemoData() {
 
   const setups = ['SMC — Order Block','SMC — BOS Retest','SR — Key Level','SR — Volume Zone','Trend — EMA Pullback','ICT — Fair Value Gap'];
   const tfs = ['M15','H1','H1','H4','H4','D1'];
-  const emotPre  = ['focused','calm','confident','anxious','disciplined','patient','fomo'];
-  const emotPost = ['satisfied','disciplined','regret','neutral','frustrated','proud','calm'];
+  const emotPre  = ['Spokojny','Pewny','Podekscytowany','Zaniepokojony','FOMO','Neutralny','Revenge'];
+  const emotPost = ['Zadowolony','Spokojny','Żałuję','Neutralny','Sfrustrowany','Dumny','Chciwy'];
   const preTxts  = [
     'Rynek w trendzie — szukam pullbacku na OB.',
     'Poziomy zaznaczone, plan gotowy. Czekam na setup.',
@@ -4525,6 +4861,7 @@ function showPage(page) {
   if (page === 'library') { if(typeof renderLibrary==='function') renderLibrary(); }
   if (page === 'ideas')   { if(typeof renderIdeasPage==='function') renderIdeasPage(); }
   if (page === 'macro')   { if(typeof renderMacroCalendar==='function') renderMacroCalendar(); }
+  if (page === 'portfolio') { if(typeof renderPortfolio==='function') renderPortfolio(); }
   // Aktualizuj tytuł w topstrip
   const PAGE_TITLES = {
     dashboard:'Dashboard',
@@ -4541,7 +4878,8 @@ function showPage(page) {
     drafts:    t('nav_drafts'),
     settings:  t('nav_settings').replace(/^\S+\s/,''),
     admin:     t('nav_admin'),
-    calendar:  t('nav_calendar').replace(/^\S+\s/,'')
+    calendar:  t('nav_calendar').replace(/^\S+\s/,''),
+    portfolio: '💼 Portfel'
   };
   const topstripTitle = document.getElementById('topstrip-title');
   if (topstripTitle) topstripTitle.textContent = PAGE_TITLES[page] || page;
@@ -4974,7 +5312,7 @@ function renderStatsStrategies() {
     </div>
   </div>
   <div class="summary-card"><div class="summary-card-title">📋 R:R każdej transakcji (${closed.length})</div>
-    <div style="overflow-x:auto;max-height:420px;overflow-y:auto"><table style="width:100%;font-size:12px;border-collapse:collapse">
+    <div style="overflow-x:auto;max-height:409px;overflow-y:auto"><table style="width:100%;font-size:12px;border-collapse:collapse">
       <thead style="position:sticky;top:0;z-index:1;background:var(--bg3)"><tr style="color:var(--text3);font-size:10px;border-bottom:1px solid var(--border)">
         <th style="text-align:left;padding:5px 8px;white-space:nowrap">${t('th_date')}</th><th style="text-align:left;padding:5px 8px;white-space:nowrap">${t('th_instrument')}</th>
         <th style="text-align:center;padding:5px 8px;white-space:nowrap">${t('th_dir')}</th><th style="text-align:center;padding:5px 8px;white-space:nowrap">TF</th>
@@ -5072,7 +5410,7 @@ function renderTradingProfile() {
   const patterns = [];
   if (worstEmo && worstEmo[1].count >= 3) {
     const wr = Math.round(worstEmo[1].wins/worstEmo[1].count*100);
-    patterns.push({ icon:'⚠️', text: `Wchodzisz z emocją <strong>${worstEmo[0]}</strong> → WR zaledwie ${wr}%` });
+    patterns.push({ icon:'⚠️', text: `Wchodzisz z emocją <strong>${tEmo(worstEmo[0])}</strong> → WR zaledwie ${wr}%` });
   }
   if (revengePct > 10) patterns.push({ icon:'🔴', text: `Revenge trading: po stracie zwiększasz wolumen w ${revengePct}% przypadków` });
   if (fomoPct > 25)    patterns.push({ icon:'😰', text: `FOMO: ${fomoPct}% transakcji bez analizy przed wejściem` });
@@ -5084,7 +5422,7 @@ function renderTradingProfile() {
   // Strengths
   const strengths = [];
   if (totalWR >= 55) strengths.push('Win rate powyżej 55% — dobra selekcja wejść');
-  if (bestEmo)       strengths.push(`Emocja <strong>${bestEmo[0]}</strong> → WR ${Math.round(bestEmo[1].wins/bestEmo[1].count*100)}% (Twój najlepszy stan)`);
+  if (bestEmo)       strengths.push(`Emocja <strong>${tEmo(bestEmo[0])}</strong> → WR ${Math.round(bestEmo[1].wins/bestEmo[1].count*100)}% (Twój najlepszy stan)`);
   if (bestDow)       strengths.push(`Najlepszy dzień: <strong>${dowNames[bestDow[0]]}</strong> (P&L: +${bestDow[1].pnl.toFixed(2)})`);
   if (disciplineScore !== null && disciplineScore >= 80) strengths.push(`Dyscyplina ${disciplineScore}% — reguły są przestrzegane`);
 
@@ -5271,7 +5609,7 @@ function renderEmotions() {
       const color = avg >= 0 ? 'var(--green)' : 'var(--red)';
       return `<div style="margin-bottom:10px">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
-          <span style="font-size:16px;width:24px">${e}</span>
+          <span style="font-size:12px;min-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${tEmo(e)}">${tEmo(e)}</span>
           <div style="flex:1;height:14px;background:var(--bg3);border-radius:4px;overflow:hidden">
             <div style="width:${barW}%;height:100%;background:${color};border-radius:4px;transition:width .3s"></div>
           </div>
@@ -5747,8 +6085,8 @@ function renderSummary() {
   <!-- ROW 5: R:R rozkład | Tabela transakcji -->
   <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px">
     <div class="summary-card"><div class="summary-card-title">📋 R:R każdej transakcji</div>
-      <div style="overflow-x:auto"><table style="width:100%;font-size:12px;border-collapse:collapse">
-        <thead><tr style="color:var(--text3);font-size:10px;border-bottom:1px solid var(--border)">
+      <div style="overflow-x:auto;max-height:409px;overflow-y:auto"><table style="width:100%;font-size:12px;border-collapse:collapse">
+        <thead style="position:sticky;top:0;z-index:1;background:var(--bg3)"><tr style="color:var(--text3);font-size:10px;border-bottom:1px solid var(--border)">
           <th style="text-align:left;padding:5px 8px">Data</th><th style="text-align:left;padding:5px 8px">Symbol</th>
           <th style="text-align:center;padding:5px 8px">Dir</th><th style="text-align:center;padding:5px 8px">TF</th>
           <th style="text-align:center;padding:5px 8px">Setup</th><th style="text-align:center;padding:5px 8px">Ryzyko</th>
@@ -5802,7 +6140,7 @@ function renderSummary() {
     const rows = Object.entries(byEmo).sort((a,b)=>b[1].pnl-a[1].pnl).map(([e,d]) => {
       const wr = Math.round(d.wins/d.count*100);
       return `<tr>
-        <td style="padding:5px 0;font-size:13px">${e}</td>
+        <td style="padding:5px 0;font-size:13px;white-space:nowrap">${tEmo(e)}</td>
         <td style="text-align:center;color:var(--text3)">${d.count}</td>
         <td style="text-align:center;color:${wr>=50?'var(--accent)':'var(--red)'}">${wr}%</td>
         <td style="text-align:right" class="${d.pnl>=0?'pnl-pos':'pnl-neg'}">${d.pnl>=0?'+':''}${fmt(d.pnl)} ${curr}</td>
@@ -6523,8 +6861,8 @@ function renderDetailModal() {
     ${(!isCurrentAccountBot() && (_detailEditing || t.emotionPre || t.emotionPost)) ? `<div class="dv-card">
       <div class="dv-card-head">🧠 Stan emocjonalny</div>
       <div class="dv-notes" style="display:${_detailEditing?'none':'block'}">
-        ${t.emotionPre ? `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:11px;color:var(--text3);min-width:80px">Przed wejściem</span><span class="tag" style="font-size:12px">${t.emotionPre}</span></div>` : ''}
-        ${t.emotionPost ? `<div style="display:flex;align-items:center;gap:8px"><span style="font-size:11px;color:var(--text3);min-width:80px">Po zamknięciu</span><span class="tag" style="font-size:12px">${t.emotionPost}</span></div>` : ''}
+        ${t.emotionPre ? `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:11px;color:var(--text3);min-width:80px">Przed wejściem</span><span class="tag" style="font-size:12px">${tEmo(t.emotionPre)}</span></div>` : ''}
+        ${t.emotionPost ? `<div style="display:flex;align-items:center;gap:8px"><span style="font-size:11px;color:var(--text3);min-width:80px">Po zamknięciu</span><span class="tag" style="font-size:12px">${tEmo(t.emotionPost)}</span></div>` : ''}
         ${!t.emotionPre && !t.emotionPost ? '<span style="color:var(--text3);font-style:italic;font-size:12px">Brak danych</span>' : ''}
       </div>
       <div class="dv-notes-edit">${_dvEmoPicker('pre', t.emotionPre||'')}${_dvEmoPicker('post', t.emotionPost||'')}</div>
@@ -15323,7 +15661,7 @@ function checkRulesBeforeSave() {
 }
 
 function switchToolsTab(tab) {
-  ['calculator','strategies','brokers','rules'].forEach(t => {
+  ['calculator','strategies','brokers','rules','tax','import'].forEach(t => {
     const el = document.getElementById('tools-tab-' + t);
     const btn = document.getElementById('ttab-' + t);
     if (el) el.style.display = t === tab ? 'block' : 'none';
@@ -15335,6 +15673,8 @@ function switchToolsTab(tab) {
   if (tab === 'strategies') renderToolsStrategies();
   if (tab === 'brokers') initBrokerCalc();
   if (tab === 'rules') renderRules();
+  if (tab === 'tax') initTaxReport();
+  if (tab === 'import') initImportTab();
   if (tab === 'calculator') {
     const acc = getAccounts().find(a => a.id === state.currentAccountId);
     if (acc) {
@@ -17763,6 +18103,296 @@ async function loadLibraryIndex() {
   } catch(e) {}
 }
 
+// ===== ROZLICZENIA PODATKOWE (PIT-38) =====
+
+const _CRYPTO_SYMBOLS = ['BTC','ETH','LTC','XRP','BNB','SOL','ADA','DOT','MATIC','DOGE','USDT','BTCUSD','ETHUSD'];
+
+function _isCrypto(symbol) {
+  const s = (symbol||'').toUpperCase();
+  return _CRYPTO_SYMBOLS.some(c => s.includes(c));
+}
+
+function initTaxReport() {
+  // Wypełnij selektor lat
+  const yearSel = document.getElementById('tax-year');
+  if (!yearSel) return;
+  const allTrades = _getAllClosedTrades();
+  const years = [...new Set(allTrades.map(t => {
+    const d = t.date || t.exitDate;
+    return d ? new Date(d).getFullYear() : null;
+  }).filter(Boolean))].sort((a,b) => b - a);
+  const currentYear = new Date().getFullYear();
+  if (!years.includes(currentYear)) years.unshift(currentYear);
+  yearSel.innerHTML = years.map(y => `<option value="${y}" ${y===currentYear?'selected':''}>${y}</option>`).join('');
+
+  // Wypełnij selektor kont
+  const accSel = document.getElementById('tax-account');
+  if (accSel) {
+    const accounts = getAccounts();
+    accSel.innerHTML = '<option value="all">Wszystkie konta</option>' +
+      accounts.map(a => `<option value="${a.id}">${a.name} (${a.broker})</option>`).join('');
+  }
+
+  renderTaxReport();
+}
+
+function _getAllClosedTrades() {
+  const accounts = getAccounts();
+  const all = [];
+  accounts.forEach(acc => {
+    getTrades(acc.id).filter(t => t.status === 'closed').forEach(t => {
+      all.push({ ...t, _accName: acc.name, _broker: acc.broker, _currency: acc.currency || 'USD' });
+    });
+  });
+  return all;
+}
+
+function renderTaxReport() {
+  const el = document.getElementById('tax-report-container');
+  if (!el) return;
+  const year    = parseInt(document.getElementById('tax-year')?.value) || new Date().getFullYear();
+  const accId   = document.getElementById('tax-account')?.value || 'all';
+  const instrF  = document.getElementById('tax-instr')?.value || 'all';
+
+  let trades = _getAllClosedTrades().filter(t => {
+    const d = t.date || t.exitDate;
+    if (!d) return false;
+    if (new Date(d).getFullYear() !== year) return false;
+    if (accId !== 'all' && t._accId !== accId) return false;
+    if (instrF === 'forex'  && _isCrypto(t.symbol)) return false;
+    if (instrF === 'crypto' && !_isCrypto(t.symbol)) return false;
+    return true;
+  });
+
+  if (!trades.length) {
+    el.innerHTML = `<div style="text-align:center;padding:60px 20px;color:var(--text3)">
+      <div style="font-size:40px;margin-bottom:12px">📂</div>
+      <div style="font-size:15px;font-weight:600">Brak zamkniętych transakcji w ${year} roku</div>
+    </div>`;
+    return;
+  }
+
+  // Podział na forex/CFD i krypto
+  const forexTrades  = trades.filter(t => !_isCrypto(t.symbol));
+  const cryptoTrades = trades.filter(t =>  _isCrypto(t.symbol));
+
+  // Grupowanie po brokerach
+  const byBroker = {};
+  trades.forEach(t => {
+    const k = t._broker || 'Nieznany broker';
+    if (!byBroker[k]) byBroker[k] = [];
+    byBroker[k].push(t);
+  });
+
+  const fmtPLN = v => (v >= 0 ? '+' : '') + v.toFixed(2) + ' zł';
+  const fmtUSD = v => (v >= 0 ? '+' : '') + v.toFixed(2) + ' USD';
+  const colorPnl = v => v >= 0 ? 'var(--green)' : 'var(--red)';
+
+  const tradeRow = t => {
+    const pnl = t.pnl || 0;
+    const przychod = pnl > 0 ? pnl : 0;
+    const koszt    = pnl < 0 ? Math.abs(pnl) : 0;
+    return `<tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:7px 10px;font-size:12px;color:var(--text2)">${t.date || '—'}</td>
+      <td style="padding:7px 10px;font-size:12px;font-weight:600">${t.symbol || '—'}</td>
+      <td style="padding:7px 10px;font-size:12px">${t.dir || '—'}</td>
+      <td style="padding:7px 10px;font-size:12px">${t._broker || '—'}</td>
+      <td style="padding:7px 10px;font-size:12px;text-align:right;color:var(--green)">${przychod > 0 ? '+' + przychod.toFixed(2) : '—'}</td>
+      <td style="padding:7px 10px;font-size:12px;text-align:right;color:var(--red)">${koszt > 0 ? '-' + koszt.toFixed(2) : '—'}</td>
+      <td style="padding:7px 10px;font-size:12px;text-align:right;font-weight:700;color:${colorPnl(pnl)}">${(pnl >= 0 ? '+' : '') + pnl.toFixed(2)}</td>
+    </tr>`;
+  };
+
+  const tableWrap = (rows, currency) => `
+    <div style="overflow-x:auto;border-radius:8px;border:1px solid var(--border)">
+      <table style="width:100%;border-collapse:collapse">
+        <thead>
+          <tr style="background:var(--bg3)">
+            <th style="padding:8px 10px;font-size:11px;color:var(--text3);font-weight:600;text-align:left">Data</th>
+            <th style="padding:8px 10px;font-size:11px;color:var(--text3);font-weight:600;text-align:left">Instrument</th>
+            <th style="padding:8px 10px;font-size:11px;color:var(--text3);font-weight:600;text-align:left">Kierunek</th>
+            <th style="padding:8px 10px;font-size:11px;color:var(--text3);font-weight:600;text-align:left">Broker</th>
+            <th style="padding:8px 10px;font-size:11px;color:var(--text3);font-weight:600;text-align:right">Przychód (${currency})</th>
+            <th style="padding:8px 10px;font-size:11px;color:var(--text3);font-weight:600;text-align:right">Koszt (${currency})</th>
+            <th style="padding:8px 10px;font-size:11px;color:var(--text3);font-weight:600;text-align:right">Zysk/Strata (${currency})</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+
+  const summaryBox = (label, przychod, koszt, dochod, podatek, color) => `
+    <div class="summary-card" style="border-left:3px solid ${color}">
+      <div style="font-size:12px;font-weight:700;color:${color};margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px">${label}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div><div style="font-size:10px;color:var(--text3)">Przychód</div><div style="font-size:15px;font-weight:700;color:var(--green)">${przychod.toFixed(2)}</div></div>
+        <div><div style="font-size:10px;color:var(--text3)">Koszty uzysk. przychodu</div><div style="font-size:15px;font-weight:700;color:var(--red)">${koszt.toFixed(2)}</div></div>
+        <div><div style="font-size:10px;color:var(--text3)">Dochód do opodatkowania</div><div style="font-size:15px;font-weight:700;color:${dochod>=0?'var(--green)':'var(--red)'}">${dochod.toFixed(2)}</div></div>
+        <div><div style="font-size:10px;color:var(--text3)">Podatek 19% (szacunkowy)</div><div style="font-size:15px;font-weight:700;color:var(--amber)">${podatek.toFixed(2)}</div></div>
+      </div>
+    </div>`;
+
+  // Obliczenia forex
+  const fPrzychod = forexTrades.reduce((s,t) => s + Math.max(t.pnl||0, 0), 0);
+  const fKoszt    = forexTrades.reduce((s,t) => s + Math.max(-(t.pnl||0), 0), 0);
+  const fDochod   = fPrzychod - fKoszt;
+  const fPodatek  = Math.max(fDochod, 0) * 0.19;
+
+  // Obliczenia krypto
+  const cPrzychod = cryptoTrades.reduce((s,t) => s + Math.max(t.pnl||0, 0), 0);
+  const cKoszt    = cryptoTrades.reduce((s,t) => s + Math.max(-(t.pnl||0), 0), 0);
+  const cDochod   = cPrzychod - cKoszt;
+  const cPodatek  = Math.max(cDochod, 0) * 0.19;
+
+  // Per-broker summary
+  const brokerRows = Object.entries(byBroker).map(([broker, bTrades]) => {
+    const bp = bTrades.reduce((s,t) => s + Math.max(t.pnl||0, 0), 0);
+    const bk = bTrades.reduce((s,t) => s + Math.max(-(t.pnl||0), 0), 0);
+    const bd = bp - bk;
+    return `<tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:7px 10px;font-size:13px;font-weight:600">${broker}</td>
+      <td style="padding:7px 10px;font-size:13px;text-align:center">${bTrades.length}</td>
+      <td style="padding:7px 10px;font-size:13px;text-align:right;color:var(--green)">+${bp.toFixed(2)}</td>
+      <td style="padding:7px 10px;font-size:13px;text-align:right;color:var(--red)">-${bk.toFixed(2)}</td>
+      <td style="padding:7px 10px;font-size:13px;text-align:right;font-weight:700;color:${bd>=0?'var(--green)':'var(--red)'}">${(bd>=0?'+':'')+bd.toFixed(2)}</td>
+    </tr>`;
+  }).join('');
+
+  let html = `<div id="tax-printable">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div>
+        <div style="font-size:18px;font-weight:700">Raport PIT-38 — Rok ${year}</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:4px">Wygenerowano: ${new Date().toLocaleDateString('pl-PL')} · Wartości w walucie konta (szacunkowe — skonsultuj z doradcą podatkowym)</div>
+      </div>
+    </div>`;
+
+  // Podsumowania
+  html += `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:24px">`;
+  if (forexTrades.length)  html += summaryBox('📈 Forex / CFD / Akcje (PIT-38 poz. 20–23)', fPrzychod, fKoszt, fDochod, fPodatek, 'var(--blue)');
+  if (cryptoTrades.length) html += summaryBox('₿ Kryptowaluty (PIT-38 poz. 24–27)', cPrzychod, cKoszt, cDochod, cPodatek, 'var(--amber)');
+  html += `</div>`;
+
+  // Per-broker
+  if (Object.keys(byBroker).length > 1) {
+    html += `<div style="margin-bottom:24px">
+      <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--text2)">Zestawienie per broker</div>
+      <div style="overflow-x:auto;border-radius:8px;border:1px solid var(--border)">
+        <table style="width:100%;border-collapse:collapse">
+          <thead><tr style="background:var(--bg3)">
+            <th style="padding:8px 10px;font-size:11px;color:var(--text3);text-align:left">Broker</th>
+            <th style="padding:8px 10px;font-size:11px;color:var(--text3);text-align:center">Transakcje</th>
+            <th style="padding:8px 10px;font-size:11px;color:var(--text3);text-align:right">Przychód</th>
+            <th style="padding:8px 10px;font-size:11px;color:var(--text3);text-align:right">Koszty</th>
+            <th style="padding:8px 10px;font-size:11px;color:var(--text3);text-align:right">Dochód</th>
+          </tr></thead>
+          <tbody>${brokerRows}</tbody>
+        </table>
+      </div>
+    </div>`;
+  }
+
+  // Tabela transakcji forex
+  if (forexTrades.length) {
+    html += `<div style="margin-bottom:24px">
+      <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--text2)">📈 Forex / CFD / Akcje — transakcje (${forexTrades.length})</div>
+      ${tableWrap(forexTrades.map(tradeRow).join(''), 'USD')}
+    </div>`;
+  }
+
+  // Tabela transakcji crypto
+  if (cryptoTrades.length) {
+    html += `<div style="margin-bottom:24px">
+      <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--text2)">₿ Kryptowaluty — transakcje (${cryptoTrades.length})</div>
+      ${tableWrap(cryptoTrades.map(tradeRow).join(''), 'USD')}
+    </div>`;
+  }
+
+  html += `<div style="font-size:11px;color:var(--text3);padding:12px;background:var(--bg3);border-radius:8px;margin-top:8px">
+    ⚠️ Raport ma charakter informacyjny. Wartości podane w walucie konta (USD/EUR/PLN). Przed złożeniem PIT-38 przelicz przychody na PLN według kursu NBP z dnia poprzedzającego transakcję. Skonsultuj z doradcą podatkowym.
+  </div>
+  </div>`;
+
+  el.innerHTML = html;
+}
+
+function exportTaxCSV() {
+  const year   = parseInt(document.getElementById('tax-year')?.value) || new Date().getFullYear();
+  const instrF = document.getElementById('tax-instr')?.value || 'all';
+
+  let trades = _getAllClosedTrades().filter(t => {
+    const d = t.date || t.exitDate;
+    if (!d || new Date(d).getFullYear() !== year) return false;
+    if (instrF === 'forex'  && _isCrypto(t.symbol)) return false;
+    if (instrF === 'crypto' && !_isCrypto(t.symbol)) return false;
+    return true;
+  });
+
+  if (!trades.length) return toast('Brak transakcji do eksportu', 'error');
+
+  const rows = [
+    ['Data', 'Instrument', 'Kierunek', 'Broker', 'Wielkosc', 'Cena wejscia', 'Cena wyjscia', 'Przychod', 'Koszt uzysk. przychodu', 'Zysk/Strata', 'Waluta', 'Typ']
+  ];
+  trades.forEach(t => {
+    const pnl = t.pnl || 0;
+    rows.push([
+      t.date || '',
+      t.symbol || '',
+      t.dir || '',
+      t._broker || '',
+      t.size || '',
+      t.entry || '',
+      t.exit || '',
+      pnl > 0 ? pnl.toFixed(2) : '0.00',
+      pnl < 0 ? Math.abs(pnl).toFixed(2) : '0.00',
+      pnl.toFixed(2),
+      t._currency || 'USD',
+      _isCrypto(t.symbol) ? 'Kryptowaluta' : 'Forex/CFD'
+    ]);
+  });
+
+  const csv = rows.map(r => r.map(v => '"' + String(v).replace(/"/g,'""') + '"').join(',')).join('\r\n');
+  const bom = '﻿';
+  const blob = new Blob([bom + csv], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `PIT38_${year}_transakcje.csv`;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { a.remove(); URL.revokeObjectURL(a.href); }, 500);
+  toast('✓ CSV pobrany — otwórz w Excelu i przelicz na PLN wg kursu NBP', 'success');
+}
+
+function printTaxPDF() {
+  const content = document.getElementById('tax-printable');
+  if (!content) return toast('Najpierw otwórz zakładkę Rozliczenia PIT', 'error');
+  const w = window.open('', '_blank');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>PIT-38 Raport</title>
+    <style>
+      body{font-family:Arial,sans-serif;font-size:12px;color:#111;padding:20px;max-width:960px;margin:0 auto}
+      table{width:100%;border-collapse:collapse;margin-bottom:16px}
+      th,td{padding:6px 10px;border:1px solid #ccc;text-align:left}
+      th{background:#f5f5f5;font-weight:600;font-size:11px}
+      .card{border:1px solid #ccc;border-radius:6px;padding:14px;margin-bottom:12px;display:inline-block;min-width:240px;vertical-align:top;margin-right:12px}
+      .green{color:#009966} .red{color:#cc0033} .amber{color:#cc7700}
+      h2{margin-bottom:4px} .sub{color:#666;font-size:11px;margin-bottom:20px}
+      .warn{background:#fffbea;border:1px solid #f0c040;padding:10px;border-radius:6px;font-size:11px;color:#666;margin-top:16px}
+      @media print{body{padding:10px}}
+    </style></head><body>`);
+  // Simplified print version
+  w.document.write('<h2>Raport PIT-38 — Rok ' + (document.getElementById('tax-year')?.value || '') + '</h2>');
+  w.document.write('<p class="sub">Wygenerowano: ' + new Date().toLocaleDateString('pl-PL') + ' | TraderLogJournal</p>');
+  w.document.write(content.innerHTML
+    .replace(/style="[^"]*color:var\([^)]+\)[^"]*"/g, '')
+    .replace(/var\(--green\)/g,'#009966').replace(/var\(--red\)/g,'#cc0033')
+    .replace(/var\(--amber\)/g,'#cc7700').replace(/var\(--bg3\)/g,'#f5f5f5')
+    .replace(/var\(--border\)/g,'#ccc').replace(/var\(--text3\)/g,'#666')
+    .replace(/var\(--text2\)/g,'#444').replace(/var\(--blue\)/g,'#0066cc'));
+  w.document.write('<div class="warn">⚠️ Wartości szacunkowe w walucie konta. Przed PIT-38 przelicz na PLN wg kursu NBP. Skonsultuj z doradcą podatkowym.</div>');
+  w.document.write('</body></html>');
+  w.document.close();
+  setTimeout(() => w.print(), 500);
+}
+
 // ===== MAKRO KALENDARZ =====
 
 let _macroNotifyTimer = null;
@@ -18125,6 +18755,774 @@ function deleteMyIdea(id) {
       await renderIdeasPage();
     } catch(e) { toast('Błąd: ' + e.message, 'error'); }
   });
+}
+
+// ===== EMOTION HELPERS =====
+const _EMO_MAP = {
+  // PL (zapisywane przez formularz)
+  'Spokojny':       { emoji:'😌', en:'Calm' },
+  'Pewny':          { emoji:'💪', en:'Confident' },
+  'Podekscytowany': { emoji:'🔥', en:'Excited' },
+  'Zaniepokojony':  { emoji:'😟', en:'Anxious' },
+  'FOMO':           { emoji:'😰', en:'FOMO' },
+  'Revenge':        { emoji:'😡', en:'Revenge' },
+  'Zadowolony':     { emoji:'😊', en:'Satisfied' },
+  'Żałuję':         { emoji:'😔', en:'Regret' },
+  'Sfrustrowany':   { emoji:'😤', en:'Frustrated' },
+  'Chciwy':         { emoji:'🤑', en:'Greedy' },
+  'Neutralny':      { emoji:'🧘', en:'Neutral' },
+  'Dumny':          { emoji:'🌟', en:'Proud' },
+  // EN (demo data / legacy)
+  'focused':        { emoji:'🎯', en:'Focused',     pl:'Skupiony' },
+  'calm':           { emoji:'😌', en:'Calm',         pl:'Spokojny' },
+  'confident':      { emoji:'💪', en:'Confident',    pl:'Pewny' },
+  'anxious':        { emoji:'😟', en:'Anxious',      pl:'Zaniepokojony' },
+  'disciplined':    { emoji:'✅', en:'Disciplined',  pl:'Zdyscyplinowany' },
+  'patient':        { emoji:'⏳', en:'Patient',      pl:'Cierpliwy' },
+  'fomo':           { emoji:'😰', en:'FOMO',         pl:'FOMO' },
+  'satisfied':      { emoji:'😊', en:'Satisfied',    pl:'Zadowolony' },
+  'regret':         { emoji:'😔', en:'Regret',       pl:'Żałuję' },
+  'neutral':        { emoji:'🧘', en:'Neutral',      pl:'Neutralny' },
+  'frustrated':     { emoji:'😤', en:'Frustrated',   pl:'Sfrustrowany' },
+  'proud':          { emoji:'🌟', en:'Proud',         pl:'Dumny' },
+};
+
+// Zwraca "emoji Nazwa PL / EN" lub samo "emoji Nazwa" jeśli brak tłumaczenia
+function tEmo(key) {
+  if (!key) return '—';
+  const m = _EMO_MAP[key];
+  if (!m) return key;
+  const isEn = !m.pl; // rekord bez .pl = wpis jest już po PL
+  if (isEn) {
+    // legacy EN key — pokaż PL / EN
+    return `${m.emoji} ${m.pl} / ${m.en}`;
+  }
+  // wpis PL — pokaż PL / EN
+  return `${m.emoji} ${key} / ${m.en}`;
+}
+
+// Skrócona wersja do małych miejsc (tylko emoji + PL)
+function tEmoShort(key) {
+  if (!key) return '—';
+  const m = _EMO_MAP[key];
+  if (!m) return key;
+  const label = m.pl || key;
+  return `${m.emoji} ${label}`;
+}
+
+// ===== IMPORT CSV =====
+
+let _importBuffer = [];
+let _importFormat = '';
+
+function initImportTab() {
+  const sel = document.getElementById('import-account-sel');
+  if (!sel) return;
+  const accounts = getAccounts();
+  sel.innerHTML = accounts.length
+    ? accounts.map(a => `<option value="${a.id}">${a.name}${a.broker ? ' — ' + a.broker : ''}</option>`).join('')
+    : '<option value="">— Najpierw dodaj konto —</option>';
+  if (state.currentAccountId) sel.value = state.currentAccountId;
+}
+
+function handleImportFile(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const raw = e.target.result;
+    const fmt = detectImportFormat(raw, file.name);
+    _importFormat = fmt;
+    let trades = [];
+    try {
+      if      (fmt === 'mt4csv')      trades = parseMT4CSV(raw);
+      else if (fmt === 'mt4html')     trades = parseMT4HTML(raw);
+      else if (fmt === 'mt5csv')      trades = parseMT5CSV(raw);
+      else if (fmt === 'bybit-fut')   trades = parseBybitFutures(raw);
+      else if (fmt === 'bybit-spot')  trades = parseBybitSpot(raw);
+      else if (fmt === 'mexc-fut')    trades = parseMEXCFutures(raw);
+      else if (fmt === 'mexc-spot')   trades = parseMEXCSpot(raw);
+      else {
+        showImportStatus('error', `Nierozpoznany format pliku <strong>${file.name}</strong>.<br>Obsługiwane: MT4/MT5 CSV lub HTML, Bybit Closed P&L CSV, MEXC Futures/Spot CSV.`);
+        return;
+      }
+    } catch(err) {
+      showImportStatus('error', 'Błąd parsowania: ' + err.message);
+      return;
+    }
+    if (!trades.length) {
+      showImportStatus('warning', 'Nie znaleziono żadnych transakcji w pliku. Sprawdź format eksportu (patrz instrukcja poniżej).');
+      return;
+    }
+    _importBuffer = trades;
+    renderImportPreview(trades, fmt, file.name);
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function detectImportFormat(text, filename) {
+  const sample = text.slice(0, 4000).toLowerCase();
+  // HTML files
+  if (sample.includes('<html') || sample.startsWith('<!')) {
+    return sample.includes('metatrader 5') ? 'mt5html' : 'mt4html';
+  }
+  const firstLine = text.split('\n')[0];
+  const sep = firstLine.includes(';') ? ';' : ',';
+  const hdrs = firstLine.split(sep).map(h => h.replace(/[\r\n﻿"]/g,'').trim().toLowerCase());
+  const h = hdrs.join('|');
+
+  // MT4: Ticket;Open Time;Type;Size;Item;Price  (semicolons)
+  if (sep === ';' && hdrs.some(x => x==='ticket'||x==='#') && hdrs.some(x => x.includes('open time')||x==='time')) return 'mt4csv';
+  // MT5: Position,Symbol,Type,Volume,Open Time,Open Price,Close Time,Close Price
+  if (hdrs.includes('position') && hdrs.includes('symbol') && hdrs.some(x => x.includes('open') && x.includes('price'))) return 'mt5csv';
+  // Bybit Futures Closed P&L: Symbol,Closed P&L,Opening Direction,...
+  if (h.includes('closed') && (h.includes('p&l')||h.includes('pnl')) || h.includes('opening direction')) return 'bybit-fut';
+  // Bybit Spot: Date(UTC),Pair,Side,Average Price,...
+  if ((hdrs.includes('pair')||hdrs.includes('symbol')) && hdrs.includes('side') && hdrs.some(x=>x.includes('average')||x.includes('avg'))) return 'bybit-spot';
+  // MEXC Futures: Settled Time,Contract,...,Realized PnL
+  if (hdrs.some(x=>x.includes('contract')) && hdrs.some(x=>x.includes('realized')||x.includes('pnl'))) return 'mexc-fut';
+  // MEXC Spot: Time,Pair,Side,Price,...
+  if ((hdrs.includes('pair')||hdrs.includes('symbol')) && hdrs.includes('side') && hdrs.includes('fee')) return 'mexc-spot';
+  return 'unknown';
+}
+
+// ---- CSV helpers ----
+function _csvSplit(line, sep) {
+  const res = []; let cur = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') { inQ = !inQ; continue; }
+    if (c === sep && !inQ) { res.push(cur.trim()); cur = ''; } else cur += c;
+  }
+  res.push(cur.trim());
+  return res;
+}
+function _parseCSV(text, sep) {
+  const lines = text.replace(/\r/g,'').split('\n').filter(l => l.trim());
+  if (!lines.length) return { hdrs:[], rows:[] };
+  const hdrs = _csvSplit(lines[0], sep).map(h => h.replace(/[﻿"]/g,'').trim().toLowerCase());
+  const rows = lines.slice(1).map(l => _csvSplit(l, sep));
+  return { hdrs, rows };
+}
+function _col(hdrs, ...names) {
+  for (const n of names) { const i = hdrs.findIndex(h => h.includes(n)); if (i >= 0) return i; }
+  return -1;
+}
+function _num(s) { return parseFloat(String(s||0).replace(/[^\d.\-]/g,'')) || 0; }
+function _dt(s) {
+  if (!s) return '';
+  // MT4 format: 2024.01.15 10:30:00
+  const clean = s.replace(/(\d{4})\.(\d{2})\.(\d{2})/, '$1-$2-$3').replace(' ','T');
+  const d = new Date(clean);
+  return isNaN(d.getTime()) ? s.slice(0,16) : d.toISOString().slice(0,16);
+}
+function _uid() { return 'imp_' + Date.now() + '_' + Math.random().toString(36).slice(2,6); }
+
+// ---- MT4 CSV ----
+function parseMT4CSV(text) {
+  const sep = text.split('\n')[0].includes(';') ? ';' : ',';
+  const { hdrs, rows } = _parseCSV(text, sep);
+  const BUY_SELL = ['buy','sell','buy limit','sell limit','buy stop','sell stop'];
+  return rows.flatMap(c => {
+    if (c.length < 10) return [];
+    const type = (c[2]||'').toLowerCase().trim();
+    if (!BUY_SELL.includes(type)) return [];
+    const sym = (c[4]||'').toUpperCase().trim();
+    const entry = _num(c[5]), exit = _num(c[9]);
+    if (!sym || !entry) return [];
+    return [{
+      id: _uid(), symbol: sym,
+      dir: type.startsWith('sell') ? 'short' : 'long',
+      size: _num(c[3]), entry, exit,
+      sl: _num(c[6]), tp: _num(c[7]),
+      commission: _num(c[10]), swap: _num(c[12]),
+      pnl: _num(c[13]), status: 'closed',
+      date: _dt(c[1]), dateClose: _dt(c[8]),
+      _src: 'MT4'
+    }];
+  });
+}
+
+// ---- MT4 HTML Statement ----
+function parseMT4HTML(text) {
+  const doc = new DOMParser().parseFromString(text, 'text/html');
+  const BUY_SELL = ['buy','sell'];
+  const trades = [];
+  doc.querySelectorAll('tr').forEach(row => {
+    const cells = [...row.querySelectorAll('td')].map(td => td.textContent.trim());
+    if (cells.length < 13) return;
+    const type = (cells[2]||'').toLowerCase();
+    if (!BUY_SELL.some(t => type.startsWith(t))) return;
+    const sym = (cells[4]||'').toUpperCase(), entry = _num(cells[5]), exit = _num(cells[9]);
+    if (!sym || !entry || !exit) return;
+    trades.push({
+      id: _uid(), symbol: sym,
+      dir: type.startsWith('sell') ? 'short' : 'long',
+      size: _num(cells[3]), entry, exit,
+      sl: _num(cells[6]), tp: _num(cells[7]),
+      commission: _num(cells[10]), swap: _num(cells[12]),
+      pnl: _num(cells[13]), status: 'closed',
+      date: _dt(cells[1]), dateClose: _dt(cells[8]),
+      _src: 'MT4'
+    });
+  });
+  return trades;
+}
+
+// ---- MT5 CSV ----
+function parseMT5CSV(text) {
+  const { hdrs, rows } = _parseCSV(text, ',');
+  const iSym  = _col(hdrs,'symbol','item');
+  const iType = _col(hdrs,'type','direction');
+  const iVol  = _col(hdrs,'volume','size','lots');
+  const iOT   = _col(hdrs,'open time');
+  const iOP   = _col(hdrs,'open price');
+  const iCT   = _col(hdrs,'close time');
+  const iCP   = _col(hdrs,'close price');
+  const iComm = _col(hdrs,'commission');
+  const iSwap = _col(hdrs,'swap');
+  const iPnl  = _col(hdrs,'profit');
+  const iSL   = _col(hdrs,'s / l','s/l');
+  const iTP   = _col(hdrs,'t / p','t/p');
+  return rows.flatMap(c => {
+    const type = (c[iType]||'').toLowerCase();
+    if (!type.includes('buy') && !type.includes('sell')) return [];
+    const sym = (c[iSym]||'').toUpperCase().trim();
+    if (!sym) return [];
+    return [{
+      id: _uid(), symbol: sym,
+      dir: type.includes('sell') ? 'short' : 'long',
+      size: iVol>=0 ? _num(c[iVol]) : 0,
+      entry: iOP>=0 ? _num(c[iOP]) : 0,
+      exit:  iCP>=0 ? _num(c[iCP]) : 0,
+      sl: iSL>=0 ? _num(c[iSL]) : 0,
+      tp: iTP>=0 ? _num(c[iTP]) : 0,
+      commission: iComm>=0 ? _num(c[iComm]) : 0,
+      swap: iSwap>=0 ? _num(c[iSwap]) : 0,
+      pnl: iPnl>=0 ? _num(c[iPnl]) : 0, status: 'closed',
+      date: iOT>=0 ? _dt(c[iOT]) : '', dateClose: iCT>=0 ? _dt(c[iCT]) : '',
+      _src: 'MT5'
+    }];
+  });
+}
+
+// ---- Bybit Futures (Closed P&L) ----
+function parseBybitFutures(text) {
+  const { hdrs, rows } = _parseCSV(text, ',');
+  const iSym  = _col(hdrs,'symbol');
+  const iPnl  = _col(hdrs,'closed p','closedp','pnl');
+  const iDir  = _col(hdrs,'opening direction','direction','side');
+  const iQty  = _col(hdrs,'qty','size','closed size','volume');
+  const iEnt  = _col(hdrs,'entry price','avg entry');
+  const iExt  = _col(hdrs,'exit price','avg exit','close price');
+  const iODt  = _col(hdrs,'open date','open time','create time');
+  const iCDt  = _col(hdrs,'close date','close time','settle time');
+  return rows.flatMap(c => {
+    const sym = (c[iSym]||'').toUpperCase().trim();
+    if (!sym) return [];
+    const dirRaw = ((iDir>=0 ? c[iDir] : '')||'').toLowerCase();
+    return [{
+      id: _uid(), symbol: sym,
+      dir: dirRaw.includes('sell')||dirRaw.includes('short') ? 'short' : 'long',
+      size: iQty>=0 ? _num(c[iQty]) : 0,
+      entry: iEnt>=0 ? _num(c[iEnt]) : 0,
+      exit:  iExt>=0 ? _num(c[iExt]) : 0,
+      commission: 0, swap: 0,
+      pnl: iPnl>=0 ? _num(c[iPnl]) : 0, status: 'closed',
+      date: iODt>=0 ? _dt(c[iODt]) : '', dateClose: iCDt>=0 ? _dt(c[iCDt]) : '',
+      _src: 'Bybit'
+    }];
+  });
+}
+
+// ---- Bybit Spot ----
+function parseBybitSpot(text) {
+  const { hdrs, rows } = _parseCSV(text, ',');
+  const iDt   = _col(hdrs,'date','time');
+  const iPair = _col(hdrs,'pair','symbol');
+  const iSide = _col(hdrs,'side');
+  const iPrc  = _col(hdrs,'average price','avg price','price');
+  const iQty  = _col(hdrs,'executed','filled','qty');
+  const iFee  = _col(hdrs,'fee');
+  return rows.flatMap(c => {
+    const sym  = (c[iPair]||'').toUpperCase().replace('/','').trim();
+    const side = (c[iSide]||'').toLowerCase();
+    if (!sym||!side) return [];
+    return [{
+      id: _uid(), symbol: sym,
+      dir: side.includes('sell') ? 'short' : 'long',
+      size: iQty>=0 ? _num(c[iQty]) : 0,
+      entry: iPrc>=0 ? _num(c[iPrc]) : 0,
+      exit: 0, sl: 0, tp: 0,
+      commission: iFee>=0 ? _num(c[iFee]) : 0, swap: 0,
+      pnl: 0, status: 'closed',
+      date: iDt>=0 ? _dt(c[iDt]) : '', dateClose: '',
+      _src: 'Bybit Spot'
+    }];
+  });
+}
+
+// ---- MEXC Futures ----
+function parseMEXCFutures(text) {
+  const { hdrs, rows } = _parseCSV(text, ',');
+  const iDt   = _col(hdrs,'settled time','time','date');
+  const iSym  = _col(hdrs,'contract','symbol');
+  const iDir  = _col(hdrs,'direction','type','side');
+  const iOP   = _col(hdrs,'open price','avg.open','avg. open','entry');
+  const iCP   = _col(hdrs,'close price','settle price','avg.settle','avg.close');
+  const iQty  = _col(hdrs,'filled amount','amount','quantity','qty');
+  const iPnl  = _col(hdrs,'realized pnl','realized p','pnl');
+  const iFee  = _col(hdrs,'fee','transaction fee');
+  return rows.flatMap(c => {
+    const sym = (c[iSym]||'').toUpperCase().replace('_','').trim();
+    if (!sym) return [];
+    const dirRaw = ((iDir>=0 ? c[iDir] : '')||'').toLowerCase();
+    const fee = iFee>=0 ? _num(c[iFee]) : 0;
+    return [{
+      id: _uid(), symbol: sym,
+      dir: dirRaw.includes('short')||dirRaw.includes('sell') ? 'short' : 'long',
+      size: iQty>=0 ? _num(c[iQty]) : 0,
+      entry: iOP>=0 ? _num(c[iOP]) : 0,
+      exit:  iCP>=0 ? _num(c[iCP]) : 0,
+      commission: fee, swap: 0,
+      pnl: (iPnl>=0 ? _num(c[iPnl]) : 0) - Math.abs(fee),
+      status: 'closed',
+      date: '', dateClose: iDt>=0 ? _dt(c[iDt]) : '',
+      _src: 'MEXC'
+    }];
+  });
+}
+
+// ---- MEXC Spot ----
+function parseMEXCSpot(text) {
+  const { hdrs, rows } = _parseCSV(text, ',');
+  const iDt   = _col(hdrs,'time','date');
+  const iPair = _col(hdrs,'pair','symbol');
+  const iSide = _col(hdrs,'side');
+  const iPrc  = _col(hdrs,'price','avg price');
+  const iQty  = _col(hdrs,'filled','qty','amount');
+  const iFee  = _col(hdrs,'fee');
+  return rows.flatMap(c => {
+    const sym  = (c[iPair]||'').toUpperCase().replace('/','').trim();
+    const side = (c[iSide]||'').toLowerCase();
+    if (!sym||!side) return [];
+    return [{
+      id: _uid(), symbol: sym,
+      dir: side.includes('sell') ? 'short' : 'long',
+      size: iQty>=0 ? _num(c[iQty]) : 0,
+      entry: iPrc>=0 ? _num(c[iPrc]) : 0,
+      exit: 0, sl: 0, tp: 0,
+      commission: iFee>=0 ? _num(c[iFee]) : 0, swap: 0,
+      pnl: 0, status: 'closed',
+      date: iDt>=0 ? _dt(c[iDt]) : '', dateClose: '',
+      _src: 'MEXC Spot'
+    }];
+  });
+}
+
+function showImportStatus(type, msg) {
+  const el = document.getElementById('import-status');
+  if (!el) return;
+  const colors = { error: 'var(--red)', warning: 'var(--amber)', success: 'var(--green)' };
+  const col = colors[type] || colors.error;
+  el.innerHTML = `<div style="padding:12px 16px;background:${col}22;border:1px solid ${col};border-radius:8px;font-size:13px;line-height:1.6">${msg}</div>`;
+  el.style.display = 'block';
+  document.getElementById('import-preview-wrap').style.display = 'none';
+}
+
+function renderImportPreview(trades, fmt, filename) {
+  document.getElementById('import-status').style.display = 'none';
+  const previewEl = document.getElementById('import-preview-wrap');
+  if (!previewEl) return;
+
+  // Deduplication check against selected account
+  const accId = document.getElementById('import-account-sel')?.value;
+  const existing = accId ? getTrades(accId) : [];
+  const withFlags = trades.map(tr => ({
+    ...tr,
+    _dup: existing.some(ex =>
+      ex.symbol === tr.symbol &&
+      ex.date && tr.date &&
+      ex.date.slice(0,15) === tr.date.slice(0,15) &&
+      Math.abs((_num(ex.entry) - tr.entry)) < 0.0001
+    )
+  }));
+
+  const newCnt = withFlags.filter(t => !t._dup).length;
+  const dupCnt = withFlags.filter(t =>  t._dup).length;
+  const FMT = { 'mt4csv':'MT4 CSV','mt4html':'MT4 HTML','mt5csv':'MT5','mt5html':'MT5 HTML','bybit-fut':'Bybit Futures','bybit-spot':'Bybit Spot','mexc-fut':'MEXC Futures','mexc-spot':'MEXC Spot' };
+
+  document.getElementById('import-summary-text').innerHTML =
+    `<span style="color:var(--text3)">Format: </span><strong>${FMT[fmt]||fmt}</strong>&ensp;` +
+    `<span style="color:var(--green);font-weight:700">✓ ${newCnt} nowych</span>` +
+    (dupCnt ? `&ensp;<span style="color:var(--text3)">⊘ ${dupCnt} duplikatów (pominięte)</span>` : '');
+
+  const btn = document.getElementById('import-confirm-btn');
+  if (btn) btn.disabled = newCnt === 0;
+
+  const tbody = document.getElementById('import-preview-tbody');
+  if (!tbody) return;
+
+  tbody.innerHTML = withFlags.slice(0, 300).map(tr => {
+    const dc  = tr.dir === 'long' ? 'var(--green)' : 'var(--red)';
+    const pc  = tr.pnl >= 0 ? 'var(--green)' : 'var(--red)';
+    const op  = tr._dup ? 0.35 : 1;
+    const dup = tr._dup ? '<span style="font-size:9px;background:var(--bg3);color:var(--text3);padding:1px 4px;border-radius:3px;margin-left:4px">dup</span>' : '';
+    return `<tr style="opacity:${op}">
+      <td style="padding:7px 10px;font-size:12px;white-space:nowrap;color:var(--text3)">${(tr.date||tr.dateClose||'—').replace('T',' ')}</td>
+      <td style="padding:7px 10px;font-weight:700">${tr.symbol}${dup}</td>
+      <td style="padding:7px 10px;color:${dc};font-weight:600;text-transform:uppercase;font-size:12px">${tr.dir}</td>
+      <td style="padding:7px 10px;text-align:right;font-size:12px">${tr.size||'—'}</td>
+      <td style="padding:7px 10px;text-align:right;font-size:12px">${tr.entry||'—'}</td>
+      <td style="padding:7px 10px;text-align:right;font-size:12px">${tr.exit||'—'}</td>
+      <td style="padding:7px 10px;text-align:right;font-weight:600;color:${pc}">${tr.pnl?(tr.pnl>=0?'+':'')+tr.pnl.toFixed(2):'—'}</td>
+      <td style="padding:7px 10px;text-align:center"><span style="font-size:10px;background:var(--bg3);padding:2px 6px;border-radius:10px;color:var(--text2)">${tr._src}</span></td>
+    </tr>`;
+  }).join('') + (withFlags.length > 300 ? `<tr><td colspan="8" style="text-align:center;padding:12px;font-size:12px;color:var(--text3)">… i ${withFlags.length-300} kolejnych</td></tr>` : '');
+
+  _importBuffer = withFlags;
+  previewEl.style.display = 'block';
+}
+
+function confirmImportTrades() {
+  const accId = document.getElementById('import-account-sel')?.value;
+  if (!accId) return toast('Wybierz konto docelowe', 'error');
+  const toAdd = _importBuffer.filter(t => !t._dup).map(({ _dup, _src, dateClose, ...rest }) => ({
+    ...rest,
+    note: (rest.note || '') + (rest.note ? '\n' : '') + 'Import: ' + (_src||''),
+    dateClose: dateClose || undefined
+  }));
+  if (!toAdd.length) return toast('Brak nowych transakcji do importu', 'error');
+  const existing = getTrades(accId);
+  saveTrades(accId, [...existing, ...toAdd]);
+  toast(`✓ Zaimportowano ${toAdd.length} transakcji`, 'success');
+  resetImportTab();
+  if (document.getElementById('page-trades')?.classList.contains('active')) renderTrades();
+}
+
+function resetImportTab() {
+  _importBuffer = []; _importFormat = '';
+  const s = document.getElementById('import-status');
+  const p = document.getElementById('import-preview-wrap');
+  if (s) s.style.display = 'none';
+  if (p) p.style.display = 'none';
+}
+
+// ===== PORTFOLIO INWESTYCYJNY =====
+
+const _PF_COLORS = {
+  'ETF':       '#4da6ff',
+  'Akcja':     '#4caf50',
+  'Obligacja': '#ffc107',
+  'Krypto':    '#ce93d8',
+  'Złoto':     '#ffb300',
+  'REIT':      '#26c6da',
+  'Inne':      '#90a4ae'
+};
+
+function getPortfolio() {
+  const db = getDB();
+  return db['portfolio_' + state.currentUser] || [];
+}
+
+function savePortfolio(positions) {
+  const db = getDB();
+  db['portfolio_' + state.currentUser] = positions;
+  saveDB(db);
+}
+
+function openPortfolioModal(editId) {
+  const modal = document.getElementById('portfolio-modal');
+  if (!modal) return;
+  document.getElementById('pf-edit-id').value = editId || '';
+  document.getElementById('pf-modal-title').textContent = editId ? 'Edytuj pozycję' : 'Dodaj pozycję';
+  if (editId) {
+    const pos = getPortfolio().find(p => p.id === editId);
+    if (!pos) return;
+    document.getElementById('pf-symbol').value       = pos.symbol || '';
+    document.getElementById('pf-name').value         = pos.name || '';
+    document.getElementById('pf-type').value         = pos.type || 'ETF';
+    document.getElementById('pf-account-type').value = pos.account_type || 'zwykłe';
+    document.getElementById('pf-broker').value       = pos.broker || '';
+    document.getElementById('pf-currency').value     = pos.currency || 'PLN';
+    document.getElementById('pf-qty').value          = pos.qty || '';
+    document.getElementById('pf-buy-price').value    = pos.avg_price || '';
+    document.getElementById('pf-buy-date').value     = pos.buy_date || '';
+    document.getElementById('pf-fee').value          = pos.fee || '';
+    document.getElementById('pf-current-price').value = pos.current_price || '';
+    document.getElementById('pf-note').value         = pos.note || '';
+  } else {
+    ['pf-symbol','pf-name','pf-broker','pf-qty','pf-buy-price','pf-buy-date','pf-fee','pf-current-price','pf-note'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.value = '';
+    });
+    document.getElementById('pf-type').value = 'ETF';
+    document.getElementById('pf-account-type').value = 'zwykłe';
+    document.getElementById('pf-currency').value = 'PLN';
+    document.getElementById('pf-buy-date').value = new Date().toISOString().slice(0,10);
+  }
+  pfUpdateLiveCalc();
+  modal.classList.add('open');
+}
+
+function closePortfolioModal() {
+  document.getElementById('portfolio-modal')?.classList.remove('open');
+}
+
+function pfUpdateLiveCalc() {
+  const qty   = parseFloat(document.getElementById('pf-qty')?.value);
+  const buy   = parseFloat(document.getElementById('pf-buy-price')?.value);
+  const cur   = parseFloat(document.getElementById('pf-current-price')?.value);
+  const fee   = parseFloat(document.getElementById('pf-fee')?.value) || 0;
+  const curr  = document.getElementById('pf-currency')?.value || 'PLN';
+  const lc    = document.getElementById('pf-live-calc');
+  if (!lc) return;
+  if (isNaN(qty) || isNaN(buy) || isNaN(cur)) { lc.style.display = 'none'; return; }
+  const cost  = qty * buy + fee;
+  const val   = qty * cur;
+  const pnl   = val - cost;
+  const pct   = cost > 0 ? (pnl / cost * 100) : 0;
+  const fmt   = (n) => n.toLocaleString('pl-PL', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' ' + curr;
+  document.getElementById('pf-calc-cost').textContent  = fmt(cost);
+  document.getElementById('pf-calc-value').textContent = fmt(val);
+  const pnlEl = document.getElementById('pf-calc-pnl');
+  pnlEl.textContent = (pnl >= 0 ? '+' : '') + fmt(pnl) + ' (' + (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%)';
+  pnlEl.style.color = pnl >= 0 ? 'var(--green)' : 'var(--red)';
+  lc.style.display = 'block';
+}
+
+function savePortfolioPosition() {
+  const symbol = document.getElementById('pf-symbol').value.trim().toUpperCase();
+  const name   = document.getElementById('pf-name').value.trim();
+  const qty    = parseFloat(document.getElementById('pf-qty').value);
+  const buy    = parseFloat(document.getElementById('pf-buy-price').value);
+  if (!symbol) return toast('Wpisz symbol instrumentu', 'error');
+  if (isNaN(qty) || qty <= 0) return toast('Wpisz ilość > 0', 'error');
+  if (isNaN(buy) || buy <= 0) return toast('Wpisz cenę zakupu', 'error');
+
+  const editId  = document.getElementById('pf-edit-id').value;
+  const positions = getPortfolio();
+  const pos = {
+    id:           editId || ('pf_' + Date.now()),
+    symbol,
+    name:         name || symbol,
+    type:         document.getElementById('pf-type').value,
+    account_type: document.getElementById('pf-account-type').value,
+    broker:       document.getElementById('pf-broker').value.trim(),
+    currency:     document.getElementById('pf-currency').value,
+    qty,
+    avg_price:    buy,
+    buy_date:     document.getElementById('pf-buy-date').value,
+    fee:          parseFloat(document.getElementById('pf-fee').value) || 0,
+    current_price: parseFloat(document.getElementById('pf-current-price').value) || buy,
+    note:         document.getElementById('pf-note').value.trim(),
+    updated_at:   new Date().toISOString()
+  };
+
+  if (editId) {
+    const idx = positions.findIndex(p => p.id === editId);
+    if (idx >= 0) positions[idx] = pos; else positions.push(pos);
+  } else {
+    positions.push(pos);
+  }
+  savePortfolio(positions);
+  closePortfolioModal();
+  renderPortfolio();
+  toast((editId ? 'Pozycja zaktualizowana' : 'Pozycja dodana') + ' ✓', 'success');
+}
+
+function deletePortfolioPosition(id) {
+  showConfirm('Usunąć tę pozycję z portfela?', () => {
+    const positions = getPortfolio().filter(p => p.id !== id);
+    savePortfolio(positions);
+    renderPortfolio();
+    toast('Pozycja usunięta', 'success');
+  });
+}
+
+function renderPortfolioSummary(positions) {
+  const el = document.getElementById('pf-summary-cards');
+  if (!el) return;
+  if (!positions.length) { el.innerHTML = ''; return; }
+
+  let totalCost = 0, totalVal = 0;
+  positions.forEach(p => {
+    totalCost += p.qty * p.avg_price + (p.fee || 0);
+    totalVal  += p.qty * p.current_price;
+  });
+  const pnl    = totalVal - totalCost;
+  const pnlPct = totalCost > 0 ? (pnl / totalCost * 100) : 0;
+  const fmtPLN = n => n.toLocaleString('pl-PL', {minimumFractionDigits:2, maximumFractionDigits:2});
+  const pnlColor = pnl >= 0 ? 'var(--green)' : 'var(--red)';
+
+  el.innerHTML = `
+    <div class="portfolio-stat-card">
+      <div class="portfolio-stat-label">Wartość portfela</div>
+      <div class="portfolio-stat-value">${fmtPLN(totalVal)}</div>
+      <div class="portfolio-stat-sub">${positions.length} pozycji</div>
+    </div>
+    <div class="portfolio-stat-card">
+      <div class="portfolio-stat-label">Koszt zakupu</div>
+      <div class="portfolio-stat-value">${fmtPLN(totalCost)}</div>
+      <div class="portfolio-stat-sub">łącznie z prowizjami</div>
+    </div>
+    <div class="portfolio-stat-card" style="border-color:${pnlColor}">
+      <div class="portfolio-stat-label">Zysk / Strata</div>
+      <div class="portfolio-stat-value" style="color:${pnlColor}">${pnl >= 0 ? '+' : ''}${fmtPLN(pnl)}</div>
+      <div class="portfolio-stat-sub" style="color:${pnlColor}">${pnlPct >= 0 ? '+' : ''}${pnlPct.toFixed(2)}%</div>
+    </div>
+    <div class="portfolio-stat-card">
+      <div class="portfolio-stat-label">Inwestycje</div>
+      <div class="portfolio-stat-value">${positions.filter(p=>p.account_type==='IKE'||p.account_type==='IKZE').length}</div>
+      <div class="portfolio-stat-sub">pozycji IKE/IKZE</div>
+    </div>`;
+}
+
+function renderPortfolioAllocation(positions) {
+  const canvas = document.getElementById('pf-alloc-chart');
+  const legend = document.getElementById('pf-alloc-legend');
+  const section = document.getElementById('pf-alloc-section');
+  if (!canvas || !legend || !section) return;
+  if (!positions.length) { section.style.display = 'none'; return; }
+  section.style.display = '';
+
+  // Group by type
+  const groups = {};
+  positions.forEach(p => {
+    const v = p.qty * p.current_price;
+    groups[p.type] = (groups[p.type] || 0) + v;
+  });
+  const total = Object.values(groups).reduce((a,b) => a+b, 0);
+  if (total <= 0) { section.style.display = 'none'; return; }
+
+  // Draw canvas pie
+  const ctx = canvas.getContext('2d');
+  const cx = 70, cy = 70, r = 60;
+  ctx.clearRect(0, 0, 140, 140);
+  let startAngle = -Math.PI / 2;
+  Object.entries(groups).forEach(([type, val]) => {
+    const slice = (val / total) * 2 * Math.PI;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, startAngle, startAngle + slice);
+    ctx.closePath();
+    ctx.fillStyle = _PF_COLORS[type] || '#90a4ae';
+    ctx.fill();
+    startAngle += slice;
+  });
+  // Center hole (donut)
+  ctx.beginPath();
+  ctx.arc(cx, cy, 38, 0, 2 * Math.PI);
+  const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+  ctx.fillStyle = isDark ? '#141414' : '#f4f4f4';
+  ctx.fill();
+
+  // Legend
+  legend.innerHTML = Object.entries(groups)
+    .sort((a,b) => b[1] - a[1])
+    .map(([type, val]) => {
+      const pct = (val / total * 100).toFixed(1);
+      return `<div class="alloc-legend-row">
+        <span class="alloc-dot" style="background:${_PF_COLORS[type]||'#90a4ae'}"></span>
+        <span style="color:var(--text2);min-width:80px">${type}</span>
+        <span style="font-weight:600;color:var(--text)">${pct}%</span>
+        <span style="color:var(--text3);font-size:11px">${val.toLocaleString('pl-PL',{maximumFractionDigits:0})} PLN</span>
+      </div>`;
+    }).join('');
+}
+
+function renderPortfolio() {
+  const positions = getPortfolio();
+  const tbody = document.getElementById('pf-tbody');
+  const emptyEl = document.getElementById('pf-empty');
+  const tableEl = document.getElementById('pf-table');
+  if (!tbody) return;
+
+  renderPortfolioSummary(positions);
+  renderPortfolioAllocation(positions);
+
+  if (!positions.length) {
+    if (tableEl) tableEl.style.display = 'none';
+    if (emptyEl) emptyEl.style.display = 'block';
+    return;
+  }
+  if (tableEl) tableEl.style.display = '';
+  if (emptyEl) emptyEl.style.display = 'none';
+
+  const fmtN = (n, dec=2) => isNaN(n) ? '—' : n.toLocaleString('pl-PL', {minimumFractionDigits:dec, maximumFractionDigits:dec});
+
+  tbody.innerHTML = positions.map(p => {
+    const cost  = p.qty * p.avg_price + (p.fee || 0);
+    const val   = p.qty * p.current_price;
+    const pnl   = val - cost;
+    const pnlPct = cost > 0 ? (pnl / cost * 100) : 0;
+    const pnlColor = pnl >= 0 ? 'var(--green)' : 'var(--red)';
+    const typeClass = 'pf-type-' + (p.type || 'Inne').replace(/[^a-zA-ZąćęłńóśźżĄĆĘŁŃÓŚŹŻ]/g,'');
+    const accClass  = 'pf-acc-' + (p.account_type || 'zwykłe');
+    const pnlSign = pnl >= 0 ? '+' : '';
+    return `<tr>
+      <td>
+        <div style="font-weight:700;font-size:13px">${p.symbol}</div>
+        <div style="font-size:11px;color:var(--text3);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.name}">${p.name}</div>
+        ${p.broker ? `<div style="font-size:10px;color:var(--text3)">${p.broker}</div>` : ''}
+      </td>
+      <td><span class="pf-type-badge ${typeClass}">${p.type}</span></td>
+      <td class="hide-sm"><span class="pf-acc-badge ${accClass}">${p.account_type}</span></td>
+      <td class="num">${fmtN(p.qty, p.qty % 1 === 0 ? 0 : 4)}</td>
+      <td class="num">${fmtN(p.avg_price)} ${p.currency}</td>
+      <td class="num" style="cursor:pointer" onclick="pfEditCurrentPrice('${p.id}')" title="Kliknij aby zaktualizować cenę">
+        <span style="border-bottom:1px dashed var(--border)">${fmtN(p.current_price)} ${p.currency}</span>
+        <span style="font-size:10px;color:var(--text3);display:block">✏️ aktualizuj</span>
+      </td>
+      <td class="num hide-sm">${fmtN(cost)} ${p.currency}</td>
+      <td class="num" style="font-weight:600">${fmtN(val)} ${p.currency}</td>
+      <td class="num" style="color:${pnlColor};font-weight:600">${pnlSign}${fmtN(pnl)} ${p.currency}</td>
+      <td class="num" style="color:${pnlColor};font-weight:700">${pnlSign}${pnlPct.toFixed(2)}%</td>
+      <td>
+        <div style="display:flex;gap:6px;justify-content:flex-end">
+          <button class="btn-sm" onclick="openPortfolioModal('${p.id}')" style="padding:3px 8px;font-size:11px">✏️</button>
+          <button class="btn-sm" onclick="deletePortfolioPosition('${p.id}')" style="padding:3px 8px;font-size:11px;color:var(--red);border-color:var(--red)">🗑</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function pfEditCurrentPrice(id) {
+  const pos = getPortfolio().find(p => p.id === id);
+  if (!pos) return;
+  const newPrice = prompt(`Aktualizuj cenę rynkową dla ${pos.symbol}\nAktualna: ${pos.current_price} ${pos.currency}\nNowa cena:`, pos.current_price);
+  if (newPrice === null) return;
+  const parsed = parseFloat(newPrice);
+  if (isNaN(parsed) || parsed <= 0) return toast('Nieprawidłowa cena', 'error');
+  const positions = getPortfolio();
+  const idx = positions.findIndex(p => p.id === id);
+  if (idx < 0) return;
+  positions[idx].current_price = parsed;
+  positions[idx].updated_at = new Date().toISOString();
+  savePortfolio(positions);
+  renderPortfolio();
+  toast(`${pos.symbol}: cena zaktualizowana → ${parsed} ${pos.currency}`, 'success');
+}
+
+function exportPortfolioCSV() {
+  const positions = getPortfolio();
+  if (!positions.length) return toast('Brak pozycji do eksportu', 'error');
+  const headers = ['Symbol','Nazwa','Typ','Konto','Broker','Waluta','Ilosc','Sr cena zakupu','Biezaca cena','Koszt','Wartosc','PnL','PnL %','Data zakupu','Notatka'];
+  const rows = positions.map(p => {
+    const cost = p.qty * p.avg_price + (p.fee || 0);
+    const val  = p.qty * p.current_price;
+    const pnl  = val - cost;
+    const pct  = cost > 0 ? (pnl / cost * 100).toFixed(2) : '0.00';
+    return [p.symbol, p.name, p.type, p.account_type, p.broker, p.currency,
+      p.qty, p.avg_price.toFixed(4), p.current_price.toFixed(4),
+      cost.toFixed(2), val.toFixed(2), pnl.toFixed(2), pct + '%',
+      p.buy_date || '', p.note || ''].map(v => '"' + String(v).replace(/"/g,'""') + '"').join(',');
+  });
+  const csv = '﻿' + headers.join(',') + '\n' + rows.join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'portfel_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click(); URL.revokeObjectURL(url);
+  toast('✓ CSV portfela pobrany', 'success');
 }
 
 // Rejestracja Service Worker (PWA)
