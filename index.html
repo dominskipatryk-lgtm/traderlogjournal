@@ -4518,6 +4518,8 @@ function genId() { return Date.now().toString(36) + Math.random().toString(36).s
 // doLogin replaced above
 // doRegister replaced above
 function loginAs(username, userData) {
+  // Blokuj login podczas resetu hasła — formularz musi pozostać widoczny
+  if (_inPasswordRecovery) { showPasswordResetForm(); return; }
   try {
   state.currentUser = username;
   document.getElementById('auth-screen').style.display = 'none';
@@ -12764,7 +12766,7 @@ function _setupSbListeners() {
     if (event === 'SIGNED_IN' && session && !state.currentUser && !_appInitRunning) {
       if (_inPasswordRecovery) return;
       setTimeout(async () => {
-        if (!state.currentUser && !_appInitRunning) await appInit();
+        if (!state.currentUser && !_appInitRunning && !_inPasswordRecovery) await appInit();
       }, 800);
     }
   });
@@ -13898,6 +13900,9 @@ async function adminActivateUser(userId) {
 
 // [v1.3] Pokazuje formularz zmiany hasła — ukrywa wszystkie inne sekcje auth
 function showPasswordResetForm() {
+  // Wymuś ukrycie app — blokuje appInit() który mógłby przykryć formularz
+  const appEl = document.getElementById('app');
+  if (appEl) appEl.style.display = 'none';
   // Ukryj wszystkie zakładki auth
   ['login-form','register-form','forgot-form'].forEach(id => {
     const el = document.getElementById(id);
