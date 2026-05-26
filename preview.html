@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
@@ -1901,27 +1901,6 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
         </div>
 
         <div class="settings-section">
-          <div class="settings-section-title">📅 Kalendarz Makro — klucz Finnhub</div>
-          <p style="font-size:13px;color:var(--text2);margin-bottom:12px;line-height:1.6">
-            Finnhub.io udostępnia ekonomiczny kalendarz przez darmowe API (bez limitu dla kalendarza).<br>
-            Rejestracja zajmuje 30 sekund na <a href="https://finnhub.io" target="_blank" style="color:var(--accent)">finnhub.io</a> → Dashboard → API Key.
-          </p>
-          <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
-            <input class="form-input" id="sett-finnhub-key" type="password"
-              placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-              style="font-family:var(--font-mono);font-size:12px;flex:1"
-              autocomplete="off">
-            <button class="btn-sm btn-accent" onclick="saveFinnhubKey()">💾 Zapisz</button>
-            <button class="btn-sm" onclick="toggleFinnhubKeyVisibility()">👁</button>
-          </div>
-          <div id="finnhub-key-status" style="font-size:12px;margin-bottom:8px"></div>
-          <div style="font-size:11px;color:var(--text3);line-height:1.7">
-            Bez klucza: powiadomienia wyłączone, kalendarz na stronie działa przez widget.<br>
-            Z kluczem: powiadomienia 1h przed HIGH/MEDIUM wydarzeniami.
-          </div>
-        </div>
-
-        <div class="settings-section">
           <div class="settings-section-title">💾 Kopia zapasowa danych</div>
           <p style="font-size:13px;color:var(--text2);margin-bottom:18px;line-height:1.6">
             Wybierz metodę tworzenia kopii zapasowej swoich transakcji. Możesz aktywować kilka jednocześnie.
@@ -2987,58 +2966,42 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
     <!-- ===== MAKRO KALENDARZ ===== -->
     <div id="page-macro" class="page">
       <div class="page-title">📅 Kalendarz Makroekonomiczny</div>
-      <div class="page-subtitle">Powiadomienia 1h przed wydarzeniami HIGH/MEDIUM — widget TradingView</div>
+      <div class="page-subtitle">Dodaj przypomnienia o ważnych wydarzeniach — alert 1h przed</div>
 
-      <!-- Filtry -->
-      <div class="summary-card" style="margin-bottom:16px;padding:14px 16px">
-        <div style="display:flex;flex-direction:column;gap:10px">
-          <!-- Waluty -->
-          <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
-            <span style="font-size:10px;color:var(--text3);font-weight:700;letter-spacing:0.5px;text-transform:uppercase;width:58px;flex-shrink:0">Waluty</span>
-            <label class="macro-filter-chip" data-type="curr" data-val="USD"><input type="checkbox" onchange="macroFilterChange()"> USD</label>
-            <label class="macro-filter-chip" data-type="curr" data-val="EUR"><input type="checkbox" onchange="macroFilterChange()"> EUR</label>
-            <label class="macro-filter-chip" data-type="curr" data-val="GBP"><input type="checkbox" onchange="macroFilterChange()"> GBP</label>
-            <label class="macro-filter-chip" data-type="curr" data-val="JPY"><input type="checkbox" onchange="macroFilterChange()"> JPY</label>
-            <label class="macro-filter-chip" data-type="curr" data-val="AUD"><input type="checkbox" onchange="macroFilterChange()"> AUD</label>
-            <label class="macro-filter-chip" data-type="curr" data-val="CAD"><input type="checkbox" onchange="macroFilterChange()"> CAD</label>
-            <label class="macro-filter-chip" data-type="curr" data-val="CHF"><input type="checkbox" onchange="macroFilterChange()"> CHF</label>
-            <label class="macro-filter-chip" data-type="curr" data-val="NZD"><input type="checkbox" onchange="macroFilterChange()"> NZD</label>
+      <!-- Moje przypomnienia -->
+      <div class="summary-card" style="margin-bottom:16px">
+        <div class="summary-card-title">🔔 Moje Przypomnienia</div>
+        <div style="display:grid;grid-template-columns:1fr 160px 100px auto;gap:8px;align-items:end;margin-bottom:12px">
+          <div>
+            <label class="form-label-modal" style="font-size:11px">Nazwa wydarzenia</label>
+            <input class="form-input-modal" id="macro-rem-title" placeholder="np. NFP, CPI USA, FOMC..." style="font-size:13px">
           </div>
-          <!-- Towary -->
-          <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
-            <span style="font-size:10px;color:var(--text3);font-weight:700;letter-spacing:0.5px;text-transform:uppercase;width:58px;flex-shrink:0">Towary</span>
-            <label class="macro-filter-chip" data-type="comm" data-val="XAU"><input type="checkbox" onchange="macroFilterChange()"> XAU Gold</label>
-            <label class="macro-filter-chip" data-type="comm" data-val="XAG"><input type="checkbox" onchange="macroFilterChange()"> XAG Silver</label>
-            <label class="macro-filter-chip" data-type="comm" data-val="OIL"><input type="checkbox" onchange="macroFilterChange()"> OIL</label>
+          <div>
+            <label class="form-label-modal" style="font-size:11px">Data i godzina</label>
+            <input class="form-input-modal" id="macro-rem-dt" type="datetime-local" style="font-size:13px">
           </div>
-          <!-- Indeksy -->
-          <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
-            <span style="font-size:10px;color:var(--text3);font-weight:700;letter-spacing:0.5px;text-transform:uppercase;width:58px;flex-shrink:0">Indeksy</span>
-            <label class="macro-filter-chip" data-type="idx" data-val="SPX"><input type="checkbox" onchange="macroFilterChange()"> SPX (US500)</label>
-            <label class="macro-filter-chip" data-type="idx" data-val="NDX"><input type="checkbox" onchange="macroFilterChange()"> NDX (NAS100)</label>
-            <label class="macro-filter-chip" data-type="idx" data-val="DAX"><input type="checkbox" onchange="macroFilterChange()"> DAX</label>
+          <div>
+            <label class="form-label-modal" style="font-size:11px">Waluta / Para</label>
+            <select class="form-select-modal" id="macro-rem-curr" style="font-size:13px">
+              <option>USD</option><option>EUR</option><option>GBP</option><option>JPY</option>
+              <option>AUD</option><option>CAD</option><option>CHF</option><option>NZD</option>
+              <option>XAU</option><option>XAG</option><option>OIL</option><option>SPX</option><option>NDX</option><option>DAX</option>
+            </select>
           </div>
-          <!-- Ważność -->
-          <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
-            <span style="font-size:10px;color:var(--text3);font-weight:700;letter-spacing:0.5px;text-transform:uppercase;width:58px;flex-shrink:0">Ważność</span>
-            <label class="macro-filter-chip" data-type="imp" data-val="High"><input type="checkbox" onchange="macroFilterChange()"> 🔴 Wysoka</label>
-            <label class="macro-filter-chip" data-type="imp" data-val="Medium"><input type="checkbox" onchange="macroFilterChange()"> 🟡 Średnia</label>
-            <label class="macro-filter-chip" data-type="imp" data-val="Low"><input type="checkbox" onchange="macroFilterChange()"> 🟢 Niska</label>
-          </div>
+          <button class="btn-sm btn-accent" onclick="addMacroReminder()" style="align-self:flex-end;white-space:nowrap">+ Dodaj</button>
         </div>
-        <!-- Nadchodzące eventy -->
-        <div id="macro-upcoming" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);font-size:12px;color:var(--text3)">
-          Kliknij w sekcję aby załadować dane kalendarza...
-        </div>
+        <div id="macro-reminders-list"></div>
       </div>
 
-      <!-- Tabela wydarzeń -->
+      <!-- Widget Investing.com -->
       <div class="summary-card" style="padding:0;overflow:hidden">
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border)">
-          <span style="font-size:13px;font-weight:700" id="macro-week-label">Kalendarz tygodniowy</span>
-          <button class="btn-sm" onclick="refreshMacroCalendar()" style="font-size:11px">↻ Odśwież</button>
+        <iframe
+          src="https://sslecal2.investing.com?ecoDayBackground=1a1d23&columns=exc_flags,exc_currency,exc_importance,exc_actual,exc_forecast,exc_previous&features=datepicker,timezone&countries=25,32,6,37,72,22,17,39,14,10,35,43,56,36,110,11,26,12,4,5&calType=week&timeZone=55&lang=1"
+          width="100%" height="650" frameborder="0" allowtransparency="true" style="display:block;border:none">
+        </iframe>
+        <div style="padding:6px 14px;font-size:10px;color:var(--text3);text-align:right;border-top:1px solid var(--border)">
+          Dane: <a href="https://www.investing.com" target="_blank" rel="noopener" style="color:var(--text3)">Investing.com</a>
         </div>
-        <div id="macro-events-table" style="padding:0;min-height:300px"></div>
       </div>
     </div>
 
@@ -8913,8 +8876,6 @@ async function renderSettings() {
   document.getElementById('sett-login').value = state.currentUser;
   document.getElementById('sett-name').value  = u.name  || '';
   document.getElementById('sett-email').value = u.email || '';
-  const fhInp = document.getElementById('sett-finnhub-key');
-  if (fhInp) { fhInp.value = getFinnhubKey(); const fhSt = document.getElementById('finnhub-key-status'); if (fhSt) fhSt.textContent = getFinnhubKey() ? '✅ Klucz zapisany' : ''; }
   // [v1.7] Pokaż zajętość pamięci
   const storageBar = document.getElementById('storage-usage-bar');
   if (storageBar) {
@@ -17676,288 +17637,99 @@ async function downloadLibraryFile(id) {
 
 // ===== MAKRO KALENDARZ =====
 
-let _macroEvents = [];
 let _macroNotifyTimer = null;
 let _macroNotified = {};
-let _macroFetched = false;
-let _macroWidgetInit = false;
 
-const _MACRO_COMM_CURR = { XAU:['USD'], XAG:['USD'], OIL:['USD'], SPX:['USD'], NDX:['USD'], DAX:['EUR'] };
-
-function getMacroFilters() {
-  try {
-    const s = localStorage.getItem('macro_filters');
-    if (s) return JSON.parse(s);
-  } catch(e) {}
-  return { curr:['USD','EUR','GBP','JPY'], comm:['XAU'], idx:[], imp:['High','Medium'] };
+function getMacroReminders() {
+  try { return JSON.parse(localStorage.getItem('macro_reminders') || '[]'); } catch { return []; }
 }
-
-function saveMacroFilters(f) {
-  try { localStorage.setItem('macro_filters', JSON.stringify(f)); } catch(e) {}
-}
-
-function getMacroActiveCurrencies() {
-  const f = getMacroFilters();
-  const set = new Set(f.curr);
-  [...(f.comm||[]), ...(f.idx||[])].forEach(item => (_MACRO_COMM_CURR[item]||[]).forEach(c => set.add(c)));
-  return [...set];
-}
-
-function macroFilterChange() {
-  const f = { curr:[], comm:[], idx:[], imp:[] };
-  document.querySelectorAll('.macro-filter-chip').forEach(chip => {
-    const type = chip.dataset.type;
-    const val  = chip.dataset.val;
-    if (chip.querySelector('input')?.checked && f[type]) f[type].push(val);
-  });
-  saveMacroFilters(f);
-  renderMacroUpcoming();
+function saveMacroReminders(arr) {
+  try { localStorage.setItem('macro_reminders', JSON.stringify(arr)); } catch(e) {}
 }
 
 function renderMacroCalendar() {
   if (!document.getElementById('page-macro')?.classList.contains('active')) return;
-  // Apply saved filters to checkboxes
-  const f = getMacroFilters();
-  document.querySelectorAll('.macro-filter-chip').forEach(chip => {
-    const type = chip.dataset.type;
-    const val  = chip.dataset.val;
-    const cb = chip.querySelector('input');
-    if (cb && f[type]) cb.checked = f[type].includes(val);
-  });
-  // Fetch ForexFactory data if not yet done
-  if (!_macroFetched) fetchMacroEvents();
-  else { renderMacroUpcoming(); renderMacroTable(); }
-  // Start notification heartbeat
+  renderMacroReminders();
   if (!_macroNotifyTimer) _macroNotifyTimer = setInterval(checkMacroNotifications, 60000);
 }
 
-function refreshMacroCalendar() {
-  _macroFetched = false;
-  _macroEvents = [];
-  fetchMacroEvents();
+function addMacroReminder() {
+  const title = (document.getElementById('macro-rem-title')?.value || '').trim();
+  const dt    = document.getElementById('macro-rem-dt')?.value;
+  const curr  = document.getElementById('macro-rem-curr')?.value || 'USD';
+  if (!title) return toast('Wpisz nazwe wydarzenia', 'error');
+  if (!dt)    return toast('Wybierz date i godzine', 'error');
+  if (new Date(dt) < new Date()) return toast('Data musi byc w przyszlosci', 'error');
+  const reminders = getMacroReminders();
+  reminders.push({ id: genId(), title, dt, curr });
+  reminders.sort((a,b) => a.dt.localeCompare(b.dt));
+  saveMacroReminders(reminders);
+  document.getElementById('macro-rem-title').value = '';
+  document.getElementById('macro-rem-dt').value = '';
+  renderMacroReminders();
+  toast('Przypomnienie dodane', 'success');
 }
 
-function getFinnhubKey() {
-  try { return localStorage.getItem('tlj_finnhub_key') || ''; } catch { return ''; }
-}
-function saveFinnhubKey() {
-  const key = (document.getElementById('sett-finnhub-key')?.value || '').trim();
-  try { localStorage.setItem('tlj_finnhub_key', key); } catch(e) {}
-  const st = document.getElementById('finnhub-key-status');
-  if (st) st.textContent = key ? '✅ Klucz zapisany' : '❌ Klucz usunięty';
-  // Reset cache so next visit refetches
-  _macroFetched = false; _macroEvents = [];
-  toast(key ? 'Klucz Finnhub zapisany ✓' : 'Klucz Finnhub usunięty', key ? 'success' : 'info');
-}
-function toggleFinnhubKeyVisibility() {
-  const inp = document.getElementById('sett-finnhub-key');
-  if (inp) inp.type = inp.type === 'password' ? 'text' : 'password';
+function deleteMacroReminder(id) {
+  saveMacroReminders(getMacroReminders().filter(r => r.id !== id));
+  renderMacroReminders();
 }
 
-async function fetchMacroEvents() {
-  const upEl  = document.getElementById('macro-upcoming');
-  const tblEl = document.getElementById('macro-events-table');
-  if (upEl)  upEl.textContent = t('macro_loading');
-  if (tblEl) tblEl.innerHTML  = '<div style="text-align:center;padding:60px;color:var(--text3)">⏳ Pobieranie danych...</div>';
-
-  const key = getFinnhubKey();
-  if (!key) {
-    _macroFetched = true;
-    const msg = '🔑 Dodaj klucz API Finnhub w Ustawieniach aby załadować dane i powiadomienia.';
-    if (upEl)  upEl.innerHTML  = msg + ' <button class="btn-sm" onclick="showPage(\'settings\')" style="font-size:11px;margin-left:8px">→ Ustawienia</button>';
-    if (tblEl) tblEl.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--text3);line-height:1.8">' + msg + '<br><button class="btn-sm btn-accent" onclick="showPage(\'settings\')" style="margin-top:12px">⚙️ Otwórz Ustawienia</button></div>';
+function renderMacroReminders() {
+  const el = document.getElementById('macro-reminders-list');
+  if (!el) return;
+  const reminders = getMacroReminders();
+  const now = new Date();
+  const active = reminders.filter(r => new Date(r.dt) > new Date(now.getTime() - 2*3600000));
+  if (active.length !== reminders.length) saveMacroReminders(active);
+  if (!active.length) {
+    el.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:8px 0">Brak przypomnieniów — dodaj nadchodzące wydarzenia które chcesz obserwować.</div>';
     return;
   }
-
-  // Finnhub economic calendar — bieżący tydzień
-  const now   = new Date();
-  const from  = now.toISOString().slice(0,10);
-  const toD   = new Date(now.getTime() + 7*24*3600000).toISOString().slice(0,10);
-  const url   = `https://finnhub.io/api/v1/calendar/economic?from=${from}&to=${toD}&token=${key}`;
-  try {
-    const resp = await fetch(url, { cache: 'no-cache' });
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
-    const json = await resp.json();
-    // Finnhub: {economicCalendar: [{actual,country,estimate,event,impact,prev,time,unit}]}
-    const raw = json.economicCalendar || json || [];
-    // Normalizuj do formatu wewnętrznego
-    _macroEvents = raw.map(ev => ({
-      title:    ev.event   || '',
-      country:  (ev.country || '').toUpperCase(),
-      date:     ev.time    ? ev.time.slice(0,10) : '',
-      time:     ev.time    ? ev.time.slice(11,16) : 'Tentative',
-      impact:   mapFinnhubImpact(ev.impact),
-      forecast: ev.estimate != null ? String(ev.estimate) : '',
-      previous: ev.prev    != null ? String(ev.prev)    : '',
-      actual:   ev.actual  != null ? String(ev.actual)  : ''
-    }));
-    _macroFetched = true;
-    renderMacroUpcoming();
-    renderMacroTable();
-    checkMacroNotifications();
-  } catch(e) {
-    console.warn('Finnhub fetch:', e);
-    _macroFetched = true;
-    const errMsg = e.message?.includes('401') ? '❌ Nieprawidłowy klucz Finnhub — sprawdź Ustawienia.' : t('macro_fetch_err');
-    if (upEl)  upEl.textContent  = errMsg;
-    if (tblEl) tblEl.innerHTML   = `<div style="text-align:center;padding:60px;color:var(--text3)">${errMsg}</div>`;
-  }
-}
-
-function mapFinnhubImpact(v) {
-  if (!v) return 'Low';
-  const s = String(v).toLowerCase();
-  if (s === 'high' || s === '3') return 'High';
-  if (s === 'medium' || s === '2') return 'Medium';
-  return 'Low';
-}
-
-function renderMacroTable() {
-  const tblEl = document.getElementById('macro-events-table');
-  if (!tblEl || !_macroFetched) return;
-  const activeCurr = getMacroActiveCurrencies();
-  const activeImp  = getMacroFilters().imp;
-  const IMP_COLOR  = { High:'var(--red)', Medium:'var(--amber)', Low:'var(--green)' };
-  const IMP_ICON   = { High:'🔴', Medium:'🟡', Low:'🟢' };
-
-  const filtered = _macroEvents.filter(ev =>
-    activeCurr.includes(ev.country) && activeImp.includes(ev.impact)
-  );
-
-  if (!filtered.length) {
-    tblEl.innerHTML = '<div style="text-align:center;padding:60px;color:var(--text3)">Brak wydarzeń pasujących do filtrów</div>';
-    return;
-  }
-
-  // Group by date
-  const byDay = {};
-  filtered.forEach(ev => {
-    const d = ev.date || 'Nieznana data';
-    if (!byDay[d]) byDay[d] = [];
-    byDay[d].push(ev);
-  });
-
-  const now = new Date();
-  const weekLabel = document.getElementById('macro-week-label');
-  if (weekLabel && filtered.length) {
-    const dates = Object.keys(byDay).sort();
-    weekLabel.textContent = 'Tydzień: ' + formatMacroDate(dates[0]) + ' — ' + formatMacroDate(dates[dates.length-1]);
-  }
-
-  let html = '';
-  Object.keys(byDay).sort().forEach(day => {
-    const dayLabel = formatMacroDayFull(day);
-    html += `<div style="padding:10px 18px 4px;background:var(--bg3);font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;border-top:1px solid var(--border)">${dayLabel}</div>`;
-    byDay[day].forEach(ev => {
-      const evT = parseMacroTime(ev);
-      const timeStr = ev.time === 'Tentative' || ev.time === 'All Day' ? ev.time : (evT ? evT.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : ev.time || '—');
-      const isPast = evT && evT < now;
-      const isSoon = evT && !isPast && (evT - now) < 3600000;
-      const hasActual = ev.actual && ev.actual !== '';
-      html += `<div style="display:grid;grid-template-columns:52px 38px 1fr auto auto auto;align-items:center;gap:8px;padding:8px 18px;border-bottom:1px solid var(--border);opacity:${isPast?0.55:1};background:${isSoon?'rgba(246,173,85,0.06)':''}">
-        <span style="font-size:12px;font-family:monospace;color:var(--text3)">${timeStr}</span>
-        <span style="font-size:12px;font-weight:700;background:var(--bg3);padding:2px 5px;border-radius:4px;text-align:center">${ev.country}</span>
-        <span style="font-size:12px;font-weight:${ev.impact==='High'?700:400}">${ev.title}</span>
-        <span style="font-size:11px;color:var(--text3);text-align:right">${ev.previous ? 'P: ' + ev.previous : ''}</span>
-        <span style="font-size:11px;color:var(--text3);text-align:right">${ev.forecast ? 'F: ' + ev.forecast : ''}</span>
-        <span style="font-size:12px;text-align:right;min-width:24px">${IMP_ICON[ev.impact]||'⚪'}</span>
-      </div>`;
-    });
-  });
-  tblEl.innerHTML = html;
-}
-
-function formatMacroDate(dateStr) {
-  try {
-    return new Date(dateStr + 'T12:00:00').toLocaleDateString('pl-PL', {day:'numeric', month:'short'});
-  } catch { return dateStr; }
-}
-
-function formatMacroDayFull(dateStr) {
-  try {
-    return new Date(dateStr + 'T12:00:00').toLocaleDateString('pl-PL', {weekday:'long', day:'numeric', month:'long'});
-  } catch { return dateStr; }
-}
-
-function parseMacroTime(ev) {
-  if (!ev.date || !ev.time || ev.time === 'Tentative' || ev.time === 'All Day') return null;
-  try { return new Date(ev.date + 'T' + ev.time + ':00'); } catch { return null; }
-}
-
-function renderMacroUpcoming() {
-  const el = document.getElementById('macro-upcoming');
-  if (!el || !_macroFetched) return;
-  const activeCurr = getMacroActiveCurrencies();
-  const activeImp  = getMacroFilters().imp;
-  const now = new Date();
-  const in24h = new Date(now.getTime() + 24*3600000);
-  const IMP_COLOR = { High:'var(--red)', Medium:'var(--amber)', Low:'var(--green)' };
-  const IMP_ICON  = { High:'🔴', Medium:'🟡', Low:'🟢' };
-
-  const upcoming = _macroEvents.filter(ev => {
-    if (!activeCurr.includes(ev.country)) return false;
-    if (!activeImp.includes(ev.impact)) return false;
-    const t2 = parseMacroTime(ev);
-    return t2 && t2 > now && t2 < in24h;
-  }).sort((a,b) => parseMacroTime(a) - parseMacroTime(b)).slice(0, 6);
-
-  if (!upcoming.length) { el.textContent = t('macro_no_upcoming'); return; }
-
-  el.innerHTML = `<div style="font-size:11px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">${t('macro_upcoming_label')}</div>` +
-    upcoming.map(ev => {
-      const evT = parseMacroTime(ev);
-      const mins = Math.round((evT - now) / 60000);
-      const timeStr = evT.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-      const awayStr = mins < 60 ? `za ${mins} min` : `za ${Math.floor(mins/60)}h ${mins%60}min`;
-      return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border)">
-        <span style="font-size:13px">${IMP_ICON[ev.impact]||'⚪'}</span>
-        <span style="flex:1;font-size:12px;font-weight:600">${ev.title}</span>
-        <span style="font-size:11px;background:var(--bg3);padding:2px 6px;border-radius:4px;font-family:monospace">${ev.country}</span>
-        <span style="font-size:11px;color:var(--text3)">${timeStr}</span>
-        <span style="font-size:11px;font-weight:${mins<=60?700:400};color:${mins<=60?'var(--amber)':'var(--text3)'}">${awayStr}</span>
-      </div>`;
-    }).join('');
+  el.innerHTML = active.map(r => {
+    const evT = new Date(r.dt);
+    const isPast = evT < now;
+    const mins = Math.round((evT - now) / 60000);
+    const timeStr = evT.toLocaleDateString('pl-PL', {weekday:'short', day:'numeric', month:'short'}) + ' ' + evT.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    const awayStr = isPast ? 'minelo' : mins < 60 ? 'za ' + mins + ' min' : 'za ' + Math.floor(mins/60) + 'h ' + (mins%60) + 'min';
+    return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);opacity:' + (isPast?0.5:1) + '">'
+      + '<span style="font-size:12px;font-weight:700;background:var(--bg3);padding:2px 6px;border-radius:4px;font-family:monospace">' + r.curr + '</span>'
+      + '<span style="flex:1;font-size:13px;font-weight:600">' + r.title + '</span>'
+      + '<span style="font-size:11px;color:var(--text3)">' + timeStr + '</span>'
+      + '<span style="font-size:11px;font-weight:' + (mins<=60&&!isPast?700:400) + ';color:' + (mins<=60&&!isPast?'var(--amber)':'var(--text3)') + '">' + awayStr + '</span>'
+      + '<button onclick="deleteMacroReminder(\'' + r.id + '\')" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:0 4px" title="Usun">x</button>'
+      + '</div>';
+  }).join('');
 }
 
 function checkMacroNotifications() {
-  if (!_macroEvents.length) return;
-  const activeCurr = getMacroActiveCurrencies();
-  const activeImp  = (getMacroFilters().imp||[]).filter(i => i !== 'Low');
   const now = new Date();
-  _macroEvents.forEach(ev => {
-    if (!activeCurr.includes(ev.country) || !activeImp.includes(ev.impact)) return;
-    const evT = parseMacroTime(ev);
-    if (!evT) return;
+  getMacroReminders().forEach(r => {
+    const evT = new Date(r.dt);
     const mins = (evT - now) / 60000;
-    if (mins > 0 && mins <= 60) {
-      const key = ev.date + '|' + ev.time + '|' + ev.title;
-      if (!_macroNotified[key]) {
-        _macroNotified[key] = true;
-        showMacroToast(ev, Math.round(mins));
-      }
+    if (mins > 0 && mins <= 60 && !_macroNotified[r.id]) {
+      _macroNotified[r.id] = true;
+      showMacroToast(r.title, r.curr, Math.round(mins), evT);
     }
   });
-  // Refresh upcoming panel if macro page is open
-  if (document.getElementById('page-macro')?.classList.contains('active')) renderMacroUpcoming();
+  if (document.getElementById('page-macro')?.classList.contains('active')) renderMacroReminders();
 }
 
-function showMacroToast(ev, mins) {
-  const IMP_ICON = { High:'🔴', Medium:'🟡', Low:'🟢' };
-  const evT = parseMacroTime(ev);
+function showMacroToast(title, curr, mins, evT) {
   const timeStr = evT ? evT.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '';
   const el = document.createElement('div');
   el.style.cssText = 'position:fixed;top:16px;right:16px;z-index:10000;background:var(--bg2);border:2px solid var(--amber);border-radius:12px;padding:14px 18px;max-width:330px;box-shadow:0 6px 24px rgba(0,0,0,0.5);cursor:pointer;';
-  el.innerHTML = `<div style="display:flex;align-items:flex-start;gap:10px">
-    <span style="font-size:22px;line-height:1">${IMP_ICON[ev.impact]||'📅'}</span>
-    <div style="flex:1">
-      <div style="font-weight:700;font-size:13px;margin-bottom:3px">Za ${mins} min: ${ev.title}</div>
-      <div style="font-size:11px;color:var(--text3)">${ev.country} • ${ev.impact === 'High' ? 'Wysoka ważność' : 'Średnia ważność'} • ${timeStr}</div>
-    </div>
-    <span style="font-size:16px;color:var(--text3);cursor:pointer" onclick="this.closest('div[style*=fixed]').remove()">✕</span>
-  </div>`;
-  el.addEventListener('click', e => { if (e.target.tagName !== 'SPAN') { showPage('macro'); el.remove(); } });
+  el.innerHTML = '<div style="display:flex;align-items:flex-start;gap:10px">'
+    + '<span style="font-size:22px;line-height:1">📅</span>'
+    + '<div style="flex:1">'
+    + '<div style="font-weight:700;font-size:13px;margin-bottom:3px">Za ' + mins + ' min: ' + title + '</div>'
+    + '<div style="font-size:11px;color:var(--text3)">' + curr + ' • ' + timeStr + '</div>'
+    + '</div>'
+    + '<span style="font-size:16px;color:var(--text3);padding:0 4px" onclick="this.closest(\'div[style*=fixed]\').remove()">x</span>'
+    + '</div>';
+  el.addEventListener('click', function(e) { if (e.target.tagName !== 'SPAN') { showPage('macro'); el.remove(); } });
   document.body.appendChild(el);
-  setTimeout(() => { if (el.parentNode) el.remove(); }, 20000);
+  setTimeout(function() { if (el.parentNode) el.remove(); }, 20000);
 }
 
 // ===== IDEAS =====
