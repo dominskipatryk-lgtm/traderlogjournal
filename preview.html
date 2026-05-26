@@ -1519,6 +1519,10 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
           style="padding:10px 20px;background:none;border:none;color:var(--text3);font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px">
           📏 Reguły
         </button>
+        <button class="tools-tab" onclick="switchToolsTab('tax')" id="ttab-tax"
+          style="padding:10px 20px;background:none;border:none;color:var(--text3);font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px">
+          🧾 Rozliczenia PIT
+        </button>
       </div>
 
       <!-- TAB: Kalkulator pozycji -->
@@ -1731,6 +1735,42 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- TAB: Rozliczenia PIT -->
+      <div id="tools-tab-tax" style="display:none">
+        <div class="page-title" style="margin-bottom:4px">🧾 Rozliczenia podatkowe</div>
+        <div class="page-subtitle" style="margin-bottom:20px">Raport do PIT-38 — zyski kapitałowe z transakcji tradingowych</div>
+
+        <!-- Filtry -->
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px">
+          <div>
+            <label class="form-label" style="font-size:11px">Rok podatkowy</label>
+            <select id="tax-year" onchange="renderTaxReport()" class="filter-select" style="font-size:13px">
+            </select>
+          </div>
+          <div>
+            <label class="form-label" style="font-size:11px">Konto</label>
+            <select id="tax-account" onchange="renderTaxReport()" class="filter-select" style="font-size:13px">
+              <option value="all">Wszystkie konta</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label" style="font-size:11px">Typ instrumentu</label>
+            <select id="tax-instr" onchange="renderTaxReport()" class="filter-select" style="font-size:13px">
+              <option value="all">Wszystkie</option>
+              <option value="forex">Forex / CFD / Akcje</option>
+              <option value="crypto">Kryptowaluty</option>
+            </select>
+          </div>
+          <div style="margin-top:16px;display:flex;gap:8px">
+            <button class="btn-sm btn-accent" onclick="exportTaxCSV()" style="font-size:12px">📥 Eksport CSV (e-Deklaracje)</button>
+            <button class="btn-sm" onclick="printTaxPDF()" style="font-size:12px">🖨️ Drukuj / PDF</button>
+          </div>
+        </div>
+
+        <!-- Raport -->
+        <div id="tax-report-container"></div>
       </div>
 
       <!-- TAB: Reguły osobiste tradera -->
@@ -15322,7 +15362,7 @@ function checkRulesBeforeSave() {
 }
 
 function switchToolsTab(tab) {
-  ['calculator','strategies','brokers','rules'].forEach(t => {
+  ['calculator','strategies','brokers','rules','tax'].forEach(t => {
     const el = document.getElementById('tools-tab-' + t);
     const btn = document.getElementById('ttab-' + t);
     if (el) el.style.display = t === tab ? 'block' : 'none';
@@ -15334,6 +15374,7 @@ function switchToolsTab(tab) {
   if (tab === 'strategies') renderToolsStrategies();
   if (tab === 'brokers') initBrokerCalc();
   if (tab === 'rules') renderRules();
+  if (tab === 'tax') initTaxReport();
   if (tab === 'calculator') {
     const acc = getAccounts().find(a => a.id === state.currentAccountId);
     if (acc) {
@@ -17760,6 +17801,296 @@ async function loadLibraryIndex() {
       saveDB(db);
     }
   } catch(e) {}
+}
+
+// ===== ROZLICZENIA PODATKOWE (PIT-38) =====
+
+const _CRYPTO_SYMBOLS = ['BTC','ETH','LTC','XRP','BNB','SOL','ADA','DOT','MATIC','DOGE','USDT','BTCUSD','ETHUSD'];
+
+function _isCrypto(symbol) {
+  const s = (symbol||'').toUpperCase();
+  return _CRYPTO_SYMBOLS.some(c => s.includes(c));
+}
+
+function initTaxReport() {
+  // Wypełnij selektor lat
+  const yearSel = document.getElementById('tax-year');
+  if (!yearSel) return;
+  const allTrades = _getAllClosedTrades();
+  const years = [...new Set(allTrades.map(t => {
+    const d = t.date || t.exitDate;
+    return d ? new Date(d).getFullYear() : null;
+  }).filter(Boolean))].sort((a,b) => b - a);
+  const currentYear = new Date().getFullYear();
+  if (!years.includes(currentYear)) years.unshift(currentYear);
+  yearSel.innerHTML = years.map(y => `<option value="${y}" ${y===currentYear?'selected':''}>${y}</option>`).join('');
+
+  // Wypełnij selektor kont
+  const accSel = document.getElementById('tax-account');
+  if (accSel) {
+    const accounts = getAccounts();
+    accSel.innerHTML = '<option value="all">Wszystkie konta</option>' +
+      accounts.map(a => `<option value="${a.id}">${a.name} (${a.broker})</option>`).join('');
+  }
+
+  renderTaxReport();
+}
+
+function _getAllClosedTrades() {
+  const accounts = getAccounts();
+  const all = [];
+  accounts.forEach(acc => {
+    getTrades(acc.id).filter(t => t.status === 'closed').forEach(t => {
+      all.push({ ...t, _accName: acc.name, _broker: acc.broker, _currency: acc.currency || 'USD' });
+    });
+  });
+  return all;
+}
+
+function renderTaxReport() {
+  const el = document.getElementById('tax-report-container');
+  if (!el) return;
+  const year    = parseInt(document.getElementById('tax-year')?.value) || new Date().getFullYear();
+  const accId   = document.getElementById('tax-account')?.value || 'all';
+  const instrF  = document.getElementById('tax-instr')?.value || 'all';
+
+  let trades = _getAllClosedTrades().filter(t => {
+    const d = t.date || t.exitDate;
+    if (!d) return false;
+    if (new Date(d).getFullYear() !== year) return false;
+    if (accId !== 'all' && t._accId !== accId) return false;
+    if (instrF === 'forex'  && _isCrypto(t.symbol)) return false;
+    if (instrF === 'crypto' && !_isCrypto(t.symbol)) return false;
+    return true;
+  });
+
+  if (!trades.length) {
+    el.innerHTML = `<div style="text-align:center;padding:60px 20px;color:var(--text3)">
+      <div style="font-size:40px;margin-bottom:12px">📂</div>
+      <div style="font-size:15px;font-weight:600">Brak zamkniętych transakcji w ${year} roku</div>
+    </div>`;
+    return;
+  }
+
+  // Podział na forex/CFD i krypto
+  const forexTrades  = trades.filter(t => !_isCrypto(t.symbol));
+  const cryptoTrades = trades.filter(t =>  _isCrypto(t.symbol));
+
+  // Grupowanie po brokerach
+  const byBroker = {};
+  trades.forEach(t => {
+    const k = t._broker || 'Nieznany broker';
+    if (!byBroker[k]) byBroker[k] = [];
+    byBroker[k].push(t);
+  });
+
+  const fmtPLN = v => (v >= 0 ? '+' : '') + v.toFixed(2) + ' zł';
+  const fmtUSD = v => (v >= 0 ? '+' : '') + v.toFixed(2) + ' USD';
+  const colorPnl = v => v >= 0 ? 'var(--green)' : 'var(--red)';
+
+  const tradeRow = t => {
+    const pnl = t.pnl || 0;
+    const przychod = pnl > 0 ? pnl : 0;
+    const koszt    = pnl < 0 ? Math.abs(pnl) : 0;
+    return `<tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:7px 10px;font-size:12px;color:var(--text2)">${t.date || '—'}</td>
+      <td style="padding:7px 10px;font-size:12px;font-weight:600">${t.symbol || '—'}</td>
+      <td style="padding:7px 10px;font-size:12px">${t.dir || '—'}</td>
+      <td style="padding:7px 10px;font-size:12px">${t._broker || '—'}</td>
+      <td style="padding:7px 10px;font-size:12px;text-align:right;color:var(--green)">${przychod > 0 ? '+' + przychod.toFixed(2) : '—'}</td>
+      <td style="padding:7px 10px;font-size:12px;text-align:right;color:var(--red)">${koszt > 0 ? '-' + koszt.toFixed(2) : '—'}</td>
+      <td style="padding:7px 10px;font-size:12px;text-align:right;font-weight:700;color:${colorPnl(pnl)}">${(pnl >= 0 ? '+' : '') + pnl.toFixed(2)}</td>
+    </tr>`;
+  };
+
+  const tableWrap = (rows, currency) => `
+    <div style="overflow-x:auto;border-radius:8px;border:1px solid var(--border)">
+      <table style="width:100%;border-collapse:collapse">
+        <thead>
+          <tr style="background:var(--bg3)">
+            <th style="padding:8px 10px;font-size:11px;color:var(--text3);font-weight:600;text-align:left">Data</th>
+            <th style="padding:8px 10px;font-size:11px;color:var(--text3);font-weight:600;text-align:left">Instrument</th>
+            <th style="padding:8px 10px;font-size:11px;color:var(--text3);font-weight:600;text-align:left">Kierunek</th>
+            <th style="padding:8px 10px;font-size:11px;color:var(--text3);font-weight:600;text-align:left">Broker</th>
+            <th style="padding:8px 10px;font-size:11px;color:var(--text3);font-weight:600;text-align:right">Przychód (${currency})</th>
+            <th style="padding:8px 10px;font-size:11px;color:var(--text3);font-weight:600;text-align:right">Koszt (${currency})</th>
+            <th style="padding:8px 10px;font-size:11px;color:var(--text3);font-weight:600;text-align:right">Zysk/Strata (${currency})</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+
+  const summaryBox = (label, przychod, koszt, dochod, podatek, color) => `
+    <div class="summary-card" style="border-left:3px solid ${color}">
+      <div style="font-size:12px;font-weight:700;color:${color};margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px">${label}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div><div style="font-size:10px;color:var(--text3)">Przychód</div><div style="font-size:15px;font-weight:700;color:var(--green)">${przychod.toFixed(2)}</div></div>
+        <div><div style="font-size:10px;color:var(--text3)">Koszty uzysk. przychodu</div><div style="font-size:15px;font-weight:700;color:var(--red)">${koszt.toFixed(2)}</div></div>
+        <div><div style="font-size:10px;color:var(--text3)">Dochód do opodatkowania</div><div style="font-size:15px;font-weight:700;color:${dochod>=0?'var(--green)':'var(--red)'}">${dochod.toFixed(2)}</div></div>
+        <div><div style="font-size:10px;color:var(--text3)">Podatek 19% (szacunkowy)</div><div style="font-size:15px;font-weight:700;color:var(--amber)">${podatek.toFixed(2)}</div></div>
+      </div>
+    </div>`;
+
+  // Obliczenia forex
+  const fPrzychod = forexTrades.reduce((s,t) => s + Math.max(t.pnl||0, 0), 0);
+  const fKoszt    = forexTrades.reduce((s,t) => s + Math.max(-(t.pnl||0), 0), 0);
+  const fDochod   = fPrzychod - fKoszt;
+  const fPodatek  = Math.max(fDochod, 0) * 0.19;
+
+  // Obliczenia krypto
+  const cPrzychod = cryptoTrades.reduce((s,t) => s + Math.max(t.pnl||0, 0), 0);
+  const cKoszt    = cryptoTrades.reduce((s,t) => s + Math.max(-(t.pnl||0), 0), 0);
+  const cDochod   = cPrzychod - cKoszt;
+  const cPodatek  = Math.max(cDochod, 0) * 0.19;
+
+  // Per-broker summary
+  const brokerRows = Object.entries(byBroker).map(([broker, bTrades]) => {
+    const bp = bTrades.reduce((s,t) => s + Math.max(t.pnl||0, 0), 0);
+    const bk = bTrades.reduce((s,t) => s + Math.max(-(t.pnl||0), 0), 0);
+    const bd = bp - bk;
+    return `<tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:7px 10px;font-size:13px;font-weight:600">${broker}</td>
+      <td style="padding:7px 10px;font-size:13px;text-align:center">${bTrades.length}</td>
+      <td style="padding:7px 10px;font-size:13px;text-align:right;color:var(--green)">+${bp.toFixed(2)}</td>
+      <td style="padding:7px 10px;font-size:13px;text-align:right;color:var(--red)">-${bk.toFixed(2)}</td>
+      <td style="padding:7px 10px;font-size:13px;text-align:right;font-weight:700;color:${bd>=0?'var(--green)':'var(--red)'}">${(bd>=0?'+':'')+bd.toFixed(2)}</td>
+    </tr>`;
+  }).join('');
+
+  let html = `<div id="tax-printable">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div>
+        <div style="font-size:18px;font-weight:700">Raport PIT-38 — Rok ${year}</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:4px">Wygenerowano: ${new Date().toLocaleDateString('pl-PL')} · Wartości w walucie konta (szacunkowe — skonsultuj z doradcą podatkowym)</div>
+      </div>
+    </div>`;
+
+  // Podsumowania
+  html += `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:24px">`;
+  if (forexTrades.length)  html += summaryBox('📈 Forex / CFD / Akcje (PIT-38 poz. 20–23)', fPrzychod, fKoszt, fDochod, fPodatek, 'var(--blue)');
+  if (cryptoTrades.length) html += summaryBox('₿ Kryptowaluty (PIT-38 poz. 24–27)', cPrzychod, cKoszt, cDochod, cPodatek, 'var(--amber)');
+  html += `</div>`;
+
+  // Per-broker
+  if (Object.keys(byBroker).length > 1) {
+    html += `<div style="margin-bottom:24px">
+      <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--text2)">Zestawienie per broker</div>
+      <div style="overflow-x:auto;border-radius:8px;border:1px solid var(--border)">
+        <table style="width:100%;border-collapse:collapse">
+          <thead><tr style="background:var(--bg3)">
+            <th style="padding:8px 10px;font-size:11px;color:var(--text3);text-align:left">Broker</th>
+            <th style="padding:8px 10px;font-size:11px;color:var(--text3);text-align:center">Transakcje</th>
+            <th style="padding:8px 10px;font-size:11px;color:var(--text3);text-align:right">Przychód</th>
+            <th style="padding:8px 10px;font-size:11px;color:var(--text3);text-align:right">Koszty</th>
+            <th style="padding:8px 10px;font-size:11px;color:var(--text3);text-align:right">Dochód</th>
+          </tr></thead>
+          <tbody>${brokerRows}</tbody>
+        </table>
+      </div>
+    </div>`;
+  }
+
+  // Tabela transakcji forex
+  if (forexTrades.length) {
+    html += `<div style="margin-bottom:24px">
+      <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--text2)">📈 Forex / CFD / Akcje — transakcje (${forexTrades.length})</div>
+      ${tableWrap(forexTrades.map(tradeRow).join(''), 'USD')}
+    </div>`;
+  }
+
+  // Tabela transakcji crypto
+  if (cryptoTrades.length) {
+    html += `<div style="margin-bottom:24px">
+      <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--text2)">₿ Kryptowaluty — transakcje (${cryptoTrades.length})</div>
+      ${tableWrap(cryptoTrades.map(tradeRow).join(''), 'USD')}
+    </div>`;
+  }
+
+  html += `<div style="font-size:11px;color:var(--text3);padding:12px;background:var(--bg3);border-radius:8px;margin-top:8px">
+    ⚠️ Raport ma charakter informacyjny. Wartości podane w walucie konta (USD/EUR/PLN). Przed złożeniem PIT-38 przelicz przychody na PLN według kursu NBP z dnia poprzedzającego transakcję. Skonsultuj z doradcą podatkowym.
+  </div>
+  </div>`;
+
+  el.innerHTML = html;
+}
+
+function exportTaxCSV() {
+  const year   = parseInt(document.getElementById('tax-year')?.value) || new Date().getFullYear();
+  const instrF = document.getElementById('tax-instr')?.value || 'all';
+
+  let trades = _getAllClosedTrades().filter(t => {
+    const d = t.date || t.exitDate;
+    if (!d || new Date(d).getFullYear() !== year) return false;
+    if (instrF === 'forex'  && _isCrypto(t.symbol)) return false;
+    if (instrF === 'crypto' && !_isCrypto(t.symbol)) return false;
+    return true;
+  });
+
+  if (!trades.length) return toast('Brak transakcji do eksportu', 'error');
+
+  const rows = [
+    ['Data', 'Instrument', 'Kierunek', 'Broker', 'Wielkosc', 'Cena wejscia', 'Cena wyjscia', 'Przychod', 'Koszt uzysk. przychodu', 'Zysk/Strata', 'Waluta', 'Typ']
+  ];
+  trades.forEach(t => {
+    const pnl = t.pnl || 0;
+    rows.push([
+      t.date || '',
+      t.symbol || '',
+      t.dir || '',
+      t._broker || '',
+      t.size || '',
+      t.entry || '',
+      t.exit || '',
+      pnl > 0 ? pnl.toFixed(2) : '0.00',
+      pnl < 0 ? Math.abs(pnl).toFixed(2) : '0.00',
+      pnl.toFixed(2),
+      t._currency || 'USD',
+      _isCrypto(t.symbol) ? 'Kryptowaluta' : 'Forex/CFD'
+    ]);
+  });
+
+  const csv = rows.map(r => r.map(v => '"' + String(v).replace(/"/g,'""') + '"').join(',')).join('\r\n');
+  const bom = '﻿';
+  const blob = new Blob([bom + csv], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `PIT38_${year}_transakcje.csv`;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { a.remove(); URL.revokeObjectURL(a.href); }, 500);
+  toast('✓ CSV pobrany — otwórz w Excelu i przelicz na PLN wg kursu NBP', 'success');
+}
+
+function printTaxPDF() {
+  const content = document.getElementById('tax-printable');
+  if (!content) return toast('Najpierw otwórz zakładkę Rozliczenia PIT', 'error');
+  const w = window.open('', '_blank');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>PIT-38 Raport</title>
+    <style>
+      body{font-family:Arial,sans-serif;font-size:12px;color:#111;padding:20px;max-width:960px;margin:0 auto}
+      table{width:100%;border-collapse:collapse;margin-bottom:16px}
+      th,td{padding:6px 10px;border:1px solid #ccc;text-align:left}
+      th{background:#f5f5f5;font-weight:600;font-size:11px}
+      .card{border:1px solid #ccc;border-radius:6px;padding:14px;margin-bottom:12px;display:inline-block;min-width:240px;vertical-align:top;margin-right:12px}
+      .green{color:#009966} .red{color:#cc0033} .amber{color:#cc7700}
+      h2{margin-bottom:4px} .sub{color:#666;font-size:11px;margin-bottom:20px}
+      .warn{background:#fffbea;border:1px solid #f0c040;padding:10px;border-radius:6px;font-size:11px;color:#666;margin-top:16px}
+      @media print{body{padding:10px}}
+    </style></head><body>`);
+  // Simplified print version
+  w.document.write('<h2>Raport PIT-38 — Rok ' + (document.getElementById('tax-year')?.value || '') + '</h2>');
+  w.document.write('<p class="sub">Wygenerowano: ' + new Date().toLocaleDateString('pl-PL') + ' | TraderLogJournal</p>');
+  w.document.write(content.innerHTML
+    .replace(/style="[^"]*color:var\([^)]+\)[^"]*"/g, '')
+    .replace(/var\(--green\)/g,'#009966').replace(/var\(--red\)/g,'#cc0033')
+    .replace(/var\(--amber\)/g,'#cc7700').replace(/var\(--bg3\)/g,'#f5f5f5')
+    .replace(/var\(--border\)/g,'#ccc').replace(/var\(--text3\)/g,'#666')
+    .replace(/var\(--text2\)/g,'#444').replace(/var\(--blue\)/g,'#0066cc'));
+  w.document.write('<div class="warn">⚠️ Wartości szacunkowe w walucie konta. Przed PIT-38 przelicz na PLN wg kursu NBP. Skonsultuj z doradcą podatkowym.</div>');
+  w.document.write('</body></html>');
+  w.document.close();
+  setTimeout(() => w.print(), 500);
 }
 
 // ===== MAKRO KALENDARZ =====
