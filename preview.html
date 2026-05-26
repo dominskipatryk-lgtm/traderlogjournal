@@ -1833,9 +1833,9 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
         </div>
 
         <!-- Konto docelowe -->
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap">
-          <label style="font-size:13px;color:var(--text2);flex-shrink:0;font-weight:600">Importuj do konta:</label>
-          <select id="import-account-sel" class="field-input" style="max-width:280px"></select>
+        <div style="max-width:380px;margin-bottom:20px">
+          <label class="form-label-modal">Importuj do konta</label>
+          <select id="import-account-sel" class="form-select-modal"></select>
         </div>
 
         <!-- Dropzone -->
@@ -1844,10 +1844,10 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
           ondragover="event.preventDefault();this.classList.add('import-dz-hover')"
           ondragleave="this.classList.remove('import-dz-hover')"
           ondrop="event.preventDefault();this.classList.remove('import-dz-hover');const f=event.dataTransfer.files[0];if(f)handleImportFile(f)"
-          style="border:2px dashed var(--border);border-radius:14px;padding:44px 20px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:20px;user-select:none">
-          <div style="font-size:40px;margin-bottom:10px">📁</div>
-          <div style="font-size:15px;font-weight:700;margin-bottom:6px">Kliknij lub przeciągnij plik</div>
-          <div style="font-size:12px;color:var(--text3)">Obsługiwane: <strong>.csv</strong>, <strong>.htm</strong>, <strong>.html</strong></div>
+          style="border:2px dashed var(--border);border-radius:12px;padding:44px 20px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:20px;user-select:none;background:var(--bg2)">
+          <div style="font-size:36px;margin-bottom:10px">📁</div>
+          <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px">Kliknij lub przeciągnij plik</div>
+          <div style="font-size:12px;color:var(--text3)">Obsługiwane: <strong style="color:var(--text2)">.csv</strong> · <strong style="color:var(--text2)">.htm</strong> · <strong style="color:var(--text2)">.html</strong></div>
         </div>
         <input type="file" id="import-file-input" accept=".csv,.htm,.html" style="display:none"
           onchange="if(this.files[0])handleImportFile(this.files[0]);this.value=''">
@@ -3332,93 +3332,113 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 
 <!-- PORTFOLIO MODAL -->
 <div class="modal-overlay" id="portfolio-modal" role="dialog" aria-modal="true" aria-label="Pozycja portfela">
-  <div class="modal" style="max-width:560px">
+  <div class="modal" style="max-width:580px">
     <div class="modal-header">
       <div class="modal-title" id="pf-modal-title">Dodaj pozycję</div>
       <button class="modal-close" onclick="closePortfolioModal()" aria-label="Zamknij">✕</button>
     </div>
-    <div class="modal-body" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+    <div class="modal-body">
       <input type="hidden" id="pf-edit-id">
-      <div style="grid-column:1/-1;display:grid;grid-template-columns:1fr 2fr;gap:12px">
-        <div>
-          <label class="field-label">Symbol / Ticker</label>
-          <input class="field-input" id="pf-symbol" placeholder="np. CSPX, KGHM, BTC" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
+      <div class="form-grid">
+        <!-- Symbol + Nazwa — full width, 1:2 split -->
+        <div class="form-group-modal full" style="display:grid;grid-template-columns:1fr 2fr;gap:12px">
+          <div>
+            <label class="form-label-modal" style="color:var(--accent)">Symbol / Ticker *</label>
+            <input class="form-input-modal" id="pf-symbol" placeholder="np. CSPX, BTC, KGHM"
+              style="border-color:var(--accent);text-transform:uppercase;font-weight:700;letter-spacing:.5px"
+              oninput="this.value=this.value.toUpperCase()">
+          </div>
+          <div>
+            <label class="form-label-modal">Nazwa instrumentu</label>
+            <input class="form-input-modal" id="pf-name" placeholder="np. iShares Core S&P 500 UCITS ETF">
+          </div>
         </div>
-        <div>
-          <label class="field-label">Nazwa instrumentu</label>
-          <input class="field-input" id="pf-name" placeholder="np. iShares Core S&P 500 UCITS ETF">
+
+        <!-- Typ + Konto -->
+        <div class="form-group-modal">
+          <label class="form-label-modal">Typ instrumentu</label>
+          <select class="form-select-modal" id="pf-type">
+            <option value="ETF">ETF</option>
+            <option value="Akcja">Akcja</option>
+            <option value="Obligacja">Obligacja</option>
+            <option value="Krypto">Krypto</option>
+            <option value="Złoto">Złoto / Surowiec</option>
+            <option value="REIT">REIT / Nieruchomość</option>
+            <option value="Inne">Inne</option>
+          </select>
         </div>
-      </div>
-      <div>
-        <label class="field-label">Typ instrumentu</label>
-        <select class="field-input" id="pf-type">
-          <option value="ETF">ETF</option>
-          <option value="Akcja">Akcja</option>
-          <option value="Obligacja">Obligacja</option>
-          <option value="Krypto">Krypto</option>
-          <option value="Złoto">Złoto / Surowiec</option>
-          <option value="REIT">REIT / Nieruchomość</option>
-          <option value="Inne">Inne</option>
-        </select>
-      </div>
-      <div>
-        <label class="field-label">Typ konta</label>
-        <select class="field-input" id="pf-account-type">
-          <option value="zwykłe">Zwykłe (opodatkowane)</option>
-          <option value="IKE">IKE (zwolnienie z podatku)</option>
-          <option value="IKZE">IKZE (odliczenie od dochodu)</option>
-        </select>
-      </div>
-      <div>
-        <label class="field-label">Broker / Platforma</label>
-        <input class="field-input" id="pf-broker" placeholder="np. XTB, DEGIRO, Binance">
-      </div>
-      <div>
-        <label class="field-label">Waluta</label>
-        <select class="field-input" id="pf-currency">
-          <option value="PLN">PLN</option>
-          <option value="USD">USD</option>
-          <option value="EUR">EUR</option>
-          <option value="GBP">GBP</option>
-          <option value="CHF">CHF</option>
-        </select>
-      </div>
-      <div>
-        <label class="field-label">Ilość (sztuk / jednostek)</label>
-        <input class="field-input" id="pf-qty" type="number" step="any" placeholder="0">
-      </div>
-      <div>
-        <label class="field-label">Cena zakupu (avg)</label>
-        <input class="field-input" id="pf-buy-price" type="number" step="any" placeholder="0.00">
-      </div>
-      <div>
-        <label class="field-label">Data zakupu</label>
-        <input class="field-input" id="pf-buy-date" type="date">
-      </div>
-      <div>
-        <label class="field-label">Prowizja (opcjonalnie)</label>
-        <input class="field-input" id="pf-fee" type="number" step="any" placeholder="0.00">
-      </div>
-      <div>
-        <label class="field-label">Bieżąca cena rynkowa</label>
-        <input class="field-input" id="pf-current-price" type="number" step="any" placeholder="0.00" oninput="pfUpdateLiveCalc()">
-      </div>
-      <div style="grid-column:1/-1">
-        <label class="field-label">Notatka</label>
-        <textarea class="field-input" id="pf-note" rows="2" placeholder="Strategia, cel, horyzont..."></textarea>
-      </div>
-      <!-- Live P&L preview -->
-      <div id="pf-live-calc" style="grid-column:1/-1;display:none;background:var(--bg3);border-radius:8px;padding:12px;font-size:13px">
-        <div style="display:flex;gap:20px;flex-wrap:wrap">
-          <div><span style="color:var(--text3)">Koszt całkowity: </span><span id="pf-calc-cost" style="font-weight:600"></span></div>
-          <div><span style="color:var(--text3)">Wartość rynkowa: </span><span id="pf-calc-value" style="font-weight:600"></span></div>
-          <div><span style="color:var(--text3)">P&amp;L: </span><span id="pf-calc-pnl" style="font-weight:700"></span></div>
+        <div class="form-group-modal">
+          <label class="form-label-modal">Typ konta</label>
+          <select class="form-select-modal" id="pf-account-type">
+            <option value="zwykłe">Zwykłe (opodatkowane)</option>
+            <option value="IKE">IKE (zwolnienie z podatku)</option>
+            <option value="IKZE">IKZE (odliczenie od dochodu)</option>
+          </select>
+        </div>
+
+        <!-- Broker + Waluta -->
+        <div class="form-group-modal">
+          <label class="form-label-modal">Broker / Platforma</label>
+          <input class="form-input-modal" id="pf-broker" placeholder="np. XTB, DEGIRO, Binance">
+        </div>
+        <div class="form-group-modal">
+          <label class="form-label-modal">Waluta</label>
+          <select class="form-select-modal" id="pf-currency">
+            <option value="PLN">PLN</option>
+            <option value="USD">USD</option>
+            <option value="EUR">EUR</option>
+            <option value="GBP">GBP</option>
+            <option value="CHF">CHF</option>
+          </select>
+        </div>
+
+        <!-- Ilość + Data -->
+        <div class="form-group-modal">
+          <label class="form-label-modal">Ilość (sztuk / jednostek) *</label>
+          <input class="form-input-modal" id="pf-qty" type="number" step="any" placeholder="0">
+        </div>
+        <div class="form-group-modal">
+          <label class="form-label-modal">Data zakupu</label>
+          <input class="form-input-modal" id="pf-buy-date" type="date">
+        </div>
+
+        <!-- Cena zakupu + Prowizja -->
+        <div class="form-group-modal">
+          <label class="form-label-modal" style="color:var(--accent)">Cena zakupu (avg) *</label>
+          <input class="form-input-modal" id="pf-buy-price" type="number" step="any" placeholder="0.00"
+            style="border-color:var(--accent)" oninput="pfUpdateLiveCalc()">
+        </div>
+        <div class="form-group-modal">
+          <label class="form-label-modal">Prowizja</label>
+          <input class="form-input-modal" id="pf-fee" type="number" step="any" placeholder="0.00" oninput="pfUpdateLiveCalc()">
+        </div>
+
+        <!-- Bieżąca cena — full width z akcentem green -->
+        <div class="form-group-modal full">
+          <label class="form-label-modal" style="color:var(--green)">Bieżąca cena rynkowa</label>
+          <input class="form-input-modal" id="pf-current-price" type="number" step="any" placeholder="0.00"
+            style="border-color:var(--green)" oninput="pfUpdateLiveCalc()">
+        </div>
+
+        <!-- Live P&L calc -->
+        <div id="pf-live-calc" class="full" style="display:none;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px">
+          <div style="display:flex;gap:24px;flex-wrap:wrap;font-size:13px">
+            <div><span class="form-label-modal" style="display:inline">Koszt: </span><span id="pf-calc-cost" style="font-weight:700;color:var(--text)"></span></div>
+            <div><span class="form-label-modal" style="display:inline">Wartość: </span><span id="pf-calc-value" style="font-weight:700;color:var(--text)"></span></div>
+            <div><span class="form-label-modal" style="display:inline">P&amp;L: </span><span id="pf-calc-pnl" style="font-weight:700"></span></div>
+          </div>
+        </div>
+
+        <!-- Notatka -->
+        <div class="form-group-modal full">
+          <label class="form-label-modal">Notatka</label>
+          <textarea class="form-input-modal" id="pf-note" rows="2" placeholder="Strategia, cel, horyzont..."></textarea>
         </div>
       </div>
     </div>
-    <div style="display:flex;justify-content:flex-end;gap:10px;padding:16px 20px;border-top:1px solid var(--border)">
+    <div class="modal-footer">
       <button class="btn-sm" onclick="closePortfolioModal()">Anuluj</button>
-      <button class="btn-sm btn-accent" onclick="savePortfolioPosition()">Zapisz</button>
+      <button class="btn-sm btn-accent" onclick="savePortfolioPosition()">Zapisz pozycję</button>
     </div>
   </div>
 </div>
