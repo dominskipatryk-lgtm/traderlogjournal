@@ -1023,6 +1023,9 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
   .btn-sm { padding: 5px 10px; font-size: 12px; }
 }
 
+/* ===== IMPORT CSV ===== */
+.import-dz-hover { border-color:var(--accent) !important; background:var(--accent-dim) !important; }
+
 /* ===== PORTFOLIO ===== */
 .portfolio-stat-card { background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:16px 18px; }
 .portfolio-stat-label { font-size:11px; color:var(--text3); text-transform:uppercase; letter-spacing:.5px; margin-bottom:4px; }
@@ -1559,6 +1562,10 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
           style="padding:10px 20px;background:none;border:none;color:var(--text3);font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px">
           🧾 Rozliczenia PIT
         </button>
+        <button class="tools-tab" onclick="switchToolsTab('import')" id="ttab-import"
+          style="padding:10px 20px;background:none;border:none;color:var(--text3);font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px">
+          📂 Import CSV
+        </button>
       </div>
 
       <!-- TAB: Kalkulator pozycji -->
@@ -1807,6 +1814,93 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 
         <!-- Raport -->
         <div id="tax-report-container"></div>
+      </div>
+
+      <!-- TAB: Import CSV -->
+      <div id="tools-tab-import" style="display:none">
+        <div class="page-title" style="margin-bottom:4px">📂 Import historii transakcji</div>
+        <div class="page-subtitle" style="margin-bottom:20px">Wgraj plik CSV lub HTML z platformy tradingowej</div>
+
+        <!-- Obsługiwane formaty -->
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">
+          <span style="background:#1a3a5c;color:#4da6ff;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600">MT4 CSV / HTML</span>
+          <span style="background:#1a3a5c;color:#4da6ff;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600">MT5 CSV</span>
+          <span style="background:#1a2d2d;color:#26c6da;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600">Bybit Futures</span>
+          <span style="background:#1a2d2d;color:#26c6da;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600">Bybit Spot</span>
+          <span style="background:#2d1a2d;color:#ce93d8;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600">MEXC Futures</span>
+          <span style="background:#2d1a2d;color:#ce93d8;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600">MEXC Spot</span>
+          <span style="background:var(--bg3);color:var(--text3);padding:4px 10px;border-radius:20px;font-size:12px;border:1px dashed var(--border)">Axi → przez MT4</span>
+        </div>
+
+        <!-- Konto docelowe -->
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap">
+          <label style="font-size:13px;color:var(--text2);flex-shrink:0;font-weight:600">Importuj do konta:</label>
+          <select id="import-account-sel" class="field-input" style="max-width:280px"></select>
+        </div>
+
+        <!-- Dropzone -->
+        <div id="import-dropzone"
+          onclick="document.getElementById('import-file-input').click()"
+          ondragover="event.preventDefault();this.classList.add('import-dz-hover')"
+          ondragleave="this.classList.remove('import-dz-hover')"
+          ondrop="event.preventDefault();this.classList.remove('import-dz-hover');const f=event.dataTransfer.files[0];if(f)handleImportFile(f)"
+          style="border:2px dashed var(--border);border-radius:14px;padding:44px 20px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:20px;user-select:none">
+          <div style="font-size:40px;margin-bottom:10px">📁</div>
+          <div style="font-size:15px;font-weight:700;margin-bottom:6px">Kliknij lub przeciągnij plik</div>
+          <div style="font-size:12px;color:var(--text3)">Obsługiwane: <strong>.csv</strong>, <strong>.htm</strong>, <strong>.html</strong></div>
+        </div>
+        <input type="file" id="import-file-input" accept=".csv,.htm,.html" style="display:none"
+          onchange="if(this.files[0])handleImportFile(this.files[0]);this.value=''">
+
+        <!-- Status / błąd -->
+        <div id="import-status" style="display:none;margin-bottom:16px"></div>
+
+        <!-- Podgląd -->
+        <div id="import-preview-wrap" style="display:none">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+            <div id="import-summary-text" style="font-size:13px"></div>
+            <div style="display:flex;gap:8px">
+              <button class="btn-sm" onclick="resetImportTab()">↩ Anuluj</button>
+              <button class="btn-sm btn-accent" id="import-confirm-btn" onclick="confirmImportTrades()">✓ Importuj</button>
+            </div>
+          </div>
+          <div class="table-wrap" style="max-height:420px;overflow-y:auto">
+            <table style="width:100%;border-collapse:collapse">
+              <thead>
+                <tr style="position:sticky;top:0;background:var(--bg2);z-index:1">
+                  <th style="text-align:left;padding:8px 10px;font-size:11px;color:var(--text3);font-weight:600;border-bottom:2px solid var(--border)">Data</th>
+                  <th style="text-align:left;padding:8px 10px;font-size:11px;color:var(--text3);font-weight:600;border-bottom:2px solid var(--border)">Symbol</th>
+                  <th style="text-align:left;padding:8px 10px;font-size:11px;color:var(--text3);font-weight:600;border-bottom:2px solid var(--border)">Kier.</th>
+                  <th style="text-align:right;padding:8px 10px;font-size:11px;color:var(--text3);font-weight:600;border-bottom:2px solid var(--border)">Wolumen</th>
+                  <th style="text-align:right;padding:8px 10px;font-size:11px;color:var(--text3);font-weight:600;border-bottom:2px solid var(--border)">Entry</th>
+                  <th style="text-align:right;padding:8px 10px;font-size:11px;color:var(--text3);font-weight:600;border-bottom:2px solid var(--border)">Exit</th>
+                  <th style="text-align:right;padding:8px 10px;font-size:11px;color:var(--text3);font-weight:600;border-bottom:2px solid var(--border)">P&amp;L</th>
+                  <th style="text-align:center;padding:8px 10px;font-size:11px;color:var(--text3);font-weight:600;border-bottom:2px solid var(--border)">Źródło</th>
+                </tr>
+              </thead>
+              <tbody id="import-preview-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Instrukcja eksportu -->
+        <details style="margin-top:28px">
+          <summary style="cursor:pointer;font-size:13px;font-weight:600;color:var(--text2);padding:8px 0">ℹ️ Jak wyeksportować plik z platformy?</summary>
+          <div style="margin-top:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px">
+            <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px">
+              <div style="font-weight:700;margin-bottom:6px">MT4 (Axi i inni)</div>
+              <div style="font-size:12px;color:var(--text2);line-height:1.7">Terminal → Historia rachunku → PPM → Zapisz jako raport (wybierz <strong>HTML</strong> lub <strong>CSV</strong>)</div>
+            </div>
+            <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px">
+              <div style="font-weight:700;margin-bottom:6px">Bybit</div>
+              <div style="font-size:12px;color:var(--text2);line-height:1.7">Deriv. → <strong>Closed P&amp;L</strong> → Eksportuj CSV<br>lub Spot → Historia handlu → Eksportuj</div>
+            </div>
+            <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px">
+              <div style="font-weight:700;margin-bottom:6px">MEXC</div>
+              <div style="font-size:12px;color:var(--text2);line-height:1.7">Futures → Zamknięte pozycje → Eksportuj<br>lub Spot → Historia zleceń → Eksportuj CSV</div>
+            </div>
+          </div>
+        </details>
       </div>
 
       <!-- TAB: Reguły osobiste tradera -->
@@ -15547,7 +15641,7 @@ function checkRulesBeforeSave() {
 }
 
 function switchToolsTab(tab) {
-  ['calculator','strategies','brokers','rules','tax'].forEach(t => {
+  ['calculator','strategies','brokers','rules','tax','import'].forEach(t => {
     const el = document.getElementById('tools-tab-' + t);
     const btn = document.getElementById('ttab-' + t);
     if (el) el.style.display = t === tab ? 'block' : 'none';
@@ -15560,6 +15654,7 @@ function switchToolsTab(tab) {
   if (tab === 'brokers') initBrokerCalc();
   if (tab === 'rules') renderRules();
   if (tab === 'tax') initTaxReport();
+  if (tab === 'import') initImportTab();
   if (tab === 'calculator') {
     const acc = getAccounts().find(a => a.id === state.currentAccountId);
     if (acc) {
@@ -18640,6 +18735,402 @@ function deleteMyIdea(id) {
       await renderIdeasPage();
     } catch(e) { toast('Błąd: ' + e.message, 'error'); }
   });
+}
+
+// ===== IMPORT CSV =====
+
+let _importBuffer = [];
+let _importFormat = '';
+
+function initImportTab() {
+  const sel = document.getElementById('import-account-sel');
+  if (!sel) return;
+  const accounts = getAccounts();
+  sel.innerHTML = accounts.length
+    ? accounts.map(a => `<option value="${a.id}">${a.name}${a.broker ? ' — ' + a.broker : ''}</option>`).join('')
+    : '<option value="">— Najpierw dodaj konto —</option>';
+  if (state.currentAccountId) sel.value = state.currentAccountId;
+}
+
+function handleImportFile(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const raw = e.target.result;
+    const fmt = detectImportFormat(raw, file.name);
+    _importFormat = fmt;
+    let trades = [];
+    try {
+      if      (fmt === 'mt4csv')      trades = parseMT4CSV(raw);
+      else if (fmt === 'mt4html')     trades = parseMT4HTML(raw);
+      else if (fmt === 'mt5csv')      trades = parseMT5CSV(raw);
+      else if (fmt === 'bybit-fut')   trades = parseBybitFutures(raw);
+      else if (fmt === 'bybit-spot')  trades = parseBybitSpot(raw);
+      else if (fmt === 'mexc-fut')    trades = parseMEXCFutures(raw);
+      else if (fmt === 'mexc-spot')   trades = parseMEXCSpot(raw);
+      else {
+        showImportStatus('error', `Nierozpoznany format pliku <strong>${file.name}</strong>.<br>Obsługiwane: MT4/MT5 CSV lub HTML, Bybit Closed P&L CSV, MEXC Futures/Spot CSV.`);
+        return;
+      }
+    } catch(err) {
+      showImportStatus('error', 'Błąd parsowania: ' + err.message);
+      return;
+    }
+    if (!trades.length) {
+      showImportStatus('warning', 'Nie znaleziono żadnych transakcji w pliku. Sprawdź format eksportu (patrz instrukcja poniżej).');
+      return;
+    }
+    _importBuffer = trades;
+    renderImportPreview(trades, fmt, file.name);
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function detectImportFormat(text, filename) {
+  const sample = text.slice(0, 4000).toLowerCase();
+  // HTML files
+  if (sample.includes('<html') || sample.startsWith('<!')) {
+    return sample.includes('metatrader 5') ? 'mt5html' : 'mt4html';
+  }
+  const firstLine = text.split('\n')[0];
+  const sep = firstLine.includes(';') ? ';' : ',';
+  const hdrs = firstLine.split(sep).map(h => h.replace(/[\r\n﻿"]/g,'').trim().toLowerCase());
+  const h = hdrs.join('|');
+
+  // MT4: Ticket;Open Time;Type;Size;Item;Price  (semicolons)
+  if (sep === ';' && hdrs.some(x => x==='ticket'||x==='#') && hdrs.some(x => x.includes('open time')||x==='time')) return 'mt4csv';
+  // MT5: Position,Symbol,Type,Volume,Open Time,Open Price,Close Time,Close Price
+  if (hdrs.includes('position') && hdrs.includes('symbol') && hdrs.some(x => x.includes('open') && x.includes('price'))) return 'mt5csv';
+  // Bybit Futures Closed P&L: Symbol,Closed P&L,Opening Direction,...
+  if (h.includes('closed') && (h.includes('p&l')||h.includes('pnl')) || h.includes('opening direction')) return 'bybit-fut';
+  // Bybit Spot: Date(UTC),Pair,Side,Average Price,...
+  if ((hdrs.includes('pair')||hdrs.includes('symbol')) && hdrs.includes('side') && hdrs.some(x=>x.includes('average')||x.includes('avg'))) return 'bybit-spot';
+  // MEXC Futures: Settled Time,Contract,...,Realized PnL
+  if (hdrs.some(x=>x.includes('contract')) && hdrs.some(x=>x.includes('realized')||x.includes('pnl'))) return 'mexc-fut';
+  // MEXC Spot: Time,Pair,Side,Price,...
+  if ((hdrs.includes('pair')||hdrs.includes('symbol')) && hdrs.includes('side') && hdrs.includes('fee')) return 'mexc-spot';
+  return 'unknown';
+}
+
+// ---- CSV helpers ----
+function _csvSplit(line, sep) {
+  const res = []; let cur = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') { inQ = !inQ; continue; }
+    if (c === sep && !inQ) { res.push(cur.trim()); cur = ''; } else cur += c;
+  }
+  res.push(cur.trim());
+  return res;
+}
+function _parseCSV(text, sep) {
+  const lines = text.replace(/\r/g,'').split('\n').filter(l => l.trim());
+  if (!lines.length) return { hdrs:[], rows:[] };
+  const hdrs = _csvSplit(lines[0], sep).map(h => h.replace(/[﻿"]/g,'').trim().toLowerCase());
+  const rows = lines.slice(1).map(l => _csvSplit(l, sep));
+  return { hdrs, rows };
+}
+function _col(hdrs, ...names) {
+  for (const n of names) { const i = hdrs.findIndex(h => h.includes(n)); if (i >= 0) return i; }
+  return -1;
+}
+function _num(s) { return parseFloat(String(s||0).replace(/[^\d.\-]/g,'')) || 0; }
+function _dt(s) {
+  if (!s) return '';
+  // MT4 format: 2024.01.15 10:30:00
+  const clean = s.replace(/(\d{4})\.(\d{2})\.(\d{2})/, '$1-$2-$3').replace(' ','T');
+  const d = new Date(clean);
+  return isNaN(d.getTime()) ? s.slice(0,16) : d.toISOString().slice(0,16);
+}
+function _uid() { return 'imp_' + Date.now() + '_' + Math.random().toString(36).slice(2,6); }
+
+// ---- MT4 CSV ----
+function parseMT4CSV(text) {
+  const sep = text.split('\n')[0].includes(';') ? ';' : ',';
+  const { hdrs, rows } = _parseCSV(text, sep);
+  const BUY_SELL = ['buy','sell','buy limit','sell limit','buy stop','sell stop'];
+  return rows.flatMap(c => {
+    if (c.length < 10) return [];
+    const type = (c[2]||'').toLowerCase().trim();
+    if (!BUY_SELL.includes(type)) return [];
+    const sym = (c[4]||'').toUpperCase().trim();
+    const entry = _num(c[5]), exit = _num(c[9]);
+    if (!sym || !entry) return [];
+    return [{
+      id: _uid(), symbol: sym,
+      dir: type.startsWith('sell') ? 'short' : 'long',
+      size: _num(c[3]), entry, exit,
+      sl: _num(c[6]), tp: _num(c[7]),
+      commission: _num(c[10]), swap: _num(c[12]),
+      pnl: _num(c[13]), status: 'closed',
+      date: _dt(c[1]), dateClose: _dt(c[8]),
+      _src: 'MT4'
+    }];
+  });
+}
+
+// ---- MT4 HTML Statement ----
+function parseMT4HTML(text) {
+  const doc = new DOMParser().parseFromString(text, 'text/html');
+  const BUY_SELL = ['buy','sell'];
+  const trades = [];
+  doc.querySelectorAll('tr').forEach(row => {
+    const cells = [...row.querySelectorAll('td')].map(td => td.textContent.trim());
+    if (cells.length < 13) return;
+    const type = (cells[2]||'').toLowerCase();
+    if (!BUY_SELL.some(t => type.startsWith(t))) return;
+    const sym = (cells[4]||'').toUpperCase(), entry = _num(cells[5]), exit = _num(cells[9]);
+    if (!sym || !entry || !exit) return;
+    trades.push({
+      id: _uid(), symbol: sym,
+      dir: type.startsWith('sell') ? 'short' : 'long',
+      size: _num(cells[3]), entry, exit,
+      sl: _num(cells[6]), tp: _num(cells[7]),
+      commission: _num(cells[10]), swap: _num(cells[12]),
+      pnl: _num(cells[13]), status: 'closed',
+      date: _dt(cells[1]), dateClose: _dt(cells[8]),
+      _src: 'MT4'
+    });
+  });
+  return trades;
+}
+
+// ---- MT5 CSV ----
+function parseMT5CSV(text) {
+  const { hdrs, rows } = _parseCSV(text, ',');
+  const iSym  = _col(hdrs,'symbol','item');
+  const iType = _col(hdrs,'type','direction');
+  const iVol  = _col(hdrs,'volume','size','lots');
+  const iOT   = _col(hdrs,'open time');
+  const iOP   = _col(hdrs,'open price');
+  const iCT   = _col(hdrs,'close time');
+  const iCP   = _col(hdrs,'close price');
+  const iComm = _col(hdrs,'commission');
+  const iSwap = _col(hdrs,'swap');
+  const iPnl  = _col(hdrs,'profit');
+  const iSL   = _col(hdrs,'s / l','s/l');
+  const iTP   = _col(hdrs,'t / p','t/p');
+  return rows.flatMap(c => {
+    const type = (c[iType]||'').toLowerCase();
+    if (!type.includes('buy') && !type.includes('sell')) return [];
+    const sym = (c[iSym]||'').toUpperCase().trim();
+    if (!sym) return [];
+    return [{
+      id: _uid(), symbol: sym,
+      dir: type.includes('sell') ? 'short' : 'long',
+      size: iVol>=0 ? _num(c[iVol]) : 0,
+      entry: iOP>=0 ? _num(c[iOP]) : 0,
+      exit:  iCP>=0 ? _num(c[iCP]) : 0,
+      sl: iSL>=0 ? _num(c[iSL]) : 0,
+      tp: iTP>=0 ? _num(c[iTP]) : 0,
+      commission: iComm>=0 ? _num(c[iComm]) : 0,
+      swap: iSwap>=0 ? _num(c[iSwap]) : 0,
+      pnl: iPnl>=0 ? _num(c[iPnl]) : 0, status: 'closed',
+      date: iOT>=0 ? _dt(c[iOT]) : '', dateClose: iCT>=0 ? _dt(c[iCT]) : '',
+      _src: 'MT5'
+    }];
+  });
+}
+
+// ---- Bybit Futures (Closed P&L) ----
+function parseBybitFutures(text) {
+  const { hdrs, rows } = _parseCSV(text, ',');
+  const iSym  = _col(hdrs,'symbol');
+  const iPnl  = _col(hdrs,'closed p','closedp','pnl');
+  const iDir  = _col(hdrs,'opening direction','direction','side');
+  const iQty  = _col(hdrs,'qty','size','closed size','volume');
+  const iEnt  = _col(hdrs,'entry price','avg entry');
+  const iExt  = _col(hdrs,'exit price','avg exit','close price');
+  const iODt  = _col(hdrs,'open date','open time','create time');
+  const iCDt  = _col(hdrs,'close date','close time','settle time');
+  return rows.flatMap(c => {
+    const sym = (c[iSym]||'').toUpperCase().trim();
+    if (!sym) return [];
+    const dirRaw = ((iDir>=0 ? c[iDir] : '')||'').toLowerCase();
+    return [{
+      id: _uid(), symbol: sym,
+      dir: dirRaw.includes('sell')||dirRaw.includes('short') ? 'short' : 'long',
+      size: iQty>=0 ? _num(c[iQty]) : 0,
+      entry: iEnt>=0 ? _num(c[iEnt]) : 0,
+      exit:  iExt>=0 ? _num(c[iExt]) : 0,
+      commission: 0, swap: 0,
+      pnl: iPnl>=0 ? _num(c[iPnl]) : 0, status: 'closed',
+      date: iODt>=0 ? _dt(c[iODt]) : '', dateClose: iCDt>=0 ? _dt(c[iCDt]) : '',
+      _src: 'Bybit'
+    }];
+  });
+}
+
+// ---- Bybit Spot ----
+function parseBybitSpot(text) {
+  const { hdrs, rows } = _parseCSV(text, ',');
+  const iDt   = _col(hdrs,'date','time');
+  const iPair = _col(hdrs,'pair','symbol');
+  const iSide = _col(hdrs,'side');
+  const iPrc  = _col(hdrs,'average price','avg price','price');
+  const iQty  = _col(hdrs,'executed','filled','qty');
+  const iFee  = _col(hdrs,'fee');
+  return rows.flatMap(c => {
+    const sym  = (c[iPair]||'').toUpperCase().replace('/','').trim();
+    const side = (c[iSide]||'').toLowerCase();
+    if (!sym||!side) return [];
+    return [{
+      id: _uid(), symbol: sym,
+      dir: side.includes('sell') ? 'short' : 'long',
+      size: iQty>=0 ? _num(c[iQty]) : 0,
+      entry: iPrc>=0 ? _num(c[iPrc]) : 0,
+      exit: 0, sl: 0, tp: 0,
+      commission: iFee>=0 ? _num(c[iFee]) : 0, swap: 0,
+      pnl: 0, status: 'closed',
+      date: iDt>=0 ? _dt(c[iDt]) : '', dateClose: '',
+      _src: 'Bybit Spot'
+    }];
+  });
+}
+
+// ---- MEXC Futures ----
+function parseMEXCFutures(text) {
+  const { hdrs, rows } = _parseCSV(text, ',');
+  const iDt   = _col(hdrs,'settled time','time','date');
+  const iSym  = _col(hdrs,'contract','symbol');
+  const iDir  = _col(hdrs,'direction','type','side');
+  const iOP   = _col(hdrs,'open price','avg.open','avg. open','entry');
+  const iCP   = _col(hdrs,'close price','settle price','avg.settle','avg.close');
+  const iQty  = _col(hdrs,'filled amount','amount','quantity','qty');
+  const iPnl  = _col(hdrs,'realized pnl','realized p','pnl');
+  const iFee  = _col(hdrs,'fee','transaction fee');
+  return rows.flatMap(c => {
+    const sym = (c[iSym]||'').toUpperCase().replace('_','').trim();
+    if (!sym) return [];
+    const dirRaw = ((iDir>=0 ? c[iDir] : '')||'').toLowerCase();
+    const fee = iFee>=0 ? _num(c[iFee]) : 0;
+    return [{
+      id: _uid(), symbol: sym,
+      dir: dirRaw.includes('short')||dirRaw.includes('sell') ? 'short' : 'long',
+      size: iQty>=0 ? _num(c[iQty]) : 0,
+      entry: iOP>=0 ? _num(c[iOP]) : 0,
+      exit:  iCP>=0 ? _num(c[iCP]) : 0,
+      commission: fee, swap: 0,
+      pnl: (iPnl>=0 ? _num(c[iPnl]) : 0) - Math.abs(fee),
+      status: 'closed',
+      date: '', dateClose: iDt>=0 ? _dt(c[iDt]) : '',
+      _src: 'MEXC'
+    }];
+  });
+}
+
+// ---- MEXC Spot ----
+function parseMEXCSpot(text) {
+  const { hdrs, rows } = _parseCSV(text, ',');
+  const iDt   = _col(hdrs,'time','date');
+  const iPair = _col(hdrs,'pair','symbol');
+  const iSide = _col(hdrs,'side');
+  const iPrc  = _col(hdrs,'price','avg price');
+  const iQty  = _col(hdrs,'filled','qty','amount');
+  const iFee  = _col(hdrs,'fee');
+  return rows.flatMap(c => {
+    const sym  = (c[iPair]||'').toUpperCase().replace('/','').trim();
+    const side = (c[iSide]||'').toLowerCase();
+    if (!sym||!side) return [];
+    return [{
+      id: _uid(), symbol: sym,
+      dir: side.includes('sell') ? 'short' : 'long',
+      size: iQty>=0 ? _num(c[iQty]) : 0,
+      entry: iPrc>=0 ? _num(c[iPrc]) : 0,
+      exit: 0, sl: 0, tp: 0,
+      commission: iFee>=0 ? _num(c[iFee]) : 0, swap: 0,
+      pnl: 0, status: 'closed',
+      date: iDt>=0 ? _dt(c[iDt]) : '', dateClose: '',
+      _src: 'MEXC Spot'
+    }];
+  });
+}
+
+function showImportStatus(type, msg) {
+  const el = document.getElementById('import-status');
+  if (!el) return;
+  const colors = { error: 'var(--red)', warning: 'var(--amber)', success: 'var(--green)' };
+  const col = colors[type] || colors.error;
+  el.innerHTML = `<div style="padding:12px 16px;background:${col}22;border:1px solid ${col};border-radius:8px;font-size:13px;line-height:1.6">${msg}</div>`;
+  el.style.display = 'block';
+  document.getElementById('import-preview-wrap').style.display = 'none';
+}
+
+function renderImportPreview(trades, fmt, filename) {
+  document.getElementById('import-status').style.display = 'none';
+  const previewEl = document.getElementById('import-preview-wrap');
+  if (!previewEl) return;
+
+  // Deduplication check against selected account
+  const accId = document.getElementById('import-account-sel')?.value;
+  const existing = accId ? getTrades(accId) : [];
+  const withFlags = trades.map(tr => ({
+    ...tr,
+    _dup: existing.some(ex =>
+      ex.symbol === tr.symbol &&
+      ex.date && tr.date &&
+      ex.date.slice(0,15) === tr.date.slice(0,15) &&
+      Math.abs((_num(ex.entry) - tr.entry)) < 0.0001
+    )
+  }));
+
+  const newCnt = withFlags.filter(t => !t._dup).length;
+  const dupCnt = withFlags.filter(t =>  t._dup).length;
+  const FMT = { 'mt4csv':'MT4 CSV','mt4html':'MT4 HTML','mt5csv':'MT5','mt5html':'MT5 HTML','bybit-fut':'Bybit Futures','bybit-spot':'Bybit Spot','mexc-fut':'MEXC Futures','mexc-spot':'MEXC Spot' };
+
+  document.getElementById('import-summary-text').innerHTML =
+    `<span style="color:var(--text3)">Format: </span><strong>${FMT[fmt]||fmt}</strong>&ensp;` +
+    `<span style="color:var(--green);font-weight:700">✓ ${newCnt} nowych</span>` +
+    (dupCnt ? `&ensp;<span style="color:var(--text3)">⊘ ${dupCnt} duplikatów (pominięte)</span>` : '');
+
+  const btn = document.getElementById('import-confirm-btn');
+  if (btn) btn.disabled = newCnt === 0;
+
+  const tbody = document.getElementById('import-preview-tbody');
+  if (!tbody) return;
+
+  tbody.innerHTML = withFlags.slice(0, 300).map(tr => {
+    const dc  = tr.dir === 'long' ? 'var(--green)' : 'var(--red)';
+    const pc  = tr.pnl >= 0 ? 'var(--green)' : 'var(--red)';
+    const op  = tr._dup ? 0.35 : 1;
+    const dup = tr._dup ? '<span style="font-size:9px;background:var(--bg3);color:var(--text3);padding:1px 4px;border-radius:3px;margin-left:4px">dup</span>' : '';
+    return `<tr style="opacity:${op}">
+      <td style="padding:7px 10px;font-size:12px;white-space:nowrap;color:var(--text3)">${(tr.date||tr.dateClose||'—').replace('T',' ')}</td>
+      <td style="padding:7px 10px;font-weight:700">${tr.symbol}${dup}</td>
+      <td style="padding:7px 10px;color:${dc};font-weight:600;text-transform:uppercase;font-size:12px">${tr.dir}</td>
+      <td style="padding:7px 10px;text-align:right;font-size:12px">${tr.size||'—'}</td>
+      <td style="padding:7px 10px;text-align:right;font-size:12px">${tr.entry||'—'}</td>
+      <td style="padding:7px 10px;text-align:right;font-size:12px">${tr.exit||'—'}</td>
+      <td style="padding:7px 10px;text-align:right;font-weight:600;color:${pc}">${tr.pnl?(tr.pnl>=0?'+':'')+tr.pnl.toFixed(2):'—'}</td>
+      <td style="padding:7px 10px;text-align:center"><span style="font-size:10px;background:var(--bg3);padding:2px 6px;border-radius:10px;color:var(--text2)">${tr._src}</span></td>
+    </tr>`;
+  }).join('') + (withFlags.length > 300 ? `<tr><td colspan="8" style="text-align:center;padding:12px;font-size:12px;color:var(--text3)">… i ${withFlags.length-300} kolejnych</td></tr>` : '');
+
+  _importBuffer = withFlags;
+  previewEl.style.display = 'block';
+}
+
+function confirmImportTrades() {
+  const accId = document.getElementById('import-account-sel')?.value;
+  if (!accId) return toast('Wybierz konto docelowe', 'error');
+  const toAdd = _importBuffer.filter(t => !t._dup).map(({ _dup, _src, dateClose, ...rest }) => ({
+    ...rest,
+    note: (rest.note || '') + (rest.note ? '\n' : '') + 'Import: ' + (_src||''),
+    dateClose: dateClose || undefined
+  }));
+  if (!toAdd.length) return toast('Brak nowych transakcji do importu', 'error');
+  const existing = getTrades(accId);
+  saveTrades(accId, [...existing, ...toAdd]);
+  toast(`✓ Zaimportowano ${toAdd.length} transakcji`, 'success');
+  resetImportTab();
+  if (document.getElementById('page-trades')?.classList.contains('active')) renderTrades();
+}
+
+function resetImportTab() {
+  _importBuffer = []; _importFormat = '';
+  const s = document.getElementById('import-status');
+  const p = document.getElementById('import-preview-wrap');
+  if (s) s.style.display = 'none';
+  if (p) p.style.display = 'none';
 }
 
 // ===== PORTFOLIO INWESTYCYJNY =====
