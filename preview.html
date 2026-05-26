@@ -6692,8 +6692,8 @@ function detailSaveEdit() {
   const trades = getTrades(state.currentAccountId);
   const idx = trades.findIndex(t => t.id === _detailId);
   if (idx < 0) return;
-  const t = { ...trades[idx] };
-  const _dvStatus   = document.getElementById('dv-status')?.value || t.status || '';
+  const tr = { ...trades[idx] };
+  const _dvStatus   = document.getElementById('dv-status')?.value || tr.status || '';
   const _dvEmosPre  = document.getElementById('dv-emotion-pre')?.value  || '';
   const _dvEmosPost = document.getElementById('dv-emotion-post')?.value || '';
   if (!isCurrentAccountBot()) {
@@ -6708,38 +6708,38 @@ function detailSaveEdit() {
       return;
     }
   }
-  t.symbol  = (document.getElementById('dv-symbol')?.value || t.symbol).trim().toUpperCase();
-  t.dir     = document.getElementById('dv-dir')?.value || t.dir;
-  t.date    = document.getElementById('dv-date')?.value || t.date;
-  t.tf      = getDvTfValue() || t.tf;
-  t.status  = _dvStatus;
-  t.setup   = document.getElementById('dv-setup')?.value || '';
-  t.entry   = parseFloat(document.getElementById('dv-entry')?.value) || null;
-  t.exit    = parseFloat(document.getElementById('dv-exit')?.value) || null;
-  t.sl      = parseFloat(document.getElementById('dv-sl')?.value) || null;
-  t.tp      = parseFloat(document.getElementById('dv-tp')?.value) || null;
-  t.size    = parseFloat(document.getElementById('dv-size')?.value) || null;
-  t.pnl     = parseFloat(document.getElementById('dv-pnl')?.value);
-  if (isNaN(t.pnl)) t.pnl = null;
-  t.pre        = document.getElementById('dv-pre')?.value || '';
-  t.post       = document.getElementById('dv-post')?.value || '';
-  t.emotionPre  = document.getElementById('dv-emotion-pre')?.value || null;
-  t.emotionPost = document.getElementById('dv-emotion-post')?.value || null;
-  t.screenshots = _detailScreenshots.filter(s => s.dataUrl && !s.uploading).map(s => s.dataUrl);
+  tr.symbol  = (document.getElementById('dv-symbol')?.value || tr.symbol).trim().toUpperCase();
+  tr.dir     = document.getElementById('dv-dir')?.value || tr.dir;
+  tr.date    = document.getElementById('dv-date')?.value || tr.date;
+  tr.tf      = getDvTfValue() || tr.tf;
+  tr.status  = _dvStatus;
+  tr.setup   = document.getElementById('dv-setup')?.value || '';
+  tr.entry   = parseFloat(document.getElementById('dv-entry')?.value) || null;
+  tr.exit    = parseFloat(document.getElementById('dv-exit')?.value) || null;
+  tr.sl      = parseFloat(document.getElementById('dv-sl')?.value) || null;
+  tr.tp      = parseFloat(document.getElementById('dv-tp')?.value) || null;
+  tr.size    = parseFloat(document.getElementById('dv-size')?.value) || null;
+  tr.pnl     = parseFloat(document.getElementById('dv-pnl')?.value);
+  if (isNaN(tr.pnl)) tr.pnl = null;
+  tr.pre        = document.getElementById('dv-pre')?.value || '';
+  tr.post       = document.getElementById('dv-post')?.value || '';
+  tr.emotionPre  = document.getElementById('dv-emotion-pre')?.value || null;
+  tr.emotionPost = document.getElementById('dv-emotion-post')?.value || null;
+  tr.screenshots = _detailScreenshots.filter(s => s.dataUrl && !s.uploading).map(s => s.dataUrl);
 
   // Historia zmian
   const _EDIT_FIELDS = { symbol:'Symbol', dir:'Kierunek', date:'Data wejścia', tf:'Timeframe', status:'Status', setup:'Setup', entry:'Cena wejścia', exit:'Cena wyjścia', sl:'Stop Loss', tp:'Take Profit', size:'Wolumen', pnl:'P&L', pre:'Analiza pre', post:'Wnioski post', emotionPre:'Emocja pre', emotionPost:'Emocja post' };
   const prev = trades[idx];
-  const changed = Object.keys(_EDIT_FIELDS).filter(k => String(t[k]??'') !== String(prev[k]??''));
+  const changed = Object.keys(_EDIT_FIELDS).filter(k => String(tr[k]??'') !== String(prev[k]??''));
   if (changed.length > 0) {
-    const histEntry = { ts: Date.now(), fields: changed.map(k => ({ k, label: _EDIT_FIELDS[k], from: prev[k]??null, to: t[k]??null })) };
-    t.editHistory = [...(prev.editHistory||[]), histEntry].slice(-20);
+    const histEntry = { ts: Date.now(), fields: changed.map(k => ({ k, label: _EDIT_FIELDS[k], from: prev[k]??null, to: tr[k]??null })) };
+    tr.editHistory = [...(prev.editHistory||[]), histEntry].slice(-20);
   }
-  t.updatedAt = Date.now();
+  tr.updatedAt = Date.now();
 
-  trades[idx] = t;
+  trades[idx] = tr;
   saveTrades(state.currentAccountId, trades);
-  saveSymbol(t.symbol);
+  saveSymbol(tr.symbol);
   _detailEditing = false;
   renderDetailModal();
   renderDashboard();
@@ -11230,22 +11230,22 @@ function assignTradeToAnalysis(tradeId) {
   }
 
   const trades = getTrades(state.currentAccountId);
-  const idx = trades.findIndex(t => t.id === tradeId);
+  const idx = trades.findIndex(tr => tr.id === tradeId);
   if (idx < 0) return;
-  const t = { ...trades[idx] };
+  const tr = { ...trades[idx] };
 
-  const isLinked = t.linkedAnalysisId === currentAnalysisId;
+  const isLinked = tr.linkedAnalysisId === currentAnalysisId;
   if (isLinked) {
-    t.linkedAnalysisId = null;
-    t.updatedAt = Date.now();
-    trades[idx] = t;
+    tr.linkedAnalysisId = null;
+    tr.updatedAt = Date.now();
+    trades[idx] = tr;
     saveTrades(state.currentAccountId, trades);
     _selectedTradeForAnalysis = null;
     toast(t('toast_analysis_unlinked'), 'success');
   } else {
-    t.linkedAnalysisId = currentAnalysisId;
-    t.updatedAt = Date.now();
-    trades[idx] = t;
+    tr.linkedAnalysisId = currentAnalysisId;
+    tr.updatedAt = Date.now();
+    trades[idx] = tr;
     saveTrades(state.currentAccountId, trades);
     _selectedTradeForAnalysis = tradeId;
     toast('Transakcja powiązana ✓ — "Zapisz jako Transakcję" skopiuje też treść analizy', 'success');
