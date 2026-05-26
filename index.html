@@ -12732,7 +12732,10 @@ let _sbListenersSet = false;
 let _inPasswordRecovery = (function() {
   const qp = new URLSearchParams(window.location.search);
   const hp = new URLSearchParams((window.location.hash || '').replace('#', ''));
-  return qp.get('type') === 'recovery' || hp.get('type') === 'recovery';
+  // ?code= w URL oznacza recovery (ta aplikacja nie używa magic link login)
+  // ?type=recovery — nasz własny znacznik w redirectTo
+  // #access_token...type=recovery — stary implicit flow
+  return qp.has('code') || qp.get('type') === 'recovery' || hp.get('type') === 'recovery';
 })();
 
 function _createSbClient(lib) {
@@ -13945,6 +13948,12 @@ async function handlePasswordResetRedirect() {
 
 // Wywołaj przy starcie strony
 handlePasswordResetRedirect();
+
+// Fallback: jeśli URL wskazuje na recovery — pokaż formularz natychmiast,
+// nie czekaj na event Supabase (który może przyjść za późno)
+if (_inPasswordRecovery) {
+  showPasswordResetForm();
+}
 
 
 async function submitPasswordReset() {
