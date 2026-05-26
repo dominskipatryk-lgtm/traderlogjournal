@@ -1164,6 +1164,47 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
           Wyślemy link na Twój adres email. Kliknij go aby ustawić nowe hasło.
         </div>
       </div>
+
+      <!-- RECOVERY CODE SECTION -->
+      <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px">
+        <div style="font-size:11px;color:var(--text3);text-align:center;margin-bottom:10px;letter-spacing:.5px">— lub użyj kodu odzyskiwania —</div>
+        <div id="recovery-code-step1">
+          <div class="form-group">
+            <label class="form-label">Kod odzyskiwania</label>
+            <input class="form-input" id="recovery-code-input" type="text"
+              placeholder="XXXX-XXXX-XXXX" maxlength="14"
+              style="text-transform:uppercase;letter-spacing:3px;font-family:var(--font-mono);text-align:center"
+              oninput="this.value=this.value.toUpperCase()"
+              onkeydown="if(event.key==='Enter')doRecoveryCode()">
+          </div>
+          <button class="btn-secondary" style="width:100%" onclick="doRecoveryCode()">
+            🔑 Użyj kodu odzyskiwania
+          </button>
+        </div>
+        <div id="recovery-code-step2" style="display:none">
+          <div style="background:var(--green-dim);border:1px solid var(--green);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--green);margin-bottom:12px">
+            ✓ Kod poprawny. Ustaw nowe hasło dla konta.
+          </div>
+          <div class="form-group">
+            <label class="form-label">Nowe hasło</label>
+            <div class="pass-wrap">
+              <input class="form-input" id="recovery-new-pass1" type="password" placeholder="minimum 6 znaków" autocomplete="new-password" onkeydown="if(event.key==='Enter')doRecoverySetPass()">
+              <button class="pass-eye" type="button" onclick="togglePassEye('recovery-new-pass1',this)" aria-label="Pokaż/ukryj hasło">👁</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Powtórz hasło</label>
+            <div class="pass-wrap">
+              <input class="form-input" id="recovery-new-pass2" type="password" placeholder="powtórz hasło" autocomplete="new-password" onkeydown="if(event.key==='Enter')doRecoverySetPass()">
+              <button class="pass-eye" type="button" onclick="togglePassEye('recovery-new-pass2',this)" aria-label="Pokaż/ukryj hasło">👁</button>
+            </div>
+          </div>
+          <button class="btn-primary" style="width:100%" onclick="doRecoverySetPass()">
+            💾 Zapisz nowe hasło
+          </button>
+        </div>
+      </div>
+
       <div style="margin-top:14px;text-align:center">
         <a onclick="switchAuthTab('login')" style="font-size:12px;color:var(--text3);cursor:pointer">
           ← Wróć do logowania
@@ -9234,21 +9275,47 @@ function copyLoginToClipboard() {
   });
 }
 
+let _recoveryLogin = null;
+
 function doRecoveryCode() {
-  const code  = document.getElementById('recovery-code-input').value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
+  const code = (document.getElementById('recovery-code-input')?.value || '').trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
   if (code.length < 8) return showAuthError('Nieprawidłowy kod odzyskiwania');
   const users = getUsers();
   const entry = Object.entries(users).find(([,u]) => u.recoveryCode === code);
   if (!entry) return showAuthError('Kod nieprawidłowy lub wygasł');
-  const [login, u] = entry;
-  // Invalidate code and prompt new password
-  const np = prompt(`Kod poprawny dla konta "${login}".\nWpisz nowe hasło (min. 6 znaków):`);
-  if (!np || np.length < 6) return showAuthError('Hasło min. 6 znaków');
-  u.pass = np;
+  _recoveryLogin = entry[0];
+  document.getElementById('recovery-code-step1').style.display = 'none';
+  document.getElementById('recovery-code-step2').style.display = 'block';
+  document.getElementById('auth-error').style.display = 'none';
+  document.getElementById('recovery-new-pass1')?.focus();
+}
+
+function doRecoverySetPass() {
+  const p1 = (document.getElementById('recovery-new-pass1')?.value || '');
+  const p2 = (document.getElementById('recovery-new-pass2')?.value || '');
+  if (p1.length < 6) return showAuthError('Hasło min. 6 znaków');
+  if (p1 !== p2) return showAuthError('Hasła nie są zgodne');
+  if (!_recoveryLogin) return showAuthError('Błąd sesji — odśwież stronę');
+  const users = getUsers();
+  const u = users[_recoveryLogin];
+  if (!u) return showAuthError('Konto nie istnieje');
+  u.pass = p1;
   delete u.recoveryCode;
   saveUsers(users);
-  showAuthSuccess('Hasło zmienione! Możesz się teraz zalogować.');
-  setTimeout(() => switchAuthTab('login'), 1500);
+  _recoveryLogin = null;
+  // Reset formularza
+  const step1 = document.getElementById('recovery-code-step1');
+  const step2 = document.getElementById('recovery-code-step2');
+  if (step1) step1.style.display = 'block';
+  if (step2) step2.style.display = 'none';
+  const codeInput = document.getElementById('recovery-code-input');
+  if (codeInput) codeInput.value = '';
+  const p1El = document.getElementById('recovery-new-pass1');
+  const p2El = document.getElementById('recovery-new-pass2');
+  if (p1El) p1El.value = '';
+  if (p2El) p2El.value = '';
+  showAuthSuccess('✓ Hasło zmienione! Możesz się teraz zalogować.');
+  setTimeout(() => switchAuthTab('login'), 1800);
 }
 
 // ── Recovery token helpers ───────────────────────────────────────────────────
@@ -12660,11 +12727,45 @@ async function testApiConnection() {
 let _sb = null;
 let _appInitRunning = false;
 let _inPasswordRecovery = false;
+let _sbListenersSet = false;
+
+function _createSbClient(lib) {
+  return lib.createClient(_SB_URL, _SB_ANON, {
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true,
+      flowType: 'pkce'
+    }
+  });
+}
+
+function _setupSbListeners() {
+  if (_sbListenersSet) return;
+  _sbListenersSet = true;
+  _sb.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'PASSWORD_RECOVERY') {
+      _inPasswordRecovery = true;
+      document.getElementById('auth-screen').style.display = 'flex';
+      const appEl = document.getElementById('app');
+      if (appEl) appEl.style.display = 'none';
+      showPasswordResetForm();
+      return;
+    }
+    if (event === 'SIGNED_IN' && session && !state.currentUser && !_appInitRunning) {
+      if (_inPasswordRecovery) return;
+      setTimeout(async () => {
+        if (!state.currentUser && !_appInitRunning) await appInit();
+      }, 800);
+    }
+  });
+}
+
 (function tryInitNow() {
   const lib = window.supabase || window.Supabase;
   if (lib && lib.createClient) {
-    _sb = lib.createClient(_SB_URL, _SB_ANON);
-    // Supabase ready
+    _sb = _createSbClient(lib);
+    _setupSbListeners();
   }
 })();
 
@@ -12676,37 +12777,17 @@ let _inPasswordRecovery = false;
 
 
 function initSupabase() {
-  if (!_sb) {
-    const sb_lib = window.supabase || window.Supabase || window.supabaseJs;
-    if (!sb_lib || !sb_lib.createClient) {
-      console.warn('Supabase not loaded');
-      return false;
-    }
-    _sb = sb_lib.createClient(_SB_URL, _SB_ANON, {
-      auth: {
-        autoRefreshToken: true,
-        persistSession: true,
-        detectSessionInUrl: true,
-        flowType: 'pkce'
-      }
-    });
+  if (_sb) {
+    if (!_sbListenersSet) _setupSbListeners();
+    return true;
   }
-  _sb.auth.onAuthStateChange(async (event, session) => {
-    if (event === 'PASSWORD_RECOVERY') {
-      _inPasswordRecovery = true;
-      document.getElementById('auth-screen').style.display = 'flex';
-      showPasswordResetForm();
-      return;
-    }
-    if (event === 'SIGNED_IN' && session && !state.currentUser && !_appInitRunning) {
-      if (_inPasswordRecovery) return;
-      const hash = window.location.hash;
-      if (hash.includes('type=recovery')) return;
-      setTimeout(async () => {
-        if (!state.currentUser && !_appInitRunning) await appInit();
-      }, 800);
-    }
-  });
+  const sb_lib = window.supabase || window.Supabase || window.supabaseJs;
+  if (!sb_lib || !sb_lib.createClient) {
+    console.warn('Supabase not loaded');
+    return false;
+  }
+  _sb = _createSbClient(sb_lib);
+  _setupSbListeners();
   return true;
 }
 
@@ -13830,29 +13911,44 @@ function showPasswordResetForm() {
 }
 
 async function handlePasswordResetRedirect() {
+  // PKCE flow: ?code=XXX w query string (Supabase v2 domyślnie)
+  const searchParams = new URLSearchParams(window.location.search);
+  const code = searchParams.get('code');
+
+  // Implicit flow (fallback): #access_token=XXX&type=recovery w hash
   const hash = window.location.hash;
-  if (!hash) return;
+  const hashParams = new URLSearchParams(hash.replace('#', ''));
+  const accessToken  = hashParams.get('access_token');
+  const refreshToken = hashParams.get('refresh_token');
+  const type         = hashParams.get('type');
 
-  // Supabase v2 — token w hash jako #access_token=...&type=recovery
-  const params = new URLSearchParams(hash.replace('#', ''));
-  const accessToken  = params.get('access_token');
-  const refreshToken = params.get('refresh_token');
-  const type = params.get('type');
+  if (!code && !(type === 'recovery' && accessToken)) return;
 
-  if (type === 'recovery' && accessToken) {
-    // Poczekaj aż Supabase będzie załadowany
-    let attempts = 0;
-    while (!_sb && attempts < 20) {
-      await new Promise(r => setTimeout(r, 200));
-      attempts++;
-      if (!_sb) initSupabase();
+  // Poczekaj aż Supabase będzie załadowany
+  let attempts = 0;
+  while (!_sb && attempts < 30) {
+    await new Promise(r => setTimeout(r, 100));
+    attempts++;
+    if (!_sb) initSupabase();
+  }
+  if (!_sb) return;
+
+  if (code) {
+    // PKCE: exchangeCodeForSession → Supabase wywoła PASSWORD_RECOVERY przez onAuthStateChange
+    history.replaceState(null, '', window.location.pathname);
+    try {
+      await _sb.auth.exchangeCodeForSession(code);
+      // onAuthStateChange obsłuży PASSWORD_RECOVERY → showPasswordResetForm()
+    } catch(e) {
+      console.warn('Password recovery code exchange failed:', e);
     }
-    if (!_sb) return;
+  } else if (type === 'recovery' && accessToken) {
+    // Implicit flow — ustaw sesję ręcznie
+    history.replaceState(null, '', window.location.pathname);
     try {
       await _sb.auth.setSession({ access_token: accessToken, refresh_token: refreshToken || '' });
     } catch(e) {}
-    // Wyczyść hash z URL
-    history.replaceState(null, '', window.location.pathname);
+    _inPasswordRecovery = true;
     showPasswordResetForm();
   }
 }
@@ -13879,7 +13975,25 @@ async function submitPasswordReset() {
     if (errEl) { errEl.textContent = error.message; errEl.style.display='block'; }
     if (btn) { btn.textContent = 'Zapisz nowe hasło'; btn.disabled = false; }
   } else {
-    // [v1.3] Po sukcesie — wyloguj sesję resetu i wróć do ekranu logowania
+    // Pobierz email zanim wylogujemy sesję resetu
+    let userEmail = '';
+    try {
+      const { data: { user } } = await _sb.auth.getUser();
+      userEmail = user?.email || '';
+    } catch(e) {}
+
+    // Próba wysłania emaila potwierdzającego przez Edge Function (graceful fallback)
+    if (userEmail) {
+      try {
+        await Promise.race([
+          _sb.functions.invoke('password-changed-notify', {
+            body: { email: userEmail, timestamp: new Date().toISOString() }
+          }),
+          new Promise((_, r) => setTimeout(() => r(new Error('timeout')), 3000))
+        ]);
+      } catch(e) { /* Edge function nie jest wdrożona — ignoruj */ }
+    }
+
     _inPasswordRecovery = false;
     await _sb.auth.signOut();
     window.history.replaceState({}, '', window.location.pathname);
@@ -13892,7 +14006,10 @@ async function submitPasswordReset() {
     if (sub) sub.style.display = 'block';
 
     switchAuthTab('login');
-    showAuthSuccess('✓ Hasło zmienione! Możesz się teraz zalogować.');
+    const successMsg = userEmail
+      ? `✓ Hasło zmienione! Email potwierdzający wysłany na ${userEmail}. Możesz się zalogować.`
+      : '✓ Hasło zmienione! Możesz się teraz zalogować.';
+    showAuthSuccess(successMsg);
   }
 }
 
