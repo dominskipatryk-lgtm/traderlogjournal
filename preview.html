@@ -1289,6 +1289,20 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
         🔔
         <span id="reminder-bell-count" style="display:none;position:absolute;top:2px;right:2px;background:var(--red);color:#fff;border-radius:50%;width:16px;height:16px;font-size:9px;font-weight:700;align-items:center;justify-content:center;line-height:1"></span>
       </button>
+      <!-- Macro Calendar Bell -->
+      <div style="position:relative">
+        <button id="macro-bell-btn" onclick="toggleMacroBell()" style="position:relative;background:none;border:none;cursor:pointer;padding:6px 8px;color:var(--text2);font-size:18px;border-radius:8px;display:flex;align-items:center;transition:background .15s" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'" title="Makro Przypomnienia">
+          📅
+          <span id="macro-bell-badge" style="display:none;position:absolute;top:2px;right:2px;background:var(--amber);color:#000;border-radius:50%;width:16px;height:16px;font-size:9px;font-weight:700;display:none;align-items:center;justify-content:center;line-height:16px"></span>
+        </button>
+        <div id="macro-bell-dropdown" style="display:none;position:absolute;top:calc(100% + 6px);right:0;background:var(--bg2);border:1px solid var(--border2);border-radius:12px;min-width:300px;z-index:600;box-shadow:0 8px 32px rgba(0,0,0,.4)">
+          <div style="padding:10px 14px 8px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)">
+            <span style="font-size:12px;font-weight:700;color:var(--text2)">📅 Makro Przypomnienia</span>
+            <button onclick="showPage('macro');closeMacroBell()" style="background:none;border:none;font-size:11px;color:var(--accent);cursor:pointer;padding:0">Zarządzaj →</button>
+          </div>
+          <div id="macro-bell-list" style="max-height:280px;overflow-y:auto;padding:6px 0"></div>
+        </div>
+      </div>
       <!-- MT4 Live Terminal -->
       <div id="mt4-terminal" style="display:none;align-items:center;gap:6px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:4px 10px;cursor:pointer;position:relative" onclick="toggleMT4Terminal()">
         <div style="width:7px;height:7px;border-radius:50%;background:var(--accent);animation:pulse-amber 1.4s infinite;flex-shrink:0" id="mt4-dot"></div>
@@ -4527,6 +4541,7 @@ function renderAll() {
   renderTopbarAccount();
   // Start macro reminder timer on login (niezależnie od odwiedzenia strony Makro)
   if (!_macroNotifyTimer) _macroNotifyTimer = setInterval(checkMacroNotifications, 60000);
+  updateMacroBellBadge();
 }
 
 // ===== TOPBAR =====
@@ -17655,6 +17670,65 @@ function renderMacroCalendar() {
   if (!_macroNotifyTimer) _macroNotifyTimer = setInterval(checkMacroNotifications, 60000);
 }
 
+function toggleMacroBell() {
+  const dd = document.getElementById('macro-bell-dropdown');
+  if (!dd) return;
+  const open = dd.style.display !== 'none';
+  if (open) { closeMacroBell(); return; }
+  dd.style.display = 'block';
+  renderMacroBellList();
+  setTimeout(() => document.addEventListener('click', _macroBellOutside, { once: true }), 10);
+}
+function closeMacroBell() {
+  const dd = document.getElementById('macro-bell-dropdown');
+  if (dd) dd.style.display = 'none';
+}
+function _macroBellOutside(e) {
+  const wrap = document.getElementById('macro-bell-btn')?.closest('div[style*=relative]');
+  if (wrap && !wrap.contains(e.target)) closeMacroBell();
+}
+
+function renderMacroBellList() {
+  const el = document.getElementById('macro-bell-list');
+  if (!el) return;
+  const reminders = getMacroReminders();
+  const now = new Date();
+  const active = reminders.filter(r => new Date(r.dt) > new Date(now.getTime() - 2*3600000));
+  if (!active.length) {
+    el.innerHTML = '<div style="padding:16px 14px;font-size:12px;color:var(--text3);text-align:center">Brak przypomnień</div>';
+    return;
+  }
+  el.innerHTML = active.map(r => {
+    const evT = new Date(r.dt);
+    const isPast = evT < now;
+    const mins = Math.round((evT - now) / 60000);
+    const timeStr = evT.toLocaleDateString('pl-PL', {day:'numeric', month:'short'}) + ' ' + evT.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    const awayStr = isPast ? 'minęło' : mins < 60 ? `za ${mins} min` : `za ${Math.floor(mins/60)}h ${mins%60}min`;
+    const soon = !isPast && mins <= 60;
+    return `<div style="display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--border);opacity:${isPast?0.5:1}">
+      <span style="font-size:11px;font-weight:700;background:var(--bg3);padding:1px 5px;border-radius:4px;font-family:monospace">${r.curr}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.title}</div>
+        <div style="font-size:10px;color:var(--text3)">${timeStr}</div>
+      </div>
+      <span style="font-size:11px;font-weight:${soon?700:400};color:${soon?'var(--amber)':'var(--text3)'};white-space:nowrap">${awayStr}</span>
+    </div>`;
+  }).join('');
+}
+
+function updateMacroBellBadge() {
+  const badge = document.getElementById('macro-bell-badge');
+  if (!badge) return;
+  const now = new Date();
+  const count = getMacroReminders().filter(r => new Date(r.dt) > now).length;
+  if (count > 0) {
+    badge.textContent = count;
+    badge.style.display = 'flex';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
 function addMacroReminder() {
   const title = (document.getElementById('macro-rem-title')?.value || '').trim();
   const dt    = document.getElementById('macro-rem-dt')?.value;
@@ -17669,12 +17743,14 @@ function addMacroReminder() {
   document.getElementById('macro-rem-title').value = '';
   document.getElementById('macro-rem-dt').value = '';
   renderMacroReminders();
+  updateMacroBellBadge();
   toast('Przypomnienie dodane', 'success');
 }
 
 function deleteMacroReminder(id) {
   saveMacroReminders(getMacroReminders().filter(r => r.id !== id));
   renderMacroReminders();
+  updateMacroBellBadge();
 }
 
 function renderMacroReminders() {
@@ -17715,6 +17791,7 @@ function checkMacroNotifications() {
     }
   });
   if (document.getElementById('page-macro')?.classList.contains('active')) renderMacroReminders();
+  updateMacroBellBadge();
 }
 
 function showMacroToast(title, curr, mins, evT) {
