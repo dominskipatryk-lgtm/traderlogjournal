@@ -4525,6 +4525,8 @@ function showPage(page) {
 function renderAll() {
   renderDashboard();
   renderTopbarAccount();
+  // Start macro reminder timer on login (niezależnie od odwiedzenia strony Makro)
+  if (!_macroNotifyTimer) _macroNotifyTimer = setInterval(checkMacroNotifications, 60000);
 }
 
 // ===== TOPBAR =====
@@ -17725,7 +17727,7 @@ function showMacroToast(title, curr, mins, evT) {
     + '<div style="font-weight:700;font-size:13px;margin-bottom:3px">Za ' + mins + ' min: ' + title + '</div>'
     + '<div style="font-size:11px;color:var(--text3)">' + curr + ' • ' + timeStr + '</div>'
     + '</div>'
-    + '<span style="font-size:16px;color:var(--text3);padding:0 4px" onclick="this.closest(\'div[style*=fixed]\').remove()">x</span>'
+    + '<span style="font-size:16px;color:var(--text3);padding:0 4px" onclick="this.closest(\'div[style*=fixed]\').remove()">✕</span>'
     + '</div>';
   el.addEventListener('click', function(e) { if (e.target.tagName !== 'SPAN') { showPage('macro'); el.remove(); } });
   document.body.appendChild(el);
