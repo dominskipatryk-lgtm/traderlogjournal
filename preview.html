@@ -9227,7 +9227,7 @@ async function doForgotPassword() {
 
   try {
     const result = await _sb.auth.resetPasswordForEmail(email, {
-      redirectTo: window.location.origin + '/'
+      redirectTo: window.location.origin + '/?type=recovery'
     });
     if (btn) { btn.textContent = '📧 Wyślij link do resetowania hasła'; btn.disabled = false; }
     const msg = document.getElementById('forgot-msg');
@@ -12726,8 +12726,14 @@ async function testApiConnection() {
 // [v1.1] _SB_URL i _SB_ANON przeniesione na górę skryptu (przed STATE)
 let _sb = null;
 let _appInitRunning = false;
-let _inPasswordRecovery = false;
 let _sbListenersSet = false;
+// Wczesne wykrycie recovery URL — musi być PRZED inicjalizacją Supabase,
+// żeby SIGNED_IN event nie odpalił appInit() zanim przyjdzie PASSWORD_RECOVERY
+let _inPasswordRecovery = (function() {
+  const qp = new URLSearchParams(window.location.search);
+  const hp = new URLSearchParams((window.location.hash || '').replace('#', ''));
+  return qp.get('type') === 'recovery' || hp.get('type') === 'recovery';
+})();
 
 function _createSbClient(lib) {
   return lib.createClient(_SB_URL, _SB_ANON, {
@@ -13911,20 +13917,16 @@ function showPasswordResetForm() {
 }
 
 async function handlePasswordResetRedirect() {
-  // PKCE flow: ?code=XXX w query string (Supabase v2 domyślnie)
-  const searchParams = new URLSearchParams(window.location.search);
-  const code = searchParams.get('code');
-
-  // Implicit flow (fallback): #access_token=XXX&type=recovery w hash
+  // PKCE flow (?code=) jest obsługiwany automatycznie przez detectSessionInUrl:true w createClient()
+  // Ta funkcja obsługuje TYLKO starszy implicit flow (#access_token=...&type=recovery)
   const hash = window.location.hash;
-  const hashParams = new URLSearchParams(hash.replace('#', ''));
-  const accessToken  = hashParams.get('access_token');
-  const refreshToken = hashParams.get('refresh_token');
-  const type         = hashParams.get('type');
+  if (!hash) return;
+  const hp = new URLSearchParams(hash.replace('#', ''));
+  const accessToken  = hp.get('access_token');
+  const refreshToken = hp.get('refresh_token');
+  const type         = hp.get('type');
+  if (type !== 'recovery' || !accessToken) return;
 
-  if (!code && !(type === 'recovery' && accessToken)) return;
-
-  // Poczekaj aż Supabase będzie załadowany
   let attempts = 0;
   while (!_sb && attempts < 30) {
     await new Promise(r => setTimeout(r, 100));
@@ -13933,24 +13935,12 @@ async function handlePasswordResetRedirect() {
   }
   if (!_sb) return;
 
-  if (code) {
-    // PKCE: exchangeCodeForSession → Supabase wywoła PASSWORD_RECOVERY przez onAuthStateChange
-    history.replaceState(null, '', window.location.pathname);
-    try {
-      await _sb.auth.exchangeCodeForSession(code);
-      // onAuthStateChange obsłuży PASSWORD_RECOVERY → showPasswordResetForm()
-    } catch(e) {
-      console.warn('Password recovery code exchange failed:', e);
-    }
-  } else if (type === 'recovery' && accessToken) {
-    // Implicit flow — ustaw sesję ręcznie
-    history.replaceState(null, '', window.location.pathname);
-    try {
-      await _sb.auth.setSession({ access_token: accessToken, refresh_token: refreshToken || '' });
-    } catch(e) {}
-    _inPasswordRecovery = true;
-    showPasswordResetForm();
-  }
+  history.replaceState(null, '', window.location.pathname);
+  try {
+    await _sb.auth.setSession({ access_token: accessToken, refresh_token: refreshToken || '' });
+  } catch(e) {}
+  _inPasswordRecovery = true;
+  showPasswordResetForm();
 }
 
 // Wywołaj przy starcie strony
