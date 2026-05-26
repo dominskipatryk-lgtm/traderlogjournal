@@ -17709,27 +17709,43 @@ function renderMacroCalendar() {
   // Investing.com iframe — no init needed, already in HTML
   // Fetch ForexFactory data if not yet done
   if (!_macroFetched) fetchMacroEvents();
-  else renderMacroUpcoming();
+  else { renderMacroUpcoming(); }
   // Start notification heartbeat
   if (!_macroNotifyTimer) _macroNotifyTimer = setInterval(checkMacroNotifications, 60000);
 }
 
+function refreshMacroCalendar() {
+  _macroFetched = false;
+  _macroEvents = [];
+  fetchMacroEvents();
+}
+
+const _FF_PROXIES = [
+  'https://corsproxy.io/?' + encodeURIComponent('https://nfs.faireconomy.media/ff_calendar_thisweek.json'),
+  'https://api.allorigins.win/get?url=' + encodeURIComponent('https://nfs.faireconomy.media/ff_calendar_thisweek.json')
+];
+
 async function fetchMacroEvents() {
-  const el = document.getElementById('macro-upcoming');
-  if (el) el.textContent = t('macro_loading');
-  try {
-    const resp = await fetch('https://nfs.faireconomy.media/ff_calendar_thisweek.json', { cache: 'no-cache' });
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
-    _macroEvents = await resp.json();
-    _macroFetched = true;
-    renderMacroUpcoming();
-    checkMacroNotifications();
-  } catch(e) {
-    _macroFetched = true;
-    console.warn('ForexFactory fetch:', e);
-    const el2 = document.getElementById('macro-upcoming');
-    if (el2) el2.textContent = t('macro_fetch_err');
+  const upEl = document.getElementById('macro-upcoming');
+  if (upEl) upEl.textContent = t('macro_loading');
+  for (const url of _FF_PROXIES) {
+    try {
+      const resp = await fetch(url, { cache: 'no-cache' });
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      let json = await resp.json();
+      if (json.contents) json = JSON.parse(json.contents);
+      if (!Array.isArray(json)) throw new Error('not array');
+      _macroEvents = json;
+      _macroFetched = true;
+      renderMacroUpcoming();
+      checkMacroNotifications();
+      return;
+    } catch(e) {
+      console.warn('ForexFactory fetch via', url, e);
+    }
   }
+  _macroFetched = true;
+  if (upEl) upEl.textContent = t('macro_fetch_err');
 }
 
 function parseMacroTime(ev) {

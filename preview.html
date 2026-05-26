@@ -3011,11 +3011,13 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
         </div>
       </div>
 
-      <!-- Widget TradingView -->
+      <!-- Tabela wydarzeń -->
       <div class="summary-card" style="padding:0;overflow:hidden">
-        <div class="tradingview-widget-container" id="macro-tv-container" style="width:100%;min-height:650px">
-          <div id="tradingview-eco-widget"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border)">
+          <span style="font-size:13px;font-weight:700" id="macro-week-label">Kalendarz tygodniowy</span>
+          <button class="btn-sm" onclick="refreshMacroCalendar()" style="font-size:11px">↻ Odśwież</button>
         </div>
+        <div id="macro-events-table" style="padding:0;min-height:300px"></div>
       </div>
     </div>
 
@@ -17699,50 +17701,119 @@ function renderMacroCalendar() {
     const cb = chip.querySelector('input');
     if (cb && f[type]) cb.checked = f[type].includes(val);
   });
-  // Init TradingView widget once
-  if (!_macroWidgetInit) {
-    _macroWidgetInit = true;
-    const container = document.getElementById('tradingview-eco-widget');
-    if (container) {
-      const script = document.createElement('script');
-      script.type = 'text/javascript';
-      script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-economic-calendar.js';
-      script.async = true;
-      script.textContent = JSON.stringify({
-        colorTheme: 'dark',
-        isTransparent: true,
-        width: '100%',
-        height: '650',
-        locale: _lang === 'en' ? 'en' : 'pl',
-        importanceFilter: '-1,0,1',
-        countryFilter: 'ar,au,br,ca,cn,fr,de,in,id,it,jp,kr,mx,ru,sa,za,tr,gb,us,eu'
-      });
-      container.appendChild(script);
-    }
-  }
   // Fetch ForexFactory data if not yet done
   if (!_macroFetched) fetchMacroEvents();
-  else renderMacroUpcoming();
+  else { renderMacroUpcoming(); renderMacroTable(); }
   // Start notification heartbeat
   if (!_macroNotifyTimer) _macroNotifyTimer = setInterval(checkMacroNotifications, 60000);
 }
 
+function refreshMacroCalendar() {
+  _macroFetched = false;
+  _macroEvents = [];
+  fetchMacroEvents();
+}
+
+const _FF_PROXIES = [
+  'https://corsproxy.io/?' + encodeURIComponent('https://nfs.faireconomy.media/ff_calendar_thisweek.json'),
+  'https://api.allorigins.win/get?url=' + encodeURIComponent('https://nfs.faireconomy.media/ff_calendar_thisweek.json')
+];
+
 async function fetchMacroEvents() {
-  const el = document.getElementById('macro-upcoming');
-  if (el) el.textContent = t('macro_loading');
-  try {
-    const resp = await fetch('https://nfs.faireconomy.media/ff_calendar_thisweek.json', { cache: 'no-cache' });
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
-    _macroEvents = await resp.json();
-    _macroFetched = true;
-    renderMacroUpcoming();
-    checkMacroNotifications();
-  } catch(e) {
-    _macroFetched = true;
-    console.warn('ForexFactory fetch:', e);
-    const el2 = document.getElementById('macro-upcoming');
-    if (el2) el2.textContent = t('macro_fetch_err');
+  const upEl = document.getElementById('macro-upcoming');
+  const tblEl = document.getElementById('macro-events-table');
+  if (upEl) upEl.textContent = t('macro_loading');
+  if (tblEl) tblEl.innerHTML = '<div style="text-align:center;padding:60px;color:var(--text3)">⏳ Pobieranie danych...</div>';
+
+  for (const url of _FF_PROXIES) {
+    try {
+      const resp = await fetch(url, { cache: 'no-cache' });
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      let json = await resp.json();
+      // allorigins wraps in {contents: "..."}
+      if (json.contents) json = JSON.parse(json.contents);
+      if (!Array.isArray(json)) throw new Error('not array');
+      _macroEvents = json;
+      _macroFetched = true;
+      renderMacroUpcoming();
+      renderMacroTable();
+      checkMacroNotifications();
+      return;
+    } catch(e) {
+      console.warn('ForexFactory fetch via', url, e);
+    }
   }
+  // All proxies failed
+  _macroFetched = true;
+  if (upEl) upEl.textContent = t('macro_fetch_err');
+  if (tblEl) tblEl.innerHTML = '<div style="text-align:center;padding:60px;color:var(--text3)">' + t('macro_fetch_err') + '</div>';
+}
+
+function renderMacroTable() {
+  const tblEl = document.getElementById('macro-events-table');
+  if (!tblEl || !_macroFetched) return;
+  const activeCurr = getMacroActiveCurrencies();
+  const activeImp  = getMacroFilters().imp;
+  const IMP_COLOR  = { High:'var(--red)', Medium:'var(--amber)', Low:'var(--green)' };
+  const IMP_ICON   = { High:'🔴', Medium:'🟡', Low:'🟢' };
+
+  const filtered = _macroEvents.filter(ev =>
+    activeCurr.includes(ev.country) && activeImp.includes(ev.impact)
+  );
+
+  if (!filtered.length) {
+    tblEl.innerHTML = '<div style="text-align:center;padding:60px;color:var(--text3)">Brak wydarzeń pasujących do filtrów</div>';
+    return;
+  }
+
+  // Group by date
+  const byDay = {};
+  filtered.forEach(ev => {
+    const d = ev.date || 'Nieznana data';
+    if (!byDay[d]) byDay[d] = [];
+    byDay[d].push(ev);
+  });
+
+  const now = new Date();
+  const weekLabel = document.getElementById('macro-week-label');
+  if (weekLabel && filtered.length) {
+    const dates = Object.keys(byDay).sort();
+    weekLabel.textContent = 'Tydzień: ' + formatMacroDate(dates[0]) + ' — ' + formatMacroDate(dates[dates.length-1]);
+  }
+
+  let html = '';
+  Object.keys(byDay).sort().forEach(day => {
+    const dayLabel = formatMacroDayFull(day);
+    html += `<div style="padding:10px 18px 4px;background:var(--bg3);font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;border-top:1px solid var(--border)">${dayLabel}</div>`;
+    byDay[day].forEach(ev => {
+      const evT = parseMacroTime(ev);
+      const timeStr = ev.time === 'Tentative' || ev.time === 'All Day' ? ev.time : (evT ? evT.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : ev.time || '—');
+      const isPast = evT && evT < now;
+      const isSoon = evT && !isPast && (evT - now) < 3600000;
+      const hasActual = ev.actual && ev.actual !== '';
+      html += `<div style="display:grid;grid-template-columns:52px 38px 1fr auto auto auto;align-items:center;gap:8px;padding:8px 18px;border-bottom:1px solid var(--border);opacity:${isPast?0.55:1};background:${isSoon?'rgba(246,173,85,0.06)':''}">
+        <span style="font-size:12px;font-family:monospace;color:var(--text3)">${timeStr}</span>
+        <span style="font-size:12px;font-weight:700;background:var(--bg3);padding:2px 5px;border-radius:4px;text-align:center">${ev.country}</span>
+        <span style="font-size:12px;font-weight:${ev.impact==='High'?700:400}">${ev.title}</span>
+        <span style="font-size:11px;color:var(--text3);text-align:right">${ev.previous ? 'P: ' + ev.previous : ''}</span>
+        <span style="font-size:11px;color:var(--text3);text-align:right">${ev.forecast ? 'F: ' + ev.forecast : ''}</span>
+        <span style="font-size:12px;text-align:right;min-width:24px">${IMP_ICON[ev.impact]||'⚪'}</span>
+      </div>`;
+    });
+  });
+  tblEl.innerHTML = html;
+}
+
+function formatMacroDate(dateStr) {
+  try {
+    return new Date(dateStr + 'T12:00:00').toLocaleDateString('pl-PL', {day:'numeric', month:'short'});
+  } catch { return dateStr; }
+}
+
+function formatMacroDayFull(dateStr) {
+  try {
+    return new Date(dateStr + 'T12:00:00').toLocaleDateString('pl-PL', {weekday:'long', day:'numeric', month:'long'});
+  } catch { return dateStr; }
 }
 
 function parseMacroTime(ev) {
