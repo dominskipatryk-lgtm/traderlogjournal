@@ -17720,32 +17720,67 @@ function refreshMacroCalendar() {
   fetchMacroEvents();
 }
 
-const _FF_PROXIES = [
-  'https://corsproxy.io/?' + encodeURIComponent('https://nfs.faireconomy.media/ff_calendar_thisweek.json'),
-  'https://api.allorigins.win/get?url=' + encodeURIComponent('https://nfs.faireconomy.media/ff_calendar_thisweek.json')
-];
+function getFinnhubKey() {
+  try { return localStorage.getItem('tlj_finnhub_key') || ''; } catch { return ''; }
+}
+function saveFinnhubKey() {
+  const key = (document.getElementById('sett-finnhub-key')?.value || '').trim();
+  try { localStorage.setItem('tlj_finnhub_key', key); } catch(e) {}
+  const st = document.getElementById('finnhub-key-status');
+  if (st) st.textContent = key ? '✅ Klucz zapisany' : '❌ Klucz usunięty';
+  _macroFetched = false; _macroEvents = [];
+  toast(key ? 'Klucz Finnhub zapisany ✓' : 'Klucz Finnhub usunięty', key ? 'success' : 'info');
+}
+function toggleFinnhubKeyVisibility() {
+  const inp = document.getElementById('sett-finnhub-key');
+  if (inp) inp.type = inp.type === 'password' ? 'text' : 'password';
+}
 
 async function fetchMacroEvents() {
   const upEl = document.getElementById('macro-upcoming');
   if (upEl) upEl.textContent = t('macro_loading');
-  for (const url of _FF_PROXIES) {
-    try {
-      const resp = await fetch(url, { cache: 'no-cache' });
-      if (!resp.ok) throw new Error('HTTP ' + resp.status);
-      let json = await resp.json();
-      if (json.contents) json = JSON.parse(json.contents);
-      if (!Array.isArray(json)) throw new Error('not array');
-      _macroEvents = json;
-      _macroFetched = true;
-      renderMacroUpcoming();
-      checkMacroNotifications();
-      return;
-    } catch(e) {
-      console.warn('ForexFactory fetch via', url, e);
-    }
+
+  const key = getFinnhubKey();
+  if (!key) {
+    _macroFetched = true;
+    if (upEl) upEl.innerHTML = '🔑 Dodaj klucz API Finnhub w Ustawieniach aby załadować dane. <button class="btn-sm" onclick="showPage(\'settings\')" style="font-size:11px;margin-left:8px">→ Ustawienia</button>';
+    return;
   }
-  _macroFetched = true;
-  if (upEl) upEl.textContent = t('macro_fetch_err');
+
+  const now  = new Date();
+  const from = now.toISOString().slice(0,10);
+  const toD  = new Date(now.getTime() + 7*24*3600000).toISOString().slice(0,10);
+  const url  = `https://finnhub.io/api/v1/calendar/economic?from=${from}&to=${toD}&token=${key}`;
+  try {
+    const resp = await fetch(url, { cache: 'no-cache' });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const json = await resp.json();
+    const raw  = json.economicCalendar || json || [];
+    _macroEvents = raw.map(ev => ({
+      title:   ev.event   || '',
+      country: (ev.country || '').toUpperCase(),
+      date:    ev.time    ? ev.time.slice(0,10) : '',
+      time:    ev.time    ? ev.time.slice(11,16) : 'Tentative',
+      impact:  mapFinnhubImpact(ev.impact),
+      forecast:ev.estimate != null ? String(ev.estimate) : '',
+      previous:ev.prev    != null ? String(ev.prev)    : '',
+      actual:  ev.actual  != null ? String(ev.actual)  : ''
+    }));
+    _macroFetched = true;
+    renderMacroUpcoming();
+    checkMacroNotifications();
+  } catch(e) {
+    _macroFetched = true;
+    if (upEl) upEl.textContent = t('macro_fetch_err');
+  }
+}
+
+function mapFinnhubImpact(v) {
+  if (!v) return 'Low';
+  const s = String(v).toLowerCase();
+  if (s === 'high'   || s === '3') return 'High';
+  if (s === 'medium' || s === '2') return 'Medium';
+  return 'Low';
 }
 
 function parseMacroTime(ev) {
