@@ -3605,6 +3605,18 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
   <img id="lightbox-img" src="" alt="Screenshot transakcji">
 </div>
 
+<!-- PDF VIEWER MODAL -->
+<div id="pdf-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.85);display:none;flex-direction:column;align-items:center;justify-content:center" onclick="closePdfModal(event)">
+  <div style="width:90vw;max-width:900px;height:85vh;background:var(--bg2);border-radius:12px;display:flex;flex-direction:column;overflow:hidden;position:relative" onclick="event.stopPropagation()">
+    <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);flex-shrink:0">
+      <span id="pdf-modal-title" style="flex:1;font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></span>
+      <a id="pdf-modal-download" href="#" download style="font-size:12px;color:var(--accent);text-decoration:none;padding:6px 12px;border:1px solid var(--accent);border-radius:6px;flex-shrink:0">⬇ Pobierz</a>
+      <button onclick="closePdfModal()" style="background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer;padding:0 4px;line-height:1">✕</button>
+    </div>
+    <iframe id="pdf-modal-iframe" src="" style="flex:1;border:none;width:100%"></iframe>
+  </div>
+</div>
+
 <!-- TOAST -->
 <div id="toast"><div class="toast-dot green" id="toast-dot"></div><span id="toast-msg"></span></div>
 
@@ -4565,7 +4577,29 @@ function renderDashboard() {
   const accounts = getAccounts();
   const acc = accounts.find(a => a.id === state.currentAccountId);
   if (!acc) {
-    document.getElementById('dash-stats').innerHTML = '<div class="empty-state"><div class="empty-icon">🏦</div><div class="empty-title">Brak konta</div><p>Utwórz pierwsze konto tradingowe</p><br><button class="btn-sm btn-accent" onclick="showPage(\'accounts\')">Dodaj konto</button></div>';
+    document.getElementById('dash-stats').innerHTML = `
+      <div style="grid-column:1/-1;display:flex;flex-direction:column;align-items:center;gap:24px;padding:40px 20px;text-align:center">
+        <div style="font-size:48px">👋</div>
+        <div style="font-size:20px;font-weight:700;color:var(--text)">Witaj w TraderLog Journal!</div>
+        <div style="font-size:13px;color:var(--text2);max-width:420px">Zacznij w 2 krokach — zajmie to mniej niż minutę.</div>
+        <div style="display:flex;flex-direction:column;gap:12px;width:100%;max-width:400px">
+          <div style="display:flex;align-items:center;gap:16px;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:16px 20px">
+            <div style="width:32px;height:32px;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div>
+            <div style="flex:1;text-align:left">
+              <div style="font-weight:600;font-size:14px">Dodaj konto tradingowe</div>
+              <div style="font-size:12px;color:var(--text3);margin-top:2px">Broker, typ konta, waluta, kapitał początkowy</div>
+            </div>
+            <button class="btn-sm btn-accent" onclick="showPage('accounts')" style="flex-shrink:0">Dodaj →</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:16px;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:16px 20px;opacity:0.6">
+            <div style="width:32px;height:32px;border-radius:50%;background:var(--bg4);color:var(--text3);font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</div>
+            <div style="flex:1;text-align:left">
+              <div style="font-weight:600;font-size:14px">Dodaj pierwszą transakcję</div>
+              <div style="font-size:12px;color:var(--text3);margin-top:2px">Symbol, kierunek, wolumen, wynik</div>
+            </div>
+          </div>
+        </div>
+      </div>`;
     return;
   }
   document.getElementById('dash-title').textContent = acc.name;
@@ -4583,7 +4617,17 @@ function renderDashboard() {
   const equity = (acc.capital || 0) + totalPnl;
 
   const curr = getCurrSym(acc.id);
+  const ctaBanner = trades.length === 0 ? `
+    <div style="grid-column:1/-1;display:flex;align-items:center;gap:16px;background:linear-gradient(135deg,var(--accent-dim),var(--bg3));border:1px solid var(--accent);border-radius:12px;padding:16px 20px;margin-bottom:4px">
+      <div style="font-size:28px">🎯</div>
+      <div style="flex:1">
+        <div style="font-weight:700;font-size:14px;color:var(--accent)">Konto gotowe! Dodaj pierwszą transakcję.</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:3px">Śledź swoje wyniki, ucz się na błędach i rozwijaj się jako trader.</div>
+      </div>
+      <button class="btn-sm btn-accent" onclick="openNewTrade()" style="flex-shrink:0">+ Transakcja</button>
+    </div>` : '';
   document.getElementById('dash-stats').innerHTML = `
+    ${ctaBanner}
     <div class="stat-card"><div class="stat-label">Kapitał</div><div class="stat-value">${fmt(equity)} <span style="font-size:12px;color:var(--text3)">${curr}</span></div><div class="stat-sub">Start: ${fmt(acc.capital)} ${curr}</div></div>
     <div class="stat-card"><div class="stat-label">P&L Total</div><div class="stat-value ${totalPnl>=0?'green':'red'}">${totalPnl>=0?'+':''}${fmt(totalPnl)} <span style="font-size:12px;color:var(--text3)">${curr}</span></div><div class="stat-sub">${closed.length} zamkniętych</div></div>
     <div class="stat-card"><div class="stat-label">Win Rate</div><div class="stat-value amber">${winRate}%</div><div class="stat-sub">${wins.length}W / ${losses.length}L</div></div>
@@ -7249,7 +7293,7 @@ function autoPnl(force) {
   _pnlManual = false;
 
   const entry  = parseFloat(document.getElementById('t-entry')?.value);
-  const exit   = parseFloat(document.getElementById('t-exit')?.value);
+  let   exit   = parseFloat(document.getElementById('t-exit')?.value);
   const sizeRaw = parseFloat(document.getElementById('t-size')?.value);
   const dir    = document.getElementById('t-dir')?.value;
   const instr  = document.getElementById('calc-instr')?.value || 'custom';
@@ -7259,58 +7303,54 @@ function autoPnl(force) {
 
   if (!preview || !pnlField) return;
 
+  // If exit is empty, try to compute weighted average from multi-TP percentages
+  let multiTpNote = '';
+  if (isNaN(exit) && !isNaN(entry)) {
+    let weightedSum = 0, totalPct = 0;
+    for (let i = 1; i <= 4; i++) {
+      const tpPrice = parseFloat(document.getElementById('t-tp' + i)?.value);
+      const tpPct   = parseFloat(document.getElementById('t-tp' + i + '-pct')?.value);
+      if (!isNaN(tpPrice) && !isNaN(tpPct) && tpPct > 0) {
+        weightedSum += tpPrice * tpPct;
+        totalPct += tpPct;
+      }
+    }
+    if (totalPct > 0) {
+      exit = weightedSum / totalPct;
+      multiTpNote = ` <span style="font-size:10px;color:var(--text3)">(śr. ${totalPct}% TP)</span>`;
+    }
+  }
+
   if (isNaN(entry) || isNaN(exit) || isNaN(sizeRaw)) {
     preview.textContent = '';
     return;
   }
 
-  // sizeRaw może być w lotach lub jednostkach — sprawdź czy panel kalkulatora jest otwarty
-  // Domyślnie traktujemy jako LOTY (standard dziennika), ale jeśli calc-units jest wypełnione
-  // i odpowiada sizeRaw to traktujemy jako jednostki
   const calcUnitsEl = document.getElementById('calc-units');
   let units;
   if (calcUnitsEl && parseFloat(calcUnitsEl.value) === sizeRaw) {
-    // wpisane jako jednostki
     units = sizeRaw;
   } else {
-    // wpisane jako loty → przelicz na jednostki
     units = sizeRaw * contractSize;
   }
 
-  // Kalkulacja P&L
-  // Wzór ogólny: P&L = (exit - entry) * units * kierunek
-  // Dla Forex pip = 0.0001, Gold/Oil/Indeks = 1 jednostka = 1 USD per punkt przy 1 oz/barrelce
   let priceDiff = exit - entry;
   if (dir === 'SHORT') priceDiff = -priceDiff;
 
-  // Oblicz wartość punktu zależnie od instrumentu
-  let pnl;
-  if (instr === 'forex') {
-    // Forex: 1 pip = 0.0001, 1 lot = 100 000 jednostek, pip value = 10 USD/lot
-    // P&L = priceDiff * units (units = nominał w walucie bazowej)
-    pnl = priceDiff * units;
-  } else {
-    // Gold, Oil, Indices, Crypto: P&L = priceDiff * units
-    pnl = priceDiff * units;
-  }
-
+  const pnl = priceDiff * units;
   const pnlRounded = Math.round(pnl * 100) / 100;
   const color = pnlRounded >= 0 ? 'var(--green)' : 'var(--red)';
   const sign  = pnlRounded >= 0 ? '+' : '';
 
-  // Pokaż preview przy labelu
   const _pnlCurr = getCurrSym();
-  preview.innerHTML = `<span style="color:${color}">${sign}${fmtN(pnlRounded)} ${_pnlCurr}</span>`;
+  preview.innerHTML = `<span style="color:${color}">${sign}${fmtN(pnlRounded)} ${_pnlCurr}</span>${multiTpNote}`;
   const _pcl = document.getElementById('pnl-currency-label'); if (_pcl) _pcl.textContent = 'P&L (' + _pnlCurr + ')';
 
-  // Wpisz do pola P&L
   pnlField.value = pnlRounded;
   pnlField.style.borderColor = pnlRounded >= 0 ? 'var(--green)' : 'var(--red)';
 
-  // Dodatkowy breakdown przy labelu
   const pts = Math.abs(priceDiff);
-  const breakdown = `${pts.toFixed(2)} pkt × ${units.toFixed(2)} jed.`;
-  preview.title = breakdown;
+  preview.title = `${pts.toFixed(2)} pkt × ${units.toFixed(2)} jed.`;
 }
 
 function pnlManualEdit() {
@@ -8994,7 +9034,7 @@ function saveProfileSettings() {
   toast(t('toast_profile_saved'), 'success');
 }
 
-function savePasswordSettings() {
+async function savePasswordSettings() {
   const oldP  = document.getElementById('sett-old-pass').value;
   const newP  = document.getElementById('sett-new-pass').value;
   const newP2 = document.getElementById('sett-new-pass2').value;
@@ -9005,12 +9045,22 @@ function savePasswordSettings() {
   if (u.pass !== oldP) { toast('Obecne hasło jest nieprawidłowe', 'error'); return; }
   if (newP.length < 6) { toast('Nowe hasło min. 6 znaków', 'error'); return; }
   if (newP !== newP2)  { toast('Hasła nie są identyczne', 'error'); return; }
+
+  if (_sb) {
+    const { error } = await _sb.auth.updateUser({ password: newP });
+    if (error) { toast('Błąd zmiany hasła: ' + error.message, 'error'); return; }
+  }
+
   u.pass = newP;
   saveUsers(users);
   ['sett-old-pass','sett-new-pass','sett-new-pass2'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = '';
   });
-  toast('Hasło zmienione ✓', 'success');
+  toast('Hasło zmienione ✓ Za chwilę nastąpi wylogowanie.', 'success');
+  setTimeout(async () => {
+    if (_sb) await _sb.auth.signOut();
+    doLogout();
+  }, 2000);
 }
 
 function generateRecoveryCode() {
@@ -10549,7 +10599,7 @@ function renderBackupOptions() {
     <!-- OPCJA B: Własna baza danych -->
     <div class="backup-option">
       <div class="backup-option-header">
-        <div class="backup-option-title">🖥️ Opcja C — Własny serwer / baza danych</div>
+        <div class="backup-option-title">🖥️ Opcja B — Własny serwer / baza danych</div>
         <span class="badge" style="background:var(--bg4);color:var(--text3);font-size:10px;padding:3px 8px">Wkrótce</span>
       </div>
       <div class="backup-option-desc">
@@ -10563,10 +10613,10 @@ function renderBackupOptions() {
       </div>
     </div>
 
-    <!-- OPCJA D: Auto-pobieranie -->
+    <!-- OPCJA C: Auto-pobieranie -->
     <div class="backup-option">
       <div class="backup-option-header">
-        <div class="backup-option-title">⬇️ Opcja D — Auto-pobieranie przy logowaniu</div>
+        <div class="backup-option-title">⬇️ Opcja C — Auto-pobieranie przy logowaniu</div>
         <label class="toggle-switch">
           <input type="checkbox" id="bk-autodown-toggle" ${s.autoDownload?'checked':''} onchange="toggleBackupOption('autodownload',this.checked)">
           <span class="toggle-slider"></span>
@@ -12270,6 +12320,7 @@ async function testApiConnection() {
 // [v1.1] _SB_URL i _SB_ANON przeniesione na górę skryptu (przed STATE)
 let _sb = null;
 let _appInitRunning = false;
+let _inPasswordRecovery = false;
 (function tryInitNow() {
   const lib = window.supabase || window.Supabase;
   if (lib && lib.createClient) {
@@ -12303,13 +12354,13 @@ function initSupabase() {
   }
   _sb.auth.onAuthStateChange(async (event, session) => {
     if (event === 'PASSWORD_RECOVERY') {
-      // Pokaż formularz ustawiania nowego hasła
+      _inPasswordRecovery = true;
       document.getElementById('auth-screen').style.display = 'flex';
       showPasswordResetForm();
       return;
     }
     if (event === 'SIGNED_IN' && session && !state.currentUser && !_appInitRunning) {
-      // Nie inicjuj aplikacji jeśli to sesja resetu hasła
+      if (_inPasswordRecovery) return;
       const hash = window.location.hash;
       if (hash.includes('type=recovery')) return;
       setTimeout(async () => {
@@ -13490,6 +13541,7 @@ async function submitPasswordReset() {
     if (btn) { btn.textContent = 'Zapisz nowe hasło'; btn.disabled = false; }
   } else {
     // [v1.3] Po sukcesie — wyloguj sesję resetu i wróć do ekranu logowania
+    _inPasswordRecovery = false;
     await _sb.auth.signOut();
     window.history.replaceState({}, '', window.location.pathname);
 
@@ -14120,6 +14172,15 @@ const BROKER_COMMISSIONS = {
   'interactive':  { name: 'Interactive Brokers', type: 'commission', commission: 2.0, spreadPips: 0.0, currency: 'USD', unit: 'lot' },
   'bitget':       { name: 'Bitget',           type: 'percent', makerPct: 0.02,  takerPct: 0.06,  currency: 'USD', unit: 'value' },
   'tradestation': { name: 'TradeStation',     type: 'commission', commission: 5.0, spreadPips: 0.0, currency: 'USD', unit: 'lot' },
+  // XTB
+  'xtb_standard': { name: 'XTB Standard',    type: 'spread',     commission: 0,   spreadPips: 0.9, currency: 'USD', unit: 'lot' },
+  'xtb_pro':      { name: 'XTB Pro',         type: 'commission', commission: 3.5, spreadPips: 0.0, currency: 'USD', unit: 'lot' },
+  // OANDA
+  'oanda_std':    { name: 'OANDA Standard',  type: 'spread',     commission: 0,   spreadPips: 1.0, currency: 'USD', unit: 'lot' },
+  'oanda_core':   { name: 'OANDA Core',      type: 'commission', commission: 5.0, spreadPips: 0.0, currency: 'USD', unit: 'lot' },
+  // Deriv
+  'deriv_std':    { name: 'Deriv Standard',  type: 'spread',     commission: 0,   spreadPips: 1.0, currency: 'USD', unit: 'lot' },
+  'deriv_zero':   { name: 'Deriv Zero Spread', type: 'commission', commission: 6.0, spreadPips: 0.0, currency: 'USD', unit: 'lot' },
 };
 
 
@@ -17486,7 +17547,11 @@ function renderLibrary() {
   const adminMode = (typeof isAdmin === 'function') ? isAdmin() : false;
   const adminSection = document.getElementById('library-admin-section');
   if (adminSection) adminSection.style.display = adminMode ? 'block' : 'none';
-  filterLibrary(_libFilter);
+  if (!adminMode) {
+    loadLibraryIndex().then(() => filterLibrary(_libFilter)).catch(() => filterLibrary(_libFilter));
+  } else {
+    filterLibrary(_libFilter);
+  }
 }
 
 function filterLibrary(type) {
@@ -17599,6 +17664,7 @@ async function addLibraryFile() {
   if (addBtn) addBtn.disabled = false;
   renderLibrary();
   toast(t('toast_library_added'), 'success');
+  saveLibraryIndex().catch(() => {});
 }
 
 function deleteLibraryFile(id) {
@@ -17611,22 +17677,43 @@ function deleteLibraryFile(id) {
     saveLibraryFiles(getLibraryFiles().filter(x => x.id !== id));
     filterLibrary(_libFilter);
     toast(t('toast_library_deleted'), 'success');
+    saveLibraryIndex().catch(() => {});
   });
 }
 
 async function openLibraryFile(id) {
   const f = getLibraryFiles().find(f => f.id === id);
   if (!f) return toast(t('err_library_no_src'), 'error');
+  let url = null;
   if (f.storagePath) {
     if (!_sb) return toast(t('err_login_first'), 'error');
     const { data, error } = await _sb.storage.from('library').createSignedUrl(f.storagePath, 3600);
     if (error) { toast(t('err_library_download'), 'error'); return; }
-    window.open(data.signedUrl, '_blank');
+    url = data.signedUrl;
   } else if (f.url) {
-    window.open(f.url, '_blank');
-  } else {
-    toast(t('err_library_no_src'), 'error');
+    url = f.url;
   }
+  if (!url) return toast(t('err_library_no_src'), 'error');
+
+  const isPdf = f.type === 'PDF' || (f.filename || '').toLowerCase().endsWith('.pdf');
+  if (isPdf) {
+    const modal = document.getElementById('pdf-modal');
+    document.getElementById('pdf-modal-title').textContent = f.title;
+    document.getElementById('pdf-modal-iframe').src = url;
+    const dl = document.getElementById('pdf-modal-download');
+    dl.href = url;
+    dl.download = f.filename || (f.title + '.pdf');
+    modal.style.display = 'flex';
+  } else {
+    window.open(url, '_blank');
+  }
+}
+
+function closePdfModal(e) {
+  if (e && e.target !== document.getElementById('pdf-modal')) return;
+  const modal = document.getElementById('pdf-modal');
+  modal.style.display = 'none';
+  document.getElementById('pdf-modal-iframe').src = '';
 }
 
 async function downloadLibraryFile(id) {
@@ -17650,6 +17737,29 @@ async function downloadLibraryFile(id) {
   } else {
     toast(t('err_library_no_src'), 'error');
   }
+}
+
+async function saveLibraryIndex() {
+  if (!_sb) return;
+  const files = getLibraryFiles();
+  const blob = new Blob([JSON.stringify(files)], { type: 'application/json' });
+  await _sb.storage.from('library').upload('library_meta.json', blob, { upsert: true, contentType: 'application/json' });
+}
+
+async function loadLibraryIndex() {
+  if (!_sb) return;
+  try {
+    const { data, error } = await _sb.storage.from('library').createSignedUrl('library_meta.json', 300);
+    if (error || !data?.signedUrl) return;
+    const res = await fetch(data.signedUrl);
+    if (!res.ok) return;
+    const files = await res.json();
+    if (Array.isArray(files)) {
+      const db = getDB();
+      db['library_files'] = files;
+      saveDB(db);
+    }
+  } catch(e) {}
 }
 
 // ===== MAKRO KALENDARZ =====
