@@ -4630,8 +4630,8 @@ function seedDemoData() {
 
   const setups = ['SMC — Order Block','SMC — BOS Retest','SR — Key Level','SR — Volume Zone','Trend — EMA Pullback','ICT — Fair Value Gap'];
   const tfs = ['M15','H1','H1','H4','H4','D1'];
-  const emotPre  = ['focused','calm','confident','anxious','disciplined','patient','fomo'];
-  const emotPost = ['satisfied','disciplined','regret','neutral','frustrated','proud','calm'];
+  const emotPre  = ['Spokojny','Pewny','Podekscytowany','Zaniepokojony','FOMO','Neutralny','Revenge'];
+  const emotPost = ['Zadowolony','Spokojny','Żałuję','Neutralny','Sfrustrowany','Dumny','Chciwy'];
   const preTxts  = [
     'Rynek w trendzie — szukam pullbacku na OB.',
     'Poziomy zaznaczone, plan gotowy. Czekam na setup.',
@@ -5410,7 +5410,7 @@ function renderTradingProfile() {
   const patterns = [];
   if (worstEmo && worstEmo[1].count >= 3) {
     const wr = Math.round(worstEmo[1].wins/worstEmo[1].count*100);
-    patterns.push({ icon:'⚠️', text: `Wchodzisz z emocją <strong>${worstEmo[0]}</strong> → WR zaledwie ${wr}%` });
+    patterns.push({ icon:'⚠️', text: `Wchodzisz z emocją <strong>${tEmo(worstEmo[0])}</strong> → WR zaledwie ${wr}%` });
   }
   if (revengePct > 10) patterns.push({ icon:'🔴', text: `Revenge trading: po stracie zwiększasz wolumen w ${revengePct}% przypadków` });
   if (fomoPct > 25)    patterns.push({ icon:'😰', text: `FOMO: ${fomoPct}% transakcji bez analizy przed wejściem` });
@@ -5422,7 +5422,7 @@ function renderTradingProfile() {
   // Strengths
   const strengths = [];
   if (totalWR >= 55) strengths.push('Win rate powyżej 55% — dobra selekcja wejść');
-  if (bestEmo)       strengths.push(`Emocja <strong>${bestEmo[0]}</strong> → WR ${Math.round(bestEmo[1].wins/bestEmo[1].count*100)}% (Twój najlepszy stan)`);
+  if (bestEmo)       strengths.push(`Emocja <strong>${tEmo(bestEmo[0])}</strong> → WR ${Math.round(bestEmo[1].wins/bestEmo[1].count*100)}% (Twój najlepszy stan)`);
   if (bestDow)       strengths.push(`Najlepszy dzień: <strong>${dowNames[bestDow[0]]}</strong> (P&L: +${bestDow[1].pnl.toFixed(2)})`);
   if (disciplineScore !== null && disciplineScore >= 80) strengths.push(`Dyscyplina ${disciplineScore}% — reguły są przestrzegane`);
 
@@ -5609,7 +5609,7 @@ function renderEmotions() {
       const color = avg >= 0 ? 'var(--green)' : 'var(--red)';
       return `<div style="margin-bottom:10px">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
-          <span style="font-size:16px;width:24px">${e}</span>
+          <span style="font-size:12px;min-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${tEmo(e)}">${tEmo(e)}</span>
           <div style="flex:1;height:14px;background:var(--bg3);border-radius:4px;overflow:hidden">
             <div style="width:${barW}%;height:100%;background:${color};border-radius:4px;transition:width .3s"></div>
           </div>
@@ -6140,7 +6140,7 @@ function renderSummary() {
     const rows = Object.entries(byEmo).sort((a,b)=>b[1].pnl-a[1].pnl).map(([e,d]) => {
       const wr = Math.round(d.wins/d.count*100);
       return `<tr>
-        <td style="padding:5px 0;font-size:13px">${e}</td>
+        <td style="padding:5px 0;font-size:13px;white-space:nowrap">${tEmo(e)}</td>
         <td style="text-align:center;color:var(--text3)">${d.count}</td>
         <td style="text-align:center;color:${wr>=50?'var(--accent)':'var(--red)'}">${wr}%</td>
         <td style="text-align:right" class="${d.pnl>=0?'pnl-pos':'pnl-neg'}">${d.pnl>=0?'+':''}${fmt(d.pnl)} ${curr}</td>
@@ -6861,8 +6861,8 @@ function renderDetailModal() {
     ${(!isCurrentAccountBot() && (_detailEditing || t.emotionPre || t.emotionPost)) ? `<div class="dv-card">
       <div class="dv-card-head">🧠 Stan emocjonalny</div>
       <div class="dv-notes" style="display:${_detailEditing?'none':'block'}">
-        ${t.emotionPre ? `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:11px;color:var(--text3);min-width:80px">Przed wejściem</span><span class="tag" style="font-size:12px">${t.emotionPre}</span></div>` : ''}
-        ${t.emotionPost ? `<div style="display:flex;align-items:center;gap:8px"><span style="font-size:11px;color:var(--text3);min-width:80px">Po zamknięciu</span><span class="tag" style="font-size:12px">${t.emotionPost}</span></div>` : ''}
+        ${t.emotionPre ? `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:11px;color:var(--text3);min-width:80px">Przed wejściem</span><span class="tag" style="font-size:12px">${tEmo(t.emotionPre)}</span></div>` : ''}
+        ${t.emotionPost ? `<div style="display:flex;align-items:center;gap:8px"><span style="font-size:11px;color:var(--text3);min-width:80px">Po zamknięciu</span><span class="tag" style="font-size:12px">${tEmo(t.emotionPost)}</span></div>` : ''}
         ${!t.emotionPre && !t.emotionPost ? '<span style="color:var(--text3);font-style:italic;font-size:12px">Brak danych</span>' : ''}
       </div>
       <div class="dv-notes-edit">${_dvEmoPicker('pre', t.emotionPre||'')}${_dvEmoPicker('post', t.emotionPost||'')}</div>
@@ -18755,6 +18755,59 @@ function deleteMyIdea(id) {
       await renderIdeasPage();
     } catch(e) { toast('Błąd: ' + e.message, 'error'); }
   });
+}
+
+// ===== EMOTION HELPERS =====
+const _EMO_MAP = {
+  // PL (zapisywane przez formularz)
+  'Spokojny':       { emoji:'😌', en:'Calm' },
+  'Pewny':          { emoji:'💪', en:'Confident' },
+  'Podekscytowany': { emoji:'🔥', en:'Excited' },
+  'Zaniepokojony':  { emoji:'😟', en:'Anxious' },
+  'FOMO':           { emoji:'😰', en:'FOMO' },
+  'Revenge':        { emoji:'😡', en:'Revenge' },
+  'Zadowolony':     { emoji:'😊', en:'Satisfied' },
+  'Żałuję':         { emoji:'😔', en:'Regret' },
+  'Sfrustrowany':   { emoji:'😤', en:'Frustrated' },
+  'Chciwy':         { emoji:'🤑', en:'Greedy' },
+  'Neutralny':      { emoji:'🧘', en:'Neutral' },
+  'Dumny':          { emoji:'🌟', en:'Proud' },
+  // EN (demo data / legacy)
+  'focused':        { emoji:'🎯', en:'Focused',     pl:'Skupiony' },
+  'calm':           { emoji:'😌', en:'Calm',         pl:'Spokojny' },
+  'confident':      { emoji:'💪', en:'Confident',    pl:'Pewny' },
+  'anxious':        { emoji:'😟', en:'Anxious',      pl:'Zaniepokojony' },
+  'disciplined':    { emoji:'✅', en:'Disciplined',  pl:'Zdyscyplinowany' },
+  'patient':        { emoji:'⏳', en:'Patient',      pl:'Cierpliwy' },
+  'fomo':           { emoji:'😰', en:'FOMO',         pl:'FOMO' },
+  'satisfied':      { emoji:'😊', en:'Satisfied',    pl:'Zadowolony' },
+  'regret':         { emoji:'😔', en:'Regret',       pl:'Żałuję' },
+  'neutral':        { emoji:'🧘', en:'Neutral',      pl:'Neutralny' },
+  'frustrated':     { emoji:'😤', en:'Frustrated',   pl:'Sfrustrowany' },
+  'proud':          { emoji:'🌟', en:'Proud',         pl:'Dumny' },
+};
+
+// Zwraca "emoji Nazwa PL / EN" lub samo "emoji Nazwa" jeśli brak tłumaczenia
+function tEmo(key) {
+  if (!key) return '—';
+  const m = _EMO_MAP[key];
+  if (!m) return key;
+  const isEn = !m.pl; // rekord bez .pl = wpis jest już po PL
+  if (isEn) {
+    // legacy EN key — pokaż PL / EN
+    return `${m.emoji} ${m.pl} / ${m.en}`;
+  }
+  // wpis PL — pokaż PL / EN
+  return `${m.emoji} ${key} / ${m.en}`;
+}
+
+// Skrócona wersja do małych miejsc (tylko emoji + PL)
+function tEmoShort(key) {
+  if (!key) return '—';
+  const m = _EMO_MAP[key];
+  if (!m) return key;
+  const label = m.pl || key;
+  return `${m.emoji} ${label}`;
 }
 
 // ===== IMPORT CSV =====
