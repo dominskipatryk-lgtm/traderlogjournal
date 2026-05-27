@@ -3389,6 +3389,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
       <div style="display:flex;gap:0;margin-bottom:20px;border-bottom:2px solid var(--border)">
         <button id="ai-tab-coach" class="ai-tab active" onclick="aiSwitchTab('coach')">💬 AI Coach</button>
         <button id="ai-tab-chart" class="ai-tab" onclick="aiSwitchTab('chart')">📊 Analiza wykresu</button>
+        <button id="ai-tab-report" class="ai-tab" onclick="aiSwitchTab('report')">📈 Raport AI</button>
       </div>
 
       <!-- ── COACH TAB ────────────────────────────────────────── -->
@@ -3463,6 +3464,53 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
           </div>
         </div>
         <div id="ai-chart-result" style="display:none;margin-top:24px;padding:20px;background:var(--bg2);border:1px solid var(--border);border-radius:12px"></div>
+      </div>
+
+      <!-- ── REPORT TAB ──────────────────────────────────────── -->
+      <div id="ai-section-report" style="display:none">
+        <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin-bottom:22px">
+          <div>
+            <label style="font-size:11px;color:var(--text3);display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px">Okres analizy</label>
+            <select id="ai-report-period" class="form-input-modal" style="font-size:13px;min-width:200px">
+              <option value="all">Cała historia</option>
+              <option value="90">Ostatnie 90 dni</option>
+              <option value="30" selected>Ostatnie 30 dni</option>
+              <option value="7">Ostatnie 7 dni</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:11px;color:var(--text3);display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px">Głębokość analizy</label>
+            <select id="ai-report-depth" class="form-input-modal" style="font-size:13px;min-width:200px">
+              <option value="full">Pełny raport (wszystkie sekcje)</option>
+              <option value="quick">Szybki raport (kluczowe wnioski)</option>
+              <option value="emotional">Skupiony na emocjach i psychologii</option>
+              <option value="technical">Skupiony na setupach i strategiach</option>
+            </select>
+          </div>
+          <button id="ai-report-btn" class="btn-sm btn-accent" onclick="aiGenerateReport()" style="padding:11px 22px;font-size:14px;font-weight:700;white-space:nowrap">📈 Generuj raport</button>
+        </div>
+
+        <!-- Score cards (filled by JS) -->
+        <div id="ai-report-scores" style="display:none;display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
+          <div class="stat-card" id="ai-score-discipline" style="text-align:center;padding:14px 10px">
+            <div style="font-size:22px;font-weight:800;color:var(--accent)" id="ai-score-disc-val">—</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px">Dyscyplina</div>
+          </div>
+          <div class="stat-card" id="ai-score-risk" style="text-align:center;padding:14px 10px">
+            <div style="font-size:22px;font-weight:800;color:var(--accent)" id="ai-score-risk-val">—</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px">Zarządzanie ryzykiem</div>
+          </div>
+          <div class="stat-card" id="ai-score-psych" style="text-align:center;padding:14px 10px">
+            <div style="font-size:22px;font-weight:800;color:var(--accent)" id="ai-score-psych-val">—</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px">Psychologia</div>
+          </div>
+          <div class="stat-card" id="ai-score-exec" style="text-align:center;padding:14px 10px">
+            <div style="font-size:22px;font-weight:800;color:var(--accent)" id="ai-score-exec-val">—</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px">Egzekucja</div>
+          </div>
+        </div>
+
+        <div id="ai-report-result" style="display:none;padding:24px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;line-height:1.7"></div>
       </div>
     </div><!-- /page-ai -->
 
@@ -19909,10 +19957,12 @@ function aiShowEdgeFn() {
 // ── Tab switching ───────────────────────────────────────────────────────────
 function aiSwitchTab(tab) {
   _aiTab = tab;
-  document.getElementById('ai-section-coach').style.display = tab === 'coach' ? '' : 'none';
-  document.getElementById('ai-section-chart').style.display = tab === 'chart' ? '' : 'none';
-  document.getElementById('ai-tab-coach').classList.toggle('active', tab === 'coach');
-  document.getElementById('ai-tab-chart').classList.toggle('active', tab === 'chart');
+  document.getElementById('ai-section-coach').style.display  = tab === 'coach'  ? '' : 'none';
+  document.getElementById('ai-section-chart').style.display  = tab === 'chart'  ? '' : 'none';
+  document.getElementById('ai-section-report').style.display = tab === 'report' ? '' : 'none';
+  document.getElementById('ai-tab-coach').classList.toggle('active',  tab === 'coach');
+  document.getElementById('ai-tab-chart').classList.toggle('active',  tab === 'chart');
+  document.getElementById('ai-tab-report').classList.toggle('active', tab === 'report');
 }
 
 // ── Render page ─────────────────────────────────────────────────────────────
@@ -20031,6 +20081,220 @@ OSTATNIE 20 TRANSAKCJI:
 ${ctx.recent || 'brak danych'}
 
 Twoje zasady: wskazuj konkretne wzorce z liczb, doceniaj sukcesy, punktuj powtarzające się błędy (emocje, reguły, setupy), wspieraj psychicznie. Jeśli trader prześle wykres — oceń go przez pryzmat jego strategii i reguł.`;
+}
+
+function _aiBuildReportContext(periodDays) {
+  const trades = getTrades(state.currentAccountId);
+  const now = Date.now();
+  const cutoff = periodDays === 'all' ? 0 : now - periodDays * 86400000;
+  const closed = trades.filter(t => t.status === 'closed' && t.pnl != null && new Date(t.date).getTime() >= cutoff);
+  if (!closed.length) return null;
+
+  const wins = closed.filter(t => t.pnl > 0);
+  const losses = closed.filter(t => t.pnl < 0);
+  const totalPnl = closed.reduce((s,t) => s+(t.pnl||0), 0);
+  const winRate = (wins.length / closed.length * 100).toFixed(1);
+  const avgWin  = wins.length   ? (wins.reduce((s,t)=>s+t.pnl,0)/wins.length).toFixed(2)   : 0;
+  const avgLoss = losses.length ? (losses.reduce((s,t)=>s+t.pnl,0)/losses.length).toFixed(2) : 0;
+  const rr = avgLoss !== 0 ? Math.abs(avgWin / avgLoss).toFixed(2) : '∞';
+  const brokenTrades = closed.filter(t=>t.rulesBroken?.length>0);
+  const brokenPct = (brokenTrades.length / closed.length * 100).toFixed(1);
+  const brokenRules = {};
+  brokenTrades.forEach(t => (t.rulesBroken||[]).forEach(r => { brokenRules[r] = (brokenRules[r]||0)+1; }));
+  const brokenTop = Object.entries(brokenRules).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([r,n])=>`"${r}": ${n}x`).join(', ');
+
+  // Symbol stats
+  const sym = {};
+  closed.forEach(t => {
+    if (!t.symbol) return;
+    if (!sym[t.symbol]) sym[t.symbol] = {n:0,pnl:0,w:0,l:0};
+    sym[t.symbol].n++; sym[t.symbol].pnl += t.pnl||0;
+    t.pnl > 0 ? sym[t.symbol].w++ : sym[t.symbol].l++;
+  });
+  const symStats = Object.entries(sym).sort((a,b)=>b[1].pnl-a[1].pnl)
+    .map(([s,v])=>`${s}: ${v.n}T WR=${(v.w/v.n*100).toFixed(0)}% PnL=${v.pnl.toFixed(0)}`).join('\n');
+
+  // Direction stats
+  const dirs = {};
+  closed.forEach(t => {
+    const d = (t.dir||'?').toUpperCase();
+    if (!dirs[d]) dirs[d] = {n:0,pnl:0,w:0};
+    dirs[d].n++; dirs[d].pnl += t.pnl||0;
+    if (t.pnl > 0) dirs[d].w++;
+  });
+  const dirStats = Object.entries(dirs).map(([d,v])=>`${d}: ${v.n}T WR=${(v.w/v.n*100).toFixed(0)}% PnL=${v.pnl.toFixed(0)}`).join(' | ');
+
+  // Day of week
+  const days = ['Niedziela','Poniedziałek','Wtorek','Środa','Czwartek','Piątek','Sobota'];
+  const dayS = {};
+  closed.forEach(t => {
+    const d = new Date(t.date).getDay();
+    if (!dayS[d]) dayS[d] = {n:0,pnl:0,w:0};
+    dayS[d].n++; dayS[d].pnl += t.pnl||0;
+    if (t.pnl > 0) dayS[d].w++;
+  });
+  const dayStats = Object.entries(dayS).sort((a,b)=>Number(a[0])-Number(b[0]))
+    .filter(([,v])=>v.n>0).map(([d,v])=>`${days[d]}: ${v.n}T WR=${(v.w/v.n*100).toFixed(0)}% PnL=${v.pnl.toFixed(0)}`).join('\n');
+
+  // Setup stats
+  const setS = {};
+  closed.forEach(t => {
+    const s = t.setup||'—';
+    if (!setS[s]) setS[s] = {n:0,pnl:0,w:0};
+    setS[s].n++; setS[s].pnl += t.pnl||0;
+    if (t.pnl > 0) setS[s].w++;
+  });
+  const setupStats = Object.entries(setS).filter(([k])=>k!=='—').sort((a,b)=>b[1].pnl-a[1].pnl)
+    .map(([s,v])=>`${s}: ${v.n}T WR=${(v.w/v.n*100).toFixed(0)}% PnL=${v.pnl.toFixed(0)}`).join('\n') || 'Brak danych';
+
+  // Emotion stats
+  const emo = {};
+  closed.forEach(t => {
+    if (!t.emotionPre) return;
+    if (!emo[t.emotionPre]) emo[t.emotionPre] = {n:0,pnl:0,w:0};
+    emo[t.emotionPre].n++; emo[t.emotionPre].pnl += t.pnl||0;
+    if (t.pnl > 0) emo[t.emotionPre].w++;
+  });
+  const emoStats = Object.entries(emo).map(([e,v])=>`${e}: ${v.n}T WR=${(v.w/v.n*100).toFixed(0)}% PnL=${v.pnl.toFixed(0)}`).join('\n') || 'Brak danych';
+
+  // Pre/post notes of last 50
+  const notesSample = closed.slice(-50).reverse().map(t =>
+    `[${(t.date||'').slice(0,10)}] ${t.symbol} ${t.dir} ${t.pnl>=0?'+':''}${t.pnl?.toFixed(2)} | Emo:${t.emotionPre||'?'}→${t.emotionPost||'?'} | Reguły:${t.rulesBroken?.length?'❌ '+t.rulesBroken.join(', '):'✓'} | Pre:"${(t.pre||'').slice(0,80)}" | Post:"${(t.post||'').slice(0,80)}"`
+  ).join('\n');
+
+  const strats = getStrategies();
+  const rules  = getRules();
+
+  return {
+    n: closed.length, winRate, totalPnl: totalPnl.toFixed(2), avgWin, avgLoss, rr,
+    brokenPct, brokenTop, symStats, dirStats, dayStats, setupStats, emoStats, notesSample,
+    stratsTxt: strats.length ? strats.map(s=>`- ${s.name}${s.description?' — '+s.description:''}`).join('\n') : 'Brak',
+    rulesTxt: rules.length ? rules.map(r=>`- ${r.text||r.name||r}`).join('\n') : 'Brak',
+    periodLabel: periodDays === 'all' ? 'cała historia' : `ostatnie ${periodDays} dni`,
+  };
+}
+
+function _aiReportPrompt(rCtx, depth) {
+  const sections = {
+    full: `Wygeneruj PEŁNY RAPORT tradingowy ze WSZYSTKIMI sekcjami poniżej.`,
+    quick: `Wygeneruj SZYBKI RAPORT — tylko kluczowe wnioski, max 3 punkty na sekcję.`,
+    emotional: `Skup się GŁÓWNIE na emocjach, psychologii i dyscyplinie. Techniczne sekcje tylko krótko.`,
+    technical: `Skup się GŁÓWNIE na setupach, strategiach i egzekucji. Psychologiczne sekcje tylko krótko.`,
+  };
+  return `Jesteś zaawansowanym analitykiem tradingowym i psychologiem. Odpowiadaj po POLSKU. Używaj markdown (##, **bold**, listy, tabele).
+
+Masz dane historyczne tradera za ${rCtx.periodLabel} (${rCtx.n} zamkniętych transakcji).
+
+═══════════════════════════════
+DANE DO ANALIZY
+═══════════════════════════════
+METRYKI GŁÓWNE:
+- Transakcje: ${rCtx.n} | WR: ${rCtx.winRate}% | P&L: ${rCtx.totalPnl}
+- Avg win: ${rCtx.avgWin} | Avg loss: ${rCtx.avgLoss} | R:R: ${rCtx.rr}
+- Transakcje ze złamanymi regułami: ${rCtx.brokenPct}%
+- Najczęściej łamane: ${rCtx.brokenTop || 'brak danych'}
+
+WYNIKI WG INSTRUMENTU:
+${rCtx.symStats || 'Brak danych'}
+
+KIERUNEK (LONG/SHORT):
+${rCtx.dirStats || 'Brak danych'}
+
+WYNIKI WG SETUPU:
+${rCtx.setupStats}
+
+WYNIKI WG DNIA TYGODNIA:
+${rCtx.dayStats || 'Brak danych'}
+
+EMOCJE PRZED WEJŚCIEM × WYNIKI:
+${rCtx.emoStats}
+
+STRATEGIE TRADERA:
+${rCtx.stratsTxt}
+
+REGUŁY TRADERA:
+${rCtx.rulesTxt}
+
+OSTATNIE 50 TRANSAKCJI (notatki):
+${rCtx.notesSample || 'Brak danych'}
+
+═══════════════════════════════
+ZADANIE
+═══════════════════════════════
+${sections[depth] || sections.full}
+
+Odpowiedz DOKŁADNIE w tej strukturze:
+
+## 🏆 Ocena ogólna
+Krótkie podsumowanie okresu (2-3 zdania). Następnie oceny w formacie:
+- **Dyscyplina: X/10** — [uzasadnienie]
+- **Zarządzanie ryzykiem: X/10** — [uzasadnienie]
+- **Psychologia: X/10** — [uzasadnienie]
+- **Egzekucja: X/10** — [uzasadnienie]
+
+## ✅ Co działa — Twoje mocne strony
+[Minimum 3 konkretne wzorce poparte liczbami z danych. Np. "Na EURUSD masz 74% WR — to Twój najlepszy instrument"]
+
+## ❌ Co szkodzi — Powtarzające się błędy
+[Minimum 3 konkretne wzorce poparte liczbami. Np. "Po wejściu z emocją FOMO tracisz w 78% przypadków"]
+
+## 🧠 Analiza psychologiczna
+[Głęboka analiza emocji: które sprzyjają zyskom, które powodują straty, czy są wzorce (np. poniedziałkowe FOMO, piątkowa impulsywność). Powołaj się konkretnie na dane.]
+
+## 📐 Analiza setupów i strategii
+[Które setupy mają najwyższe WR i P&L, które są nierentowne. Czy trader stosuje swoje strategie konsekwentnie.]
+
+## ⏰ Analiza timing
+[Najlepsze i najgorsze dni tygodnia. Wzorce czasowe jeśli widoczne.]
+
+## 🎯 3 Priorytety na następny tydzień
+Konkretne, wykonalne zalecenia:
+1. **[Zalecenie 1]** — [dlaczego, co konkretnie robić]
+2. **[Zalecenie 2]** — [dlaczego, co konkretnie robić]
+3. **[Zalecenie 3]** — [dlaczego, co konkretnie robić]
+
+## 💬 Słowo od mentora
+[2-3 zdania wsparcia i motywacji — szczere, oparte na danych, nie ogólnikowe]`;
+}
+
+async function aiGenerateReport() {
+  const btn = document.getElementById('ai-report-btn');
+  const resEl = document.getElementById('ai-report-result');
+  const scoresEl = document.getElementById('ai-report-scores');
+  const period = document.getElementById('ai-report-period')?.value || '30';
+  const depth  = document.getElementById('ai-report-depth')?.value  || 'full';
+
+  const rCtx = _aiBuildReportContext(period === 'all' ? 'all' : parseInt(period));
+  if (!rCtx) return toast('Brak transakcji w wybranym okresie', 'error');
+
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Analizuję...'; }
+  if (resEl) { resEl.style.display = 'block'; resEl.innerHTML = '<div style="color:var(--text3);font-style:italic;text-align:center;padding:30px 20px">⏳ AI analizuje Twoją historię...<br><span style="font-size:11px">To może potrwać 20-40 sekund</span></div>'; }
+  if (scoresEl) scoresEl.style.display = 'none';
+
+  try {
+    const system = _aiReportPrompt(rCtx, depth);
+    const messages = [{ role:'user', content: `Wygeneruj raport za ${rCtx.periodLabel}.` }];
+    const reply = await _aiCall(messages, system, 4096);
+
+    // Extract scores from response and update score cards
+    ['disc','risk','psych','exec'].forEach((key, i) => {
+      const labels = ['Dyscyplina','Zarządzanie ryzykiem','Psychologia','Egzekucja'];
+      const m = reply.match(new RegExp(labels[i] + ':\\s*(\\d+)/10'));
+      const el = document.getElementById(`ai-score-${key}-val`);
+      if (el) {
+        const score = m ? parseInt(m[1]) : null;
+        el.textContent = score ? `${score}/10` : '—';
+        el.style.color = !score ? 'var(--text3)' : score >= 8 ? 'var(--green)' : score >= 6 ? 'var(--accent)' : 'var(--red)';
+      }
+    });
+    if (scoresEl) scoresEl.style.display = 'grid';
+
+    if (resEl) resEl.innerHTML = '<div class="ai-msg assistant" style="max-width:100%;border:none;background:transparent;padding:0">' + _aiMd(reply) + '</div>';
+  } catch(e) {
+    if (resEl) resEl.innerHTML = `<div style="color:var(--red);padding:10px">❌ ${e.message}</div>`;
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '📈 Generuj raport'; }
+  }
 }
 
 function _aiChartPrompt(ctx, stratId, symbol) {
