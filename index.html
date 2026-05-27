@@ -13570,8 +13570,10 @@ function exportTradesToCSV() {
 async function sbSyncAccount(acc) {
   if (!_sb || !state.currentUser) return null;
   const userId = getUsers()[state.currentUser]?.supabaseId;
-  if (!userId) return null;
-  const payload = {
+  if (!userId) { console.warn('sbSyncAccount: brak supabaseId dla', state.currentUser); return null; }
+
+  // Payload pełny — jeśli kolumna nie istnieje w Supabase, spróbuj minimalny
+  const payloadFull = {
     user_id: userId,
     name: acc.name, broker: acc.broker || '',
     broker_key: acc.brokerKey || '', spread: acc.spread || null,
@@ -13580,18 +13582,44 @@ async function sbSyncAccount(acc) {
     strategy: acc.strategy || '', color: acc.color || '#00d4a1',
     currency: acc.currency || 'USD',
   };
-  try {
+  const payloadMin = {
+    user_id: userId,
+    name: acc.name, broker: acc.broker || '',
+    type: acc.type || 'forex', capital: acc.capital || 0,
+  };
+
+  const _doUpsert = async (payload) => {
     if (acc.sbId) {
-      await _sb.from('accounts').update(payload).eq('id', acc.sbId);
+      const { error } = await _sb.from('accounts').update(payload).eq('id', acc.sbId);
+      if (error) throw error;
       return acc.sbId;
     } else {
-      // Sprawdź czy konto już istnieje po lokalnym id
       const { data: existing } = await _sb.from('accounts').select('id').eq('user_id', userId).eq('name', acc.name).maybeSingle();
       if (existing) { acc.sbId = existing.id; return existing.id; }
-      const { data } = await _sb.from('accounts').insert(payload).select().single();
+      const { data, error } = await _sb.from('accounts').insert(payload).select('id').single();
+      if (error) throw error;
       if (data) { acc.sbId = data.id; return data.id; }
     }
-  } catch(e) { console.warn('Account sync error:', e); }
+    return null;
+  };
+
+  try {
+    return await _doUpsert(payloadFull);
+  } catch(e) {
+    const msg = e?.message || JSON.stringify(e);
+    console.warn('Account sync (full payload) error:', msg);
+    // Jeśli 400 — brakująca kolumna — spróbuj minimalny payload
+    if (msg.includes('column') || msg.includes('does not exist') || e?.code === '42703') {
+      try {
+        toast('⚠️ Supabase accounts: ' + msg.slice(0, 120), 'error');
+        return await _doUpsert(payloadMin);
+      } catch(e2) {
+        toast('❌ Sync konta nie powiódł się: ' + (e2?.message||'').slice(0,120), 'error');
+      }
+    } else {
+      toast('❌ Sync konta: ' + msg.slice(0, 120), 'error');
+    }
+  }
   return null;
 }
 
