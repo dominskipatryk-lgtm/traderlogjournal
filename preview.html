@@ -13968,15 +13968,33 @@ async function submitPasswordReset() {
 
   if (p1.length < 6) { if (errEl) { errEl.textContent = 'Hasło min. 6 znaków'; errEl.style.display='block'; } return; }
   if (p1 !== p2) { if (errEl) { errEl.textContent = 'Hasła nie są zgodne'; errEl.style.display='block'; } return; }
-  if (!_sb) return;
+  if (!_sb) { _showResetExpiredError(errEl); return; }
 
   if (btn) { btn.textContent = '⏳ Zapisuję...'; btn.disabled = true; }
+
+  // Sprawdź sesję przed zmianą hasła — jeśli brak, link wygasł lub był już użyty
+  try {
+    const { data: _sessChk } = await _sb.auth.getSession();
+    if (!_sessChk?.session) {
+      if (btn) { btn.textContent = 'Zapisz nowe hasło'; btn.disabled = false; }
+      _showResetExpiredError(errEl);
+      return;
+    }
+  } catch(e) {
+    if (btn) { btn.textContent = 'Zapisz nowe hasło'; btn.disabled = false; }
+    _showResetExpiredError(errEl);
+    return;
+  }
 
   const { error } = await _sb.auth.updateUser({ password: p1 });
 
   if (error) {
-    if (errEl) { errEl.textContent = error.message; errEl.style.display='block'; }
     if (btn) { btn.textContent = 'Zapisz nowe hasło'; btn.disabled = false; }
+    if (error.message && error.message.toLowerCase().includes('session')) {
+      _showResetExpiredError(errEl);
+    } else {
+      if (errEl) { errEl.textContent = error.message; errEl.style.display='block'; }
+    }
   } else {
     // Pobierz email zanim wylogujemy sesję resetu
     let userEmail = '';
@@ -14013,6 +14031,43 @@ async function submitPasswordReset() {
       ? `✓ Hasło zmienione! Email potwierdzający wysłany na ${userEmail}. Możesz się zalogować.`
       : '✓ Hasło zmienione! Możesz się teraz zalogować.';
     showAuthSuccess(successMsg);
+  }
+}
+
+function _showResetExpiredError(errEl) {
+  if (!errEl) return;
+  errEl.innerHTML = '⚠️ Link wygasł lub był już użyty.<br><span style="font-size:12px;color:var(--text3)">Otwórz link ponownie z emaila lub wyślij nowy.</span><br><button onclick="_backToForgotForm()" style="margin-top:8px;padding:6px 14px;background:var(--accent);color:#000;border:none;border-radius:6px;cursor:pointer;font-weight:700;font-size:12px">📧 Wyślij nowy link</button>';
+  errEl.style.display = 'block';
+}
+
+function _backToForgotForm() {
+  _inPasswordRecovery = false;
+  const form = document.getElementById('reset-password-form');
+  if (form) form.style.display = 'none';
+  const tabs = document.querySelector('.auth-tabs');
+  if (tabs) tabs.style.display = 'flex';
+  const sub = document.querySelector('.auth-subtitle');
+  if (sub) sub.style.display = 'block';
+  window.history.replaceState({}, '', window.location.pathname);
+  switchAuthTab('forgot');
+}
+
+async function _checkRecoverySession() {
+  // Czekaj na zakończenie PKCE exchange (max 4s), potem ostrzeż jeśli brak sesji
+  for (let i = 0; i < 20; i++) {
+    await new Promise(r => setTimeout(r, 200));
+    if (!_inPasswordRecovery) return;
+    if (_sb) {
+      try {
+        const { data } = await _sb.auth.getSession();
+        if (data?.session) return; // sesja OK — nic nie rób
+      } catch(e) {}
+    }
+  }
+  // Po 4s — wciąż brak sesji
+  if (_inPasswordRecovery) {
+    const errEl = document.getElementById('reset-err');
+    _showResetExpiredError(errEl);
   }
 }
 
@@ -17863,6 +17918,14 @@ async function appInit() {
   }
   initSupabase();
   await initDB();
+
+  // Podczas resetu hasła — nie ingeruj w sesję PKCE (exchange w toku lub już gotowy)
+  if (_inPasswordRecovery) {
+    document.getElementById('auth-screen').style.display = 'flex';
+    _checkRecoverySession(); // sprawdź sesję asynchronicznie, ostrzeż jeśli brak
+    return;
+  }
+
   const _users = getUsers();
 
   // Seed stalego admina — zawsze aktualizuj role i subscription
