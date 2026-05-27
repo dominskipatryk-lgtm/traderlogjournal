@@ -7001,6 +7001,7 @@ function _archiveAnalysisByTrade(analysisId, tradeId, archive) {
   if (ai < 0) return;
   analyses[ai] = { ...analyses[ai], archived: archive, linkedTradeId: tradeId };
   saveAnalyses(analyses);
+  if (_sb && _isOnline) sbSyncAnalysis(analyses[ai]);
   if (document.getElementById('page-analyses')?.style.display !== 'none') renderAnalysisList();
 }
 function selectDvLinkedAnalysis(analysisId) {
@@ -11925,6 +11926,7 @@ function saveAnalysis() {
   if (idx >= 0) analyses[idx] = a; else analyses.push(a);
   saveAnalyses(analyses);
   if (idEl) idEl.value = id;
+  if (_sb && _isOnline) sbSyncAnalysis(a);
   // Wyczysc szkic analizy po zapisaniu
   _anDraftKey = null;
   const _db = getDB(); delete _db['_an_draft_'+(state.currentUser||'')]; saveDB(_db);
@@ -11935,7 +11937,10 @@ function saveAnalysis() {
 
 function deleteAnalysis(id) {
   showConfirm(t('confirm_delete_analysis'), () => {
-    saveAnalyses(getAnalyses().filter(a => a.id !== id));
+    const all = getAnalyses();
+    const target = all.find(a => a.id === id);
+    saveAnalyses(all.filter(a => a.id !== id));
+    if (target && _sb && _isOnline) sbSyncAnalysis(target, true);
     renderAnalysisList();
     toast('Analiza usunięta', 'success');
   });
@@ -13154,12 +13159,15 @@ async function sbSyncDown(userId, userLogin) {
       const accId = state.currentAccountId || (accounts?.[0]?.id);
       const key = 'analyses_' + (loginKey || '') + '_' + (accId || '');
       db[key] = analyses.map(a => ({
-        id: a.id, title: a.title, symbol: a.symbol,
+        id: a.local_id || a.id, sbId: a.id,
+        title: a.title, symbol: a.symbol,
         type: a.type, bias: a.bias, tf: a.tf, setup: a.setup,
         content: a.content, levels: a.levels,
         entry: a.entry, sl: a.sl, tp: a.tp,
         post: a.post_notes, date: a.analysis_date,
         screenshots: Array.isArray(a.screenshots) ? a.screenshots : [],
+        archived: a.archived || false,
+        linkedTradeId: a.linked_trade_id || null,
         updatedAt: new Date(a.updated_at).getTime()
       }));
       saveDB(db);
@@ -13669,6 +13677,49 @@ async function sbSyncTrade(trade, accountId) {
   }
 }
 
+
+async function sbSyncAnalysis(analysis, deleted = false) {
+  if (!_sb || !state.currentUser) return;
+  const userId = getUsers()[state.currentUser]?.supabaseId;
+  if (!userId) return;
+  try {
+    if (deleted) {
+      if (analysis.sbId) await _sb.from('analyses').delete().eq('id', analysis.sbId);
+      return;
+    }
+    const payload = {
+      user_id:       userId,
+      local_id:      analysis.id,
+      title:         analysis.title || '',
+      symbol:        analysis.symbol || null,
+      type:          analysis.type || 'technical',
+      bias:          analysis.bias || null,
+      tf:            analysis.tf || null,
+      setup:         analysis.setup || null,
+      content:       analysis.content || null,
+      levels:        analysis.levels || null,
+      entry:         analysis.entry || null,
+      sl:            analysis.sl || null,
+      tp:            analysis.tp || null,
+      post_notes:    analysis.post || null,
+      analysis_date: analysis.date || new Date().toISOString(),
+      screenshots:   (analysis.screenshots || []).filter(s => typeof s === 'string' && (s.startsWith('sb://') || s.startsWith('drive://'))),
+      archived:      analysis.archived || false,
+      linked_trade_id: analysis.linkedTradeId || null,
+      updated_at:    new Date().toISOString(),
+    };
+    if (analysis.sbId) {
+      await _sb.from('analyses').update(payload).eq('id', analysis.sbId);
+    } else {
+      const { data } = await _sb.from('analyses').insert(payload).select().single();
+      if (data?.id) {
+        const analyses = getAnalyses();
+        const ai = analyses.findIndex(a => a.id === analysis.id);
+        if (ai >= 0) { analyses[ai].sbId = data.id; saveAnalyses(analyses); }
+      }
+    }
+  } catch(e) { console.warn('Analysis sync error:', e); }
+}
 
 async function sbGenerateInvite(email) {
   if (!_sb) return null;
