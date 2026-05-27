@@ -20033,13 +20033,14 @@ ${ctx.recent || 'brak danych'}
 Twoje zasady: wskazuj konkretne wzorce z liczb, doceniaj sukcesy, punktuj powtarzające się błędy (emocje, reguły, setupy), wspieraj psychicznie. Jeśli trader prześle wykres — oceń go przez pryzmat jego strategii i reguł.`;
 }
 
-function _aiChartPrompt(ctx, stratId) {
+function _aiChartPrompt(ctx, stratId, symbol) {
+  // ── Trader strategies / setups ────────────────────────────────────────────
   let stratTxt = '';
   if (stratId === 'all' || !stratId) {
     stratTxt = ctx.strats.map(s => {
       const sSetups = ctx.setups.filter(x => x.strategyId === s.id);
       return `**${s.name}**${s.description ? ': '+s.description : ''}${sSetups.length ? '\nSetupy: '+sSetups.map(x=>x.name).join(', ') : ''}`;
-    }).join('\n\n') || 'Brak zdefiniowanych strategii — oceń ogólnie wg Price Action.';
+    }).join('\n\n');
   } else {
     const s = ctx.strats.find(x => x.id === stratId);
     if (s) {
@@ -20047,51 +20048,96 @@ function _aiChartPrompt(ctx, stratId) {
       stratTxt = `**${s.name}**${s.description ? ': '+s.description : ''}${sSetups.length ? '\nSetupy: '+sSetups.map(x=>x.name).join(', ') : ''}`;
     } else { stratTxt = stratId; }
   }
-  let extStratTxt = '';
-  if (_aiExtStrats.size > 0) {
-    extStratTxt = '\n\nSTRATEGIE ZEWNĘTRZNE DO ZASTOSOWANIA W ANALIZIE:\n' +
-      [..._aiExtStrats].map(k => _AI_EXT_STRATS[k] ? `**${_AI_EXT_STRATS[k].name}**:\n${_AI_EXT_STRATS[k].desc}` : '').filter(Boolean).join('\n\n');
+
+  // ── External strategies ───────────────────────────────────────────────────
+  const extStratNames = [..._aiExtStrats].map(k => _AI_EXT_STRATS[k]?.name).filter(Boolean);
+  const extStratDetails = [..._aiExtStrats].map(k => _AI_EXT_STRATS[k] ? `**${_AI_EXT_STRATS[k].name}**:\n${_AI_EXT_STRATS[k].desc}` : '').filter(Boolean).join('\n\n');
+  const hasExtStrats = extStratNames.length > 0;
+
+  // ── Trader data snapshot ──────────────────────────────────────────────────
+  const symUpper = (symbol || '').toUpperCase();
+  let symStat = '';
+  if (symUpper && ctx.symTxt) {
+    const line = ctx.symTxt.split('; ').find(l => l.toUpperCase().startsWith(symUpper + ':'));
+    if (line) symStat = `${symUpper}: ${line.split(':').slice(1).join(':').trim()}`;
   }
+  const traderLines = [
+    ctx.totalTrades > 0 ? `Ogółem: ${ctx.totalTrades}T | WR: ${ctx.winRate}% | Avg win: ${ctx.avgWin} | Avg loss: ${ctx.avgLoss}` : null,
+    symStat ? `Wyniki na instrumencie: ${symStat}` : (ctx.symTxt ? `Top instrumenty: ${ctx.symTxt}` : null),
+    ctx.emoTxt && ctx.emoTxt !== 'brak danych' ? `Emocje×wyniki: ${ctx.emoTxt}` : null,
+    ctx.dayTxt ? `Dni tygodnia: ${ctx.dayTxt}` : null,
+    ctx.brokenPct > 0 ? `Transakcje ze złamanymi regułami: ${ctx.brokenPct}%` : null,
+  ].filter(Boolean).join('\n');
+  const hasTraderData = ctx.totalTrades > 0;
+
+  const techSection = hasExtStrats
+    ? `Zastosuj te metodologie analizy: ${extStratNames.join(', ')}\n\n${extStratDetails}`
+    : 'Zastosuj klasyczną analizę techniczną: Price Action, struktura rynku, S/R, momentum.';
 
   const stratSection = stratTxt
-    ? `Strategie tradera:\n${stratTxt}`
-    : 'Brak zdefiniowanych strategii tradera — oceń ogólnie wg Price Action.';
+    ? `STRATEGIE I SETUPY TRADERA:\n${stratTxt}`
+    : 'Trader nie ma jeszcze zdefiniowanych własnych strategii.';
 
-  return `Jesteś ekspertem od analizy technicznej. Odpowiadaj po POLSKU. Analizujesz wykres dla tradera.
+  return `Jesteś ekspertem od analizy technicznej i tradingowym mentorem. Odpowiadaj ZAWSZE po POLSKU. Używaj markdown.
 
-${stratSection}${extStratTxt}
-${_aiExtStrats.size > 0 ? '\nAnalizuj łącząc wiedzę z wybranych strategii zewnętrznych z podejściem tradera.' : ''}
+Zrób DWIE NIEZALEŻNE analizy tego wykresu.
 
-Odpowiedz w DOKŁADNIE tej strukturze markdown:
+════════════════════════════════════════
+CZĘŚĆ 1 — OBIEKTYWNA ANALIZA TECHNICZNA
+(czysta technika, niezależna od danych tradera)
+════════════════════════════════════════
+${techSection}
 
-## 📊 Struktura rynku
-[Trend, momentum, kluczowe poziomy S/R]
+Odpowiedz w tej strukturze:
 
-## 🎯 Dopasowanie strategii
-[Która strategia pasuje i dlaczego — uwzględnij wybrane strategie zewnętrzne jeśli aktywne]
+### 📊 Struktura rynku
+[Trend — kierunek, siła, faza. Struktura HH/HL lub LH/LL. Momentum.]
 
-## 📍 Scenariusz tradingowy
-**Wejście:** [poziom/warunek]
-**Stop Loss:** [poziom + uzasadnienie]
-**Take Profit 1:** [poziom]
-**Take Profit 2:** [poziom opcjonalnie]
-**R:R:** [stosunek]
+### 🔑 Kluczowe poziomy
+[Konkretne poziomy S/R, strefy, POI. Podaj liczby jeśli widoczne na wykresie.]
+${hasExtStrats ? `\n### 🧠 ${extStratNames.join(' + ')} — co widzę\n[Konkretne obserwacje przez pryzmat wybranych metodologii: Order Blocks, BOS/CHoCH, FVG, strefy S&D, fazy Wyckoff, fale Elliotta, sygnały VSA — cokolwiek z tego jest widoczne]` : ''}
 
-## ⚠️ Unieważnienie setupu
-[Co musiałoby się stać żeby setup był nieważny]
+### 📍 Scenariusze tradingowe
+**LONG:** [warunek wejścia | SL | TP1 | TP2 | R:R]
+**SHORT:** [warunek wejścia | SL | TP1 | TP2 | R:R]
+**Preferowany kierunek i dlaczego:**
 
-## 🎯 Pewność: X/10
-[Uzasadnienie + główne ryzyko]`;
+### ⚠️ Unieważnienie setupu
+[Co musiałoby się stać żeby setup przepadł]
+
+### 🎯 Siła sygnału obiektywnie: X/10
+[Uzasadnienie — bez kontekstu tradera]
+
+════════════════════════════════════════
+CZĘŚĆ 2 — KONTEKST TRADERA
+(jak ten setup wpisuje się w profil tradera)
+════════════════════════════════════════
+${hasTraderData ? `DANE HISTORYCZNE TRADERA:\n${traderLines}` : 'Trader nie ma jeszcze historii transakcji.'}
+
+${stratSection}
+${ctx.rulesTxt && ctx.rulesTxt !== 'Brak' ? `REGUŁY TRADERA:\n${ctx.rulesTxt}` : ''}
+
+### 🔗 Dopasowanie do stylu tradera
+[Który setup/strategia tradera pasuje do tego co widzisz na wykresie — konkretnie]
+
+### 📈 Twoje statystyki dla tego setupu
+${hasTraderData ? '[Powołaj się na liczby z danych: WR na instrumencie, najlepsze dni, emocje które działają lub nie. Jeśli brak danych dla tego instrumentu — powiedz to wprost.]' : '[Brak danych historycznych — brak możliwości personalizacji.]'}
+
+### 🧠 Psychologia i reguły
+[Które emocje/nawyki tradera mogą tu zagrać. Przypomnienie reguł jeśli są istotne dla tego setupu. Ostrzeżenia.]
+
+### ✅ Rekomendacja dla tego tradera
+[Wejść czy czekać? Który scenariusz? Jak zarządzić pozycją biorąc pod uwagę profil tradera i jego historię]`;
 }
 
 // ── API call ─────────────────────────────────────────────────────────────────
-async function _aiCall(messages, system) {
+async function _aiCall(messages, system, maxTok = 2048) {
   const key = aiGetKey();
   if (!key) { aiShowKeyPanel(); throw new Error('Brak klucza API — wprowadź go w ustawieniach (⚙️ Klucz API)'); }
   const res = await fetch(_AI_PROXY_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ apiKey: key, model: 'claude-sonnet-4-6', max_tokens: 2048, system, messages }),
+    body: JSON.stringify({ apiKey: key, model: 'claude-sonnet-4-6', max_tokens: maxTok, system, messages }),
   });
   if (!res.ok) {
     const txt = await res.text().catch(()=>'');
@@ -20277,8 +20323,8 @@ async function aiAnalyzeChart() {
   try {
     const ctx = _aiBuildContext();
     const stratId = document.getElementById('ai-chart-strategy')?.value || 'all';
-    const system = _aiChartPrompt(ctx, stratId);
     const symbol = (document.getElementById('ai-chart-symbol')?.value || '').trim();
+    const system = _aiChartPrompt(ctx, stratId, symbol);
     const tf     = (document.getElementById('ai-chart-tf')?.value || '').trim();
     const userText = `Proszę przeanalizuj ten wykres.${symbol?' Instrument: '+symbol:''}${tf?' Timeframe: '+tf:''}`;
     const messages = [{
@@ -20288,7 +20334,7 @@ async function aiAnalyzeChart() {
         { type: 'text', text: userText }
       ]
     }];
-    const reply = await _aiCall(messages, system);
+    const reply = await _aiCall(messages, system, 4096);
     if (resEl) resEl.innerHTML = '<div class="ai-msg assistant" style="max-width:100%;border:none;background:transparent;padding:0">' + _aiMd(reply) + '</div>';
   } catch(e) {
     if (resEl) resEl.innerHTML = `<div style="color:var(--red);padding:10px">❌ ${e.message}</div>`;
