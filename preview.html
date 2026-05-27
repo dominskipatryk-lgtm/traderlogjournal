@@ -3278,9 +3278,23 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
           <div class="page-title" style="margin-bottom:2px">💼 Portfel Inwestycyjny</div>
           <div class="page-subtitle">Długoterminowe inwestycje — ETF, akcje, obligacje, krypto</div>
         </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <button id="pf-fetch-prices-btn" class="btn-sm" onclick="fetchPortfolioPrices()" style="font-size:12px">🔄 Pobierz ceny</button>
+          <span id="pf-prices-ts" style="font-size:10px;color:var(--text3);display:none"></span>
+          <button class="btn-sm" onclick="pfShowApiPanel()" style="font-size:11px;color:var(--text3)" title="Ustawienia API">⚙️</button>
           <button class="btn-sm" onclick="exportPortfolioCSV()" style="font-size:12px">📥 Eksport CSV</button>
           <button class="btn-sm btn-accent" onclick="openPortfolioModal()" style="font-size:13px">+ Dodaj pozycję</button>
+        </div>
+      </div>
+
+      <!-- Panel klucza Alpha Vantage -->
+      <div id="pf-api-panel" style="display:none;margin-bottom:16px;padding:14px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:10px">
+        <div style="font-weight:600;font-size:13px;margin-bottom:4px">🔑 Alpha Vantage API — akcje i ETF</div>
+        <div style="font-size:12px;color:var(--text3);margin-bottom:10px">Wymagany darmowy klucz do pobierania cen akcji/ETF (25 zapytań/dzień). Krypto działa bez klucza. <a href="https://www.alphavantage.co/support/#api-key" target="_blank" style="color:var(--accent)">Pobierz bezpłatnie →</a></div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <input id="pf-av-key-input" class="form-input-modal" placeholder="Wklej klucz API..." style="flex:1;min-width:200px;font-size:12px;padding:7px 10px">
+          <button class="btn-sm btn-accent" onclick="pfSaveAvKey()" style="font-size:11px">Zapisz klucz</button>
+          <button class="btn-sm" onclick="document.getElementById('pf-api-panel').style.display='none'" style="font-size:11px">✕ Zamknij</button>
         </div>
       </div>
 
@@ -13689,7 +13703,6 @@ async function sbSyncAnalysis(analysis, deleted = false) {
     }
     const payload = {
       user_id:       userId,
-      local_id:      analysis.id,
       title:         analysis.title || '',
       symbol:        analysis.symbol || null,
       type:          analysis.type || 'technical',
@@ -19548,6 +19561,7 @@ function renderPortfolio() {
 
   renderPortfolioSummary(positions);
   renderPortfolioAllocation(positions);
+  pfUpdateTimestamp();
 
   if (!positions.length) {
     if (tableEl) tableEl.style.display = 'none';
@@ -19558,6 +19572,7 @@ function renderPortfolio() {
   if (emptyEl) emptyEl.style.display = 'none';
 
   const fmtN = (n, dec=2) => isNaN(n) ? '—' : n.toLocaleString('pl-PL', {minimumFractionDigits:dec, maximumFractionDigits:dec});
+  const _now = Date.now();
 
   tbody.innerHTML = positions.map(p => {
     const cost  = p.qty * p.avg_price + (p.fee || 0);
@@ -19568,6 +19583,10 @@ function renderPortfolio() {
     const typeClass = 'pf-type-' + (p.type || 'Inne').replace(/[^a-zA-ZąćęłńóśźżĄĆĘŁŃÓŚŹŻ]/g,'');
     const accClass  = 'pf-acc-' + (p.account_type || 'zwykłe');
     const pnlSign = pnl >= 0 ? '+' : '';
+    const _autoAge = p.price_updated_at ? (_now - new Date(p.price_updated_at).getTime()) : Infinity;
+    const _priceSubtext = _autoAge < 24*60*60*1000
+      ? `<span style="font-size:10px;color:var(--accent);display:block">⚡ auto ${_autoAge < 60000 ? 'przed chwilą' : Math.floor(_autoAge/60000) + ' min temu'}</span>`
+      : `<span style="font-size:10px;color:var(--text3);display:block">✏️ aktualizuj</span>`;
     return `<tr>
       <td>
         <div style="font-weight:700;font-size:13px">${p.symbol}</div>
@@ -19580,7 +19599,7 @@ function renderPortfolio() {
       <td class="num">${fmtN(p.avg_price)} ${p.currency}</td>
       <td class="num" style="cursor:pointer" onclick="pfEditCurrentPrice('${p.id}')" title="Kliknij aby zaktualizować cenę">
         <span style="border-bottom:1px dashed var(--border)">${fmtN(p.current_price)} ${p.currency}</span>
-        <span style="font-size:10px;color:var(--text3);display:block">✏️ aktualizuj</span>
+        ${_priceSubtext}
       </td>
       <td class="num hide-sm">${fmtN(cost)} ${p.currency}</td>
       <td class="num" style="font-weight:600">${fmtN(val)} ${p.currency}</td>
@@ -19634,6 +19653,159 @@ function exportPortfolioCSV() {
   a.href = url; a.download = 'portfel_' + new Date().toISOString().slice(0,10) + '.csv';
   a.click(); URL.revokeObjectURL(url);
   toast('✓ CSV portfela pobrany', 'success');
+}
+
+// ── AUTO-CENY PORTFELA ────────────────────────────────────────────────────────
+
+const _CG_IDS = {
+  BTC:'bitcoin',ETH:'ethereum',BNB:'binancecoin',SOL:'solana',
+  XRP:'ripple',ADA:'cardano',DOGE:'dogecoin',DOT:'polkadot',
+  MATIC:'matic-network',LINK:'chainlink',AVAX:'avalanche-2',
+  UNI:'uniswap',ATOM:'cosmos',LTC:'litecoin',NEAR:'near',
+  FTM:'fantom',AAVE:'aave',ALGO:'algorand',XLM:'stellar',
+  VET:'vechain',FIL:'filecoin',TRX:'tron',XMR:'monero',
+  SHIB:'shiba-inu',ARB:'arbitrum',OP:'optimism',PEPE:'pepe',
+  TON:'the-open-network',SUI:'sui',APT:'aptos',
+  INJ:'injective-protocol',GRT:'the-graph',
+  SAND:'the-sandbox',MANA:'decentraland',
+  USDT:'tether',USDC:'usd-coin',DAI:'dai',
+};
+
+function pfGetAvKey() {
+  return getDB()['av_api_key_' + (state.currentUser||'')] || '';
+}
+
+function pfSaveAvKey() {
+  const key = (document.getElementById('pf-av-key-input')?.value || '').trim();
+  if (!key) return toast('Wpisz klucz API', 'error');
+  const db = getDB();
+  db['av_api_key_' + (state.currentUser||'')] = key;
+  saveDB(db);
+  document.getElementById('pf-api-panel').style.display = 'none';
+  toast('Klucz API zapisany ✓', 'success');
+}
+
+function pfShowApiPanel() {
+  const panel = document.getElementById('pf-api-panel');
+  if (!panel) return;
+  const inp = document.getElementById('pf-av-key-input');
+  if (inp) inp.value = pfGetAvKey();
+  panel.style.display = 'block';
+  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function pfUpdateTimestamp() {
+  const ts = getDB()['_pf_price_ts_' + (state.currentUser||'')] || 0;
+  const el = document.getElementById('pf-prices-ts');
+  if (!el) return;
+  if (!ts) { el.style.display = 'none'; return; }
+  const d = new Date(ts);
+  el.textContent = `Ceny z ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+  el.style.display = 'inline';
+}
+
+function _pfDelay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function fetchPortfolioPrices() {
+  const positions = getPortfolio();
+  if (!positions.length) return toast('Brak pozycji w portfelu', 'error');
+
+  // 15 min cooldown
+  const db = getDB();
+  const cacheKey = '_pf_price_ts_' + (state.currentUser||'');
+  const ageMs = Date.now() - (db[cacheKey] || 0);
+  if (ageMs < 15 * 60 * 1000) {
+    const minsLeft = Math.ceil((15 * 60 * 1000 - ageMs) / 60000);
+    return toast(`Ceny pobrano ${Math.floor(ageMs/60000)} min temu — odczekaj jeszcze ${minsLeft} min`, 'info');
+  }
+
+  const btn = document.getElementById('pf-fetch-prices-btn');
+  if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Pobieranie...'; }
+
+  let updated = 0;
+  const failed = [];
+  const noSupport = [];
+
+  try {
+    // ── 1. Krypto — CoinGecko (bez klucza) ──────────────────────────
+    const cryptoPos = positions.filter(p => p.type === 'Krypto');
+    if (cryptoPos.length) {
+      const mapped = cryptoPos.map(p => ({ pos: p, cgId: _CG_IDS[p.symbol.toUpperCase()] }));
+      mapped.filter(m => !m.cgId).forEach(m => noSupport.push(m.pos.symbol));
+      const toFetch = mapped.filter(m => m.cgId);
+      if (toFetch.length) {
+        const cgIds = [...new Set(toFetch.map(m => m.cgId))].join(',');
+        const currencies = [...new Set(cryptoPos.map(p => (p.currency||'PLN').toLowerCase()))].join(',');
+        try {
+          const res = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${cgIds}&vs_currencies=${currencies}&precision=8`);
+          if (res.ok) {
+            const data = await res.json();
+            const fresh = getPortfolio();
+            toFetch.forEach(({ pos, cgId }) => {
+              const curr = (pos.currency||'PLN').toLowerCase();
+              const price = data[cgId]?.[curr];
+              if (price != null) {
+                const idx = fresh.findIndex(x => x.id === pos.id);
+                if (idx >= 0) { fresh[idx].current_price = price; fresh[idx].price_updated_at = new Date().toISOString(); updated++; }
+              } else {
+                failed.push(pos.symbol + ' (brak ' + pos.currency + ')');
+              }
+            });
+            savePortfolio(fresh);
+          } else { cryptoPos.forEach(p => failed.push(p.symbol)); }
+        } catch(e) { cryptoPos.forEach(p => failed.push(p.symbol)); }
+      }
+    }
+
+    // ── 2. Akcje / ETF — Alpha Vantage (darmowy klucz) ──────────────
+    const stockPos = positions.filter(p => p.type === 'ETF' || p.type === 'Akcje');
+    if (stockPos.length) {
+      const avKey = pfGetAvKey();
+      if (!avKey) {
+        stockPos.forEach(p => noSupport.push(p.symbol));
+        pfShowApiPanel();
+      } else {
+        for (const p of stockPos) {
+          try {
+            const res = await fetch(`https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${encodeURIComponent(p.symbol)}&apikey=${avKey}`);
+            if (!res.ok) { failed.push(p.symbol); await _pfDelay(1200); continue; }
+            const data = await res.json();
+            if (data.Note || data.Information) {
+              toast('Limit zapytań Alpha Vantage (25/dzień lub 5/min). Spróbuj za chwilę.', 'error');
+              stockPos.slice(stockPos.indexOf(p)).forEach(x => failed.push(x.symbol));
+              break;
+            }
+            const price = parseFloat(data['Global Quote']?.['05. price']);
+            if (price > 0) {
+              const fresh = getPortfolio();
+              const idx = fresh.findIndex(x => x.id === p.id);
+              if (idx >= 0) { fresh[idx].current_price = price; fresh[idx].price_updated_at = new Date().toISOString(); savePortfolio(fresh); updated++; }
+            } else { failed.push(p.symbol); }
+            await _pfDelay(1200);
+          } catch(e) { failed.push(p.symbol); }
+        }
+      }
+    }
+
+    // ── 3. Obligacje i Inne — pomijane (ręczna aktualizacja) ─────────
+    positions.filter(p => p.type === 'Obligacje' || p.type === 'Inne').forEach(p => noSupport.push(p.symbol));
+
+    // Zapisz timestamp
+    db[cacheKey] = Date.now();
+    saveDB(db);
+    renderPortfolio();
+
+    const parts = [];
+    if (updated) parts.push(`✓ ${updated} zaktualizowanych`);
+    if (failed.length) parts.push(`❌ nieznane: ${failed.join(', ')}`);
+    if (noSupport.length) parts.push(`⏭ pomięte: ${noSupport.join(', ')}`);
+    toast(parts.join('  ·  ') || '✓ Gotowe', updated > 0 ? 'success' : 'info');
+
+  } catch(e) {
+    toast('Błąd pobierania cen: ' + e.message, 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = '🔄 Pobierz ceny'; }
+  }
 }
 
 // Rejestracja Service Worker (PWA)
