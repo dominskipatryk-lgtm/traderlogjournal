@@ -13433,6 +13433,18 @@ function updateSyncIndicator() {
   if (btn) btn.style.display = state.currentUser ? 'inline-block' : 'none';
 }
 
+function _postSyncRender() {
+  const accs = getAccounts();
+  if (accs.length && (!state.currentAccountId || !accs.find(a => a.id === state.currentAccountId))) {
+    state.currentAccountId = accs[0].id;
+  }
+  renderAll();
+  renderTrades();
+  renderAccounts();
+  renderSummary();
+  if (document.getElementById('page-analysis')?.classList.contains('active')) renderAnalysisList();
+}
+
 async function manualSync() {
   if (!_sb || !state.currentUser) return;
   const userId = getUsers()[state.currentUser]?.supabaseId;
@@ -13443,7 +13455,7 @@ async function manualSync() {
     await sbSyncDown(userId, state.currentUser);
     _lastSyncTime = Date.now();
     updateSyncIndicator();
-    renderAll();
+    _postSyncRender();
     toast('✓ Dane zaktualizowane', 'success');
   } catch(e) {
     toast('Błąd sync: ' + e.message, 'error');
@@ -13462,7 +13474,7 @@ function startAutoSync() {
       await sbSyncDown(userId, state.currentUser);
       _lastSyncTime = Date.now();
       updateSyncIndicator();
-      renderAll();
+      _postSyncRender();
     } catch(e) { console.warn('Auto-sync error:', e.message); }
   }, 3 * 60 * 1000); // co 3 minuty
 }
@@ -13855,7 +13867,6 @@ async function sbSyncTrade(trade, accountId) {
     emotion_post: trade.emotionPost || null,
     linked_analysis_id: trade.linkedAnalysisId || null,
     mt4_ticket: trade.mt4Ticket || null,
-    rules_broken: trade.rulesBroken || [],
   };
   
   try {
@@ -18151,16 +18162,7 @@ async function appInit() {
           // Zaloguj od razu — sync uruchom w tle żeby nie blokować przy problemach z siecią
           loginAs(profile.login, users[profile.login]);
           sbSyncDown(session.user.id, profile.login).then(() => {
-            // Po sync ustaw currentAccountId jeśli nie był ustawiony (nowa przeglądarka = pusty localStorage)
-            if (!state.currentAccountId) {
-              const syncedAccs = getAccounts();
-              if (syncedAccs.length) state.currentAccountId = syncedAccs[0].id;
-            }
-            renderAll();
-            renderTrades();
-            renderAccounts();
-            renderSummary();
-            if (document.getElementById('page-analysis')?.classList.contains('active')) renderAnalysisList();
+            _postSyncRender();
           }).catch(e => console.warn('Sync after restore failed:', e.message));
           return; // Zalogowano - nie pokazuj ekranu logowania
         }
