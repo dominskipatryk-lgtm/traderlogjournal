@@ -1038,6 +1038,9 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 .ai-msg.thinking { color:var(--text3);font-style:italic;background:var(--bg2);border:1px dashed var(--border);align-self:flex-start;border-radius:14px; }
 .ai-chart-result-section { margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border); }
 .ai-chart-result-section:last-child { border-bottom:none;margin-bottom:0;padding-bottom:0; }
+.ai-ext-btn { background:var(--bg2);border:1px solid var(--border);color:var(--text3);padding:4px 11px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s; }
+.ai-ext-btn:hover { border-color:var(--accent);color:var(--text); }
+.ai-ext-btn.active { background:var(--accent);border-color:var(--accent);color:#000; }
 @media(max-width:700px) { #ai-chart-grid { grid-template-columns:1fr !important; } }
 
 /* ===== PORTFOLIO ===== */
@@ -3441,6 +3444,19 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
             <div style="margin-bottom:16px">
               <label style="font-size:11px;color:var(--text3);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px">Timeframe (opcjonalnie)</label>
               <input id="ai-chart-tf" class="form-input-modal" placeholder="np. M15, H1, D1..." style="font-size:13px">
+            </div>
+            <div style="margin-bottom:16px">
+              <label style="font-size:11px;color:var(--text3);display:block;margin-bottom:7px;text-transform:uppercase;letter-spacing:.4px">Strategie zewnętrzne</label>
+              <div style="display:flex;flex-wrap:wrap;gap:6px" id="ai-ext-strat-btns">
+                <button class="ai-ext-btn" data-strat="smc"          onclick="aiToggleExtStrat(this)">SMC</button>
+                <button class="ai-ext-btn" data-strat="ict"          onclick="aiToggleExtStrat(this)">ICT</button>
+                <button class="ai-ext-btn" data-strat="price_action" onclick="aiToggleExtStrat(this)">Price Action</button>
+                <button class="ai-ext-btn" data-strat="supply_demand" onclick="aiToggleExtStrat(this)">Supply &amp; Demand</button>
+                <button class="ai-ext-btn" data-strat="wyckoff"      onclick="aiToggleExtStrat(this)">Wyckoff</button>
+                <button class="ai-ext-btn" data-strat="elliott"      onclick="aiToggleExtStrat(this)">Elliott Wave</button>
+                <button class="ai-ext-btn" data-strat="vsa"          onclick="aiToggleExtStrat(this)">VSA</button>
+              </div>
+              <div style="font-size:10px;color:var(--text3);margin-top:5px">Kliknij aby dodać do analizy</div>
             </div>
             <button id="ai-analyze-btn" class="btn-sm btn-accent" onclick="aiAnalyzeChart()" style="width:100%;font-size:14px;padding:13px;font-weight:700">🔍 Analizuj wykres</button>
             <div style="margin-top:10px;font-size:11px;color:var(--text3);text-align:center">Wgraj wykres i kliknij Analizuj</div>
@@ -19796,6 +19812,69 @@ serve(async (req) => {
 
 let _aiMessages = [];
 let _aiAttachB64 = null;
+let _aiExtStrats = new Set();
+
+const _AI_EXT_STRATS = {
+  smc: { name:'SMC (Smart Money Concepts)', desc:`Analizuj przez pryzmat Smart Money Concepts:
+- Order Blocks (OB): ostatnia świeca przeciwna przed gwałtownym ruchem instytucjonalnym; szukaj OB na kluczowych poziomach
+- Break of Structure (BOS): wybicie poprzedniego szczytu/dołka = kontynuacja trendu
+- Change of Character (CHoCH): pierwszy sygnał zmiany trendu (niższy szczyt w uptrendzie / wyższy dołek w downtrendzie)
+- Fair Value Gap (FVG): luka 3-świecowa = obszar powrotu ceny; niezrównoważona strefa
+- Liquidity (płynność): equal highs/lows, szczyty i dołki jako strefy zleceń stop — oczekuj sweep płynności przed właściwym ruchem
+- Premium/Discount: wejścia w discount (<50% swingu) w uptrendzie, w premium w downtrendzie
+- Inducement: fałszywe wybicie przyciągające zlecenia przed właściwym impulsem
+- Struktura: zawsze oznacz Higher High/Higher Low lub Lower High/Lower Low` },
+
+  ict: { name:'ICT (Inner Circle Trader)', desc:`Analizuj metodologią ICT:
+- Kill Zones: London Open 7-9 UTC, NY Open 13-15 UTC, Asian Range 22-2 UTC — najlepsze okna do wejść
+- OTE (Optimal Trade Entry): retracement 61.8–79% po BOS = optymalny punkt wejścia
+- PD Arrays: FVG, Order Blocks, Breaker Blocks, Mitigation Blocks — hierarchia stref wejścia
+- Liquidity sweep: cena zawsze najpierw jedzie po płynność (stop hunty) przed właściwym ruchem
+- Displacement: świece z szerokim zasięgiem i małymi knotami = instytucjonalne zaangażowanie = kierunek
+- HTF Bias: najpierw D1/W1 bias → H4 setup → H1/M15 entry
+- CISD: zmiana delivery state = wczesny sygnał zmiany kierunku` },
+
+  price_action: { name:'Price Action', desc:`Analizuj czystą akcją ceny:
+- Poziomy S/R: horyzontalne wsparcia i opory, poprzednie szczyty/dołki, psychologiczne poziomy okrągłe
+- Wzorce świecowe: pin bar (odrzucenie poziomu), engulfing byczyi/niedźwiedzi, inside bar (kompresja przed wybiciem), doji
+- Wzorce chartowe: H&S / Odwrócone H&S, double top/bottom, trójkąty (sym/asc/desc), flagi, kliny, kanały
+- Trend: HH+HL = uptrend; LH+LL = downtrend. Breakout linii trendu = sygnał zmiany
+- Momentum: analiza siły świec — cienie, zasięgi, zamknięcia względem środka
+- Wolumen (jeśli widoczny): breakout z wolumenem = potwierdzenie kierunku` },
+
+  supply_demand: { name:'Supply & Demand', desc:`Analizuj przez strefy podaży i popytu:
+- Strefa popytu (Demand): obszar gdzie cena gwałtownie odbiła w górę — baza z szeroką świecą opuszczającą strefę
+- Strefa podaży (Supply): obszar gdzie cena gwałtownie spadła — baza z szeroką świecą w dół
+- Jakość strefy: im szybsze opuszczenie strefy i większy ruch, tym silniejsza. Silne strefy = RBR (rally-base-rally) lub DBD
+- Świeżość: strefa nieodwiedzona jest silniejsza. Każda wizyta ją osłabia
+- SL: za strefą (poza jej granicą). Wejście: na powrocie do strefy
+- Confluencja: strefy pokrywające się z S/R lub FVG są mocniejsze` },
+
+  wyckoff: { name:'Wyckoff Method', desc:`Analizuj metodą Wyckoffa:
+- Faza akumulacji: PS → SC (selling climax, duży vol) → AR → ST → Spring (fałszywe wybicie pod wsparcie) → SOS (sign of strength) → LPS → markup
+- Faza dystrybucji: PSY → BC (buying climax) → AR → ST → UTAD → SOW → LPSY → markdown
+- Spring/Upthrust: fałszywe wybicia pod wsparcie / nad opór = test podaży/popytu — przy niskim wolumenie oznacza brak presji
+- Composite Man: instytucje akumulują w ciszy → markup → dystrybucja → markdown. Śledź ich ślady przez wolumen
+- Effort vs Result: duży vol + mały ruch = walka; mały vol + duży ruch = brak oporu
+- Causa & Effect: im dłuższa konsolidacja (przyczyna), tym większy ruch (skutek)` },
+
+  elliott: { name:'Elliott Wave', desc:`Analizuj falami Elliotta:
+- Impulse (1-2-3-4-5): fala 3 nigdy nie jest najkrótsza; fale 1,3,5 kierunkowe; fale 2,4 korekcyjne
+- Korekty (A-B-C): po impulsie korekta do 38.2–61.8% Fibonacci całego impulsu
+- Fibonacci: fala 2 = 50–61.8% fali 1; fala 3 = 161.8% fali 1; fala 4 = 38.2% fali 3; fala 5 = 100% fali 1
+- Zasady niepodważalne: fala 4 nie wchodzi w terytorium fali 1; fala 3 ≠ najkrótsza
+- Wejście: koniec fali 2 (SL pod falą 1) lub koniec fali 4 (SL pod falą 3) = optymalne punkty
+- HTF first: zawsze określ stopień fali na wyższym TF przed analizą LTF` },
+
+  vsa: { name:'VSA (Volume Spread Analysis)', desc:`Analizuj przez wolumen i spread świec (VSA):
+- No Demand: wąska świeca + niski vol po wzroście = brak popytu, rynek słaby = ostrzeżenie przed spadkiem
+- No Supply: wąska świeca + niski vol po spadku = brak podaży = ostrzeżenie przed wzrostem
+- Stopping Volume: duży vol + wąski spread + zamknięcie >50% świecy = instytucje wchłaniają podaż (bycze)
+- Ultra High Volume (UHV): ekstremalny vol + mały ruch = walka sił lub kulminacja
+- Upthrust: wybicie nad opór przy małym vol + zamknięcie poniżej oporu = fałszywy breakout
+- Test: wąska świeca + mały vol wracając do strefy dystrybucji = brak podaży (strefa silna)
+- Background: analiza ostatnich 20+ świec — czy rynek jest silny (wzrost vol na wzrostach) czy słaby` }
+};
 let _aiAttachMime = 'image/png';
 let _aiChartB64 = null;
 let _aiChartMime = 'image/png';
@@ -19968,9 +20047,20 @@ function _aiChartPrompt(ctx, stratId) {
       stratTxt = `**${s.name}**${s.description ? ': '+s.description : ''}${sSetups.length ? '\nSetupy: '+sSetups.map(x=>x.name).join(', ') : ''}`;
     } else { stratTxt = stratId; }
   }
-  return `Jesteś ekspertem od analizy technicznej. Odpowiadaj po POLSKU. Analizujesz wykres dla tradera który używa tych strategii:
+  let extStratTxt = '';
+  if (_aiExtStrats.size > 0) {
+    extStratTxt = '\n\nSTRATEGIE ZEWNĘTRZNE DO ZASTOSOWANIA W ANALIZIE:\n' +
+      [..._aiExtStrats].map(k => _AI_EXT_STRATS[k] ? `**${_AI_EXT_STRATS[k].name}**:\n${_AI_EXT_STRATS[k].desc}` : '').filter(Boolean).join('\n\n');
+  }
 
-${stratTxt}
+  const stratSection = stratTxt
+    ? `Strategie tradera:\n${stratTxt}`
+    : 'Brak zdefiniowanych strategii tradera — oceń ogólnie wg Price Action.';
+
+  return `Jesteś ekspertem od analizy technicznej. Odpowiadaj po POLSKU. Analizujesz wykres dla tradera.
+
+${stratSection}${extStratTxt}
+${_aiExtStrats.size > 0 ? '\nAnalizuj łącząc wiedzę z wybranych strategii zewnętrznych z podejściem tradera.' : ''}
 
 Odpowiedz w DOKŁADNIE tej strukturze markdown:
 
@@ -19978,7 +20068,7 @@ Odpowiedz w DOKŁADNIE tej strukturze markdown:
 [Trend, momentum, kluczowe poziomy S/R]
 
 ## 🎯 Dopasowanie strategii
-[Która strategia tradera pasuje i dlaczego]
+[Która strategia pasuje i dlaczego — uwzględnij wybrane strategie zewnętrzne jeśli aktywne]
 
 ## 📍 Scenariusz tradingowy
 **Wejście:** [poziom/warunek]
@@ -20164,6 +20254,17 @@ function aiClearChart() {
   if (img)  img.src = '';
   const res = document.getElementById('ai-chart-result');
   if (res) { res.style.display = 'none'; res.innerHTML = ''; }
+}
+
+function aiToggleExtStrat(btn) {
+  const strat = btn.dataset.strat;
+  if (_aiExtStrats.has(strat)) {
+    _aiExtStrats.delete(strat);
+    btn.classList.remove('active');
+  } else {
+    _aiExtStrats.add(strat);
+    btn.classList.add('active');
+  }
 }
 
 async function aiAnalyzeChart() {
