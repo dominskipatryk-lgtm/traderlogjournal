@@ -19045,7 +19045,7 @@ function parseMT4CSV(text) {
       size: _num(c[3]), entry, exit,
       sl: _num(c[6]), tp: _num(c[7]),
       commission: _num(c[10]), swap: _num(c[12]),
-      pnl: _num(c[13]), status: 'closed',
+      pnl: _num(c[13]) + _num(c[10]) + _num(c[12]), status: 'closed',
       date: _dt(c[1]), dateClose: _dt(c[8]),
       _src: 'MT4'
     }];
@@ -19070,7 +19070,7 @@ function parseMT4HTML(text) {
       size: _num(cells[3]), entry, exit,
       sl: _num(cells[6]), tp: _num(cells[7]),
       commission: _num(cells[10]), swap: _num(cells[12]),
-      pnl: _num(cells[13]), status: 'closed',
+      pnl: _num(cells[13]) + _num(cells[10]) + _num(cells[12]), status: 'closed',
       date: _dt(cells[1]), dateClose: _dt(cells[8]),
       _src: 'MT4'
     });
@@ -19108,7 +19108,7 @@ function parseMT5CSV(text) {
       tp: iTP>=0 ? _num(c[iTP]) : 0,
       commission: iComm>=0 ? _num(c[iComm]) : 0,
       swap: iSwap>=0 ? _num(c[iSwap]) : 0,
-      pnl: iPnl>=0 ? _num(c[iPnl]) : 0, status: 'closed',
+      pnl: (iPnl>=0 ? _num(c[iPnl]) : 0) + (iComm>=0 ? _num(c[iComm]) : 0) + (iSwap>=0 ? _num(c[iSwap]) : 0), status: 'closed',
       date: iOT>=0 ? _dt(c[iOT]) : '', dateClose: iCT>=0 ? _dt(c[iCT]) : '',
       _src: 'MT5'
     }];
