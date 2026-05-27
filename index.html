@@ -6638,9 +6638,14 @@ function saveTrade() {
   };
   const trades = getTrades(state.currentAccountId);
   const idx = trades.findIndex(t => t.id === id);
+  const _oldLinkedId = idx >= 0 ? (trades[idx].linkedAnalysisId || null) : null;
   if (idx >= 0) trades[idx] = trade;
   else trades.push(trade);
   saveTrades(state.currentAccountId, trades);
+  if (_oldLinkedId !== trade.linkedAnalysisId) {
+    if (_oldLinkedId) _archiveAnalysisByTrade(_oldLinkedId, null, false);
+    if (trade.linkedAnalysisId) _archiveAnalysisByTrade(trade.linkedAnalysisId, trade.id, true);
+  }
   clearCurrentDraft();
   closeModal('trade-modal');
   renderDashboard();
@@ -6819,18 +6824,34 @@ function renderDetailModal() {
       if (la) {
         const laScreens = (la.screenshots||[]).filter(Boolean);
         const laScreensHtml = laScreens.length
-          ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">${laScreens.map(s=>{const imgSrc=s.startsWith('sb://')?sbScreenshotPublicUrl(s):s;return `<img src="${imgSrc}" onclick="openLightboxSmart('${s}','')" style="width:80px;height:56px;object-fit:cover;border-radius:6px;cursor:pointer;border:1px solid var(--border2)">`;}).join('')}</div>` : '';
-        const biasBadge = la.bias ? `<span class="tag" style="font-size:10px;margin-left:6px">${la.bias==='bullish'?'🟢 Byczy':la.bias==='bearish'?'🔴 Niedźwiedzi':'🟡 Neutralny'}</span>` : '';
+          ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:6px;margin-top:10px">${laScreens.map(s=>{const imgSrc=s.startsWith('sb://')?sbScreenshotPublicUrl(s):s;return `<img src="${imgSrc}" onclick="openLightboxSmart('${s}','')" style="width:100%;height:90px;object-fit:cover;border-radius:8px;cursor:pointer;border:1px solid var(--border2)">`;}).join('')}</div>` : '';
+        const biasBadge = la.bias ? `<span class="tag" style="font-size:10px;${la.bias==='bullish'?'color:var(--green);border-color:var(--green)':la.bias==='bearish'?'color:var(--red);border-color:var(--red)':''}">${la.bias==='bullish'?'🟢 Byczy':la.bias==='bearish'?'🔴 Niedźwiedzi':'🟡 Neutralny'}</span>` : '';
+        const _anTypes = {technical:'📊 Techniczna',fundamental:'📰 Fundamentalna',sentiment:'🧠 Sentyment',macro:'🌐 Makro',other:'📋 Inne'};
+        const typeLabel = _anTypes[la.type] || '';
         return `<div class="dv-card" style="border-color:var(--blue);background:var(--blue-dim)">
           <div class="dv-card-head" style="color:var(--blue);display:flex;justify-content:space-between;align-items:center">
             <span>🔗 Powiązana analiza</span>
             <button onclick="dvUnlinkAnalysis('${t.id}')" style="background:none;border:none;cursor:pointer;font-size:10px;color:var(--red);padding:0" title="Usuń powiązanie">✕ usuń</button>
           </div>
-          <div style="font-weight:700;font-size:13px;margin-bottom:4px">${escHtml(la.title)}${biasBadge}</div>
-          ${la.symbol?`<div style="font-size:11px;color:var(--text3);margin-bottom:6px">${la.symbol}${la.tf?' · '+la.tf:''}</div>`:''}
-          ${la.content?`<div style="font-size:12px;color:var(--text2);line-height:1.6">${escHtml(la.content)}</div>`:''}
+          <div style="font-weight:700;font-size:14px;margin-bottom:6px;line-height:1.3">${escHtml(la.title)}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px">
+            ${typeLabel?`<span class="tag" style="font-size:10px">${typeLabel}</span>`:''}
+            ${la.symbol?`<span class="tag" style="font-size:10px;font-family:var(--font-mono);font-weight:600">${la.symbol}</span>`:''}
+            ${la.tf?`<span class="tag" style="font-size:10px">${la.tf}</span>`:''}
+            ${biasBadge}
+            ${la.date?`<span style="font-size:10px;color:var(--text3)">${(la.date||'').slice(0,10)}</span>`:''}
+          </div>
+          ${la.content?`<div style="font-size:12px;color:var(--text2);line-height:1.6;white-space:pre-wrap;margin-bottom:8px">${escHtml(la.content)}</div>`:''}
+          ${(la.entry||la.sl||la.tp)?`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">
+            ${la.entry?`<span style="font-size:11px;padding:3px 8px;border-radius:6px;background:var(--bg3);color:var(--text2)">Wejście: <strong>${la.entry}</strong></span>`:''}
+            ${la.sl?`<span style="font-size:11px;padding:3px 8px;border-radius:6px;background:var(--red-dim);color:var(--red)">SL: ${la.sl}</span>`:''}
+            ${la.tp?`<span style="font-size:11px;padding:3px 8px;border-radius:6px;background:var(--green-dim);color:var(--green)">TP: ${la.tp}</span>`:''}
+          </div>`:''}
+          ${la.levels?`<div style="font-size:11px;color:var(--text3);margin-bottom:8px"><strong>Poziomy S/R:</strong> ${escHtml(la.levels)}</div>`:''}
+          ${la.setup?`<div style="font-size:12px;color:var(--text2);line-height:1.5;margin-bottom:8px;border-top:1px solid var(--border);padding-top:8px"><strong style="font-size:11px;color:var(--text3);display:block;margin-bottom:3px">Setup:</strong>${escHtml(la.setup)}</div>`:''}
           ${laScreensHtml}
-          <button onclick="openEditAnalysis('${la.id}')" class="btn-sm" style="margin-top:10px;font-size:11px">📖 Otwórz analizę</button>
+          ${la.post?`<div style="font-size:12px;color:var(--text2);line-height:1.5;margin-top:8px;border-top:1px solid var(--border);padding-top:8px;white-space:pre-wrap"><strong style="font-size:11px;color:var(--text3);display:block;margin-bottom:3px">Notatki po analizie:</strong>${escHtml(la.post)}</div>`:''}
+          <button onclick="openEditAnalysis('${la.id}')" class="btn-sm" style="margin-top:12px;font-size:11px">✏️ Edytuj analizę</button>
         </div>`;
       }
       return `<div class="dv-card" style="border-style:dashed">
@@ -6974,12 +6995,23 @@ function filterDvLinkList(q) {
     </div>`;
   }).join('');
 }
+function _archiveAnalysisByTrade(analysisId, tradeId, archive) {
+  const analyses = getAnalyses();
+  const ai = analyses.findIndex(a => a.id === analysisId);
+  if (ai < 0) return;
+  analyses[ai] = { ...analyses[ai], archived: archive, linkedTradeId: tradeId };
+  saveAnalyses(analyses);
+  if (document.getElementById('page-analyses')?.style.display !== 'none') renderAnalysisList();
+}
 function selectDvLinkedAnalysis(analysisId) {
   const trades = getTrades(state.currentAccountId);
   const idx = trades.findIndex(t => t.id === _detailId);
   if (idx < 0) return;
+  const oldLinkedId = trades[idx].linkedAnalysisId || null;
   trades[idx] = { ...trades[idx], linkedAnalysisId: analysisId, updatedAt: Date.now() };
   saveTrades(state.currentAccountId, trades);
+  if (oldLinkedId && oldLinkedId !== analysisId) _archiveAnalysisByTrade(oldLinkedId, null, false);
+  _archiveAnalysisByTrade(analysisId, _detailId, true);
   renderDetailModal();
   renderTrades();
   toast(t('toast_analysis_linked'), 'success');
@@ -6989,8 +7021,10 @@ function dvUnlinkAnalysis(tradeId) {
     const trades = getTrades(state.currentAccountId);
     const idx = trades.findIndex(t => t.id === tradeId);
     if (idx < 0) return;
+    const linkedId = trades[idx].linkedAnalysisId || null;
     trades[idx] = { ...trades[idx], linkedAnalysisId: null, updatedAt: Date.now() };
     saveTrades(state.currentAccountId, trades);
+    if (linkedId) _archiveAnalysisByTrade(linkedId, null, false);
     renderDetailModal();
     renderTrades();
     toast(t('toast_analysis_unlinked'), 'success');
@@ -11231,7 +11265,7 @@ function renderAnalysisList() {
         <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px">
           <div style="flex:1;min-width:0">
             <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
-              ${isArchived?'<span style="font-size:10px;background:var(--bg3);color:var(--text3);padding:1px 6px;border-radius:4px">📦 Archiwum</span>':''}
+              ${isArchived?(linkedTrade?`<span style="font-size:10px;background:var(--blue-dim);color:var(--blue);padding:2px 7px;border-radius:4px;font-weight:600">✅ Przypisana: ${linkedTrade.symbol||''} ${(linkedTrade.date||'').slice(0,10)}</span>`:'<span style="font-size:10px;background:var(--bg3);color:var(--text3);padding:1px 6px;border-radius:4px">📦 Archiwum</span>'):''}
               <div style="font-family:var(--font-head);font-size:15px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.title||'(bez tytułu)'}</div>
             </div>
             <div style="display:flex;gap:6px;flex-wrap:wrap">
@@ -11524,6 +11558,7 @@ function assignTradeToAnalysis(tradeId) {
     tr.updatedAt = Date.now();
     trades[idx] = tr;
     saveTrades(state.currentAccountId, trades);
+    _archiveAnalysisByTrade(currentAnalysisId, null, false);
     _selectedTradeForAnalysis = null;
     toast(t('toast_analysis_unlinked'), 'success');
   } else {
@@ -11531,8 +11566,9 @@ function assignTradeToAnalysis(tradeId) {
     tr.updatedAt = Date.now();
     trades[idx] = tr;
     saveTrades(state.currentAccountId, trades);
+    _archiveAnalysisByTrade(currentAnalysisId, tradeId, true);
     _selectedTradeForAnalysis = tradeId;
-    toast('Transakcja powiązana ✓ — "Zapisz jako Transakcję" skopiuje też treść analizy', 'success');
+    toast(t('toast_analysis_linked'), 'success');
   }
 
   renderAnLinkedTrades(document.getElementById('an-symbol')?.value || '');
