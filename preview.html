@@ -13297,7 +13297,7 @@ async function sbSyncDown(userId, userLogin) {
       if (loginKey) {
         if (!db.accounts) db.accounts = {};
         db.accounts[loginKey] = accounts.map(a => ({
-          id: a.id, name: a.name, broker: a.broker || '',
+          id: a.id, sbId: a.id, name: a.name, broker: a.broker || '',
           brokerKey: a.broker_key || '', spread: a.spread || null,
           traderPct: a.trader_pct || null,
           type: a.type || 'forex', capital: parseFloat(a.capital) || 0,
@@ -13324,7 +13324,7 @@ async function sbSyncDown(userId, userLogin) {
           const existingScreenshots = existing ? (existing.screenshots || []) : [];
           const sbScreenshots = Array.isArray(t.screenshots) ? t.screenshots : [];
           const trade = {
-            id: t.id, symbol: t.symbol, dir: t.direction,
+            id: t.id, sbId: t.id, symbol: t.symbol, dir: t.direction,
             status: t.status, entry: t.entry, sl: t.sl, tp: t.tp,
             tps: t.tps || [], exit: t.exit_price, size: t.size,
             pnl: t.pnl, tf: t.tf, setup: t.setup,
@@ -13335,6 +13335,7 @@ async function sbSyncDown(userId, userLogin) {
             emotionPost: t.emotion_post || null,
             linkedAnalysisId: t.linked_analysis_id || null,
             mt4Ticket: t.mt4_ticket || null,
+            rulesBroken: Array.isArray(t.rules_broken) ? t.rules_broken : (existing?.rulesBroken || []),
             updatedAt: sbUpdatedAt
           };
           if (idx >= 0) db[key][idx] = trade;
@@ -13854,6 +13855,7 @@ async function sbSyncTrade(trade, accountId) {
     emotion_post: trade.emotionPost || null,
     linked_analysis_id: trade.linkedAnalysisId || null,
     mt4_ticket: trade.mt4Ticket || null,
+    rules_broken: trade.rulesBroken || [],
   };
   
   try {
@@ -18148,7 +18150,18 @@ async function appInit() {
           saveUsers(users);
           // Zaloguj od razu — sync uruchom w tle żeby nie blokować przy problemach z siecią
           loginAs(profile.login, users[profile.login]);
-          sbSyncDown(session.user.id, profile.login).catch(e => console.warn('Sync after restore failed:', e.message));
+          sbSyncDown(session.user.id, profile.login).then(() => {
+            // Po sync ustaw currentAccountId jeśli nie był ustawiony (nowa przeglądarka = pusty localStorage)
+            if (!state.currentAccountId) {
+              const syncedAccs = getAccounts();
+              if (syncedAccs.length) state.currentAccountId = syncedAccs[0].id;
+            }
+            renderAll();
+            renderTrades();
+            renderAccounts();
+            renderSummary();
+            if (document.getElementById('page-analysis')?.classList.contains('active')) renderAnalysisList();
+          }).catch(e => console.warn('Sync after restore failed:', e.message));
           return; // Zalogowano - nie pokazuj ekranu logowania
         }
 

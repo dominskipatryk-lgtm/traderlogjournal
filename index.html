@@ -17966,6 +17966,10 @@ async function appInit() {
               if (syncedAccs.length) state.currentAccountId = syncedAccs[0].id;
             }
             renderAll();
+            renderTrades();
+            renderAccounts();
+            renderSummary();
+            if (document.getElementById('page-analysis')?.classList.contains('active')) renderAnalysisList();
           }).catch(e => console.warn('Sync after restore failed:', e.message));
           return; // Zalogowano - nie pokazuj ekranu logowania
         }
