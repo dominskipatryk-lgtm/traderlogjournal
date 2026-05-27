@@ -722,7 +722,6 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 .pass-hint { font-size:11px; margin-top:4px; }
 .settings-section { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius-lg); padding:24px; margin-bottom:20px; }
 .settings-section-title { font-family:var(--font-head); font-size:15px; font-weight:700; margin-bottom:18px; display:flex; align-items:center; gap:8px; }
-.recovery-code-box { background:var(--bg3); border:1px solid var(--border2); border-radius:8px; padding:14px 16px; font-family:var(--font-mono); font-size:18px; font-weight:700; letter-spacing:3px; text-align:center; color:var(--accent); cursor:pointer; user-select:all; }
 .smart-reminder-row { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 12px; background:var(--bg3); border:1px solid var(--border); border-radius:10px; cursor:pointer; transition:border-color .15s; }
 .smart-reminder-row:hover { border-color:var(--accent); }
 .smart-reminder-info { flex:1; }
@@ -730,7 +729,6 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 .toggle-cb::after { content:''; position:absolute; top:2px; left:2px; width:16px; height:16px; background:#fff; border-radius:50%; transition:transform .2s; }
 .toggle-cb:checked { background:var(--accent); border-color:var(--accent); }
 .toggle-cb:checked::after { transform:translateX(18px); }
-.recovery-code-box:hover { border-color:var(--accent); }
 
 /* ── Drafts ── */
 .draft-indicator {
@@ -1162,46 +1160,6 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
         </button>
         <div style="margin-top:12px;font-size:12px;color:var(--text3);line-height:1.7">
           Wyślemy link na Twój adres email. Kliknij go aby ustawić nowe hasło.
-        </div>
-      </div>
-
-      <!-- RECOVERY CODE SECTION -->
-      <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px">
-        <div style="font-size:11px;color:var(--text3);text-align:center;margin-bottom:10px;letter-spacing:.5px">— lub użyj kodu odzyskiwania —</div>
-        <div id="recovery-code-step1">
-          <div class="form-group">
-            <label class="form-label">Kod odzyskiwania</label>
-            <input class="form-input" id="recovery-code-input" type="text"
-              placeholder="XXXX-XXXX-XXXX" maxlength="14"
-              style="text-transform:uppercase;letter-spacing:3px;font-family:var(--font-mono);text-align:center"
-              oninput="this.value=this.value.toUpperCase()"
-              onkeydown="if(event.key==='Enter')doRecoveryCode()">
-          </div>
-          <button class="btn-secondary" style="width:100%" onclick="doRecoveryCode()">
-            🔑 Użyj kodu odzyskiwania
-          </button>
-        </div>
-        <div id="recovery-code-step2" style="display:none">
-          <div style="background:var(--green-dim);border:1px solid var(--green);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--green);margin-bottom:12px">
-            ✓ Kod poprawny. Ustaw nowe hasło dla konta.
-          </div>
-          <div class="form-group">
-            <label class="form-label">Nowe hasło</label>
-            <div class="pass-wrap">
-              <input class="form-input" id="recovery-new-pass1" type="password" placeholder="minimum 6 znaków" autocomplete="new-password" onkeydown="if(event.key==='Enter')doRecoverySetPass()">
-              <button class="pass-eye" type="button" onclick="togglePassEye('recovery-new-pass1',this)" aria-label="Pokaż/ukryj hasło">👁</button>
-            </div>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Powtórz hasło</label>
-            <div class="pass-wrap">
-              <input class="form-input" id="recovery-new-pass2" type="password" placeholder="powtórz hasło" autocomplete="new-password" onkeydown="if(event.key==='Enter')doRecoverySetPass()">
-              <button class="pass-eye" type="button" onclick="togglePassEye('recovery-new-pass2',this)" aria-label="Pokaż/ukryj hasło">👁</button>
-            </div>
-          </div>
-          <button class="btn-primary" style="width:100%" onclick="doRecoverySetPass()">
-            💾 Zapisz nowe hasło
-          </button>
         </div>
       </div>
 
@@ -4548,7 +4506,6 @@ function loginAs(username, userData) {
   setTimeout(showRoutineModal, 1200);
   setTimeout(checkBackupReminder, 3000);
   setTimeout(checkAutoDownload, 4000);
-  setTimeout(checkRecoveryCodeReminder, 2000);
   // [v1.7] Uruchom nasłuchiwanie sygnałów z MT4
   setTimeout(initMT4Listener, 2000);
   // Dzienny briefing + przypomnienia
@@ -9277,59 +9234,6 @@ function copyLoginToClipboard() {
   });
 }
 
-let _recoveryLogin = null;
-
-function doRecoveryCode() {
-  const code = (document.getElementById('recovery-code-input')?.value || '').trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
-  if (code.length < 8) return showAuthError('Nieprawidłowy kod odzyskiwania');
-  const users = getUsers();
-  const entry = Object.entries(users).find(([,u]) => u.recoveryCode === code);
-  if (!entry) return showAuthError('Kod nieprawidłowy lub wygasł');
-  _recoveryLogin = entry[0];
-  document.getElementById('recovery-code-step1').style.display = 'none';
-  document.getElementById('recovery-code-step2').style.display = 'block';
-  document.getElementById('auth-error').style.display = 'none';
-  document.getElementById('recovery-new-pass1')?.focus();
-}
-
-function doRecoverySetPass() {
-  const p1 = (document.getElementById('recovery-new-pass1')?.value || '');
-  const p2 = (document.getElementById('recovery-new-pass2')?.value || '');
-  if (p1.length < 6) return showAuthError('Hasło min. 6 znaków');
-  if (p1 !== p2) return showAuthError('Hasła nie są zgodne');
-  if (!_recoveryLogin) return showAuthError('Błąd sesji — odśwież stronę');
-  const users = getUsers();
-  const u = users[_recoveryLogin];
-  if (!u) return showAuthError('Konto nie istnieje');
-  u.pass = p1;
-  delete u.recoveryCode;
-  saveUsers(users);
-  _recoveryLogin = null;
-  // Reset formularza
-  const step1 = document.getElementById('recovery-code-step1');
-  const step2 = document.getElementById('recovery-code-step2');
-  if (step1) step1.style.display = 'block';
-  if (step2) step2.style.display = 'none';
-  const codeInput = document.getElementById('recovery-code-input');
-  if (codeInput) codeInput.value = '';
-  const p1El = document.getElementById('recovery-new-pass1');
-  const p2El = document.getElementById('recovery-new-pass2');
-  if (p1El) p1El.value = '';
-  if (p2El) p2El.value = '';
-  showAuthSuccess('✓ Hasło zmienione! Możesz się teraz zalogować.');
-  setTimeout(() => switchAuthTab('login'), 1800);
-}
-
-// ── Recovery token helpers ───────────────────────────────────────────────────
-function genRecoveryToken() {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let t = '';
-  for (let i = 0; i < 12; i++) {
-    if (i && i % 4 === 0) t += '-';
-    t += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return t; // e.g. ABCD-EFGH-1234
-}
 
 // ===== SETTINGS PAGE =====
 async function renderSettings() {
@@ -9376,11 +9280,6 @@ async function renderSettings() {
       } catch(e) {}
     }
     userIdEl.value = uid || '— wyloguj się i zaloguj ponownie —';
-  }
-  // Show existing recovery code if any
-  if (u.recoveryCode) {
-    document.getElementById('recovery-code-display').style.display = 'block';
-    document.getElementById('recovery-code-display').textContent = u.recoveryCode;
   }
   // Clear password fields
   ['sett-old-pass','sett-new-pass','sett-new-pass2'].forEach(id => {
@@ -9471,25 +9370,6 @@ async function savePasswordSettings() {
   }, 2000);
 }
 
-function generateRecoveryCode() {
-  const code = genRecoveryToken();
-  const users = getUsers();
-  if (!users[state.currentUser]) return;
-  users[state.currentUser].recoveryCode = code;
-  saveUsers(users);
-  const box = document.getElementById('recovery-code-display');
-  box.textContent = code;
-  box.style.display = 'block';
-  toast('Kod wygenerowany — zapisz go!', 'success');
-}
-
-function copyRecoveryCode() {
-  const code = document.getElementById('recovery-code-display').textContent;
-  navigator.clipboard?.writeText(code).then(() => {
-    document.getElementById('recovery-copy-hint').style.display = 'inline';
-    setTimeout(() => document.getElementById('recovery-copy-hint').style.display='none', 2000);
-  });
-}
 
 // ── Admin: reset user password from admin panel ──────────────────────────────
 // (already exists as adminResetPass — no change needed)
@@ -9738,10 +9618,8 @@ const T = {
     sett_title:      'Ustawienia konta',
     sett_profile:    '👤 Profil',
     sett_pass:       '🔑 Zmiana hasła',
-    sett_recovery:   '🆘 Kod odzyskiwania',
     sett_save_prof:  '💾 Zapisz profil',
     sett_change_pass:'🔑 Zmień hasło',
-    sett_gen_code:   '⚡ Generuj nowy kod',
     sett_old_pass:   'Obecne hasło',
     sett_new_pass:   'Nowe hasło',
     sett_new_pass2:  'Powtórz nowe hasło',
@@ -9859,7 +9737,6 @@ const T = {
     sett_old_pass:   'Obecne hasło',
     sett_new_pass:   'Nowe hasło',
     sett_new_pass2:  'Powtórz nowe hasło',
-    sett_recovery_desc: 'Wygeneruj jednorazowy kod — zapisz go w bezpiecznym miejscu.',
     // Backup
     backup_title:    '💾 Kopia zapasowa danych',
     backup_manual:   '📦 Ręczna kopia zapasowa',
@@ -10356,7 +10233,6 @@ const T = {
     sett_old_pass:   'Current password',
     sett_new_pass:   'New password',
     sett_new_pass2:  'Repeat new password',
-    sett_recovery_desc: 'Generate a one-time code — save it in a safe place.',
     // Backup
     backup_title:    '💾 Data backup',
     backup_manual:   '📦 Manual backup',
@@ -12126,41 +12002,6 @@ function anAutosave() {
 }
 
 
-// ── Remind user to generate recovery code ────────────────────────────────────
-function checkRecoveryCodeReminder() {
-  const users = getUsers();
-  const u = users[state.currentUser];
-  if (!u || u.role === 'admin') return; // admin nie potrzebuje
-  if (u.recoveryCode) return; // już ma kod
-  // Sprawdź czy już pokazaliśmy reminder
-  const db = getDB();
-  const shownKey = '_recovery_reminded_' + state.currentUser;
-  if (db[shownKey]) return;
-  // Pokaż raz
-  db[shownKey] = true;
-  saveDB(db);
-  const div = document.createElement('div');
-  div.style.cssText = 'position:fixed;bottom:80px;right:24px;background:var(--bg2);border:1px solid var(--amber);border-radius:12px;padding:16px 20px;z-index:4000;max-width:340px;box-shadow:0 8px 32px rgba(0,0,0,.5)';
-  div.innerHTML = `
-    <div style="font-size:13px;font-weight:600;color:var(--amber);margin-bottom:8px">🔑 Zabezpiecz swoje konto</div>
-    <div style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.6">
-      Nie masz jeszcze kodu odzyskiwania hasła.<br>
-      Jeśli zapomnisz hasła — <strong>nie będziesz mógł odzyskać konta.</strong><br>
-      Wygeneruj kod teraz i zapisz go!
-    </div>
-    <div style="display:flex;gap:8px">
-      <button onclick="showPage('settings');this.closest('div[style*=fixed]').remove()" 
-        style="background:var(--accent);color:#000;border:none;border-radius:6px;padding:7px 14px;cursor:pointer;font-size:12px;font-weight:600">
-        ⚡ Generuj kod teraz
-      </button>
-      <button onclick="this.closest('div[style*=fixed]').remove()" 
-        style="background:none;border:1px solid var(--border);border-radius:6px;padding:7px 14px;cursor:pointer;font-size:12px;color:var(--text2)">
-        Później
-      </button>
-    </div>`;
-  document.body.appendChild(div);
-  setTimeout(() => div.remove(), 20000);
-}
 
 
 // ===== TP1-TP4 SYSTEM =====
