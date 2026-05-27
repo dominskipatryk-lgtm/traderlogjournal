@@ -473,6 +473,29 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 }
 .form-select-modal:focus { border-color: var(--accent); }
 
+/* Post-trade survey slide-up panel */
+#post-trade-survey {
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+  background: var(--bg2); border: 1px solid var(--border2); border-bottom: none;
+  border-radius: 16px 16px 0 0; padding: 20px 24px 28px; z-index: 9990;
+  max-width: 500px; width: 100%; box-shadow: 0 -8px 32px rgba(0,0,0,.5);
+  animation: slideUpSurvey .3s cubic-bezier(.16,1,.3,1);
+}
+@keyframes slideUpSurvey {
+  from { transform: translateX(-50%) translateY(100%); opacity:0; }
+  to   { transform: translateX(-50%) translateY(0);    opacity:1; }
+}
+.survey-row { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+.survey-btn {
+  padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border2);
+  background: var(--bg3); color: var(--text2); cursor: pointer; font-size: 13px; transition: all .15s;
+}
+.survey-btn:hover { border-color: var(--accent); color: var(--text); }
+.survey-btn.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+.survey-star { font-size: 20px; cursor: pointer; opacity:.4; transition: opacity .15s, transform .1s; padding: 2px 3px; }
+.survey-star.lit { opacity:1; }
+.survey-star:hover { transform: scale(1.2); opacity: 1; }
+
 /* Emotion buttons */
 .emotion-btn {
   background: var(--bg3); border: 1px solid var(--border2); border-radius: 20px;
@@ -5909,6 +5932,102 @@ function renderEmotions() {
   })()}
 
   ${(()=>{
+    // --- Statystyki ankiet post-trade ---
+    const surveyed = closed.filter(tr => tr.tradeRating || tr.followedPlan || tr.exitQuality);
+    if (!surveyed.length) return '';
+
+    const survCovPct = Math.round(surveyed.length / closed.length * 100);
+
+    // Average rating
+    const rated = surveyed.filter(tr => tr.tradeRating);
+    const avgRating = rated.length ? (rated.reduce((s,tr)=>s+(tr.tradeRating||0),0)/rated.length).toFixed(1) : null;
+    const ratingStars = avgRating ? '⭐'.repeat(Math.round(parseFloat(avgRating))) : '';
+
+    // Plan adherence
+    const withPlanData = surveyed.filter(tr => tr.followedPlan);
+    const planPcts = withPlanData.length ? {
+      yes:     Math.round(withPlanData.filter(tr=>tr.followedPlan==='yes').length/withPlanData.length*100),
+      partial: Math.round(withPlanData.filter(tr=>tr.followedPlan==='partial').length/withPlanData.length*100),
+      no:      Math.round(withPlanData.filter(tr=>tr.followedPlan==='no').length/withPlanData.length*100),
+    } : null;
+
+    // Exit quality
+    const withExit = surveyed.filter(tr => tr.exitQuality);
+    const exitPcts = withExit.length ? {
+      early:   Math.round(withExit.filter(tr=>tr.exitQuality==='early').length/withExit.length*100),
+      perfect: Math.round(withExit.filter(tr=>tr.exitQuality==='perfect').length/withExit.length*100),
+      late:    Math.round(withExit.filter(tr=>tr.exitQuality==='late').length/withExit.length*100),
+    } : null;
+
+    // Last lessons
+    const lessons = closed.filter(tr => tr.keyLesson).slice(-5).reverse();
+
+    const barH = (pct, color) => `<div style="flex:1;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden"><div style="width:${pct}%;height:100%;background:${color};border-radius:3px"></div></div>`;
+
+    return `<div class="summary-card" style="margin-top:16px">
+      <div class="summary-card-title" style="color:var(--accent)">${t('survey_stats_title')}</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:12px">${surveyed.length} / ${closed.length} — ${survCovPct}% ${t('survey_coverage')}</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px">
+        ${avgRating ? `<div style="background:var(--bg3);border-radius:10px;padding:12px 14px;text-align:center">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:4px">${t('survey_avg_rating')}</div>
+          <div style="font-size:24px;font-weight:800;color:var(--amber)">${avgRating}</div>
+          <div style="font-size:14px;margin-top:2px">${ratingStars}</div>
+        </div>` : ''}
+        ${planPcts ? `<div style="background:var(--bg3);border-radius:10px;padding:12px 14px">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:8px">${t('survey_plan_pct')}</div>
+          <div style="display:flex;flex-direction:column;gap:5px">
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="font-size:10px;color:var(--green);width:70px">✅ ${t('survey_yes')}</span>
+              ${barH(planPcts.yes,'var(--green)')}
+              <span style="font-size:11px;font-weight:600;color:var(--green);width:30px;text-align:right">${planPcts.yes}%</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="font-size:10px;color:var(--amber);width:70px">🤔 ${t('survey_partial')}</span>
+              ${barH(planPcts.partial,'var(--amber)')}
+              <span style="font-size:11px;font-weight:600;color:var(--amber);width:30px;text-align:right">${planPcts.partial}%</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="font-size:10px;color:var(--red);width:70px">❌ ${t('survey_no')}</span>
+              ${barH(planPcts.no,'var(--red)')}
+              <span style="font-size:11px;font-weight:600;color:var(--red);width:30px;text-align:right">${planPcts.no}%</span>
+            </div>
+          </div>
+        </div>` : ''}
+        ${exitPcts ? `<div style="background:var(--bg3);border-radius:10px;padding:12px 14px">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:8px">${t('survey_exits')}</div>
+          <div style="display:flex;flex-direction:column;gap:5px">
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="font-size:10px;color:var(--blue);width:70px">⏩ ${t('survey_exit_early')}</span>
+              ${barH(exitPcts.early,'var(--blue)')}
+              <span style="font-size:11px;font-weight:600;color:var(--blue);width:30px;text-align:right">${exitPcts.early}%</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="font-size:10px;color:var(--green);width:70px">🎯 ${t('survey_exit_perfect')}</span>
+              ${barH(exitPcts.perfect,'var(--green)')}
+              <span style="font-size:11px;font-weight:600;color:var(--green);width:30px;text-align:right">${exitPcts.perfect}%</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="font-size:10px;color:var(--amber);width:70px">⏳ ${t('survey_exit_late')}</span>
+              ${barH(exitPcts.late,'var(--amber)')}
+              <span style="font-size:11px;font-weight:600;color:var(--amber);width:30px;text-align:right">${exitPcts.late}%</span>
+            </div>
+          </div>
+        </div>` : ''}
+      </div>
+      ${lessons.length ? `<div>
+        <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">${t('survey_top_lesson')}</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          ${lessons.map(tr => `<div style="background:var(--bg3);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--text2)">
+            <span style="color:var(--accent);font-weight:600;margin-right:6px">${tr.symbol}</span>
+            <span style="color:var(--text3);margin-right:6px">${(tr.date||'').slice(0,10)}</span>
+            ${tr.keyLesson}
+          </div>`).join('')}
+        </div>
+      </div>` : ''}
+    </div>`;
+  })()}
+
+  ${(()=>{
     // --- Overtrading Alert konfiguracja ---
     const db2 = getDB();
     const lims = db2['ot-limits_'+(state.currentUser||'')] || {maxDaily:5, maxLosses:3};
@@ -5983,6 +6102,170 @@ function showOvertradingPopup(msg) {
   el.appendChild(btn);
   document.body.appendChild(el);
   setTimeout(() => { if (el.parentNode) el.remove(); }, 8000);
+}
+
+// ===== POST-TRADE SURVEY =====
+
+function showPostTradeSurvey(tradeId) {
+  const existing = document.getElementById('post-trade-survey');
+  if (existing) existing.remove();
+
+  const trade = getTrades(state.currentAccountId).find(tr => tr.id === tradeId);
+  if (!trade || trade.status !== 'closed') return;
+
+  const curr = getCurrSym(state.currentAccountId);
+  const pnlStr = trade.pnl != null
+    ? `<span class="${trade.pnl >= 0 ? 'pnl-pos' : 'pnl-neg'}">${trade.pnl >= 0 ? '+' : ''}${parseFloat(trade.pnl).toFixed(2)}${curr}</span>`
+    : '';
+
+  const panel = document.createElement('div');
+  panel.id = 'post-trade-survey';
+  panel.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
+      <div>
+        <div style="font-size:14px;font-weight:700;color:var(--accent)">📋 ${t('survey_title')}</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:2px">${trade.symbol} · ${trade.dir} ${pnlStr}</div>
+      </div>
+      <button onclick="dismissPostTradeSurvey('${tradeId}')" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;padding:0 0 0 12px">×</button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+      <div>
+        <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">${t('survey_rating')}</div>
+        <div id="survey-stars" style="display:flex;gap:2px">
+          ${[1,2,3,4,5].map(i=>`<span class="survey-star" data-v="${i}" onclick="surveyStar(${i})">⭐</span>`).join('')}
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">${t('survey_followed_plan')}</div>
+        <div class="survey-row" style="margin-top:0">
+          <button class="survey-btn" data-group="plan" data-v="yes"    onclick="surveyToggle(this,'plan')">✅ ${t('survey_yes')}</button>
+          <button class="survey-btn" data-group="plan" data-v="partial" onclick="surveyToggle(this,'plan')">🤔 ${t('survey_partial')}</button>
+          <button class="survey-btn" data-group="plan" data-v="no"     onclick="surveyToggle(this,'plan')">❌ ${t('survey_no')}</button>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">${t('survey_exit_quality')}</div>
+        <div class="survey-row" style="margin-top:0">
+          <button class="survey-btn" data-group="exit" data-v="early"   onclick="surveyToggle(this,'exit')">⏩ ${t('survey_too_early')}</button>
+          <button class="survey-btn" data-group="exit" data-v="perfect" onclick="surveyToggle(this,'exit')">🎯 ${t('survey_perfect')}</button>
+          <button class="survey-btn" data-group="exit" data-v="late"    onclick="surveyToggle(this,'exit')">⏳ ${t('survey_too_late')}</button>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">${t('survey_lesson')}</div>
+        <input id="survey-lesson" class="form-input-modal" type="text" maxlength="120"
+          placeholder="${t('survey_lesson_hint')}" style="font-size:12px;padding:6px 10px">
+      </div>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button class="btn-sm btn-accent" onclick="savePostTradeSurvey('${tradeId}')" style="flex:1;font-size:13px">
+        💾 ${t('survey_save')}
+      </button>
+      <button class="btn-sm" onclick="dismissPostTradeSurvey('${tradeId}')" style="font-size:13px;color:var(--text3)">
+        ${t('survey_skip')}
+      </button>
+    </div>`;
+
+  document.body.appendChild(panel);
+
+  // Prefill if trade already has survey data
+  if (trade.tradeRating) surveyStar(trade.tradeRating, true);
+  if (trade.followedPlan) {
+    const btn = panel.querySelector(`[data-group="plan"][data-v="${trade.followedPlan}"]`);
+    if (btn) btn.classList.add('active');
+  }
+  if (trade.exitQuality) {
+    const btn = panel.querySelector(`[data-group="exit"][data-v="${trade.exitQuality}"]`);
+    if (btn) btn.classList.add('active');
+  }
+  if (trade.keyLesson) {
+    const inp = document.getElementById('survey-lesson');
+    if (inp) inp.value = trade.keyLesson;
+  }
+
+  // Auto-dismiss after 90 seconds if no interaction
+  let _surveyTimer = setTimeout(() => { dismissPostTradeSurvey(tradeId); }, 90000);
+  panel.addEventListener('click', () => { clearTimeout(_surveyTimer); _surveyTimer = setTimeout(() => dismissPostTradeSurvey(tradeId), 90000); });
+}
+
+function surveyStar(val, noToggle) {
+  const stars = document.querySelectorAll('#survey-stars .survey-star');
+  if (!stars.length) return;
+  const current = [...stars].findIndex(s => s.classList.contains('lit') && parseInt(s.dataset.v) === val);
+  const newVal = (!noToggle && current >= 0) ? 0 : val;
+  stars.forEach(s => { parseInt(s.dataset.v) <= newVal ? s.classList.add('lit') : s.classList.remove('lit'); });
+}
+
+function surveyToggle(btn, group) {
+  const panel = document.getElementById('post-trade-survey');
+  if (!panel) return;
+  const all = panel.querySelectorAll(`[data-group="${group}"]`);
+  const wasActive = btn.classList.contains('active');
+  all.forEach(b => b.classList.remove('active'));
+  if (!wasActive) btn.classList.add('active');
+}
+
+function getSurveyRating() {
+  const lit = [...document.querySelectorAll('#survey-stars .survey-star.lit')];
+  return lit.length ? Math.max(...lit.map(s => parseInt(s.dataset.v))) : null;
+}
+
+function getSurveyVal(group) {
+  const btn = document.querySelector(`#post-trade-survey [data-group="${group}"].active`);
+  return btn ? btn.dataset.v : null;
+}
+
+function savePostTradeSurvey(tradeId) {
+  const rating   = getSurveyRating();
+  const plan     = getSurveyVal('plan');
+  const exit     = getSurveyVal('exit');
+  const lesson   = document.getElementById('survey-lesson')?.value?.trim() || null;
+
+  if (!rating && !plan && !exit && !lesson) {
+    dismissPostTradeSurvey(tradeId);
+    return;
+  }
+
+  const trades = getTrades(state.currentAccountId);
+  const idx = trades.findIndex(tr => tr.id === tradeId);
+  if (idx < 0) { dismissPostTradeSurvey(tradeId); return; }
+
+  if (rating  !== null) trades[idx].tradeRating  = rating;
+  if (plan    !== null) trades[idx].followedPlan  = plan;
+  if (exit    !== null) trades[idx].exitQuality   = exit;
+  if (lesson  !== null) trades[idx].keyLesson     = lesson;
+  trades[idx].updatedAt = Date.now();
+
+  saveTrades(state.currentAccountId, trades);
+  dismissPostTradeSurvey(tradeId);
+  toast(t('survey_saved'), 'success');
+
+  // Sync trade to Supabase
+  if (_sb && _isOnline) {
+    (async () => {
+      try {
+        const acc = getAccounts().find(a => a.id === state.currentAccountId);
+        const sbAccId = acc?.sbId || await sbSyncAccount(acc);
+        if (sbAccId) await sbSyncTrade(trades[idx], sbAccId);
+      } catch(e) { console.warn('Survey sync:', e); }
+    })();
+  }
+
+  // Refresh emotions page if open
+  if (document.getElementById('page-emotions')?.classList.contains('active')) renderEmotions();
+}
+
+function dismissPostTradeSurvey(tradeId) {
+  const panel = document.getElementById('post-trade-survey');
+  if (panel) {
+    panel.style.animation = 'none';
+    panel.style.transition = 'transform .2s ease-in, opacity .2s ease-in';
+    panel.style.transform = 'translateX(-50%) translateY(100%)';
+    panel.style.opacity = '0';
+    setTimeout(() => panel.remove(), 220);
+  }
 }
 
 // ===== SUMMARY =====
@@ -6843,6 +7126,10 @@ function saveTrade() {
   renderTrades();
   renderSummary();
   toast(t('toast_trade_saved'), 'success');
+  // Show post-trade survey for closed trades (not for bot accounts)
+  if (trade.status === 'closed' && !isCurrentAccountBot()) {
+    setTimeout(() => showPostTradeSurvey(trade.id), 400);
+  }
   // Auto-sync to Supabase in background (non-blocking)
   if (_sb && _isOnline) {
     (async () => {
@@ -6912,6 +7199,7 @@ function renderDetailModal() {
   const trades = getTrades(state.currentAccountId);
   const t = trades.find(x => x.id === _detailId);
   if (!t) return;
+  const _i18n = window.t; // alias — wewnątrz renderDetailModal zmienna 't' to trade object
   _detailScreenshots = (t.screenshots || []).map(s => ({ id: genId(), dataUrl: s }));
 
   // Header
@@ -7078,6 +7366,21 @@ function renderDetailModal() {
         ${!t.emotionPre && !t.emotionPost ? '<span style="color:var(--text3);font-style:italic;font-size:12px">Brak danych</span>' : ''}
       </div>
       <div class="dv-notes-edit">${_dvEmoPicker('pre', t.emotionPre||'')}${_dvEmoPicker('post', t.emotionPost||'')}</div>
+    </div>` : ''}
+    <!-- Refleksja post-trade (ankieta) -->
+    ${(!isCurrentAccountBot() && t.status === 'closed') ? `<div class="dv-card">
+      <div class="dv-card-head" style="display:flex;justify-content:space-between;align-items:center">
+        <span>📋 ${_i18n('survey_title')}</span>
+        <button class="btn-sm" onclick="closeModal('detail-modal');setTimeout(()=>showPostTradeSurvey('${t.id}'),100)" style="font-size:11px;padding:3px 10px">
+          ${(t.tradeRating||t.followedPlan||t.exitQuality||t.keyLesson) ? '✏️ Edytuj' : '+ Wypełnij'}
+        </button>
+      </div>
+      ${(t.tradeRating||t.followedPlan||t.exitQuality||t.keyLesson) ? `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px">
+        ${t.tradeRating ? `<div style="background:var(--bg3);border-radius:8px;padding:6px 10px;font-size:12px"><span style="color:var(--text3);margin-right:4px">${_i18n('survey_rating')}</span><span style="color:var(--amber);font-weight:700">${t.tradeRating}⭐</span></div>` : ''}
+        ${t.followedPlan ? `<div style="background:var(--bg3);border-radius:8px;padding:6px 10px;font-size:12px"><span style="color:var(--text3);margin-right:4px">${_i18n('survey_followed_plan')}</span><span style="font-weight:600;color:${t.followedPlan==='yes'?'var(--green)':t.followedPlan==='partial'?'var(--amber)':'var(--red)'}">${t.followedPlan==='yes'?_i18n('survey_yes'):t.followedPlan==='partial'?_i18n('survey_partial'):_i18n('survey_no')}</span></div>` : ''}
+        ${t.exitQuality ? `<div style="background:var(--bg3);border-radius:8px;padding:6px 10px;font-size:12px"><span style="color:var(--text3);margin-right:4px">${_i18n('survey_exit_quality')}</span><span style="font-weight:600">${t.exitQuality==='early'?_i18n('survey_too_early'):t.exitQuality==='perfect'?('🎯 '+_i18n('survey_perfect')):_i18n('survey_too_late')}</span></div>` : ''}
+        ${t.keyLesson ? `<div style="width:100%;background:var(--bg3);border-radius:8px;padding:8px 10px;font-size:12px;color:var(--text2)"><span style="color:var(--text3);margin-right:4px">💡</span>${t.keyLesson}</div>` : ''}
+      </div>` : `<div style="font-size:12px;color:var(--text3);font-style:italic;padding:4px 0">Nie wypełniono refleksji</div>`}
     </div>` : ''}
     <!-- Screenshots -->
     <div class="dv-card">
@@ -10068,6 +10371,32 @@ const T = {
     ot_popup_daily:        'Przekroczyłeś dzienny limit {n} transakcji!',
     ot_popup_streak:       'UWAGA: {n} strat z rzędu!',
     ot_popup_btn:          'Rozumiem',
+    // Post-trade survey
+    survey_title:          'Refleksja po transakcji',
+    survey_rating:         'Ocena trade\'u',
+    survey_followed_plan:  'Trzymałem się planu?',
+    survey_exit_quality:   'Jakość wyjścia',
+    survey_lesson:         'Kluczowa lekcja',
+    survey_lesson_hint:    'Czego mnie nauczył ten trade? (opcjonalnie)',
+    survey_yes:            'Tak',
+    survey_no:             'Nie',
+    survey_partial:        'Częściowo',
+    survey_too_early:      'Za wcześnie',
+    survey_perfect:        'Idealnie',
+    survey_too_late:       'Za późno',
+    survey_save:           'Zapisz refleksję',
+    survey_skip:           'Pomiń',
+    survey_saved:          'Refleksja zapisana ✓',
+    // Emotions page — survey stats
+    survey_stats_title:    '⭐ Statystyki refleksji post-trade',
+    survey_avg_rating:     'Śr. ocena',
+    survey_plan_pct:       'Trzymanie planu',
+    survey_exits:          'Jakość wyjść',
+    survey_exit_early:     'Za wcześnie',
+    survey_exit_perfect:   'Idealnie',
+    survey_exit_late:      'Za późno',
+    survey_coverage:       'ankiet wypełniono',
+    survey_top_lesson:     'Ostatnie lekcje',
     rule_msg_max_daily:    'Maks. {lim} transakcji dziennie — masz już {count}',
     rule_msg_max_losses:   'Nie wchodzisz po {lim} stratach — obecna passa strat: {streak}',
     rule_msg_stop_hour:    'Stop trading o {hour}:00 — jest {now}',
@@ -10564,6 +10893,32 @@ const T = {
     ot_popup_daily:        'You have exceeded the daily limit of {n} trades!',
     ot_popup_streak:       'WARNING: {n} consecutive losses!',
     ot_popup_btn:          'Got it',
+    // Post-trade survey
+    survey_title:          'Post-trade reflection',
+    survey_rating:         'Trade rating',
+    survey_followed_plan:  'Did I follow the plan?',
+    survey_exit_quality:   'Exit quality',
+    survey_lesson:         'Key lesson',
+    survey_lesson_hint:    'What did this trade teach me? (optional)',
+    survey_yes:            'Yes',
+    survey_no:             'No',
+    survey_partial:        'Partially',
+    survey_too_early:      'Too early',
+    survey_perfect:        'Perfect',
+    survey_too_late:       'Too late',
+    survey_save:           'Save reflection',
+    survey_skip:           'Skip',
+    survey_saved:          'Reflection saved ✓',
+    // Emotions page — survey stats
+    survey_stats_title:    '⭐ Post-trade reflection stats',
+    survey_avg_rating:     'Avg rating',
+    survey_plan_pct:       'Plan adherence',
+    survey_exits:          'Exit quality',
+    survey_exit_early:     'Too early',
+    survey_exit_perfect:   'Perfect',
+    survey_exit_late:      'Too late',
+    survey_coverage:       'surveys filled',
+    survey_top_lesson:     'Recent lessons',
     rule_msg_max_daily:    'Max {lim} trades per day — you already have {count}',
     rule_msg_max_losses:   'No entry after {lim} losses — current streak: {streak}',
     rule_msg_stop_hour:    'Stop trading at {hour}:00 — current time: {now}',
@@ -13760,8 +14115,10 @@ function exportTradesToCSV() {
 async function sbSyncAccount(acc) {
   if (!_sb || !state.currentUser) return null;
   const userId = getUsers()[state.currentUser]?.supabaseId;
-  if (!userId) return null;
-  const payload = {
+  if (!userId) { console.warn('sbSyncAccount: brak supabaseId dla', state.currentUser); return null; }
+
+  // Payload pełny — jeśli kolumna nie istnieje w Supabase, spróbuj minimalny
+  const payloadFull = {
     user_id: userId,
     name: acc.name, broker: acc.broker || '',
     broker_key: acc.brokerKey || '', spread: acc.spread || null,
@@ -13770,18 +14127,44 @@ async function sbSyncAccount(acc) {
     strategy: acc.strategy || '', color: acc.color || '#00d4a1',
     currency: acc.currency || 'USD',
   };
-  try {
+  const payloadMin = {
+    user_id: userId,
+    name: acc.name, broker: acc.broker || '',
+    type: acc.type || 'forex', capital: acc.capital || 0,
+  };
+
+  const _doUpsert = async (payload) => {
     if (acc.sbId) {
-      await _sb.from('accounts').update(payload).eq('id', acc.sbId);
+      const { error } = await _sb.from('accounts').update(payload).eq('id', acc.sbId);
+      if (error) throw error;
       return acc.sbId;
     } else {
-      // Sprawdź czy konto już istnieje po lokalnym id
       const { data: existing } = await _sb.from('accounts').select('id').eq('user_id', userId).eq('name', acc.name).maybeSingle();
       if (existing) { acc.sbId = existing.id; return existing.id; }
-      const { data } = await _sb.from('accounts').insert(payload).select().single();
+      const { data, error } = await _sb.from('accounts').insert(payload).select('id').single();
+      if (error) throw error;
       if (data) { acc.sbId = data.id; return data.id; }
     }
-  } catch(e) { console.warn('Account sync error:', e); }
+    return null;
+  };
+
+  try {
+    return await _doUpsert(payloadFull);
+  } catch(e) {
+    const msg = e?.message || JSON.stringify(e);
+    console.warn('Account sync (full payload) error:', msg);
+    // Jeśli 400 — brakująca kolumna — spróbuj minimalny payload
+    if (msg.includes('column') || msg.includes('does not exist') || e?.code === '42703') {
+      try {
+        toast('⚠️ Supabase accounts: ' + msg.slice(0, 120), 'error');
+        return await _doUpsert(payloadMin);
+      } catch(e2) {
+        toast('❌ Sync konta nie powiódł się: ' + (e2?.message||'').slice(0,120), 'error');
+      }
+    } else {
+      toast('❌ Sync konta: ' + msg.slice(0, 120), 'error');
+    }
+  }
   return null;
 }
 
@@ -13803,7 +14186,12 @@ async function sbFullSyncUp() {
   }
   // Zapisz zaktualizowane sbId z powrotem do localStorage
   saveAccounts(accounts);
-  toast('✓ Zsynchronizowano ' + synced + ' transakcji z ' + accounts.length + ' kont', 'success');
+  // Sync strategies + setups
+  const strats = getStrategies();
+  const setups = getAllSetups();
+  if (strats.length) await sbSaveUserSetting('strategies', strats).catch(()=>{});
+  if (setups.length)  await sbSaveUserSetting('setups',    setups).catch(()=>{});
+  toast('✓ Zsynchronizowano ' + synced + ' transakcji, ' + strats.length + ' strategii z ' + accounts.length + ' kont', 'success');
 }
 
 async function sbSaveUserSetting(key, value) {
@@ -13836,6 +14224,17 @@ async function sbLoadUserSettings() {
         if (!db[localKey] || remoteTs > localTs) db[localKey] = row.value;
       } else if (row.key === 'notes') {
         if (!db['notes_' + user]?.length) db['notes_' + user] = row.value;
+      } else if (row.key === 'strategies') {
+        const localKey = 'strategies_' + user;
+        const remoteTs = row.updated_at ? new Date(row.updated_at).getTime() : 0;
+        const localTs  = db['_strategies_updatedAt_' + user] || 0;
+        if (!db[localKey]?.length || remoteTs > localTs) {
+          db[localKey] = row.value;
+          db['_strategies_updatedAt_' + user] = remoteTs;
+        }
+      } else if (row.key === 'setups') {
+        const localKey = 'setups_' + user;
+        if (!db[localKey]?.length) db[localKey] = row.value;
       } else if (row.key.startsWith('journal_')) {
         const ds = row.key.slice(8);
         const localKey = 'journal_' + user + '_' + ds;
@@ -15058,6 +15457,7 @@ function saveStrategies(strategies) {
   const db = getDB();
   db['strategies_' + (state.currentUser||'')] = strategies;
   saveDB(db);
+  if (_sb && _isOnline) sbSaveUserSetting('strategies', strategies).catch(e => console.warn('strategies sync:', e));
 }
 
 
@@ -15367,6 +15767,7 @@ function saveAllSetups(setups) {
   const db = getDB();
   db['setups_' + (state.currentUser||'')] = setups;
   saveDB(db);
+  if (_sb && _isOnline) sbSaveUserSetting('setups', setups).catch(e => console.warn('setups sync:', e));
 }
 
 
