@@ -13704,8 +13704,8 @@ async function sbSyncTrade(trade, accountId) {
   if (!_sb || !state.currentUser) return;
   const userId = getUsers()[state.currentUser]?.supabaseId;
   if (!userId) return;
-  
-  const payload = {
+
+  const payloadFull = {
     user_id: userId, account_id: accountId,
     symbol: trade.symbol, direction: trade.dir,
     status: trade.status, entry: trade.entry || null,
@@ -13722,16 +13722,41 @@ async function sbSyncTrade(trade, accountId) {
     linked_analysis_id: trade.linkedAnalysisId || null,
     mt4_ticket: trade.mt4Ticket || null,
   };
-  
-  try {
+  const payloadMin = {
+    user_id: userId, account_id: accountId,
+    symbol: trade.symbol, direction: trade.dir,
+    status: trade.status, entry: trade.entry || null,
+    sl: trade.sl || null, tp: trade.tp || null,
+    exit_price: trade.exit || null,
+    size: trade.size || null, pnl: trade.pnl || null,
+    pre_analysis: trade.pre || null, post_notes: trade.post || null,
+    trade_date: trade.date || new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+
+  const _doUpsert = async (payload) => {
     if (trade.sbId) {
-      await _sb.from('trades').update(payload).eq('id', trade.sbId);
+      const { error } = await _sb.from('trades').update(payload).eq('id', trade.sbId);
+      if (error) throw error;
     } else {
-      const { data } = await _sb.from('trades').insert(payload).select().single();
+      const { data, error } = await _sb.from('trades').insert(payload).select('id').single();
+      if (error) throw error;
       if (data) trade.sbId = data.id;
     }
+  };
+
+  try {
+    await _doUpsert(payloadFull);
   } catch(e) {
-    console.warn('Trade sync error:', e);
+    const msg = e?.message || JSON.stringify(e);
+    console.warn('Trade sync (full payload) error:', msg);
+    if (msg.includes('column') || msg.includes('does not exist') || e?.code === '42703' || e?.code === 'PGRST204') {
+      try {
+        await _doUpsert(payloadMin);
+      } catch(e2) {
+        console.warn('Trade sync (min payload) error:', e2?.message);
+      }
+    }
   }
 }
 
