@@ -13613,7 +13613,12 @@ async function sbFullSyncUp() {
   }
   // Zapisz zaktualizowane sbId z powrotem do localStorage
   saveAccounts(accounts);
-  toast('✓ Zsynchronizowano ' + synced + ' transakcji z ' + accounts.length + ' kont', 'success');
+  // Sync strategies + setups
+  const strats = getStrategies();
+  const setups = getAllSetups();
+  if (strats.length) await sbSaveUserSetting('strategies', strats).catch(()=>{});
+  if (setups.length)  await sbSaveUserSetting('setups',    setups).catch(()=>{});
+  toast('✓ Zsynchronizowano ' + synced + ' transakcji, ' + strats.length + ' strategii z ' + accounts.length + ' kont', 'success');
 }
 
 async function sbSaveUserSetting(key, value) {
@@ -13646,6 +13651,17 @@ async function sbLoadUserSettings() {
         if (!db[localKey] || remoteTs > localTs) db[localKey] = row.value;
       } else if (row.key === 'notes') {
         if (!db['notes_' + user]?.length) db['notes_' + user] = row.value;
+      } else if (row.key === 'strategies') {
+        const localKey = 'strategies_' + user;
+        const remoteTs = row.updated_at ? new Date(row.updated_at).getTime() : 0;
+        const localTs  = db['_strategies_updatedAt_' + user] || 0;
+        if (!db[localKey]?.length || remoteTs > localTs) {
+          db[localKey] = row.value;
+          db['_strategies_updatedAt_' + user] = remoteTs;
+        }
+      } else if (row.key === 'setups') {
+        const localKey = 'setups_' + user;
+        if (!db[localKey]?.length) db[localKey] = row.value;
       } else if (row.key.startsWith('journal_')) {
         const ds = row.key.slice(8);
         const localKey = 'journal_' + user + '_' + ds;
@@ -14869,6 +14885,7 @@ function saveStrategies(strategies) {
   const db = getDB();
   db['strategies_' + (state.currentUser||'')] = strategies;
   saveDB(db);
+  if (_sb && _isOnline) sbSaveUserSetting('strategies', strategies).catch(e => console.warn('strategies sync:', e));
 }
 
 
@@ -15178,6 +15195,7 @@ function saveAllSetups(setups) {
   const db = getDB();
   db['setups_' + (state.currentUser||'')] = setups;
   saveDB(db);
+  if (_sb && _isOnline) sbSaveUserSetting('setups', setups).catch(e => console.warn('setups sync:', e));
 }
 
 
