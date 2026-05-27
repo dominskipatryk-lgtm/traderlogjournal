@@ -1024,6 +1024,22 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 /* ===== IMPORT CSV ===== */
 .import-dz-hover { border-color:var(--accent) !important; background:var(--accent-dim) !important; }
 
+/* ===== AI ASYSTENT ===== */
+.ai-tab { background:none;border:none;border-bottom:3px solid transparent;padding:9px 18px;cursor:pointer;color:var(--text3);font-size:13px;font-weight:600;margin-bottom:-2px;transition:all .15s;border-radius:0; }
+.ai-tab.active { color:var(--accent);border-bottom-color:var(--accent); }
+.ai-tab:hover:not(.active) { color:var(--text);background:var(--bg2); }
+.ai-msg-wrap { display:flex;flex-direction:column;gap:10px;padding:4px 0; }
+.ai-msg { padding:11px 15px;border-radius:14px;font-size:13px;line-height:1.65;max-width:88%;word-break:break-word; }
+.ai-msg.user { background:var(--accent);color:#000;align-self:flex-end;border-radius:14px 14px 4px 14px;font-weight:500; }
+.ai-msg.assistant { background:var(--bg2);border:1px solid var(--border);align-self:flex-start;border-radius:14px 14px 14px 4px; }
+.ai-msg.assistant h2,.ai-msg.assistant h3 { font-size:13px;font-weight:700;margin:10px 0 4px;color:var(--accent); }
+.ai-msg.assistant strong { font-weight:700;color:var(--text); }
+.ai-msg.assistant code { background:var(--bg3);padding:1px 5px;border-radius:4px;font-size:12px; }
+.ai-msg.thinking { color:var(--text3);font-style:italic;background:var(--bg2);border:1px dashed var(--border);align-self:flex-start;border-radius:14px; }
+.ai-chart-result-section { margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border); }
+.ai-chart-result-section:last-child { border-bottom:none;margin-bottom:0;padding-bottom:0; }
+@media(max-width:700px) { #ai-chart-grid { grid-template-columns:1fr !important; } }
+
 /* ===== PORTFOLIO ===== */
 .portfolio-stat-card { background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:16px 18px; }
 .portfolio-stat-label { font-size:11px; color:var(--text3); text-transform:uppercase; letter-spacing:.5px; margin-bottom:4px; }
@@ -1264,6 +1280,9 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
       </button>
       <button class="nav-btn" onclick="showPage('tools')" id="nav-tools" data-i18n="nav_tools">
         <span class="nav-icon">🛠</span><span class="nav-label">Narzędzia</span>
+      </button>
+      <button class="nav-btn" onclick="showPage('ai')" id="nav-ai">
+        <span class="nav-icon">🤖</span><span class="nav-label">AI Asystent</span>
       </button>
 
       <div class="sidebar-section-label" data-i18n="sec_account">Konto</div>
@@ -3339,6 +3358,98 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
       </div>
     </div><!-- /page-portfolio -->
 
+    <!-- ═══ AI ASYSTENT ═══════════════════════════════════════════════════════ -->
+    <div id="page-ai" class="page">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:20px">
+        <div>
+          <div class="page-title" style="margin-bottom:2px">🤖 AI Asystent</div>
+          <div class="page-subtitle">Osobisty trading coach i analityk wykresów oparty na Twoich danych</div>
+        </div>
+        <button class="btn-sm" onclick="aiShowKeyPanel()" style="font-size:11px;color:var(--text3)" title="Ustawienia API">⚙️ Klucz API</button>
+      </div>
+
+      <!-- API Key panel -->
+      <div id="ai-key-panel" style="display:none;margin-bottom:16px;padding:14px 16px;background:var(--bg2);border:1px solid var(--amber);border-radius:10px">
+        <div style="font-weight:600;font-size:13px;margin-bottom:4px">🔑 Klucz Anthropic API</div>
+        <div style="font-size:12px;color:var(--text3);margin-bottom:10px">
+          Wymagany do działania AI. Pobierz bezpłatnie na <a href="https://console.anthropic.com/" target="_blank" style="color:var(--accent)">console.anthropic.com →</a><br>
+          Wymaga wdrożenia Edge Function <code style="background:var(--bg3);padding:1px 5px;border-radius:3px">ai-proxy</code> w Supabase. <a href="#" onclick="aiShowEdgeFn();return false" style="color:var(--accent)">Pokaż kod do wdrożenia →</a>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <input id="ai-key-input" class="form-input-modal" type="password" placeholder="sk-ant-api03-..." style="flex:1;min-width:220px;font-size:12px;padding:7px 10px">
+          <button class="btn-sm btn-accent" onclick="aiSaveKey()" style="font-size:11px">Zapisz klucz</button>
+          <button class="btn-sm" onclick="document.getElementById('ai-key-panel').style.display='none'" style="font-size:11px">✕</button>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div style="display:flex;gap:0;margin-bottom:20px;border-bottom:2px solid var(--border)">
+        <button id="ai-tab-coach" class="ai-tab active" onclick="aiSwitchTab('coach')">💬 AI Coach</button>
+        <button id="ai-tab-chart" class="ai-tab" onclick="aiSwitchTab('chart')">📊 Analiza wykresu</button>
+      </div>
+
+      <!-- ── COACH TAB ────────────────────────────────────────── -->
+      <div id="ai-section-coach">
+        <div id="ai-context-bar" style="font-size:11px;color:var(--text3);margin-bottom:14px;padding:8px 14px;background:var(--bg2);border-radius:8px;display:flex;flex-wrap:wrap;gap:10px;align-items:center"></div>
+        <div id="ai-chat-messages" class="ai-msg-wrap" style="min-height:120px;max-height:480px;overflow-y:auto;margin-bottom:12px"></div>
+        <div style="display:flex;gap:8px;align-items:flex-end">
+          <textarea id="ai-chat-input" class="form-input-modal" placeholder="Zapytaj o swoje transakcje, emocje, wzorce... (Enter = wyślij, Shift+Enter = nowa linia)" style="flex:1;min-height:48px;max-height:140px;resize:vertical;font-size:13px;padding:10px 12px;line-height:1.5" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();aiSendMessage()}"></textarea>
+          <div style="display:flex;flex-direction:column;gap:5px">
+            <button id="ai-send-btn" class="btn-sm btn-accent" onclick="aiSendMessage()" style="padding:12px 16px;font-size:16px" title="Wyślij">➤</button>
+            <button class="btn-sm" onclick="document.getElementById('ai-attach-input').click()" title="Dołącz screenshot do czatu" style="padding:8px 10px;font-size:13px">📎</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:7px;align-items:center;flex-wrap:wrap">
+          <span id="ai-attach-label" style="font-size:11px;color:var(--accent);display:none"></span>
+          <button id="ai-attach-remove" onclick="aiClearAttach()" style="display:none;background:none;border:none;cursor:pointer;font-size:11px;color:var(--red)" title="Usuń załącznik">✕ usuń</button>
+          <button class="btn-sm" onclick="aiClearChat()" style="font-size:10px;color:var(--text3);margin-left:auto;padding:3px 9px;border-color:var(--border)">🗑 Wyczyść czat</button>
+        </div>
+        <input type="file" id="ai-attach-input" accept="image/*" style="display:none" onchange="aiHandleAttach(this.files[0]);this.value=''">
+      </div>
+
+      <!-- ── CHART ANALYSIS TAB ──────────────────────────────── -->
+      <div id="ai-section-chart" style="display:none">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px" id="ai-chart-grid">
+          <div>
+            <div id="ai-drop-zone"
+              style="border:2px dashed var(--border);border-radius:12px;padding:44px 20px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s"
+              onclick="document.getElementById('ai-chart-file').click()"
+              ondragover="event.preventDefault();this.style.borderColor='var(--accent)';this.style.background='var(--accent-dim)'"
+              ondragleave="this.style.borderColor='var(--border)';this.style.background=''"
+              ondrop="event.preventDefault();this.style.borderColor='var(--border)';this.style.background='';aiHandleChartDrop(event)">
+              <div style="font-size:36px;margin-bottom:10px">📊</div>
+              <div style="font-weight:600;font-size:14px;margin-bottom:5px">Upuść screenshot wykresu</div>
+              <div style="font-size:12px;color:var(--text3)">lub kliknij · Ctrl+V aby wkleić</div>
+            </div>
+            <input type="file" id="ai-chart-file" accept="image/*" style="display:none" onchange="aiHandleChartFile(this.files[0]);this.value=''">
+            <div id="ai-chart-preview" style="display:none;margin-top:10px">
+              <img id="ai-chart-img" style="width:100%;max-height:300px;object-fit:contain;border-radius:8px;border:1px solid var(--border);cursor:pointer" onclick="openLightboxSmart(this.src,'')">
+              <button class="btn-sm" onclick="aiClearChart()" style="margin-top:6px;font-size:11px;color:var(--red);border-color:var(--red)">✕ Usuń wykres</button>
+            </div>
+          </div>
+          <div>
+            <div style="margin-bottom:12px">
+              <label style="font-size:11px;color:var(--text3);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px">Strategia do oceny</label>
+              <select id="ai-chart-strategy" class="form-input-modal" style="font-size:13px">
+                <option value="all">Wszystkie moje strategie</option>
+              </select>
+            </div>
+            <div style="margin-bottom:12px">
+              <label style="font-size:11px;color:var(--text3);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px">Instrument (opcjonalnie)</label>
+              <input id="ai-chart-symbol" class="form-input-modal" placeholder="np. EURUSD, BTC/USDT, SPY..." style="font-size:13px">
+            </div>
+            <div style="margin-bottom:16px">
+              <label style="font-size:11px;color:var(--text3);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px">Timeframe (opcjonalnie)</label>
+              <input id="ai-chart-tf" class="form-input-modal" placeholder="np. M15, H1, D1..." style="font-size:13px">
+            </div>
+            <button id="ai-analyze-btn" class="btn-sm btn-accent" onclick="aiAnalyzeChart()" style="width:100%;font-size:14px;padding:13px;font-weight:700">🔍 Analizuj wykres</button>
+            <div style="margin-top:10px;font-size:11px;color:var(--text3);text-align:center">Wgraj wykres i kliknij Analizuj</div>
+          </div>
+        </div>
+        <div id="ai-chart-result" style="display:none;margin-top:24px;padding:20px;background:var(--bg2);border:1px solid var(--border);border-radius:12px"></div>
+      </div>
+    </div><!-- /page-ai -->
+
   </main>
   </div><!-- /app-main -->
 </div><!-- /app -->
@@ -4876,6 +4987,7 @@ function showPage(page) {
   if (page === 'ideas')   { if(typeof renderIdeasPage==='function') renderIdeasPage(); }
   if (page === 'macro')   { if(typeof renderMacroCalendar==='function') renderMacroCalendar(); }
   if (page === 'portfolio') { if(typeof renderPortfolio==='function') renderPortfolio(); }
+  if (page === 'ai')        { if(typeof renderAiPage==='function') renderAiPage(); }
   // Aktualizuj tytuł w topstrip
   const PAGE_TITLES = {
     dashboard:'Dashboard',
@@ -4893,7 +5005,8 @@ function showPage(page) {
     settings:  t('nav_settings').replace(/^\S+\s/,''),
     admin:     t('nav_admin'),
     calendar:  t('nav_calendar').replace(/^\S+\s/,''),
-    portfolio: '💼 Portfel'
+    portfolio: '💼 Portfel',
+    ai:        '🤖 AI Asystent'
   };
   const topstripTitle = document.getElementById('topstrip-title');
   if (topstripTitle) topstripTitle.textContent = PAGE_TITLES[page] || page;
@@ -10820,7 +10933,7 @@ function applyLangToStatic() {
   });
 
   // ── 14. Re-render active page to apply translations to dynamic content ─────
-  const pages = ['dashboard','trades','summary','accounts','drafts','analysis','calendar','calculator','admin','settings','emotions','library','ideas'];
+  const pages = ['dashboard','trades','summary','accounts','drafts','analysis','calendar','calculator','admin','settings','emotions','library','ideas','ai'];
   const activePage = pages.find(p => document.getElementById('page-'+p)?.classList.contains('active'));
   // Don't re-render if a modal is open (would reset form fields!)
   const anyModalOpen = document.querySelector('.modal-overlay.open');
@@ -19653,6 +19766,466 @@ function exportPortfolioCSV() {
   a.href = url; a.download = 'portfel_' + new Date().toISOString().slice(0,10) + '.csv';
   a.click(); URL.revokeObjectURL(url);
   toast('✓ CSV portfela pobrany', 'success');
+}
+
+// ═══ AI ASYSTENT ═══════════════════════════════════════════════════════════════
+
+const _AI_PROXY_URL = 'https://ygrkcynyduuflzvbkkvo.supabase.co/functions/v1/ai-proxy';
+const _AI_EDGE_CODE = `import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+const cors = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+}
+serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
+  try {
+    const { messages, system, model, apiKey, max_tokens } = await req.json()
+    if (!apiKey) return new Response(JSON.stringify({ error: 'No API key provided' }), { status: 400, headers: cors })
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+      body: JSON.stringify({ model: model || 'claude-sonnet-4-6', max_tokens: max_tokens || 2048, system: system || '', messages })
+    })
+    const data = await res.json()
+    return new Response(JSON.stringify(data), { headers: { ...cors, 'Content-Type': 'application/json' } })
+  } catch(e) {
+    return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: cors })
+  }
+})`;
+
+let _aiMessages = [];
+let _aiAttachB64 = null;
+let _aiAttachMime = 'image/png';
+let _aiChartB64 = null;
+let _aiChartMime = 'image/png';
+let _aiTab = 'coach';
+
+// ── Key management ──────────────────────────────────────────────────────────
+function aiGetKey() { return getDB()['ai_key_' + (state.currentUser||'')] || ''; }
+
+function aiSaveKey() {
+  const k = (document.getElementById('ai-key-input')?.value || '').trim();
+  if (!k) return toast('Wpisz klucz API', 'error');
+  const db = getDB(); db['ai_key_' + (state.currentUser||'')] = k; saveDB(db);
+  document.getElementById('ai-key-panel').style.display = 'none';
+  toast('Klucz API zapisany ✓', 'success');
+}
+
+function aiShowKeyPanel() {
+  const panel = document.getElementById('ai-key-panel');
+  if (!panel) return;
+  const inp = document.getElementById('ai-key-input');
+  if (inp) inp.value = aiGetKey();
+  panel.style.display = 'block';
+  panel.scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+function aiShowEdgeFn() {
+  const el = document.getElementById('ai-edge-fn-pre');
+  if (el) el.textContent = _AI_EDGE_CODE;
+  openModal('ai-edge-fn-modal');
+}
+
+// ── Tab switching ───────────────────────────────────────────────────────────
+function aiSwitchTab(tab) {
+  _aiTab = tab;
+  document.getElementById('ai-section-coach').style.display = tab === 'coach' ? '' : 'none';
+  document.getElementById('ai-section-chart').style.display = tab === 'chart' ? '' : 'none';
+  document.getElementById('ai-tab-coach').classList.toggle('active', tab === 'coach');
+  document.getElementById('ai-tab-chart').classList.toggle('active', tab === 'chart');
+}
+
+// ── Render page ─────────────────────────────────────────────────────────────
+function renderAiPage() {
+  // Context bar
+  const trades = getTrades(state.currentAccountId);
+  const strategies = getStrategies();
+  const setups = getAllSetups();
+  const rules = getRules();
+  const bar = document.getElementById('ai-context-bar');
+  if (bar) {
+    const closed = trades.filter(t => t.status === 'closed' && t.pnl != null);
+    bar.innerHTML = [
+      `📊 <strong>${closed.length}</strong> transakcji`,
+      `🎯 <strong>${strategies.length}</strong> ${strategies.length===1?'strategia':'strategie/strategii'}`,
+      `📋 <strong>${rules.length}</strong> reguł`,
+      `⚡ <strong>${setups.length}</strong> setupów`,
+      aiGetKey() ? '🟢 Klucz API: OK' : '🔴 Brak klucza API — kliknij ⚙️'
+    ].map(s => `<span>${s}</span>`).join('');
+  }
+  // Populate strategy select for chart tab
+  const sel = document.getElementById('ai-chart-strategy');
+  if (sel) {
+    sel.innerHTML = '<option value="all">Wszystkie moje strategie</option>' +
+      strategies.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+  }
+  // Show welcome if empty chat
+  if (!_aiMessages.length) {
+    const msgEl = document.getElementById('ai-chat-messages');
+    if (msgEl && !msgEl.querySelector('.ai-msg')) {
+      _aiAddMsg('assistant', `Cześć! 👋 Jestem Twoim AI Asystentem tradingowym.\n\nMam dostęp do **${trades.filter(t=>t.status==='closed').length} Twoich transakcji**, Twoich strategii, reguł i emocji.\n\nMogę:\n• 📊 Analizować Twoje wzorce błędów i sukcesów\n• 🧠 Wskazywać związki między emocjami a wynikami\n• 🎯 Oceniać zgodność z Twoimi regułami\n• 📈 Analizować wykresy według Twoich strategii\n\nO co chcesz zapytać?`);
+    }
+  }
+}
+
+// ── Context & system prompts ─────────────────────────────────────────────────
+function _aiBuildContext() {
+  const trades = getTrades(state.currentAccountId);
+  const closed = trades.filter(t => t.status === 'closed' && t.pnl != null);
+  const wins = closed.filter(t => t.pnl > 0);
+  const losses = closed.filter(t => t.pnl < 0);
+  const totalPnl = closed.reduce((s,t) => s + (t.pnl||0), 0);
+  const winRate = closed.length ? (wins.length/closed.length*100).toFixed(1) : 0;
+  const avgWin  = wins.length   ? (wins.reduce((s,t)=>s+t.pnl,0)/wins.length).toFixed(2) : 0;
+  const avgLoss = losses.length ? (losses.reduce((s,t)=>s+t.pnl,0)/losses.length).toFixed(2) : 0;
+
+  // Emotion × result
+  const emo = {};
+  closed.slice(-100).forEach(t => {
+    if (!t.emotionPre) return;
+    if (!emo[t.emotionPre]) emo[t.emotionPre] = {w:0,l:0,pnl:0};
+    t.pnl > 0 ? emo[t.emotionPre].w++ : emo[t.emotionPre].l++;
+    emo[t.emotionPre].pnl += t.pnl;
+  });
+  const emoTxt = Object.entries(emo).map(([e,s])=>`${e}: ${s.w}W/${s.w+s.l}T PnL=${s.pnl.toFixed(0)}`).join('; ') || 'brak danych';
+
+  // Symbol stats
+  const sym = {};
+  closed.forEach(t => {
+    if (!sym[t.symbol]) sym[t.symbol]={n:0,pnl:0,w:0};
+    sym[t.symbol].n++; sym[t.symbol].pnl+=t.pnl||0;
+    if(t.pnl>0) sym[t.symbol].w++;
+  });
+  const symTxt = Object.entries(sym).sort((a,b)=>b[1].pnl-a[1].pnl).slice(0,8)
+    .map(([s,v])=>`${s}: ${v.n}T WR=${(v.w/v.n*100).toFixed(0)}% PnL=${v.pnl.toFixed(0)}`).join('; ');
+
+  // Day stats
+  const days = ['Nd','Pn','Wt','Śr','Cz','Pt','Sb'];
+  const dayS = {};
+  closed.forEach(t => { const d=new Date(t.date).getDay(); if(!dayS[d])dayS[d]={n:0,pnl:0}; dayS[d].n++; dayS[d].pnl+=t.pnl||0; });
+  const dayTxt = Object.entries(dayS).filter(([,v])=>v.n>0).map(([d,v])=>`${days[d]}: ${v.n}T PnL=${v.pnl.toFixed(0)}`).join('; ');
+
+  // Rules broken
+  const brokenTrades = closed.filter(t=>t.rulesBroken?.length>0);
+  const brokenPct = closed.length ? (brokenTrades.length/closed.length*100).toFixed(1) : 0;
+
+  // Recent 20 with notes
+  const recent = closed.slice(-20).reverse().map(t =>
+    `[${(t.date||'').slice(0,10)}] ${t.symbol} ${t.dir} ${t.pnl>=0?'+':''}${t.pnl?.toFixed(2)} | Emo: ${t.emotionPre||'?'}→${t.emotionPost||'?'} | Reguły: ${t.rulesBroken?.length?'❌ '+t.rulesBroken.join(', '):'✓'} | Pre: "${(t.pre||'').slice(0,120)}" | Post: "${(t.post||'').slice(0,120)}"`
+  ).join('\n');
+
+  // Strategies / setups / rules
+  const strats = getStrategies();
+  const setups = getAllSetups();
+  const rules  = getRules();
+  const stratsTxt = strats.length ? strats.map(s=>`- ${s.name}${s.description?' — '+s.description:''}`).join('\n') : 'Brak';
+  const setupsTxt = setups.length ? setups.map(s=>`- ${s.name}${s.description?' — '+s.description:''}`).join('\n') : 'Brak';
+  const rulesTxt  = rules.length  ? rules.map(r=>`- ${r.text||r.name||r}`).join('\n') : 'Brak';
+
+  return { winRate, totalPnl:totalPnl.toFixed(2), avgWin, avgLoss, totalTrades:closed.length, brokenPct, emoTxt, symTxt, dayTxt, recent, stratsTxt, setupsTxt, rulesTxt, strats, setups };
+}
+
+function _aiCoachPrompt(ctx) {
+  return `Jesteś osobistym trenerem tradingowym i psychologiem dla tego tradera. Masz dostęp do jego pełnej historii. Odpowiadaj zawsze po POLSKU. Używaj markdown (bold, nagłówki ##, listy). Bądź konkretny, wspierający i oparty na liczbach.
+
+STATYSTYKI:
+- Zamknięte transakcje: ${ctx.totalTrades}
+- Win Rate: ${ctx.winRate}% | Avg win: ${ctx.avgWin} | Avg loss: ${ctx.avgLoss}
+- Łączny P&L: ${ctx.totalPnl}
+- Transakcje z złamanymi regułami: ${ctx.brokenPct}%
+
+EMOCJE × WYNIKI (ostatnie 100T): ${ctx.emoTxt}
+INSTRUMENTY: ${ctx.symTxt || 'brak danych'}
+DNI TYGODNIA: ${ctx.dayTxt || 'brak danych'}
+
+STRATEGIE TRADERA:
+${ctx.stratsTxt}
+
+SETUPY TRADERA:
+${ctx.setupsTxt}
+
+REGUŁY TRADERA:
+${ctx.rulesTxt}
+
+OSTATNIE 20 TRANSAKCJI:
+${ctx.recent || 'brak danych'}
+
+Twoje zasady: wskazuj konkretne wzorce z liczb, doceniaj sukcesy, punktuj powtarzające się błędy (emocje, reguły, setupy), wspieraj psychicznie. Jeśli trader prześle wykres — oceń go przez pryzmat jego strategii i reguł.`;
+}
+
+function _aiChartPrompt(ctx, stratId) {
+  let stratTxt = '';
+  if (stratId === 'all' || !stratId) {
+    stratTxt = ctx.strats.map(s => {
+      const sSetups = ctx.setups.filter(x => x.strategyId === s.id);
+      return `**${s.name}**${s.description ? ': '+s.description : ''}${sSetups.length ? '\nSetupy: '+sSetups.map(x=>x.name).join(', ') : ''}`;
+    }).join('\n\n') || 'Brak zdefiniowanych strategii — oceń ogólnie wg Price Action.';
+  } else {
+    const s = ctx.strats.find(x => x.id === stratId);
+    if (s) {
+      const sSetups = ctx.setups.filter(x => x.strategyId === s.id);
+      stratTxt = `**${s.name}**${s.description ? ': '+s.description : ''}${sSetups.length ? '\nSetupy: '+sSetups.map(x=>x.name).join(', ') : ''}`;
+    } else { stratTxt = stratId; }
+  }
+  return `Jesteś ekspertem od analizy technicznej. Odpowiadaj po POLSKU. Analizujesz wykres dla tradera który używa tych strategii:
+
+${stratTxt}
+
+Odpowiedz w DOKŁADNIE tej strukturze markdown:
+
+## 📊 Struktura rynku
+[Trend, momentum, kluczowe poziomy S/R]
+
+## 🎯 Dopasowanie strategii
+[Która strategia tradera pasuje i dlaczego]
+
+## 📍 Scenariusz tradingowy
+**Wejście:** [poziom/warunek]
+**Stop Loss:** [poziom + uzasadnienie]
+**Take Profit 1:** [poziom]
+**Take Profit 2:** [poziom opcjonalnie]
+**R:R:** [stosunek]
+
+## ⚠️ Unieważnienie setupu
+[Co musiałoby się stać żeby setup był nieważny]
+
+## 🎯 Pewność: X/10
+[Uzasadnienie + główne ryzyko]`;
+}
+
+// ── API call ─────────────────────────────────────────────────────────────────
+async function _aiCall(messages, system) {
+  const key = aiGetKey();
+  if (!key) { aiShowKeyPanel(); throw new Error('Brak klucza API — wprowadź go w ustawieniach (⚙️ Klucz API)'); }
+  const res = await fetch(_AI_PROXY_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ apiKey: key, model: 'claude-sonnet-4-6', max_tokens: 2048, system, messages }),
+  });
+  if (!res.ok) {
+    const txt = await res.text().catch(()=>'');
+    if (res.status === 404) throw new Error('Edge Function "ai-proxy" nie istnieje w Supabase — wdróż ją (⚙️ Klucz API → pokaż kod)');
+    throw new Error(`Błąd ${res.status}: ${txt.slice(0,200)}`);
+  }
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
+  if (data.type === 'error') throw new Error(data.error?.message || 'Błąd API');
+  return data.content?.[0]?.text || '';
+}
+
+// ── Chat ─────────────────────────────────────────────────────────────────────
+function _aiAddMsg(role, text, imageB64) {
+  const wrap = document.getElementById('ai-chat-messages');
+  if (!wrap) return;
+  const div = document.createElement('div');
+  div.className = 'ai-msg ' + role;
+  if (role === 'assistant') {
+    div.innerHTML = _aiMd(text);
+  } else {
+    let html = '';
+    if (imageB64) html += `<img src="${imageB64}" style="max-width:200px;border-radius:8px;margin-bottom:6px;display:block;cursor:pointer" onclick="openLightboxSmart(this.src,'')">`;
+    html += text.replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+    div.innerHTML = html;
+  }
+  wrap.appendChild(div);
+  wrap.scrollTop = wrap.scrollHeight;
+  _aiMessages.push({ role, text, imageB64 });
+}
+
+function _aiMd(text) {
+  return text
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/##\s+(.+)/g,'<h3 style="font-size:13px;font-weight:700;margin:10px 0 4px;color:var(--accent)">$1</h3>')
+    .replace(/`([^`]+)`/g,'<code style="background:var(--bg3);padding:1px 5px;border-radius:4px;font-size:12px">$1</code>')
+    .replace(/^[-•]\s+(.+)/gm,'<div style="padding-left:12px">• $1</div>')
+    .replace(/\n\n/g,'<br><br>').replace(/\n/g,'<br>');
+}
+
+async function aiSendMessage() {
+  const inp = document.getElementById('ai-chat-input');
+  const text = (inp?.value || '').trim();
+  if (!text && !_aiAttachB64) return;
+  if (inp) inp.value = '';
+
+  const userText = text || '(przesłany screenshot)';
+  _aiAddMsg('user', userText, _aiAttachB64 ? `data:${_aiAttachMime};base64,${_aiAttachB64}` : null);
+
+  const imageB64 = _aiAttachB64;
+  const imageMime = _aiAttachMime;
+  aiClearAttach();
+
+  // Build API messages
+  const ctx = _aiBuildContext();
+  const system = _aiCoachPrompt(ctx);
+  const apiMessages = _aiMessages.slice(-12).filter(m=>m.role!=='thinking').map(m => {
+    if (m.imageB64 && m.role === 'user') {
+      const b64 = m.imageB64.replace(/^data:[^;]+;base64,/,'');
+      return { role:'user', content:[
+        { type:'image', source:{ type:'base64', media_type: m.imageB64.match(/data:([^;]+)/)?.[1]||'image/png', data: b64 }},
+        { type:'text', text: m.text || '(screenshot)' }
+      ]};
+    }
+    return { role: m.role, content: m.text };
+  });
+  // Ensure last message is user
+  if (!apiMessages.length || apiMessages[apiMessages.length-1].role !== 'user') {
+    const lastMsg = imageB64
+      ? { role:'user', content:[
+          { type:'image', source:{ type:'base64', media_type: imageMime, data: imageB64 }},
+          { type:'text', text: userText }
+        ]}
+      : { role:'user', content: userText };
+    apiMessages.push(lastMsg);
+  }
+
+  // Thinking indicator
+  const wrap = document.getElementById('ai-chat-messages');
+  const thinking = document.createElement('div');
+  thinking.className = 'ai-msg thinking';
+  thinking.textContent = '⏳ AI myśli...';
+  wrap?.appendChild(thinking);
+  wrap && (wrap.scrollTop = wrap.scrollHeight);
+  document.getElementById('ai-send-btn').disabled = true;
+
+  try {
+    const reply = await _aiCall(apiMessages, system);
+    thinking.remove();
+    _aiAddMsg('assistant', reply);
+  } catch(e) {
+    thinking.remove();
+    _aiAddMsg('assistant', `❌ Błąd: ${e.message}`);
+  } finally {
+    document.getElementById('ai-send-btn').disabled = false;
+    inp?.focus();
+  }
+}
+
+function aiClearChat() {
+  showConfirm('Wyczyścić historię czatu?', () => {
+    _aiMessages = [];
+    const wrap = document.getElementById('ai-chat-messages');
+    if (wrap) wrap.innerHTML = '';
+    renderAiPage();
+  });
+}
+
+// ── Attachments (coach chat) ─────────────────────────────────────────────────
+function aiHandleAttach(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const b64 = e.target.result.replace(/^data:[^;]+;base64,/,'');
+    _aiAttachB64 = b64;
+    _aiAttachMime = file.type || 'image/png';
+    const lbl = document.getElementById('ai-attach-label');
+    const btn = document.getElementById('ai-attach-remove');
+    if (lbl) { lbl.textContent = '📎 ' + file.name; lbl.style.display = 'inline'; }
+    if (btn) btn.style.display = 'inline';
+  };
+  reader.readAsDataURL(file);
+}
+function aiClearAttach() {
+  _aiAttachB64 = null;
+  const lbl = document.getElementById('ai-attach-label');
+  const btn = document.getElementById('ai-attach-remove');
+  if (lbl) { lbl.textContent = ''; lbl.style.display = 'none'; }
+  if (btn) btn.style.display = 'none';
+}
+
+// ── Chart analysis ───────────────────────────────────────────────────────────
+function aiHandleChartDrop(e) {
+  const file = e.dataTransfer?.files?.[0];
+  if (file?.type?.startsWith('image/')) aiHandleChartFile(file);
+}
+function aiHandleChartFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    _aiChartB64 = e.target.result.replace(/^data:[^;]+;base64,/,'');
+    _aiChartMime = file.type || 'image/png';
+    const img = document.getElementById('ai-chart-img');
+    const prev = document.getElementById('ai-chart-preview');
+    const drop = document.getElementById('ai-drop-zone');
+    if (img) img.src = e.target.result;
+    if (prev) prev.style.display = 'block';
+    if (drop) drop.style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+function aiClearChart() {
+  _aiChartB64 = null;
+  const prev = document.getElementById('ai-chart-preview');
+  const drop = document.getElementById('ai-drop-zone');
+  const img  = document.getElementById('ai-chart-img');
+  if (prev) prev.style.display = 'none';
+  if (drop) drop.style.display = 'block';
+  if (img)  img.src = '';
+  const res = document.getElementById('ai-chart-result');
+  if (res) { res.style.display = 'none'; res.innerHTML = ''; }
+}
+
+async function aiAnalyzeChart() {
+  if (!_aiChartB64) return toast('Najpierw dodaj screenshot wykresu', 'error');
+  const btn = document.getElementById('ai-analyze-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Analizuję...'; }
+  const resEl = document.getElementById('ai-chart-result');
+  if (resEl) { resEl.style.display = 'block'; resEl.innerHTML = '<div style="color:var(--text3);font-style:italic;text-align:center;padding:20px">⏳ AI analizuje wykres...</div>'; }
+
+  try {
+    const ctx = _aiBuildContext();
+    const stratId = document.getElementById('ai-chart-strategy')?.value || 'all';
+    const system = _aiChartPrompt(ctx, stratId);
+    const symbol = (document.getElementById('ai-chart-symbol')?.value || '').trim();
+    const tf     = (document.getElementById('ai-chart-tf')?.value || '').trim();
+    const userText = `Proszę przeanalizuj ten wykres.${symbol?' Instrument: '+symbol:''}${tf?' Timeframe: '+tf:''}`;
+    const messages = [{
+      role: 'user',
+      content: [
+        { type: 'image', source: { type: 'base64', media_type: _aiChartMime, data: _aiChartB64 }},
+        { type: 'text', text: userText }
+      ]
+    }];
+    const reply = await _aiCall(messages, system);
+    if (resEl) resEl.innerHTML = '<div class="ai-msg assistant" style="max-width:100%;border:none;background:transparent;padding:0">' + _aiMd(reply) + '</div>';
+  } catch(e) {
+    if (resEl) resEl.innerHTML = `<div style="color:var(--red);padding:10px">❌ ${e.message}</div>`;
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '🔍 Analizuj wykres'; }
+  }
+}
+
+// ── Paste handler (Ctrl+V chart) ─────────────────────────────────────────────
+document.addEventListener('paste', e => {
+  if (_aiTab !== 'chart') return;
+  if (document.getElementById('page-ai')?.classList.contains('active') === false) return;
+  const items = e.clipboardData?.items;
+  if (!items) return;
+  for (const item of items) {
+    if (item.type.startsWith('image/')) {
+      aiHandleChartFile(item.getAsFile());
+      toast('Wykres wklejony ze schowka ✓', 'success');
+      break;
+    }
+  }
+});
+
+// ── Edge Function code display ───────────────────────────────────────────────
+function aiShowEdgeFn() {
+  const panel = document.getElementById('ai-edge-code-panel');
+  if (panel) { panel.style.display = panel.style.display === 'none' ? 'block' : 'none'; return; }
+  // Create panel inline below key panel
+  const keyPanel = document.getElementById('ai-key-panel');
+  if (!keyPanel) return;
+  const div = document.createElement('div');
+  div.id = 'ai-edge-code-panel';
+  div.style.cssText = 'margin-top:12px;padding:12px;background:var(--bg3);border-radius:8px';
+  div.innerHTML = `<div style="font-size:11px;font-weight:600;margin-bottom:6px;color:var(--text)">Kod do wdrożenia w Supabase Dashboard → Edge Functions → New Function → "ai-proxy":</div>
+    <pre style="font-size:10px;overflow:auto;max-height:200px;white-space:pre;line-height:1.4;color:var(--text2)">${_AI_EDGE_CODE.replace(/</g,'&lt;')}</pre>
+    <button class="btn-sm btn-accent" onclick="navigator.clipboard.writeText(window._AI_EDGE_CODE||'').then(()=>toast('Kod skopiowany ✓','success'))" style="margin-top:8px;font-size:11px">📋 Kopiuj kod</button>`;
+  keyPanel.appendChild(div);
+  window._AI_EDGE_CODE = _AI_EDGE_CODE;
 }
 
 // ── AUTO-CENY PORTFELA ────────────────────────────────────────────────────────
