@@ -3275,6 +3275,51 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
     <!-- ===== MAKRO KALENDARZ ===== -->
     <div id="page-macro" class="page">
       <div class="page-title">📅 Kalendarz Makroekonomiczny</div>
+
+      <!-- Przypomnienia cykliczne -->
+      <div class="summary-card" style="margin-bottom:20px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <div class="summary-card-title" style="margin:0">🔔 Przypomnienia cykliczne</div>
+          <div id="ann-admin-add" style="display:none">
+            <button class="btn-sm btn-accent" onclick="openAnnModal()" style="font-size:12px">➕ Dodaj</button>
+          </div>
+        </div>
+        <div id="ann-list">
+          <div style="text-align:center;padding:24px;color:var(--text3);font-size:13px">Ładowanie...</div>
+        </div>
+      </div>
+
+      <!-- Modal dodawania przypomnienia (admin) -->
+      <div id="ann-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:2000;align-items:center;justify-content:center;padding:20px">
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);width:100%;max-width:480px;padding:24px">
+          <div style="font-size:16px;font-weight:700;margin-bottom:18px">🔔 Nowe przypomnienie</div>
+          <div style="margin-bottom:12px">
+            <label class="form-label-modal" style="font-size:11px">Tytuł</label>
+            <input class="form-input-modal" id="ann-title" placeholder="np. Setup środowy — Orderblock" style="font-size:13px">
+          </div>
+          <div style="margin-bottom:12px">
+            <label class="form-label-modal" style="font-size:11px">Opis (opcjonalnie)</label>
+            <textarea class="form-input-modal" id="ann-msg" rows="2" placeholder="Szczegóły setupu..." style="font-size:13px;resize:vertical"></textarea>
+          </div>
+          <div style="margin-bottom:18px">
+            <label class="form-label-modal" style="font-size:11px">Dzień tygodnia</label>
+            <select class="form-select-modal" id="ann-day" style="font-size:13px">
+              <option value="">Codziennie</option>
+              <option value="1">Poniedziałek</option>
+              <option value="2">Wtorek</option>
+              <option value="3">Środa</option>
+              <option value="4">Czwartek</option>
+              <option value="5">Piątek</option>
+              <option value="6">Sobota</option>
+              <option value="0">Niedziela</option>
+            </select>
+          </div>
+          <div style="display:flex;gap:10px">
+            <button class="btn-sm btn-accent" onclick="saveAnnouncement()" style="min-width:120px">💾 Zapisz</button>
+            <button class="btn-sm" onclick="closeAnnModal()">Anuluj</button>
+          </div>
+        </div>
+      </div>
       <div class="page-subtitle">Dodaj przypomnienia o ważnych wydarzeniach — alert 1h przed</div>
 
       <!-- Moje przypomnienia -->
@@ -4088,6 +4133,18 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 
 <!-- TOAST -->
 <div id="toast"><div class="toast-dot green" id="toast-dot"></div><span id="toast-msg"></span></div>
+
+<!-- ANNOUNCEMENT BANNER -->
+<div id="announcement-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:3000;background:linear-gradient(135deg,var(--accent),#00a87a);color:#fff;padding:0">
+  <div id="announcement-banner-inner" style="max-width:900px;margin:0 auto;padding:12px 20px;display:flex;align-items:flex-start;gap:14px">
+    <span style="font-size:20px;flex-shrink:0;margin-top:1px">🔔</span>
+    <div style="flex:1;min-width:0">
+      <div id="announcement-banner-title" style="font-weight:700;font-size:14px;margin-bottom:2px"></div>
+      <div id="announcement-banner-msg" style="font-size:13px;opacity:.9;line-height:1.4"></div>
+    </div>
+    <button onclick="dismissAnnouncementBanner()" style="background:rgba(255,255,255,.2);border:none;color:#fff;cursor:pointer;border-radius:6px;padding:4px 10px;font-size:12px;white-space:nowrap;flex-shrink:0">Zamknij</button>
+  </div>
+</div>
 
 <!-- STRATEGY MODALS — wstawione po buildReportHTML -->
     <!-- STRATEGY MANAGER MODAL -->
@@ -13327,6 +13384,9 @@ async function sbSyncDown(userId, userLogin) {
       } catch(e) { console.warn('Users sync error:', e.message); }
     }
 
+    // Pobierz przypomnienia (dla wszystkich użytkowników)
+    loadAnnouncements().catch(() => {});
+
     console.log('✓ Sync z Supabase zakończony');
   } catch(e) {
     console.warn('Sync error:', e.message);
@@ -18238,6 +18298,139 @@ async function appInit() {
 }
 appInit();
 
+// ═══ ANNOUNCEMENTS — Przypomnienia cykliczne ════════════════════════════════
+
+function _getAnnouncements() {
+  return JSON.parse(localStorage.getItem('db_announcements') || '[]');
+}
+function _saveAnnouncements(arr) {
+  localStorage.setItem('db_announcements', JSON.stringify(arr));
+}
+function _getEnabledAnn() {
+  if (!state.currentUser) return [];
+  return JSON.parse(localStorage.getItem('ann_enabled_' + state.currentUser) || '[]');
+}
+function _setEnabledAnn(ids) {
+  if (!state.currentUser) return;
+  localStorage.setItem('ann_enabled_' + state.currentUser, JSON.stringify(ids));
+}
+
+const _DAY_NAMES = ['Niedziela','Poniedziałek','Wtorek','Środa','Czwartek','Piątek','Sobota'];
+
+async function loadAnnouncements() {
+  if (!_sb) return;
+  try {
+    const { data } = await _sb.from('announcements').select('*').eq('active', true).order('created_at', { ascending: true });
+    if (data) { _saveAnnouncements(data); renderAnnList(); checkDayAnnouncements(); }
+  } catch(e) { console.warn('loadAnnouncements:', e.message); }
+}
+
+function renderAnnList() {
+  const el = document.getElementById('ann-list');
+  if (!el) return;
+  const adminMode = typeof isAdmin === 'function' && isAdmin();
+  const annAdminBtn = document.getElementById('ann-admin-add');
+  if (annAdminBtn) annAdminBtn.style.display = adminMode ? 'block' : 'none';
+  const list = _getAnnouncements();
+  if (!list.length) {
+    el.innerHTML = `<div style="text-align:center;padding:24px;color:var(--text3);font-size:13px">Brak przypomnień${adminMode?' — kliknij ➕ aby dodać':''}</div>`;
+    return;
+  }
+  const enabled = _getEnabledAnn();
+  el.innerHTML = list.map(a => {
+    const isOn = enabled.includes(a.id);
+    const dayLabel = a.day_of_week != null ? _DAY_NAMES[a.day_of_week] : 'Codziennie';
+    const dayColor = a.day_of_week != null ? 'var(--accent)' : 'var(--amber)';
+    const safe = s => { const d=document.createElement('span'); d.textContent=s||''; return d.innerHTML; };
+    return `<div style="display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:10px;background:var(--bg3);color:${dayColor};white-space:nowrap">${dayLabel}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;color:var(--text)">${safe(a.title)}</div>
+        ${a.message ? `<div style="font-size:12px;color:var(--text3);margin-top:2px">${safe(a.message)}</div>` : ''}
+      </div>
+      <label style="display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;font-size:12px;color:var(--text2)">
+        <input type="checkbox" ${isOn?'checked':''} onchange="toggleAnnouncement('${a.id}',this.checked)"
+          style="width:15px;height:15px;accent-color:var(--accent);cursor:pointer">
+        Chcę przypomnienie
+      </label>
+      ${adminMode ? `<button onclick="deleteAnnouncement('${a.id}')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:15px;flex-shrink:0">🗑</button>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function toggleAnnouncement(id, enabled) {
+  let ids = _getEnabledAnn();
+  if (enabled) { if (!ids.includes(id)) ids.push(id); }
+  else { ids = ids.filter(x => x !== id); }
+  _setEnabledAnn(ids);
+}
+
+function checkDayAnnouncements() {
+  const todayDow  = new Date().getDay();
+  const list      = _getAnnouncements();
+  const enabled   = _getEnabledAnn();
+  const dismissed = JSON.parse(sessionStorage.getItem('ann_dismissed') || '[]');
+  const toShow = list.filter(a =>
+    enabled.includes(a.id) &&
+    !dismissed.includes(a.id) &&
+    (a.day_of_week == null || parseInt(a.day_of_week) === todayDow)
+  );
+  if (!toShow.length) { _hideBanner(); return; }
+  const a = toShow[0];
+  document.getElementById('announcement-banner-title').textContent = a.title;
+  document.getElementById('announcement-banner-msg').textContent   = a.message || '';
+  document.getElementById('announcement-banner').dataset.annId     = a.id;
+  document.getElementById('announcement-banner').style.display     = 'block';
+}
+
+function dismissAnnouncementBanner() {
+  const id = document.getElementById('announcement-banner').dataset.annId;
+  if (id) {
+    const d = JSON.parse(sessionStorage.getItem('ann_dismissed') || '[]');
+    d.push(id); sessionStorage.setItem('ann_dismissed', JSON.stringify(d));
+  }
+  _hideBanner();
+  setTimeout(checkDayAnnouncements, 100);
+}
+
+function _hideBanner() {
+  document.getElementById('announcement-banner').style.display = 'none';
+}
+
+function openAnnModal()  { document.getElementById('ann-modal').style.display = 'flex'; }
+function closeAnnModal() {
+  document.getElementById('ann-modal').style.display = 'none';
+  ['ann-title','ann-msg'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  const d = document.getElementById('ann-day'); if(d) d.value='';
+}
+
+async function saveAnnouncement() {
+  const title  = document.getElementById('ann-title')?.value?.trim();
+  const msg    = document.getElementById('ann-msg')?.value?.trim() || null;
+  const dayRaw = document.getElementById('ann-day')?.value;
+  const day    = dayRaw !== '' ? parseInt(dayRaw) : null;
+  if (!title) return toast('Wpisz tytuł przypomnienia', 'error');
+  if (!_sb)   return toast('Brak połączenia', 'error');
+  try {
+    const { data, error } = await _sb.from('announcements')
+      .insert({ title, message: msg, day_of_week: day, active: true }).select().single();
+    if (error) throw error;
+    const list = _getAnnouncements(); list.push(data); _saveAnnouncements(list);
+    closeAnnModal(); renderAnnList();
+    toast('Przypomnienie dodane', 'success');
+  } catch(e) { toast('Błąd: ' + e.message, 'error'); }
+}
+
+async function deleteAnnouncement(id) {
+  showConfirm('Usunąć to przypomnienie?', async () => {
+    if (!_sb) return;
+    await _sb.from('announcements').delete().eq('id', id);
+    _saveAnnouncements(_getAnnouncements().filter(x => x.id !== id));
+    _setEnabledAnn(_getEnabledAnn().filter(x => x !== id));
+    renderAnnList(); toast('Usunięto', 'success');
+  });
+}
+
 function showNoUsersHint() {
   // Nowy użytkownik na tej przeglądarce - pokaż rejestrację
   switchAuthTab('register');
@@ -19026,6 +19219,7 @@ function saveMacroReminders(arr) {
 function renderMacroCalendar() {
   if (!document.getElementById('page-macro')?.classList.contains('active')) return;
   renderMacroReminders();
+  renderAnnList();
   if (!_macroNotifyTimer) _macroNotifyTimer = setInterval(checkMacroNotifications, 60000);
 }
 
