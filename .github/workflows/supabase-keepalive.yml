@@ -1,30 +1,27 @@
 name: Supabase Keepalive
 
-# Uruchamia się co 5 dni o 08:00 UTC — zapobiega pauzie projektu Free
 on:
   schedule:
     - cron: '0 8 */5 * *'
-  workflow_dispatch:  # możliwość ręcznego uruchomienia z GitHub
+  workflow_dispatch:
 
 jobs:
   keepalive:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping Supabase
+      - name: Ping Supabase REST API
         run: |
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
             -H "apikey: ${{ secrets.SB_ANON }}" \
             -H "Authorization: Bearer ${{ secrets.SB_ANON }}" \
             "${{ secrets.SB_URL }}/rest/v1/accounts?select=id&limit=1")
-
-          echo "Supabase response: $STATUS"
-
+          echo "HTTP status: $STATUS"
           if [ "$STATUS" -ge 200 ] && [ "$STATUS" -lt 500 ]; then
-            echo "✅ Keepalive OK — projekt aktywny"
+            echo "Keepalive OK"
           else
-            echo "❌ Keepalive BŁĄD — status $STATUS"
+            echo "Keepalive FAILED - status $STATUS"
             exit 1
           fi
 
-      - name: Log timestamp
-        run: echo "Keepalive wykonany: $(date '+%Y-%m-%d %H:%M UTC')"
+      - name: Log time
+        run: date -u
