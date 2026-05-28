@@ -18545,7 +18545,8 @@ async function addLibraryFile() {
     if (addBtn) addBtn.disabled = true;
     if (statusEl) statusEl.textContent = 'Wysyłanie...';
     const ext = f.name.split('.').pop();
-    const path = (state.currentUser||'anon') + '/' + genId() + '.' + ext;
+    const userPrefix = (state.currentUser||'anon').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const path = userPrefix + '/' + genId() + '.' + ext;
     const { error } = await _sb.storage.from('library').upload(path, f);
     if (error) {
       toast(t('err_library_upload').replace('{msg}', error.message), 'error');
