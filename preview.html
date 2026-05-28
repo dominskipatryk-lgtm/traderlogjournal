@@ -1855,6 +1855,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
           <span style="background:#1a2d2d;color:#26c6da;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600">Bybit Spot</span>
           <span style="background:#2d1a2d;color:#ce93d8;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600">MEXC Futures</span>
           <span style="background:#2d1a2d;color:#ce93d8;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600">MEXC Spot</span>
+          <span style="background:#1a2a1a;color:#81c784;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600">TradingView Strat.</span>
           <span style="background:var(--bg3);color:var(--text3);padding:4px 10px;border-radius:20px;font-size:12px;border:1px dashed var(--border)">Axi → przez MT4</span>
         </div>
 
@@ -2052,6 +2053,94 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
           </div>
           <div style="margin-top:10px;font-size:11px;color:var(--text3)">
             ⚙️ Numer konta MT4 ustawiasz osobno dla każdego konta w <strong>Moje konta → Edytuj konto</strong>
+          </div>
+        </div>
+
+        <!-- MT5 Integration -->
+        <div class="settings-section">
+          <div class="settings-section-title">🔌 Integracja z MT5</div>
+          <p style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.6">
+            Skopiuj swój <strong>User ID</strong> i wklej go w ustawieniach EA w MetaTrader 5.
+            EA wysyła sygnały OPEN/CLOSE/MODIFY do dziennika w czasie rzeczywistym.
+          </p>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;background:var(--bg3);border-radius:8px;padding:10px 14px">
+            <span style="font-size:12px;color:var(--text3)">User ID:</span>
+            <code id="mt5-userid-display" style="flex:1;font-size:13px;color:var(--accent);word-break:break-all"></code>
+            <button class="btn-sm" style="font-size:11px;padding:4px 8px" onclick="
+              const uid = document.getElementById('mt5-userid-display').textContent;
+              navigator.clipboard?.writeText(uid);
+              this.textContent='✓';
+              setTimeout(()=>this.textContent='📋',2000);
+            ">📋 Kopiuj</button>
+          </div>
+          <a href="/TraderLogJournal_EA_MT5.mq5" download="TraderLogJournal_EA_MT5.mq5" class="btn-sm btn-accent" style="display:inline-flex;align-items:center;gap:6px;margin-bottom:10px;text-decoration:none;font-size:12px">
+            ⬇ Pobierz TraderLogJournal_EA_MT5.mq5
+          </a>
+          <div style="font-size:12px;color:var(--text2);line-height:1.8;background:var(--bg3);border-radius:8px;padding:12px 14px">
+            <strong>Jak skonfigurować EA:</strong><br>
+            1. Pobierz plik <code style="background:var(--bg4);padding:1px 5px;border-radius:3px">TraderLogJournal_EA_MT5.mq5</code><br>
+            2. W MT5: <code style="background:var(--bg4);padding:1px 5px;border-radius:3px">File → Open Data Folder → MQL5 → Experts</code><br>
+            3. Wklej plik i naciśnij <code style="background:var(--bg4);padding:1px 5px;border-radius:3px">F7</code> aby skompilować<br>
+            4. W MT5: <code style="background:var(--bg4);padding:1px 5px;border-radius:3px">Tools → Options → Expert Advisors → Allow WebRequests</code><br>
+            5. Dodaj ten URL do listy dozwolonych:
+            <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
+              <code style="background:var(--bg4);padding:4px 8px;border-radius:4px;color:var(--accent);font-size:12px;flex:1;word-break:break-all">https://ygrkcynyduuflzvbkkvo.supabase.co</code>
+              <button class="btn-sm" onclick="
+                navigator.clipboard?.writeText('https://ygrkcynyduuflzvbkkvo.supabase.co');
+                this.textContent='✓';
+                setTimeout(()=>this.textContent='📋',2000);
+              " style="font-size:11px;padding:4px 8px;flex-shrink:0">📋</button>
+            </div>
+            6. Przeciągnij EA na wykres → wklej User ID w parametrach EA<br>
+            7. Włącz AutoTrading w MT5
+          </div>
+        </div>
+
+        <!-- TradingView Integration -->
+        <div class="settings-section">
+          <div class="settings-section-title">📈 Integracja z TradingView</div>
+          <p style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.6">
+            Dwa sposoby importu transakcji z TradingView do dziennika.
+          </p>
+
+          <!-- CSV Import -->
+          <div style="margin-bottom:16px">
+            <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px">📄 Import CSV (Strategy Tester)</div>
+            <div style="font-size:12px;color:var(--text2);line-height:1.7;background:var(--bg3);border-radius:8px;padding:12px 14px">
+              <strong>Jak eksportować z TradingView:</strong><br>
+              1. Otwórz <strong>Strategy Tester</strong> (zakładka List of Trades)<br>
+              2. Kliknij <strong>Export</strong> → <strong>Export list of trades as CSV</strong><br>
+              3. Idź do <strong>Transakcje → Import CSV</strong> w dzienniku<br>
+              4. Wybierz format <strong>TradingView Strategy Tester</strong> w imporcie
+            </div>
+          </div>
+
+          <!-- Webhook -->
+          <div>
+            <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px">🔗 Webhook (alerty live)</div>
+            <div style="font-size:12px;color:var(--text2);line-height:1.8;background:var(--bg3);border-radius:8px;padding:12px 14px">
+              <strong>Jak skonfigurować webhook w TradingView:</strong><br>
+              1. Otwórz alert w TradingView → zakładka <strong>Notifications</strong><br>
+              2. Zaznacz <strong>Webhook URL</strong> i wklej adres poniżej:<br>
+              <div style="display:flex;align-items:center;gap:8px;margin:8px 0">
+                <code id="tv-webhook-url" style="background:var(--bg4);padding:4px 8px;border-radius:4px;color:var(--accent);font-size:11px;flex:1;word-break:break-all">https://ygrkcynyduuflzvbkkvo.supabase.co/functions/v1/tv-webhook</code>
+                <button class="btn-sm" onclick="
+                  navigator.clipboard?.writeText('https://ygrkcynyduuflzvbkkvo.supabase.co/functions/v1/tv-webhook');
+                  this.textContent='✓';
+                  setTimeout(()=>this.textContent='📋',2000);
+                " style="font-size:11px;padding:4px 8px;flex-shrink:0">📋</button>
+              </div>
+              3. W polu <strong>Message</strong> wklej JSON z danymi transakcji:<br>
+              <pre style="background:var(--bg4);padding:8px 10px;border-radius:6px;font-size:11px;color:var(--text2);overflow:auto;margin-top:6px;line-height:1.6">{
+  "user_id": "<span id="tv-wh-userid" style="color:var(--accent)">TwójUserID</span>",
+  "symbol": "{{ticker}}",
+  "direction": "{{strategy.order.action}}",
+  "price": {{strategy.order.price}},
+  "size": {{strategy.position_size}},
+  "event": "{{strategy.order.id}}"
+}</pre>
+              4. Transakcje pojawią się automatycznie w dzienniku po wywołaniu alertu
+            </div>
           </div>
         </div>
 
@@ -9616,6 +9705,12 @@ async function renderSettings() {
       } catch(e) {}
     }
     userIdEl.value = uid || '— wyloguj się i zaloguj ponownie —';
+    // MT5 User ID display (same as MT4)
+    const mt5El = document.getElementById('mt5-userid-display');
+    if (mt5El) mt5El.textContent = uid || '— wyloguj się i zaloguj ponownie —';
+    // TradingView webhook User ID span
+    const tvWhEl = document.getElementById('tv-wh-userid');
+    if (tvWhEl) tvWhEl.textContent = uid || 'TwójUserID';
   }
   // Clear password fields
   ['sett-old-pass','sett-new-pass','sett-new-pass2'].forEach(id => {
@@ -19065,8 +19160,9 @@ function handleImportFile(file) {
       else if (fmt === 'bybit-spot')  trades = parseBybitSpot(raw);
       else if (fmt === 'mexc-fut')    trades = parseMEXCFutures(raw);
       else if (fmt === 'mexc-spot')   trades = parseMEXCSpot(raw);
+      else if (fmt === 'tv-strat')    trades = parseTradingViewCSV(raw);
       else {
-        showImportStatus('error', `Nierozpoznany format pliku <strong>${file.name}</strong>.<br>Obsługiwane: MT4/MT5 CSV lub HTML, Bybit Closed P&L CSV, MEXC Futures/Spot CSV.`);
+        showImportStatus('error', `Nierozpoznany format pliku <strong>${file.name}</strong>.<br>Obsługiwane: MT4/MT5 CSV lub HTML, Bybit, MEXC, TradingView Strategy Tester CSV.`);
         return;
       }
     } catch(err) {
@@ -19106,6 +19202,9 @@ function detectImportFormat(text, filename) {
   if (hdrs.some(x=>x.includes('contract')) && hdrs.some(x=>x.includes('realized')||x.includes('pnl'))) return 'mexc-fut';
   // MEXC Spot: Time,Pair,Side,Price,...
   if ((hdrs.includes('pair')||hdrs.includes('symbol')) && hdrs.includes('side') && hdrs.includes('fee')) return 'mexc-spot';
+  // TradingView Strategy Tester: Trade #,Type,Signal,Date/Time,Price,Contracts,Profit,...
+  if ((hdrs.some(x=>x==='trade #'||x==='#'||x==='trade') && hdrs.some(x=>x==='type') && hdrs.some(x=>x.includes('contract')||x.includes('qty')||x.includes('size'))) ||
+      (hdrs.some(x=>x.includes('entry')) && hdrs.some(x=>x.includes('exit')) && hdrs.some(x=>x.includes('profit')))) return 'tv-strat';
   return 'unknown';
 }
 
@@ -19340,6 +19439,75 @@ function parseMEXCSpot(text) {
       date: iDt>=0 ? _dt(c[iDt]) : '', dateClose: '',
       _src: 'MEXC Spot'
     }];
+  });
+}
+
+// ---- TradingView Strategy Tester ----
+// Format: Trade #,Type,Signal,Date/Time,Price,Contracts,Profit,Profit %,...
+// Each trade = 2 rows: "Entry Long/Short" + "Exit Long/Short" with same Trade #
+function parseTradingViewCSV(text) {
+  const sep = text.split('\n')[0].includes(';') ? ';' : ',';
+  const { hdrs, rows } = _parseCSV(text, sep);
+
+  const iNum  = _col(hdrs,'trade #','trade','#');
+  const iType = _col(hdrs,'type');
+  const iDt   = _col(hdrs,'date/time','date','time');
+  const iPrice= _col(hdrs,'price');
+  const iSize = _col(hdrs,'contracts','qty','size','volume');
+  const iProfit = _col(hdrs,'profit');
+  const iSignal = _col(hdrs,'signal','comment');
+
+  // Check if alternative single-row format: Entry Date, Entry Price, Exit Date, Exit Price
+  const iEntryDt   = _col(hdrs,'entry date','entry time');
+  const iEntryPrice= _col(hdrs,'entry price');
+  const iExitDt    = _col(hdrs,'exit date','exit time','close date');
+  const iExitPrice = _col(hdrs,'exit price','close price');
+
+  if (iEntryPrice >= 0 && iExitPrice >= 0) {
+    // Single-row format
+    const iDir = _col(hdrs,'type','direction','side');
+    const iSymbol = _col(hdrs,'symbol','pair','instrument');
+    const iSz = _col(hdrs,'qty','size','volume','contracts');
+    return rows.flatMap(r => {
+      const entry = _num(r[iEntryPrice]); const exit = _num(r[iExitPrice]);
+      if (!entry || !exit) return [];
+      const typeStr = (r[iDir]||'').toLowerCase();
+      const dir = typeStr.includes('short') ? 'short' : 'long';
+      const sym = iSymbol >= 0 ? (r[iSymbol]||'SYMBOL').toUpperCase() : 'SYMBOL';
+      return [{ id: _uid(), symbol: sym, dir, size: iSz>=0?_num(r[iSz]):1,
+        entry, exit, pnl: iProfit>=0?_num(r[iProfit]):null, status: 'closed',
+        date: iEntryDt>=0 ? _dt(r[iEntryDt]) : '', _src: 'TradingView' }];
+    });
+  }
+
+  if (iNum < 0 || iType < 0 || iPrice < 0) return [];
+
+  // Pair rows by Trade #
+  const byNum = {};
+  rows.forEach(r => {
+    const num = (r[iNum]||'').trim();
+    if (!num) return;
+    if (!byNum[num]) byNum[num] = [];
+    byNum[num].push(r);
+  });
+
+  return Object.values(byNum).flatMap(pair => {
+    const entry = pair.find(r => (r[iType]||'').toLowerCase().includes('entry'));
+    const exit  = pair.find(r => (r[iType]||'').toLowerCase().includes('exit'));
+    if (!entry || !exit) return [];
+    const typeStr = (entry[iType]||'').toLowerCase();
+    const dir = typeStr.includes('short') ? 'short' : 'long';
+    const entryPrice = _num(entry[iPrice]);
+    const exitPrice  = _num(exit[iPrice]);
+    if (!entryPrice || !exitPrice) return [];
+    const profit = iProfit >= 0 ? _num(exit[iProfit]) : null;
+    const size   = iSize   >= 0 ? _num(entry[iSize])  : 1;
+    const symbol = (iSignal >= 0 ? entry[iSignal] : '') || 'SYMBOL';
+    return [{ id: _uid(), symbol: symbol.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,10)||'SYMBOL',
+      dir, size, entry: entryPrice, exit: exitPrice,
+      pnl: profit, status: 'closed',
+      date: iDt >= 0 ? _dt(entry[iDt]) : '', dateClose: iDt >= 0 ? _dt(exit[iDt]) : '',
+      _src: 'TradingView' }];
   });
 }
 
