@@ -3210,7 +3210,13 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
             <div style="grid-column:1/-1">
               <label class="form-label-modal" style="font-size:11px">Tytuł</label>
-              <input class="form-input-modal" id="lib-title" placeholder="np. Strategia ICT Orderblock" style="font-size:13px">
+              <input class="form-input-modal" id="lib-title" placeholder="np. Rozdział 1 — Wejście" style="font-size:13px">
+            </div>
+            <!-- Podkategoria (tylko strategie) -->
+            <div id="lib-subcategory-row" style="display:none;grid-column:1/-1">
+              <label class="form-label-modal" style="font-size:11px">Podkategoria strategii <span style="color:var(--text3)">— np. ICT, SMC, Price Action</span></label>
+              <input class="form-input-modal" id="lib-subcategory" list="lib-subcategory-list" placeholder="Wpisz lub wybierz..." style="font-size:13px" autocomplete="off">
+              <datalist id="lib-subcategory-list"></datalist>
             </div>
             <!-- Platforma (tylko wskaźniki) -->
             <div id="lib-platform-row" style="display:none">
@@ -18302,16 +18308,17 @@ function filterLibrary(cat) {
     return;
   }
 
+  const safe = s => { const d=document.createElement('span'); d.textContent=s||''; return d.textContent; };
   const fileIcons = { pdf:'📄', ex4:'🔧', ex5:'🔧', png:'🖼', jpg:'🖼', jpeg:'🖼', mp4:'🎬' };
-  el.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px">${files.map(f => {
+
+  const _renderCard = (f) => {
     const ext = (f.filename||'').split('.').pop().toLowerCase();
-    const icon = fileIcons[ext] || (cat==='indicators'?'🔧':cat==='setups'?'🎯':'📄');
+    const icon = fileIcons[ext] || (f.category==='indicators'?'🔧':f.category==='setups'?'🎯':'📄');
     const dateStr = f.createdAt ? new Date(f.createdAt).toLocaleDateString('pl-PL') : '';
-    const safe = s => { const d=document.createElement('span'); d.textContent=s||''; return d.textContent; };
-    const isIndicator = f.category === 'indicators';
-    const platBadge = isIndicator && f.platform
+    const isInd = f.category === 'indicators';
+    const platBadge = isInd && f.platform
       ? `<span style="font-size:10px;padding:1px 6px;border-radius:8px;background:var(--accent-dim);color:var(--accent);font-weight:700;margin-left:4px">${safe(f.platform)}</span>` : '';
-    const lockBadge = isIndicator ? `<span title="Skompilowany — kod źródłowy prywatny" style="font-size:11px;color:var(--amber)">🔒</span>` : '';
+    const lockBadge = isInd ? `<span title="Skompilowany — kod źródłowy prywatny" style="font-size:11px;color:var(--amber)">🔒</span>` : '';
     return `<div class="summary-card" style="display:flex;flex-direction:column;gap:10px">
       <div style="display:flex;align-items:flex-start;gap:12px">
         <span style="font-size:28px;flex-shrink:0">${icon}</span>
@@ -18325,12 +18332,44 @@ function filterLibrary(cat) {
       </div>
       ${f.desc ? `<div style="font-size:12px;color:var(--text2);line-height:1.5">${safe(f.desc)}</div>` : ''}
       <div style="display:flex;gap:8px;margin-top:auto">
-        ${(!isIndicator && (f.storagePath || f.url)) ? `<button class="btn-sm" onclick="openLibraryFile('${f.id}')" style="font-size:12px">👁 Otwórz</button>` : ''}
+        ${(!isInd && (f.storagePath || f.url)) ? `<button class="btn-sm" onclick="openLibraryFile('${f.id}')" style="font-size:12px">👁 Otwórz</button>` : ''}
         ${(f.storagePath || f.url) ? `<button class="btn-sm btn-accent" onclick="downloadLibraryFile('${f.id}')" style="flex:1;font-size:12px">⬇ Pobierz</button>` : ''}
         ${adminMode ? `<button class="btn-sm" onclick="deleteLibraryFile('${f.id}')" style="color:var(--red);border-color:var(--red);font-size:12px">🗑</button>` : ''}
       </div>
     </div>`;
-  }).join('')}</div>`;
+  };
+
+  if (cat === 'strategies') {
+    // Group by subcategory
+    const grouped = {};
+    files.forEach(f => {
+      const key = f.subcategory || '';
+      if (!grouped[key]) grouped[key] = [];
+      grouped[key].push(f);
+    });
+    const keys = Object.keys(grouped).sort((a,b) => {
+      if (a === '') return 1; if (b === '') return -1;
+      return a.localeCompare(b, 'pl');
+    });
+    el.innerHTML = keys.map(key => {
+      const label = key || 'Bez podkategorii';
+      const isNone = !key;
+      return `<div style="margin-bottom:28px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:16px;font-weight:800;color:${isNone?'var(--text3)':'var(--accent)'}">📚 ${safe(label)}</span>
+            <span style="font-size:11px;color:var(--text3);background:var(--bg3);border-radius:10px;padding:1px 8px">${grouped[key].length}</span>
+          </div>
+          ${adminMode ? `<button class="btn-sm btn-accent" onclick="openLibAddForm('strategies',${JSON.stringify(key||'')})" style="font-size:11px;padding:3px 10px">➕ Dodaj etap</button>` : ''}
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px">
+          ${grouped[key].map(_renderCard).join('')}
+        </div>
+      </div>`;
+    }).join('');
+  } else {
+    el.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px">${files.map(_renderCard).join('')}</div>`;
+  }
 }
 
 function _renderGlossary(entries, el, adminMode) {
@@ -18365,20 +18404,23 @@ function _renderGlossary(entries, el, adminMode) {
   }).join('')}</div>`;
 }
 
-function openLibAddForm(cat) {
+function openLibAddForm(cat, subcatPrefill) {
   const modal = document.getElementById('lib-add-modal');
   if (!modal) return;
   const sel = document.getElementById('lib-category');
-  if (sel && cat) sel.value = cat || _libFilter;
-  else if (sel) sel.value = _libFilter;
+  if (sel) sel.value = cat || _libFilter;
   onLibCategoryChange();
+  if (subcatPrefill !== undefined) {
+    const sc = document.getElementById('lib-subcategory');
+    if (sc) sc.value = subcatPrefill;
+  }
   modal.style.display = 'flex';
 }
 function closeLibAddForm() {
   const modal = document.getElementById('lib-add-modal');
   if (modal) modal.style.display = 'none';
   // Reset form
-  ['lib-title','lib-desc','lib-url','lib-term','lib-definition','lib-tags'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  ['lib-title','lib-desc','lib-url','lib-subcategory','lib-term','lib-definition','lib-tags'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
   const fi = document.getElementById('lib-file'); if(fi) fi.value='';
   const info = document.getElementById('lib-file-info'); if(info) info.textContent='';
   const st = document.getElementById('lib-upload-status'); if(st) st.textContent='';
@@ -18387,12 +18429,15 @@ function closeLibAddForm() {
 
 function onLibCategoryChange() {
   const cat = document.getElementById('lib-category')?.value || 'strategies';
-  const isGlossary = cat === 'glossary';
+  const isGlossary  = cat === 'glossary';
   const isIndicator = cat === 'indicators';
+  const isStrategy  = cat === 'strategies';
   document.getElementById('lib-form-standard').style.display = isGlossary ? 'none' : 'block';
   document.getElementById('lib-form-glossary').style.display = isGlossary ? 'block' : 'none';
   document.getElementById('lib-platform-row').style.display = isIndicator ? 'block' : 'none';
   document.getElementById('lib-indicator-note').style.display = isIndicator ? 'block' : 'none';
+  document.getElementById('lib-subcategory-row').style.display = isStrategy ? 'block' : 'none';
+  if (isStrategy) _populateSubcategoryList();
   const fileLabel = document.getElementById('lib-file-label');
   const fileInput = document.getElementById('lib-file');
   if (isIndicator) {
@@ -18402,6 +18447,17 @@ function onLibCategoryChange() {
     if (fileLabel) fileLabel.innerHTML = 'Plik <span style="color:var(--text3)">— do 50 MB</span>';
     if (fileInput) fileInput.accept = '.pdf,.png,.jpg,.jpeg,.mp4,.zip,.mq4,.mq5';
   }
+}
+
+function _populateSubcategoryList() {
+  const dl = document.getElementById('lib-subcategory-list');
+  if (!dl) return;
+  const existing = [...new Set(
+    getLibraryFiles()
+      .filter(f => f.category === 'strategies' && f.subcategory)
+      .map(f => f.subcategory)
+  )].sort();
+  dl.innerHTML = existing.map(s => `<option value="${s.replace(/"/g,'&quot;')}">`).join('');
 }
 
 const _LIB_MAX_BYTES = 50 * 1024 * 1024; // 50 MB — Supabase Storage limit
@@ -18454,11 +18510,12 @@ async function addLibraryFile() {
   }
 
   // --- Standard entry (strategies / setups / indicators) ---
-  const title    = document.getElementById('lib-title')?.value?.trim() || '';
-  const desc     = document.getElementById('lib-desc')?.value?.trim() || '';
-  const url      = document.getElementById('lib-url')?.value?.trim() || '';
-  const platform = document.getElementById('lib-platform')?.value || null;
-  const fileInput = document.getElementById('lib-file');
+  const title       = document.getElementById('lib-title')?.value?.trim() || '';
+  const desc        = document.getElementById('lib-desc')?.value?.trim() || '';
+  const url         = document.getElementById('lib-url')?.value?.trim() || '';
+  const platform    = document.getElementById('lib-platform')?.value || null;
+  const subcategory = document.getElementById('lib-subcategory')?.value?.trim() || null;
+  const fileInput   = document.getElementById('lib-file');
 
   if (!title) return toast(t('err_library_title'), 'error');
 
@@ -18473,6 +18530,7 @@ async function addLibraryFile() {
   const newFile = {
     id: genId(), category,
     title, desc,
+    subcategory: category === 'strategies' ? (subcategory || null) : null,
     platform: isIndicator ? platform : null,
     url: url || null,
     storagePath: null,
