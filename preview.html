@@ -18363,7 +18363,7 @@ function filterLibrary(cat) {
             <span style="font-size:16px;font-weight:800;color:${isNone?'var(--text3)':'var(--accent)'}">📚 ${safe(label)}</span>
             <span style="font-size:11px;color:var(--text3);background:var(--bg3);border-radius:10px;padding:1px 8px">${grouped[key].length}</span>
           </div>
-          ${adminMode ? `<button class="btn-sm btn-accent" onclick="openLibAddForm('strategies',${JSON.stringify(key||'')})" style="font-size:11px;padding:3px 10px">➕ Dodaj etap</button>` : ''}
+          ${adminMode ? `<button class="btn-sm btn-accent" onclick="openLibAddForm('strategies','${(key||'').replace(/'/g,"\\'")}')" style="font-size:11px;padding:3px 10px">➕ Dodaj etap</button>` : ''}
         </div>
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px">
           ${grouped[key].map(_renderCard).join('')}
