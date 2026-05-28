@@ -18871,21 +18871,32 @@ function closePdfModal(e) {
 async function downloadLibraryFile(id) {
   const f = getLibraryFiles().find(f => f.id === id);
   if (!f) return toast(t('err_library_no_src'), 'error');
+  const filename = f.filename || f.title || 'plik';
   if (f.storagePath) {
     if (!_sb) return toast(t('err_login_first'), 'error');
-    const { data, error } = await _sb.storage.from('library').createSignedUrl(f.storagePath, 3600);
+    const { data, error } = await _sb.storage.from('library').createSignedUrl(f.storagePath, 3600, { download: filename });
     if (error) { toast(t('err_library_download'), 'error'); return; }
-    window.open(data.signedUrl, '_blank');
+    const a = document.createElement('a');
+    a.href = data.signedUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => a.remove(), 500);
   } else if (f.base64) {
-    // fallback dla starych plików base64
     const a = document.createElement('a');
     a.href = f.base64;
-    a.download = f.filename || (f.title + '.' + (f.type||'').toLowerCase() || 'file');
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     setTimeout(() => a.remove(), 500);
   } else if (f.url) {
-    window.open(f.url, '_blank');
+    const a = document.createElement('a');
+    a.href = f.url;
+    a.download = filename;
+    a.target = '_blank';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => a.remove(), 500);
   } else {
     toast(t('err_library_no_src'), 'error');
   }
