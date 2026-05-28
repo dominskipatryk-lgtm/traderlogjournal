@@ -18068,7 +18068,7 @@ function createAnalysisFromJournal() {
     openNewAnalysis();
     setTimeout(() => {
       const titleEl = document.getElementById('an-title');
-      const descEl  = document.getElementById('an-desc');
+      const descEl  = document.getElementById('an-content');
       const dateEl  = document.getElementById('an-date');
       if (titleEl) titleEl.value = 'Plan sesji · ' + _jSelectedDate;
       if (descEl)  descEl.value  = content;
@@ -18088,7 +18088,7 @@ function createAnalysisFromNote() {
     openNewAnalysis();
     setTimeout(() => {
       const titleEl = document.getElementById('an-title');
-      const descEl  = document.getElementById('an-desc');
+      const descEl  = document.getElementById('an-content');
       if (titleEl) titleEl.value = title || 'Analiza z notatki';
       if (descEl)  descEl.value  = content || '';
       anAutosave();
