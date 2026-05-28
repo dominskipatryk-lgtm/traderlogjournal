@@ -3189,8 +3189,9 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
     <!-- MODAL: Dodaj do biblioteki (admin) -->
     <div id="lib-add-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:2000;align-items:center;justify-content:center;padding:20px">
       <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);width:100%;max-width:560px;max-height:90vh;overflow-y:auto;padding:24px">
+        <input type="hidden" id="lib-edit-id" value="">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
-          <div style="font-size:16px;font-weight:700;color:var(--text)">➕ Dodaj materiał do biblioteki</div>
+          <div id="lib-modal-title" style="font-size:16px;font-weight:700;color:var(--text)">➕ Dodaj materiał do biblioteki</div>
           <button onclick="closeLibAddForm()" style="background:none;border:none;font-size:20px;color:var(--text3);cursor:pointer;line-height:1">×</button>
         </div>
 
@@ -3265,6 +3266,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 
         <div style="margin-top:16px;display:flex;gap:10px;align-items:center">
           <button class="btn-sm btn-accent" onclick="addLibraryFile()" id="lib-add-btn" style="min-width:140px">+ Dodaj</button>
+          <button class="btn-sm" onclick="closeLibAddForm()" style="min-width:80px">Anuluj</button>
           <span id="lib-upload-status" style="font-size:12px;color:var(--text3)"></span>
         </div>
       </div>
@@ -18334,6 +18336,7 @@ function filterLibrary(cat) {
       <div style="display:flex;gap:8px;margin-top:auto">
         ${(!isInd && (f.storagePath || f.url)) ? `<button class="btn-sm" onclick="openLibraryFile('${f.id}')" style="font-size:12px">👁 Otwórz</button>` : ''}
         ${(f.storagePath || f.url) ? `<button class="btn-sm btn-accent" onclick="downloadLibraryFile('${f.id}')" style="flex:1;font-size:12px">⬇ Pobierz</button>` : ''}
+        ${adminMode ? `<button class="btn-sm" onclick="editLibraryFile('${f.id}')" style="font-size:12px">✏️</button>` : ''}
         ${adminMode ? `<button class="btn-sm" onclick="deleteLibraryFile('${f.id}')" style="color:var(--red);border-color:var(--red);font-size:12px">🗑</button>` : ''}
       </div>
     </div>`;
@@ -18398,7 +18401,10 @@ function _renderGlossary(entries, el, adminMode) {
           <div style="font-size:13px;color:var(--text);line-height:1.6">${safe(e.definition||e.desc)}</div>
           ${tags.length ? `<div style="margin-top:8px;display:flex;gap:4px;flex-wrap:wrap">${tags.map(tag=>`<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);color:var(--text3)">${safe(tag)}</span>`).join('')}</div>` : ''}
         </div>
-        ${adminMode ? `<button onclick="deleteLibraryFile('${e.id}')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:16px;flex-shrink:0">🗑</button>` : ''}
+        ${adminMode ? `<div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
+          <button onclick="editLibraryFile('${e.id}')" style="background:none;border:none;cursor:pointer;font-size:15px">✏️</button>
+          <button onclick="deleteLibraryFile('${e.id}')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:15px">🗑</button>
+        </div>` : ''}
       </div>
     </div>`;
   }).join('')}</div>`;
@@ -18407,6 +18413,10 @@ function _renderGlossary(entries, el, adminMode) {
 function openLibAddForm(cat, subcatPrefill) {
   const modal = document.getElementById('lib-add-modal');
   if (!modal) return;
+  // Reset edit mode
+  const editId = document.getElementById('lib-edit-id'); if(editId) editId.value = '';
+  const titleEl = document.getElementById('lib-modal-title'); if(titleEl) titleEl.textContent = '➕ Dodaj materiał do biblioteki';
+  const btn = document.getElementById('lib-add-btn'); if(btn) btn.textContent = '+ Dodaj';
   const sel = document.getElementById('lib-category');
   if (sel) sel.value = cat || _libFilter;
   onLibCategoryChange();
@@ -18416,15 +18426,48 @@ function openLibAddForm(cat, subcatPrefill) {
   }
   modal.style.display = 'flex';
 }
+
+function editLibraryFile(id) {
+  const f = getLibraryFiles().find(x => x.id === id);
+  if (!f) return;
+  const modal = document.getElementById('lib-add-modal');
+  if (!modal) return;
+  // Set edit mode
+  const editId = document.getElementById('lib-edit-id'); if(editId) editId.value = id;
+  const titleEl = document.getElementById('lib-modal-title'); if(titleEl) titleEl.textContent = '✏️ Edytuj materiał';
+  const btn = document.getElementById('lib-add-btn'); if(btn) btn.textContent = '💾 Zapisz zmiany';
+  // Set category
+  const sel = document.getElementById('lib-category');
+  if (sel) sel.value = f.category || 'strategies';
+  onLibCategoryChange();
+  // Fill fields
+  if (f.category === 'glossary') {
+    const term = document.getElementById('lib-term'); if(term) term.value = f.term || '';
+    const def  = document.getElementById('lib-definition'); if(def) def.value = f.definition || '';
+    const tags = document.getElementById('lib-tags');
+    if(tags) tags.value = Array.isArray(f.tags) ? f.tags.join(', ') : (f.tags || '');
+  } else {
+    const titleF = document.getElementById('lib-title'); if(titleF) titleF.value = f.title || '';
+    const desc   = document.getElementById('lib-desc');  if(desc)  desc.value  = f.desc || '';
+    const url    = document.getElementById('lib-url');   if(url)   url.value   = f.url  || '';
+    const subcat = document.getElementById('lib-subcategory'); if(subcat) subcat.value = f.subcategory || '';
+    const plat   = document.getElementById('lib-platform'); if(plat && f.platform) plat.value = f.platform;
+    const info   = document.getElementById('lib-file-info');
+    if(info) info.textContent = f.filename ? ('Aktualny plik: ' + f.filename + ' — wybierz nowy, żeby zastąpić') : '';
+  }
+  modal.style.display = 'flex';
+}
+
 function closeLibAddForm() {
   const modal = document.getElementById('lib-add-modal');
   if (modal) modal.style.display = 'none';
-  // Reset form
   ['lib-title','lib-desc','lib-url','lib-subcategory','lib-term','lib-definition','lib-tags'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
   const fi = document.getElementById('lib-file'); if(fi) fi.value='';
   const info = document.getElementById('lib-file-info'); if(info) info.textContent='';
   const st = document.getElementById('lib-upload-status'); if(st) st.textContent='';
-  const btn = document.getElementById('lib-add-btn'); if(btn) btn.disabled=false;
+  const editId = document.getElementById('lib-edit-id'); if(editId) editId.value='';
+  const btn = document.getElementById('lib-add-btn'); if(btn) { btn.disabled=false; btn.textContent='+ Dodaj'; }
+  const titleEl = document.getElementById('lib-modal-title'); if(titleEl) titleEl.textContent='➕ Dodaj materiał do biblioteki';
 }
 
 function onLibCategoryChange() {
@@ -18479,7 +18522,9 @@ function libPreviewFile() {
 }
 
 async function addLibraryFile() {
-  const category = document.getElementById('lib-category')?.value || 'strategies';
+  const category   = document.getElementById('lib-category')?.value || 'strategies';
+  const editId     = document.getElementById('lib-edit-id')?.value?.trim() || '';
+  const isEdit     = !!editId;
   const isGlossary  = category === 'glossary';
   const isIndicator = category === 'indicators';
   const statusEl = document.getElementById('lib-upload-status');
@@ -18493,18 +18538,16 @@ async function addLibraryFile() {
     if (!term) return toast('Wpisz termin', 'error');
     if (!definition) return toast('Wpisz definicję', 'error');
     const tags = tagsRaw ? tagsRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
-    const newEntry = {
-      id: genId(), category: 'glossary',
-      term, definition, tags,
-      createdAt: Date.now(),
-    };
-    const files = getLibraryFiles();
-    files.unshift(newEntry);
+    let files = getLibraryFiles();
+    if (isEdit) {
+      files = files.map(x => x.id === editId ? { ...x, term, definition, tags } : x);
+    } else {
+      files.unshift({ id: genId(), category: 'glossary', term, definition, tags, createdAt: Date.now() });
+    }
     saveLibraryFiles(files);
-    ['lib-term','lib-definition','lib-tags'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
     closeLibAddForm();
     filterLibrary('glossary');
-    toast(t('toast_library_added'), 'success');
+    toast(isEdit ? 'Hasło zaktualizowane' : t('toast_library_added'), 'success');
     saveLibraryIndex().catch(() => {});
     return;
   }
@@ -18527,15 +18570,19 @@ async function addLibraryFile() {
     }
   }
 
+  // In edit mode: base on existing record; in add mode: create new
+  const existing = isEdit ? (getLibraryFiles().find(x => x.id === editId) || {}) : {};
   const newFile = {
-    id: genId(), category,
+    ...existing,
+    id: isEdit ? editId : genId(),
+    category,
     title, desc,
     subcategory: category === 'strategies' ? (subcategory || null) : null,
     platform: isIndicator ? platform : null,
-    url: url || null,
-    storagePath: null,
-    filename: fileInput?.files?.[0]?.name || null,
-    createdAt: Date.now(),
+    url: url || existing.url || null,
+    storagePath: existing.storagePath || null,
+    filename: existing.filename || null,
+    createdAt: existing.createdAt || Date.now(),
   };
 
   if (fileInput && fileInput.files.length) {
@@ -18554,23 +18601,28 @@ async function addLibraryFile() {
       if (statusEl) statusEl.textContent = '';
       return;
     }
+    // Remove old file from storage if replacing
+    if (isEdit && existing.storagePath && existing.storagePath !== path) {
+      _sb.storage.from('library').remove([existing.storagePath]).catch(() => {});
+    }
     newFile.storagePath = path;
     newFile.filename = f.name;
-  } else if (!url) {
+  } else if (!isEdit && !url) {
     return toast(t('err_library_no_file'), 'error');
   }
 
-  const files = getLibraryFiles();
-  files.unshift(newFile);
+  let files = getLibraryFiles();
+  if (isEdit) {
+    files = files.map(x => x.id === editId ? newFile : x);
+  } else {
+    files.unshift(newFile);
+  }
   saveLibraryFiles(files);
-  ['lib-title','lib-desc','lib-url'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
-  if (fileInput) fileInput.value = '';
-  const info = document.getElementById('lib-file-info'); if(info) info.textContent='';
   if (statusEl) statusEl.textContent = '';
   if (addBtn) addBtn.disabled = false;
   closeLibAddForm();
   filterLibrary(category);
-  toast(t('toast_library_added'), 'success');
+  toast(isEdit ? 'Materiał zaktualizowany' : t('toast_library_added'), 'success');
   saveLibraryIndex().catch(() => {});
 }
 
