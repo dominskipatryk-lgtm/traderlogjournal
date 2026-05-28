@@ -951,6 +951,9 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 .jcal-day.has-entry::after { content:''; position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--accent); }
 .jcal-day.full-entry { background: rgba(0,212,161,.1); }
 .jcal-day.other-month { opacity: .3; }
+.jcal-day.score-green { background: rgba(0,212,161,.18); }
+.jcal-day.score-amber { background: rgba(255,187,40,.15); }
+.jcal-day.score-red   { background: rgba(229,57,57,.12); }
 .weekly-plan-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
 .notes-cat-btn.active { background: var(--accent-dim) !important; color: var(--accent) !important; border-color: var(--accent) !important; }
 
@@ -1412,6 +1415,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
         </div>
       </div>
       <div class="stats-grid" id="dash-stats"></div>
+      <div id="dash-score-panel"></div>
       <div class="equity-chart-wrap">
         <div class="chart-title" data-i18n="dash_equity_curve">Krzywa kapitału</div>
         <div class="chart-area">
@@ -4959,6 +4963,39 @@ function renderDashboard() {
     <div class="stat-card"><div class="stat-label">Wszystkich</div><div class="stat-value">${trades.length}</div><div class="stat-sub">Transakcji łącznie</div></div>
   `;
 
+
+  // Daily Score panel
+  const _scorePanel = document.getElementById('dash-score-panel');
+  if (_scorePanel) {
+    const today = new Date().toISOString().slice(0,10);
+    const sc = getDailyScore(today);
+    if (sc.hasData) {
+      const sc_color = sc.total >= 75 ? 'var(--accent)' : sc.total >= 50 ? 'var(--amber)' : 'var(--red)';
+      const sc_bar   = sc.total >= 75 ? '#score-green' : sc.total >= 50 ? '#score-amber' : '#score-red';
+      const sc_bg    = sc.total >= 75 ? 'rgba(0,212,161,.07)' : sc.total >= 50 ? 'rgba(255,187,40,.07)' : 'rgba(229,57,57,.07)';
+      _scorePanel.innerHTML = `
+        <div style="display:flex;align-items:center;gap:16px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 20px;margin-bottom:20px;max-width:960px;background:${sc_bg}">
+          <div style="text-align:center;min-width:64px">
+            <div style="font-size:30px;font-weight:800;color:${sc_color};font-family:var(--font-mono);line-height:1">${sc.total}</div>
+            <div style="font-size:10px;color:var(--text3);font-weight:600">/ 100</div>
+          </div>
+          <div style="width:1px;height:44px;background:var(--border);flex-shrink:0"></div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:6px">🎯 Dzienny Score</div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;font-size:11px;color:var(--text2)">
+              <span title="Plan sesji">📝 ${sc.plan}/25</span>
+              <span title="Emocje pre/post">😊 ${sc.emotions}/20</span>
+              <span title="Ankieta post-trade">📋 ${sc.survey}/20</span>
+              <span title="Review dzienny">✏️ ${sc.review}/25</span>
+              <span title="Reguły">📏 ${sc.rules}/10</span>
+            </div>
+          </div>
+          <a onclick="showPage('journal')" style="font-size:12px;color:var(--accent);cursor:pointer;white-space:nowrap;text-decoration:none">→ Dziennik</a>
+        </div>`;
+    } else {
+      _scorePanel.innerHTML = '';
+    }
+  }
 
   // Equity curve
   drawEquityCurve(acc.capital, closed);
@@ -13093,6 +13130,18 @@ async function sbSyncDown(userId, userLogin) {
       saveDB(db);
     }
 
+    // Sync weekly reviews
+    const { data: reviews } = await _sb.from('weekly_reviews').select('*').eq('user_id', userId);
+    if (reviews?.length) {
+      reviews.forEach(r => {
+        const localKey = 'weekly_' + (loginKey||'') + '_' + r.week_key;
+        if (!db[localKey]) {
+          db[localKey] = { weekKey: r.week_key, q1: r.q1||'', q2: r.q2||'', q3: r.q3||'', rating: r.rating||5, planVal: '', savedAt: new Date(r.updated_at).getTime() };
+        }
+      });
+      saveDB(db);
+    }
+
     // Sync user settings (rules, journal, notes)
     await sbLoadUserSettings();
 
@@ -13564,7 +13613,16 @@ async function sbFullSyncUp() {
   const setups = getAllSetups();
   if (strats.length) await sbSaveUserSetting('strategies', strats).catch(()=>{});
   if (setups.length)  await sbSaveUserSetting('setups',    setups).catch(()=>{});
-  toast('✓ Zsynchronizowano ' + synced + ' transakcji, ' + strats.length + ' strategii z ' + accounts.length + ' kont', 'success');
+  // Sync weekly reviews
+  const _dbSnap = getDB();
+  const _wPrefix = 'weekly_' + state.currentUser + '_';
+  const _wKeys = Object.keys(_dbSnap).filter(k => k.startsWith(_wPrefix));
+  let syncedReviews = 0;
+  for (const k of _wKeys) {
+    const wKey = k.slice(_wPrefix.length);
+    if (/^\d{4}-W\d{2}$/.test(wKey)) { await sbSyncWeeklyReview(wKey, _dbSnap[k]).catch(()=>{}); syncedReviews++; }
+  }
+  toast('✓ Zsynchronizowano ' + synced + ' transakcji, ' + strats.length + ' strategii, ' + syncedReviews + ' tygodniowych przeglądów', 'success');
 }
 
 async function sbSaveUserSetting(key, value) {
@@ -13577,6 +13635,18 @@ async function sbSaveUserSetting(key, value) {
       { onConflict: 'user_id,key' }
     );
   } catch(e) { console.warn('sbSaveUserSetting', key, e.message); }
+}
+
+async function sbSyncWeeklyReview(weekKey, data) {
+  if (!_sb || !state.currentUser) return;
+  const userId = getUsers()[state.currentUser]?.supabaseId;
+  if (!userId) return;
+  try {
+    await _sb.from('weekly_reviews').upsert(
+      { user_id: userId, week_key: weekKey, q1: data.q1||'', q2: data.q2||'', q3: data.q3||'', rating: data.rating||5, updated_at: new Date().toISOString() },
+      { onConflict: 'user_id,week_key' }
+    );
+  } catch(e) { console.warn('sbSyncWeeklyReview:', e.message); }
 }
 
 async function sbLoadUserSettings() {
@@ -13639,6 +13709,7 @@ async function sbSyncTrade(trade, accountId) {
     emotion_post: trade.emotionPost || null,
     linked_analysis_id: trade.linkedAnalysisId || null,
     mt4_ticket: trade.mt4Ticket || null,
+    rules_broken: trade.rulesBroken || [],
   };
   const payloadMin = {
     user_id: userId, account_id: accountId,
@@ -16343,6 +16414,7 @@ function getWeeklyReview(weekKey) {
 function saveWeeklyReviewData(weekKey, data) {
   if (!state.currentUser) return;
   const db = getDB(); db['weekly_' + state.currentUser + '_' + weekKey] = data; saveDB(db);
+  if (_sb && _isOnline) sbSyncWeeklyReview(weekKey, data).catch(e => console.warn('weekly sync:', e));
 }
 function getWeekKey(date) {
   const d = new Date(date); const jan1 = new Date(d.getFullYear(),0,1);
@@ -16356,6 +16428,38 @@ function getWeekDates(weekKey) {
   const monday = new Date(firstMonday.getTime() + (w-1)*7*86400000);
   const sunday = new Date(monday.getTime() + 6*86400000);
   return { monday, sunday };
+}
+
+function getDailyScore(dateStr) {
+  const entry = getJournalEntry(dateStr);
+  const allTrades = state.currentAccountId ? getTrades(state.currentAccountId) : [];
+  const dayTrades = allTrades.filter(tr => tr.date === dateStr || (tr.date && tr.date.slice(0,10) === dateStr));
+  const closedDay = dayTrades.filter(tr => tr.status === 'closed');
+
+  const hasData = !!(entry?.prePlan || entry?.postReview || dayTrades.length > 0);
+  if (!hasData) return { total: 0, plan: 0, emotions: 0, survey: 0, review: 0, rules: 0, hasData: false };
+
+  const plan   = entry?.prePlan?.trim()    ? 25 : 0;
+  const review = entry?.postReview?.trim() ? 25 : 0;
+
+  let emotions = 20;
+  if (dayTrades.length > 0) {
+    const withEmo = dayTrades.filter(tr => tr.emotionPre || tr.emotionPost).length;
+    emotions = Math.round(withEmo / dayTrades.length * 20);
+  }
+
+  let survey = 20;
+  if (closedDay.length > 0) {
+    const surveyed = closedDay.filter(tr => tr.tradeRating).length;
+    survey = Math.round(surveyed / closedDay.length * 20);
+  }
+
+  let rules = 10;
+  if (closedDay.length > 0) {
+    rules = closedDay.some(tr => tr.rulesBroken?.length > 0) ? 0 : 10;
+  }
+
+  return { total: plan + emotions + survey + review + rules, plan, emotions, survey, review, rules, hasData: true };
 }
 
 // --- State ---
@@ -16427,14 +16531,20 @@ function renderJournalCal() {
   for (let d=1;d<=lastDay.getDate();d++) {
     const ds = _jCalYear+'-'+String(_jCalMonth+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
     const entry = getJournalEntry(ds);
-    const isFull = entry && entry.postReview;
+    const isFuture = ds > today;
+    const sc = (!isFuture && (entry || true)) ? getDailyScore(ds) : { hasData: false, total: 0 };
     const hasEntry = entry && (entry.prePlan || entry.postReview);
+    let scoreClass = '';
+    if (!isFuture && sc.hasData) {
+      scoreClass = sc.total >= 75 ? 'score-green' : sc.total >= 50 ? 'score-amber' : 'score-red';
+    }
     const cls = ['jcal-day',
       ds===today?'today':'', ds===_jSelectedDate?'selected':'',
-      hasEntry?'has-entry':'', isFull?'full-entry':''
+      hasEntry?'has-entry':'', scoreClass
     ].filter(Boolean).join(' ');
-    const emoji = isFull ? (entry.postMood ? ['','😤','😕','😐','😊','😄'][entry.postMood] : '') : '';
-    html += `<div class="${cls}" onclick="selectJournalDate('${ds}')" title="${ds}">${d}${emoji?`<span style="font-size:9px;position:absolute;top:1px;right:2px">${emoji}</span>`:''}`;
+    const emoji = entry?.postMood ? ['','😤','😕','😐','😊','😄'][entry.postMood] : '';
+    const scoreTitle = sc.hasData ? ` — Score: ${sc.total}/100` : '';
+    html += `<div class="${cls}" onclick="selectJournalDate('${ds}')" title="${ds}${scoreTitle}">${d}${emoji?`<span style="font-size:9px;position:absolute;top:1px;right:2px">${emoji}</span>`:''}`;
     html += `</div>`;
   }
   grid.innerHTML = html;
