@@ -12995,11 +12995,13 @@ function initRealtimeSync() {
 
   _realtimeChannel = _sb
     .channel('user_data_' + state.currentUser)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'trades',   filter: 'user_id=eq.' + userId }, _onRemoteChange)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'accounts', filter: 'user_id=eq.' + userId }, _onRemoteChange)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'analyses', filter: 'user_id=eq.' + userId }, _onRemoteChange)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'trades',         filter: 'user_id=eq.' + userId }, _onRemoteChange)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'accounts',       filter: 'user_id=eq.' + userId }, _onRemoteChange)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'analyses',       filter: 'user_id=eq.' + userId }, _onRemoteChange)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'user_settings',  filter: 'user_id=eq.' + userId }, _onRemoteChange)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'weekly_reviews', filter: 'user_id=eq.' + userId }, _onRemoteChange)
     .subscribe(status => {
-      if (status === 'SUBSCRIBED') console.log('✓ Realtime sync aktywny (trades/accounts/analyses)');
+      if (status === 'SUBSCRIBED') console.log('✓ Realtime sync aktywny (trades/accounts/analyses/settings/reviews)');
     });
 }
 
