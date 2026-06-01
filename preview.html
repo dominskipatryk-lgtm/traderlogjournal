@@ -765,6 +765,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 .draft-dot { width:7px; height:7px; border-radius:50%; background:var(--amber); flex-shrink:0; animation:pulse-amber 1.4s infinite; }
 @keyframes pulse-amber { 0%,100%{opacity:1} 50%{opacity:.4} }
 @keyframes slideInRight { from{opacity:0;transform:translateX(30px)} to{opacity:1;transform:translateX(0)} }
+@keyframes slideUp { from{opacity:0;transform:translateX(-50%) translateY(20px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
 .reminder-time-btn.active { background:var(--accent-dim)!important;color:var(--accent)!important;border-color:var(--accent)!important; }
 .stats-tab-btn { padding:10px 20px;background:none;border:none;color:var(--text3);font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color .15s; }
 .stats-tab-btn.active { color:var(--text);border-bottom-color:var(--accent); }
@@ -4136,6 +4137,17 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 
 <!-- TOAST -->
 <div id="toast"><div class="toast-dot green" id="toast-dot"></div><span id="toast-msg"></span></div>
+
+<!-- READINESS MESSAGE -->
+<div id="readiness-msg" style="display:none;position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:5000;background:linear-gradient(135deg,#0d2b1a,#0a3d24);border:1px solid var(--accent);border-radius:14px;padding:16px 20px;box-shadow:0 8px 32px rgba(0,212,161,.25);min-width:300px;max-width:420px;text-align:center;animation:slideUp .35s ease">
+  <div style="font-size:22px;margin-bottom:6px">✅</div>
+  <div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:4px">Jesteś gotowy do tradingu!</div>
+  <div style="font-size:12px;color:rgba(255,255,255,.6);margin-bottom:14px">Rytuał otwarcia zakończony · Możesz przejść do analizy wykresów</div>
+  <div style="display:flex;gap:8px;justify-content:center">
+    <button onclick="document.getElementById('readiness-msg').style.display='none'" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.7);border-radius:8px;padding:7px 14px;font-size:12px;cursor:pointer">Zostań tutaj</button>
+    <button onclick="document.getElementById('readiness-msg').style.display='none';showPage('analysis')" style="background:var(--accent);border:none;color:#000;border-radius:8px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer">→ Przejdź do analizy</button>
+  </div>
+</div>
 
 <!-- ANNOUNCEMENT BANNER -->
 <div id="announcement-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:3000;background:linear-gradient(135deg,var(--accent),#00a87a);color:#fff;padding:0">
@@ -14597,11 +14609,19 @@ function finishRoutineAction() {
       setTimeout(() => {
         const card = document.getElementById('journal-card-pre');
         if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        // Fokus na pierwszym polu
         const planInput = document.getElementById('journal-pre-plan');
         if (planInput) setTimeout(() => planInput.focus(), 300);
       }, 150);
     }, 100);
+    // Komunikat gotowości po chwili
+    setTimeout(() => {
+      const rm = document.getElementById('readiness-msg');
+      if (rm) {
+        rm.style.display = 'block';
+        // Auto-ukryj po 8 sekundach jeśli user nie kliknął
+        setTimeout(() => { if (rm) rm.style.display = 'none'; }, 8000);
+      }
+    }, 900);
   } else if (_routineMode === 'after') {
     // Nawiguj do dziennika → sekcja "Po sesji" + pokaż przycisk wylogowania
     showPage('journal');
