@@ -3983,10 +3983,6 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
         <input class="form-input-modal" id="acc-broker" placeholder="np. Capital.com, Binance">
       </div>
       <div class="form-group-modal" style="margin-bottom:16px">
-        <label class="form-label-modal">Serwer brokera <span style="font-size:10px;color:var(--text3);font-weight:400">(opcjonalne)</span></label>
-        <input class="form-input-modal" id="acc-server" placeholder="np. ICMarkets-Live01" style="font-family:var(--font-mono)">
-      </div>
-      <div class="form-group-modal" style="margin-bottom:16px">
         <label class="form-label-modal">Kapitał startowy</label>
         <input class="form-input-modal" id="acc-capital" type="number" placeholder="10000">
       </div>
@@ -4004,10 +4000,6 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
           <option value="BTC">BTC — Bitcoin</option>
           <option value="USDT">USDT — Tether</option>
         </select>
-      </div>
-      <div class="form-group-modal" style="margin-bottom:16px">
-        <label class="form-label-modal">Strategia</label>
-        <input class="form-input-modal" id="acc-strategy" placeholder="np. Smart Money Concepts, ICT">
       </div>
       <!-- Typ gracza: ręczny / bot -->
       <div class="form-group-modal" style="margin-bottom:16px">
@@ -4676,7 +4668,6 @@ async function _refreshAccDecCache() {
   for (const a of accs) {
     _accDecCache.set(a.id, {
       broker:   await decryptField(a.broker),
-      server:   await decryptField(a.server),
       mt4Login: await decryptField(a.mt4Login),
     });
   }
@@ -5204,7 +5195,7 @@ function renderDashboard() {
     return;
   }
   document.getElementById('dash-title').textContent = acc.name;
-  document.getElementById('dash-subtitle').textContent = (_accDec(acc.id).broker || acc.broker || '') + ' · ' + acc.type + ' · ' + acc.strategy;
+  document.getElementById('dash-subtitle').textContent = (_accDec(acc.id).broker || acc.broker || '') + (acc.type ? ' · ' + acc.type : '');
 
   const trades = getTrades(acc.id);
   const closed = trades.filter(t => t.status === 'closed');
@@ -6853,9 +6844,7 @@ function openAccountModal() {
   document.getElementById('acc-id').value = '';
   document.getElementById('acc-name').value = '';
   document.getElementById('acc-broker').value = '';
-  document.getElementById('acc-server').value = '';
   document.getElementById('acc-capital').value = '';
-  document.getElementById('acc-strategy').value = '';
   document.getElementById('acc-mt4-login').value = '';
   document.getElementById('acc-currency').value = 'USD';
   document.getElementById('acc-modal-title').textContent = t('modal_new_account');
@@ -6870,14 +6859,11 @@ async function openEditAccount(id) {
   const acc = getAccounts().find(a => a.id === id);
   if (!acc) return;
   const broker   = await decryptField(acc.broker);
-  const server   = await decryptField(acc.server);
   const mt4Login = await decryptField(acc.mt4Login);
   document.getElementById('acc-id').value = acc.id;
   document.getElementById('acc-name').value = acc.name;
   document.getElementById('acc-broker').value = broker || '';
-  document.getElementById('acc-server').value = server || '';
   document.getElementById('acc-capital').value = acc.capital || '';
-  document.getElementById('acc-strategy').value = acc.strategy || '';
   document.getElementById('acc-type').value = acc.type || 'Forex';
   document.getElementById('acc-mt4-login').value = mt4Login || '';
   document.getElementById('acc-currency').value = acc.currency || 'USD';
@@ -6897,10 +6883,8 @@ async function saveAccount() {
     id, name, color,
     type:     document.getElementById('acc-type').value,
     broker:   await encryptField(document.getElementById('acc-broker').value),
-    server:   await encryptField(document.getElementById('acc-server').value),
     capital:  parseFloat(document.getElementById('acc-capital').value) || 0,
     currency: document.getElementById('acc-currency').value || 'USD',
-    strategy: document.getElementById('acc-strategy').value,
     mt4Login: await encryptField(document.getElementById('acc-mt4-login').value || ''),
     isBot:    document.getElementById('acc-is-bot')?.checked || false,
   };
