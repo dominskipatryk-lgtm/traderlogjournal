@@ -3433,6 +3433,13 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
             <button class="btn-sm btn-accent" onclick="seedDemoData()" style="width:100%;margin-bottom:8px">🎲 Generuj dane demo</button>
             <button class="btn-sm" onclick="clearDemoData()" style="width:100%;color:var(--amber);border-color:var(--amber)">🗑 Usuń konto demo</button>
           </div>
+          <div class="summary-card" style="border-color:var(--blue)">
+            <div class="summary-card-title" style="color:var(--blue)">🔧 Narzędzia synchronizacji</div>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:12px">Wykryj zduplikowane konta powstałe przez różne przeglądarki bez synchronizacji.</div>
+            <button class="btn-sm" onclick="scanDuplicateAccounts(this)" style="width:100%;margin-bottom:8px">🔍 Skanuj duplikaty kont</button>
+            <button class="btn-sm" onclick="adminForceResync()" style="width:100%;margin-bottom:8px;color:var(--accent);border-color:var(--accent)">🔄 Wyczyść lokalne i synchronizuj z Supabase</button>
+            <div id="dup-scan-result" style="display:none;margin-top:6px"></div>
+          </div>
           <div class="summary-card" style="border-color:var(--red)">
             <div class="summary-card-title" style="color:var(--red)">⚠️ Strefa niebezpieczna</div>
             <div style="font-size:12px;color:var(--text2);margin-bottom:12px">Usuwa wszystkie dane wszystkich użytkowników. Nieodwracalne!</div>
@@ -3976,6 +3983,10 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
         <input class="form-input-modal" id="acc-broker" placeholder="np. Capital.com, Binance">
       </div>
       <div class="form-group-modal" style="margin-bottom:16px">
+        <label class="form-label-modal">Serwer brokera <span style="font-size:10px;color:var(--text3);font-weight:400">(opcjonalne)</span></label>
+        <input class="form-input-modal" id="acc-server" placeholder="np. ICMarkets-Live01" style="font-family:var(--font-mono)">
+      </div>
+      <div class="form-group-modal" style="margin-bottom:16px">
         <label class="form-label-modal">Kapitał startowy</label>
         <input class="form-input-modal" id="acc-capital" type="number" placeholder="10000">
       </div>
@@ -4298,101 +4309,101 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
           <div style="display:flex;justify-content:space-between;align-items:center">
             <div>
               <div style="font-family:var(--font-head);font-size:22px;font-weight:800;color:white">
-                TraderLog<span style="color:var(--accent)">Journal</span> <span style="color:var(--accent)">Routine</span>
+                TraderLog<span style="color:var(--accent)">Journal</span> <span style="color:var(--accent)">Rytuał</span>
               </div>
-              <div style="font-size:12px;color:var(--text3);margin-top:2px">Dzisiejsza rutyna tradera · <span id="routine-date"></span></div>
+              <div style="font-size:12px;color:var(--text3);margin-top:2px">Codzienny rytuał tradera · <span id="routine-date"></span></div>
             </div>
             <button onclick="closeRoutineModal()" style="background:rgba(255,255,255,.1);border:none;color:white;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px">✕</button>
           </div>
         </div>
 
         <div id="routine-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:0">
-          <!-- BEFORE SESSION -->
+          <!-- RYTUAŁ OTWARCIA -->
           <div id="routine-before-col" style="padding:20px 24px;border-right:1px solid var(--border)">
-            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:14px">⬛ Before Session</div>
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:14px">🌅 Rytuał Otwarcia</div>
 
             <div class="routine-item" onclick="toggleRoutine(this)">
-              <div class="routine-icon">📖</div>
+              <div class="routine-icon">💪</div>
               <div>
-                <div class="routine-title">Read your journal</div>
-                <div class="routine-sub">Set goal for the day</div>
+                <div class="routine-title">CIAŁO — Czy jesteś wypoczęty i najedzony?</div>
+                <div class="routine-sub">Ciało i umysł muszą być w gotowości</div>
               </div>
             </div>
 
             <div class="routine-item" onclick="toggleRoutine(this)">
               <div class="routine-icon">📰</div>
               <div>
-                <div class="routine-title">Check economic events</div>
-                <div class="routine-sub">Schedule time for Session</div>
+                <div class="routine-title">UMYSŁ — Czy wiesz co rynek robi dziś rano?</div>
+                <div class="routine-sub">Sprawdź kalendarz makro i kontekst rynku</div>
               </div>
             </div>
 
             <div class="routine-item" onclick="toggleRoutine(this)">
               <div class="routine-icon">🎯</div>
               <div>
-                <div class="routine-title">Choose strategy to trade</div>
-                <div class="routine-sub">When / Why / How to use it?</div>
+                <div class="routine-title">PLAN — Czy Twoje setupy są zidentyfikowane?</div>
+                <div class="routine-sub">Wiesz czego szukasz, gdzie i dlaczego</div>
+              </div>
+            </div>
+
+            <div class="routine-item" onclick="toggleRoutine(this)">
+              <div class="routine-icon">🛑</div>
+              <div>
+                <div class="routine-title">GRANICE — Czy znasz swój dzienny limit straty?</div>
+                <div class="routine-sub">Kiedy dzisiaj kończysz — bez wyjątków</div>
+              </div>
+            </div>
+
+            <div class="routine-item" onclick="toggleRoutine(this)">
+              <div class="routine-icon">✍️</div>
+              <div>
+                <div class="routine-title">INTENCJA — Co chcesz osiągnąć tej sesji?</div>
+                <div class="routine-sub">Jeden konkretny cel, nie lista życzeń</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- RYTUAŁ ZAMKNIĘCIA -->
+          <div id="routine-after-col" style="padding:20px 24px">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--amber);margin-bottom:14px">🌙 Rytuał Zamknięcia</div>
+
+            <div class="routine-item" onclick="toggleRoutine(this)">
+              <div class="routine-icon">💰</div>
+              <div>
+                <div class="routine-title">WYNIKI — Jak zakończyłeś dzień finansowo?</div>
+                <div class="routine-sub">Zysk / strata / break-even — bądź szczery</div>
+              </div>
+            </div>
+
+            <div class="routine-item" onclick="toggleRoutine(this)">
+              <div class="routine-icon">📏</div>
+              <div>
+                <div class="routine-title">DYSCYPLINA — Czy trzymałeś się planu?</div>
+                <div class="routine-sub">1 = wcale nie, 5 = idealnie — bez wymówek</div>
               </div>
             </div>
 
             <div class="routine-item" onclick="toggleRoutine(this)">
               <div class="routine-icon">🧠</div>
               <div>
-                <div class="routine-title">Build intuition — Trader's Mindset</div>
-                <div class="routine-sub">Visualize best & worst setups</div>
+                <div class="routine-title">EMOCJE — Jak oceniasz swój stan tej sesji?</div>
+                <div class="routine-sub">1 = bardzo źle, 5 = w pełni skupiony</div>
               </div>
             </div>
 
             <div class="routine-item" onclick="toggleRoutine(this)">
-              <div class="routine-icon">📊</div>
+              <div class="routine-icon">📝</div>
               <div>
-                <div class="routine-title">Time for Charts</div>
-                <div class="routine-sub">Prepare charts · Turn off your phone</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- AFTER SESSION -->
-          <div id="routine-after-col" style="padding:20px 24px">
-            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--amber);margin-bottom:14px">⬛ After Session</div>
-
-            <div class="routine-item" onclick="toggleRoutine(this)">
-              <div class="routine-icon">📸</div>
-              <div>
-                <div class="routine-title">Save screenshots of charts</div>
-                <div class="routine-sub">Add to journal · Summarize · Conclude</div>
+                <div class="routine-title">LEKCJA — Jedno zdanie: czego nauczyłeś się?</div>
+                <div class="routine-sub">Zapisz teraz — jutro zapomnisz</div>
               </div>
             </div>
 
             <div class="routine-item" onclick="toggleRoutine(this)">
-              <div class="routine-icon">🖥️</div>
+              <div class="routine-icon">🔒</div>
               <div>
-                <div class="routine-title">Set-ups · Scenarios · Opportunities</div>
-                <div class="routine-sub">Good set-ups? Which ones? Describe!</div>
-              </div>
-            </div>
-
-            <div class="routine-item" onclick="toggleRoutine(this)">
-              <div class="routine-icon">✅</div>
-              <div>
-                <div class="routine-title">Sum up goals for the day</div>
-                <div class="routine-sub">What works? What lacks? What to improve?</div>
-              </div>
-            </div>
-
-            <div class="routine-item" onclick="toggleRoutine(this)">
-              <div class="routine-icon">☕</div>
-              <div>
-                <div class="routine-title">Break & Relax</div>
-                <div class="routine-sub">Healthy food · 30 min break · Walk · Nap</div>
-              </div>
-            </div>
-
-            <div class="routine-item" onclick="toggleRoutine(this)">
-              <div class="routine-icon">📈</div>
-              <div>
-                <div class="routine-title">Learn & Grow as a Trader</div>
-                <div class="routine-sub">Market Replay · Fast habit building</div>
+                <div class="routine-title">RESET — Jutro to nowy dzień. Zamknij notes.</div>
+                <div class="routine-sub">Wyloguj się, odpocznij, wróć jutro silniejszy</div>
               </div>
             </div>
           </div>
@@ -4622,6 +4633,56 @@ let state = {
 function getUsers() { return getDB().users || {}; }
 function saveUsers(u) { const db = getDB(); db.users = u; saveDB(db); }
 
+// ===== ACCOUNT FIELD ENCRYPTION (AES-GCM) =====
+const _ENC_PREFIX = 'enc::';
+const _ENC_SALT   = 'traderlog-v1-2026';
+let   _cryptoKey  = null;
+
+async function _getCryptoKey() {
+  if (_cryptoKey) return _cryptoKey;
+  const raw = (state.currentUser || 'guest') + _ENC_SALT;
+  const enc = new TextEncoder();
+  const km  = await crypto.subtle.importKey('raw', enc.encode(raw), 'PBKDF2', false, ['deriveKey']);
+  _cryptoKey = await crypto.subtle.deriveKey(
+    { name:'PBKDF2', salt:enc.encode(_ENC_SALT), iterations:100000, hash:'SHA-256' },
+    km, { name:'AES-GCM', length:256 }, false, ['encrypt','decrypt']
+  );
+  return _cryptoKey;
+}
+async function encryptField(plain) {
+  if (!plain) return plain;
+  const key = await _getCryptoKey();
+  const iv  = crypto.getRandomValues(new Uint8Array(12));
+  const enc = new TextEncoder();
+  const ct  = await crypto.subtle.encrypt({ name:'AES-GCM', iv }, key, enc.encode(String(plain)));
+  const buf = new Uint8Array(12 + ct.byteLength);
+  buf.set(iv); buf.set(new Uint8Array(ct), 12);
+  return _ENC_PREFIX + btoa(String.fromCharCode(...buf));
+}
+async function decryptField(val) {
+  if (!val || !String(val).startsWith(_ENC_PREFIX)) return val;
+  try {
+    const key = await _getCryptoKey();
+    const buf = Uint8Array.from(atob(String(val).slice(_ENC_PREFIX.length)), c => c.charCodeAt(0));
+    const dec = await crypto.subtle.decrypt({ name:'AES-GCM', iv:buf.slice(0,12) }, key, buf.slice(12));
+    return new TextDecoder().decode(dec);
+  } catch { return val; }
+}
+
+// Cache odszyfrowanych wartości — sync odczyt dla renderów
+const _accDecCache = new Map(); // accId -> { broker, server, mt4Login }
+async function _refreshAccDecCache() {
+  const accs = getAccounts();
+  for (const a of accs) {
+    _accDecCache.set(a.id, {
+      broker:   await decryptField(a.broker),
+      server:   await decryptField(a.server),
+      mt4Login: await decryptField(a.mt4Login),
+    });
+  }
+}
+function _accDec(accId) { return _accDecCache.get(accId) || {}; }
+
 function getAccounts() {
   const db = getDB();
   return (db.accounts || {})[state.currentUser] || [];
@@ -4691,7 +4752,7 @@ function loginAs(username, userData) {
   }
   refreshTopbarAccount();
   updateAdminNav();
-  renderAll();
+  _refreshAccDecCache().then(() => renderAll());
   updateDraftBadges();
   setTimeout(initLang, 50);
   setTimeout(showRoutineModal, 1200);
@@ -4699,6 +4760,8 @@ function loginAs(username, userData) {
   setTimeout(checkAutoDownload, 4000);
   // [v1.7] Uruchom nasłuchiwanie sygnałów z MT4
   setTimeout(initMT4Listener, 2000);
+  // Realtime sync — zmiany z innych urządzeń w czasie rzeczywistym
+  setTimeout(initRealtimeSync, 3000);
   // Dzienny briefing + przypomnienia
   setTimeout(showDailyBriefing, 1500);
   setTimeout(updateReminderBell, 500);
@@ -4781,6 +4844,7 @@ function _executeLogout() {
     localStorage.removeItem('_routine_no_show_v2_' + state.currentUser);
   }
   stopAutoSync();
+  stopRealtimeSync();
   _lastSyncTime = null;
   const ind = document.getElementById('sync-indicator');
   const btn = document.getElementById('sync-refresh-btn');
@@ -5016,6 +5080,12 @@ function clearDemoData() {
 
 // ===== NAVIGATION =====
 function showPage(page) {
+  // Wirtualne strony z sub-nawigacją (page#tab)
+  if (page === 'journal_weekly') {
+    showPage('journal');
+    setTimeout(() => switchJournalTab('weekly'), 120);
+    return;
+  }
   // Zamknij wszystkie otwarte modale przy zmianie zakładki
   document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
   checkReminders();
@@ -5134,7 +5204,7 @@ function renderDashboard() {
     return;
   }
   document.getElementById('dash-title').textContent = acc.name;
-  document.getElementById('dash-subtitle').textContent = acc.broker + ' · ' + acc.type + ' · ' + acc.strategy;
+  document.getElementById('dash-subtitle').textContent = (_accDec(acc.id).broker || acc.broker || '') + ' · ' + acc.type + ' · ' + acc.strategy;
 
   const trades = getTrades(acc.id);
   const closed = trades.filter(t => t.status === 'closed');
@@ -6286,7 +6356,7 @@ function renderSummary() {
   const acc = accounts.find(a => a.id === state.currentAccountId);
   const closed = getStatsTrades();
   const periodLabels = {all:'Wszystkie okresy',year:'Ten rok',month:'Ten miesiąc',week:'Ten tydzień',today:'Dziś'};
-  document.getElementById('summary-subtitle').textContent = (acc ? acc.name + ' · ' + (acc.broker||'') : '') + ' — ' + (periodLabels[_statsPeriod]||'');
+  document.getElementById('summary-subtitle').textContent = (acc ? acc.name + ' · ' + (_accDec(acc.id).broker || acc.broker || '') : '') + ' — ' + (periodLabels[_statsPeriod]||'');
   if (!closed.length) { document.getElementById('summary-content').innerHTML = emptyState('📊','Brak danych','Brak zamkniętych transakcji dla wybranego okresu'); return; }
 
   const curr = getCurrSym(acc?.id);
@@ -6740,7 +6810,7 @@ function renderAccounts() {
       <div class="account-card-header">
         <div>
           <div class="account-name">${acc.name}${acc.isBot?'<span style="font-size:10px;background:rgba(255,170,0,.15);color:var(--amber);border:1px solid rgba(255,170,0,.3);border-radius:5px;padding:1px 6px;margin-left:6px;font-weight:600;vertical-align:middle">🤖 Bot</span>':''}</div>
-          <div class="account-type">${acc.type} · ${acc.broker||'—'}</div>
+          <div class="account-type">${acc.type} · ${_accDec(acc.id).broker || acc.broker || '—'}</div>
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
           <div class="account-color" style="background:${acc.color||'#00d4a1'}"></div>
@@ -6783,6 +6853,7 @@ function openAccountModal() {
   document.getElementById('acc-id').value = '';
   document.getElementById('acc-name').value = '';
   document.getElementById('acc-broker').value = '';
+  document.getElementById('acc-server').value = '';
   document.getElementById('acc-capital').value = '';
   document.getElementById('acc-strategy').value = '';
   document.getElementById('acc-mt4-login').value = '';
@@ -6795,16 +6866,20 @@ function openAccountModal() {
   openModal('account-modal');
 }
 
-function openEditAccount(id) {
+async function openEditAccount(id) {
   const acc = getAccounts().find(a => a.id === id);
   if (!acc) return;
+  const broker   = await decryptField(acc.broker);
+  const server   = await decryptField(acc.server);
+  const mt4Login = await decryptField(acc.mt4Login);
   document.getElementById('acc-id').value = acc.id;
   document.getElementById('acc-name').value = acc.name;
-  document.getElementById('acc-broker').value = acc.broker || '';
+  document.getElementById('acc-broker').value = broker || '';
+  document.getElementById('acc-server').value = server || '';
   document.getElementById('acc-capital').value = acc.capital || '';
   document.getElementById('acc-strategy').value = acc.strategy || '';
   document.getElementById('acc-type').value = acc.type || 'Forex';
-  document.getElementById('acc-mt4-login').value = acc.mt4Login || '';
+  document.getElementById('acc-mt4-login').value = mt4Login || '';
   document.getElementById('acc-currency').value = acc.currency || 'USD';
   document.getElementById('acc-modal-title').textContent = t('modal_edit_account');
   document.querySelectorAll('.color-swatch').forEach(s => s.classList.toggle('selected', s.dataset.color === acc.color));
@@ -6813,26 +6888,27 @@ function openEditAccount(id) {
   openModal('account-modal');
 }
 
-function saveAccount() {
+async function saveAccount() {
   const name = document.getElementById('acc-name').value.trim();
   if (!name) return toast(t('err_account_name'), 'error');
-  const id = document.getElementById('acc-id').value || genId();
+  const id    = document.getElementById('acc-id').value || genId();
   const color = document.querySelector('.color-swatch.selected')?.dataset.color || '#00d4a1';
   const acc = {
     id, name, color,
-    type: document.getElementById('acc-type').value,
-    broker: document.getElementById('acc-broker').value,
-    capital: parseFloat(document.getElementById('acc-capital').value) || 0,
+    type:     document.getElementById('acc-type').value,
+    broker:   await encryptField(document.getElementById('acc-broker').value),
+    server:   await encryptField(document.getElementById('acc-server').value),
+    capital:  parseFloat(document.getElementById('acc-capital').value) || 0,
     currency: document.getElementById('acc-currency').value || 'USD',
     strategy: document.getElementById('acc-strategy').value,
-    mt4Login: document.getElementById('acc-mt4-login').value || '',
-    isBot: document.getElementById('acc-is-bot')?.checked || false,
+    mt4Login: await encryptField(document.getElementById('acc-mt4-login').value || ''),
+    isBot:    document.getElementById('acc-is-bot')?.checked || false,
   };
   const accounts = getAccounts();
   const idx = accounts.findIndex(a => a.id === id);
-  if (idx >= 0) accounts[idx] = acc;
-  else accounts.push(acc);
+  if (idx >= 0) accounts[idx] = acc; else accounts.push(acc);
   saveAccounts(accounts);
+  await _refreshAccDecCache();
   if (!state.currentAccountId) state.currentAccountId = id;
   closeModal('account-modal');
   refreshTopbarAccount();
@@ -8838,6 +8914,116 @@ function adminNukeAll() {
   });
 }
 
+async function scanDuplicateAccounts(btn) {
+  if (!_sb) return;
+  const origText = btn.textContent;
+  btn.textContent = '⏳ Skanowanie...';
+  btn.disabled = true;
+  const resultEl = document.getElementById('dup-scan-result');
+  resultEl.style.display = 'none';
+  try {
+    const { data: { session } } = await _sb.auth.getSession();
+    if (!session) { toast('Brak sesji admina', 'error'); return; }
+    const headers = { 'apikey': _SB_ANON, 'Authorization': 'Bearer ' + session.access_token };
+
+    const [accRes, tradeRes] = await Promise.all([
+      fetch(_SB_URL + '/rest/v1/accounts?select=id,name,user_id,capital', { headers }),
+      fetch(_SB_URL + '/rest/v1/trades?select=account_id', { headers })
+    ]);
+    const accounts = await accRes.json();
+    const trades   = await tradeRes.json();
+
+    if (!Array.isArray(accounts)) { toast('Brak dostępu do kont (tylko admin)', 'error'); return; }
+
+    const tradeCounts = {};
+    (Array.isArray(trades) ? trades : []).forEach(t => {
+      tradeCounts[t.account_id] = (tradeCounts[t.account_id] || 0) + 1;
+    });
+
+    const groups = {};
+    accounts.forEach(a => {
+      const key = a.user_id + '||' + (a.name || '').toLowerCase().trim();
+      if (!groups[key]) groups[key] = [];
+      groups[key].push({ ...a, tradeCount: tradeCounts[a.id] || 0 });
+    });
+
+    const duplicates = Object.values(groups).filter(g => g.length > 1);
+
+    resultEl.style.display = 'block';
+    if (!duplicates.length) {
+      resultEl.innerHTML = '<div style="color:var(--green);font-size:12px;padding:6px 0">✅ Brak duplikatów — dane są spójne</div>';
+    } else {
+      let html = `<div style="color:var(--amber);font-size:12px;margin-bottom:8px;font-weight:600">⚠️ ${duplicates.length} grup duplikatów:</div>`;
+      duplicates.forEach(group => {
+        html += `<div style="background:var(--bg3);border-radius:8px;padding:10px;margin-bottom:8px;font-size:11px">
+          <div style="font-weight:700;margin-bottom:6px;color:var(--text1)">${group[0].name}</div>`;
+        group.sort((a,b) => b.tradeCount - a.tradeCount).forEach(acc => {
+          const canDelete = acc.tradeCount === 0;
+          html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-top:1px solid var(--border2)">
+            <span style="color:var(--text2);font-family:var(--font-mono)">${acc.id.substring(0,12)}…</span>
+            <span style="color:${acc.tradeCount>0?'var(--green)':'var(--text3)'}">${acc.tradeCount} transakcji</span>
+            ${canDelete
+              ? `<button class="btn-sm" onclick="deleteDuplicateAccount('${acc.id}',this)" style="font-size:10px;color:var(--red);border-color:var(--red);padding:2px 8px">Usuń</button>`
+              : `<span style="font-size:10px;color:var(--green)">✓ zachowaj</span>`
+            }
+          </div>`;
+        });
+        html += `</div>`;
+      });
+      resultEl.innerHTML = html;
+    }
+  } catch(e) {
+    toast('Błąd skanowania: ' + e.message, 'error');
+  } finally {
+    btn.textContent = origText;
+    btn.disabled = false;
+  }
+}
+
+async function deleteDuplicateAccount(accountId, btn) {
+  if (!confirm('Usuń to konto z Supabase? (brak transakcji — bezpieczne)')) return;
+  if (!_sb) return;
+  btn.textContent = '⏳';
+  btn.disabled = true;
+  try {
+    const { error } = await _sb.from('accounts').delete().eq('id', accountId);
+    if (error) throw error;
+    toast('✅ Zduplikowane konto usunięte', 'success');
+    const scanBtn = document.querySelector('[onclick^="scanDuplicateAccounts"]');
+    if (scanBtn) scanDuplicateAccounts(scanBtn);
+  } catch(e) {
+    toast('Błąd: ' + e.message, 'error');
+    btn.textContent = 'Usuń'; btn.disabled = false;
+  }
+}
+
+async function adminForceResync() {
+  if (!confirm('Wyczyść lokalne dane kont i transakcji, a następnie pobierz wszystko świeżo z Supabase?')) return;
+  if (!_sb || !state.currentUser) return;
+  const userId = getUsers()[state.currentUser]?.supabaseId;
+  if (!userId) { toast('Brak ID użytkownika', 'error'); return; }
+  const db = getDB();
+  const loginKey = state.currentUser;
+  Object.keys(db).filter(k =>
+    k === 'accounts' ||
+    (typeof k === 'string' && k.startsWith(loginKey + '_'))
+  ).forEach(k => {
+    if (k === 'accounts') { if (db.accounts) db.accounts[loginKey] = []; }
+    else delete db[k];
+  });
+  saveDB(db);
+  toast('⏳ Synchronizuję z Supabase...', 'info');
+  try {
+    await sbSyncDown(userId, loginKey);
+    _lastSyncTime = Date.now();
+    updateSyncIndicator();
+    _postSyncRender();
+    toast('✅ Dane zsynchronizowane od nowa', 'success');
+  } catch(e) {
+    toast('Błąd synchronizacji: ' + e.message, 'error');
+  }
+}
+
 async function adminExport() {
   const db = getDB();
   const json = JSON.stringify(db, null, 2);
@@ -8929,7 +9115,7 @@ function renderCalendar() {
   const map  = buildTradeMap();
   const acc  = getAccounts().find(a => a.id === state.currentAccountId);
   document.getElementById('cal-subtitle').textContent =
-    acc ? acc.name + ' · ' + acc.broker : 'Wybierz konto';
+    acc ? acc.name + ' · ' + (_accDec(acc.id).broker || acc.broker || '') : 'Wybierz konto';
 
   if (mode === 'year') renderCalendarYear(map);
   else                 renderCalendarMonth(map);
@@ -12849,6 +13035,47 @@ function initSupabase() {
   return true;
 }
 
+// ═══ REALTIME SYNC (trades / accounts / analyses) ═══
+let _realtimeChannel = null;
+let _realtimeSyncTimer = null;
+
+function initRealtimeSync() {
+  if (!_sb || _realtimeChannel) return;
+  const users = getUsers();
+  const u = users[state.currentUser];
+  if (!u?.supabaseId) return;
+  const userId = u.supabaseId;
+
+  const _onRemoteChange = () => {
+    clearTimeout(_realtimeSyncTimer);
+    _realtimeSyncTimer = setTimeout(async () => {
+      try {
+        await sbSyncDown(userId, state.currentUser);
+        _lastSyncTime = Date.now();
+        updateSyncIndicator();
+        _postSyncRender();
+        toast('🔄 Dane zaktualizowane z innego urządzenia', 'info');
+      } catch(e) { console.warn('Realtime sync error:', e.message); }
+    }, 1200);
+  };
+
+  _realtimeChannel = _sb
+    .channel('user_data_' + state.currentUser)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'trades',         filter: 'user_id=eq.' + userId }, _onRemoteChange)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'accounts',       filter: 'user_id=eq.' + userId }, _onRemoteChange)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'analyses',       filter: 'user_id=eq.' + userId }, _onRemoteChange)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'user_settings',  filter: 'user_id=eq.' + userId }, _onRemoteChange)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'weekly_reviews', filter: 'user_id=eq.' + userId }, _onRemoteChange)
+    .subscribe(status => {
+      if (status === 'SUBSCRIBED') console.log('✓ Realtime sync aktywny (trades/accounts/analyses/settings/reviews)');
+    });
+}
+
+function stopRealtimeSync() {
+  if (_realtimeChannel) { _sb.removeChannel(_realtimeChannel); _realtimeChannel = null; }
+  clearTimeout(_realtimeSyncTimer);
+}
+
 // ═══ MT4 REALTIME INTEGRATION ═══
 let _mt4Channel = null;
 
@@ -12977,11 +13204,12 @@ async function handleMT4Signal(signal) {
     if (error) { console.warn('MT4: nie udało się oznaczyć sygnału jako processed, pomijam', error); return; }
   } catch(e) { console.warn('MT4: błąd oznaczania sygnału', e); return; }
 
-  // [v1.7] Znajdź konto w dzienniku po numerze MT4
+  // [v1.7] Znajdź konto w dzienniku po numerze MT4 (odszyfrowany login z cache)
   const accounts = getAccounts();
-  const matchedAccount = accounts.find(a =>
-    a.mt4Login && String(a.mt4Login) === String(signal.mt4_account)
-  );
+  const matchedAccount = accounts.find(a => {
+    const login = _accDec(a.id).mt4Login || a.mt4Login;
+    return login && String(login) === String(signal.mt4_account);
+  });
 
   if (matchedAccount && matchedAccount.id !== state.currentAccountId) {
     state.currentAccountId = matchedAccount.id;
@@ -13428,7 +13656,7 @@ function _postSyncRender() {
   if (accs.length && (!state.currentAccountId || !accs.find(a => a.id === state.currentAccountId))) {
     state.currentAccountId = accs[0].id;
   }
-  renderAll();
+  _refreshAccDecCache().then(() => renderAll());
   renderTrades();
   renderAccounts();
   renderSummary();
@@ -17947,8 +18175,8 @@ function checkSmartReminders() {
   // Friday 16:30 — weekly review
   if (s.friday && dow === 5 && (h > 16 || (h === 16 && m >= 30)) && !_smartReminderSentToday('friday')) {
     _markSmartReminderSent('friday');
-    _addSmartReminderToList('📊 Weekly review — jak minął tydzień?', 'journal', Date.now());
-    showNativeNotification('📊 Weekly review', 'Czas ocenić miniony tydzień — wypełnij weekly review', 'journal');
+    _addSmartReminderToList('📊 Weekly review — jak minął tydzień?', 'journal_weekly', Date.now());
+    showNativeNotification('📊 Weekly review', 'Czas ocenić miniony tydzień — wypełnij weekly review', 'journal_weekly');
   }
 
   // Daily 20:00 — journal evening (only if no post-session entry today)
