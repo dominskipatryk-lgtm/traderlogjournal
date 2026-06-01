@@ -1302,6 +1302,12 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
         <span class="nav-label">Szkice</span>
         <span id="nav-draft-badge" style="display:none;background:var(--amber);color:#000;border-radius:10px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:auto"></span>
       </button>
+      <button class="nav-btn" onclick="showPage('monthly')" id="nav-monthly">
+        <span class="nav-icon">📅</span><span class="nav-label">Mies. przegląd</span>
+      </button>
+      <button class="nav-btn" onclick="showPage('yearly')" id="nav-yearly">
+        <span class="nav-icon">📆</span><span class="nav-label">Roczny przegląd</span>
+      </button>
       <button class="nav-btn" onclick="showPage('settings')" id="nav-settings" data-i18n="nav_settings">
         <span class="nav-icon">⚙️</span><span class="nav-label">Ustawienia</span>
       </button>
@@ -3089,11 +3095,13 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
         <div style="max-width:820px">
 
           <!-- Nawigacja tygodnia -->
-          <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
             <button onclick="weeklyNav(-1)" class="btn-sm" style="padding:5px 14px">← Poprzedni</button>
             <div id="weekly-label" style="font-family:var(--font-head);font-size:16px;font-weight:700;flex:1;text-align:center"></div>
             <button onclick="weeklyNav(1)" class="btn-sm" style="padding:5px 14px">Następny →</button>
           </div>
+          <!-- Status tygodnia -->
+          <div id="weekly-status-bar" style="display:flex;align-items:center;justify-content:center;margin-bottom:16px"></div>
 
           <!-- BLOK 1: KPI tygodnia -->
           <div class="summary-card" style="margin-bottom:16px">
@@ -3557,6 +3565,160 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
         </div>
       </div>
     </div><!-- /page-portfolio -->
+
+    <!-- PAGE: MONTHLY SUMMARY -->
+    <div id="page-monthly" class="page">
+      <div style="max-width:860px;margin:0 auto">
+        <div class="page-title">📅 Podsumowanie miesiąca</div>
+
+        <!-- Nawigacja miesiąca -->
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+          <button onclick="monthlyNav(-1)" class="btn-sm">← Poprzedni</button>
+          <div id="monthly-label" style="font-family:var(--font-head);font-size:16px;font-weight:700;flex:1;text-align:center"></div>
+          <button onclick="monthlyNav(1)" class="btn-sm">Następny →</button>
+        </div>
+        <div id="monthly-status-bar" style="text-align:center;margin-bottom:20px"></div>
+
+        <!-- Metryki -->
+        <div class="summary-card" style="margin-bottom:16px">
+          <div class="summary-card-title" style="color:var(--accent)">📊 Metryki miesiąca</div>
+          <div id="monthly-metrics" style="margin-top:12px"></div>
+        </div>
+
+        <!-- Top / Bottom trade'y -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+          <div class="summary-card" style="border-color:rgba(0,212,161,.3)">
+            <div class="summary-card-title" style="color:var(--green)">🏆 Top 3 trade'y</div>
+            <div id="monthly-top3" style="margin-top:10px"></div>
+          </div>
+          <div class="summary-card" style="border-color:rgba(255,80,80,.3)">
+            <div class="summary-card-title" style="color:var(--red)">⚠️ Bottom 3 trade'y</div>
+            <div id="monthly-bottom3" style="margin-top:10px"></div>
+          </div>
+        </div>
+
+        <!-- Refleksja -->
+        <div class="summary-card" style="margin-bottom:16px">
+          <div class="summary-card-title">✍️ Refleksja miesięczna</div>
+          <div style="display:flex;flex-direction:column;gap:12px;margin-top:14px">
+            <div>
+              <label class="jlabel">✅ Co działało w tym miesiącu?</label>
+              <textarea id="monthly-q1" class="form-input-modal" style="min-height:70px;line-height:1.7" placeholder="Które setupy, instrumenty, decyzje były naprawdę dobre?"></textarea>
+            </div>
+            <div>
+              <label class="jlabel">🚫 Co chcę wyeliminować?</label>
+              <textarea id="monthly-q2" class="form-input-modal" style="min-height:70px;line-height:1.7" placeholder="Konkretne błędy i zachowania do usunięcia w przyszłym miesiącu..."></textarea>
+            </div>
+            <div>
+              <label class="jlabel">🌱 Jeden nawyk do wdrożenia w następnym miesiącu</label>
+              <textarea id="monthly-q3" class="form-input-modal" style="min-height:60px;line-height:1.7" placeholder="Np. 'Codziennie 15 minut analizy przed sesją'"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cele na kolejny miesiąc -->
+        <div class="summary-card" style="margin-bottom:16px">
+          <div class="summary-card-title">🎯 Cele na kolejny miesiąc</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px">
+            <div>
+              <label class="jlabel">Win Rate (cel %)</label>
+              <input id="monthly-goal-wr" class="form-input-modal" type="number" placeholder="np. 55">
+            </div>
+            <div>
+              <label class="jlabel">Liczba transakcji (max)</label>
+              <input id="monthly-goal-trades" class="form-input-modal" type="number" placeholder="np. 20">
+            </div>
+            <div>
+              <label class="jlabel">Max dzienny drawdown</label>
+              <input id="monthly-goal-dd" class="form-input-modal" type="number" placeholder="np. 100 (w walucie konta)">
+            </div>
+            <div>
+              <label class="jlabel">Główny focus na miesiąc</label>
+              <input id="monthly-goal-focus" class="form-input-modal" placeholder="np. Cierpliwość — czekam tylko na A+ setup">
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;gap:10px;margin-bottom:32px">
+          <button class="btn-sm btn-accent" onclick="saveMonthlySummary()" style="padding:10px 24px;font-size:14px">💾 Zamknij miesiąc</button>
+        </div>
+      </div>
+    </div><!-- /page-monthly -->
+
+    <!-- PAGE: YEARLY SUMMARY -->
+    <div id="page-yearly" class="page">
+      <div style="max-width:860px;margin:0 auto">
+        <div class="page-title">📆 Podsumowanie roku</div>
+
+        <!-- Nawigacja roku -->
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+          <button onclick="yearlyNav(-1)" class="btn-sm">← Poprzedni rok</button>
+          <div id="yearly-label" style="font-family:var(--font-head);font-size:20px;font-weight:800;flex:1;text-align:center"></div>
+          <button onclick="yearlyNav(1)" class="btn-sm">Następny rok →</button>
+        </div>
+        <div id="yearly-status-bar" style="text-align:center;margin-bottom:20px"></div>
+
+        <!-- Metryki roczne -->
+        <div class="summary-card" style="margin-bottom:16px">
+          <div class="summary-card-title" style="color:var(--accent)">📊 Metryki roku</div>
+          <div id="yearly-metrics" style="margin-top:12px"></div>
+        </div>
+
+        <!-- Miesięczny breakdown -->
+        <div class="summary-card" style="margin-bottom:16px">
+          <div class="summary-card-title" style="color:var(--blue)">📅 Miesiąc po miesiącu</div>
+          <div id="yearly-monthly-breakdown" style="margin-top:12px"></div>
+        </div>
+
+        <!-- Słownik błędów -->
+        <div class="summary-card" style="margin-bottom:16px">
+          <div class="summary-card-title" style="color:var(--amber)">📖 Najczęstsze błędy roku</div>
+          <div id="yearly-errors" style="margin-top:12px"></div>
+        </div>
+
+        <!-- Refleksja roczna -->
+        <div class="summary-card" style="margin-bottom:16px">
+          <div class="summary-card-title">✍️ Refleksja roczna</div>
+          <div style="display:flex;flex-direction:column;gap:12px;margin-top:14px">
+            <div>
+              <label class="jlabel">🏆 Moje największe osiągnięcie tradingowe tego roku</label>
+              <textarea id="yearly-q1" class="form-input-modal" style="min-height:70px;line-height:1.7" placeholder="Co osiągnąłem? Z czego jestem dumny?"></textarea>
+            </div>
+            <div>
+              <label class="jlabel">💸 Błąd który kosztował mnie najwięcej</label>
+              <textarea id="yearly-q2" class="form-input-modal" style="min-height:70px;line-height:1.7" placeholder="Co powtarzałem? Ile to kosztowało? Dlaczego?"></textarea>
+            </div>
+            <div>
+              <label class="jlabel">🔄 Co zmieniam w przyszłym roku</label>
+              <textarea id="yearly-q3" class="form-input-modal" style="min-height:70px;line-height:1.7" placeholder="Konkretna zmiana — nie 'będę lepszy' ale 'zmieniam X na Y'"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cele roczne -->
+        <div class="summary-card" style="margin-bottom:16px">
+          <div class="summary-card-title">🎯 Cele na przyszły rok</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px">
+            <div>
+              <label class="jlabel">Target Win Rate (%)</label>
+              <input id="yearly-goal-wr" class="form-input-modal" type="number" placeholder="np. 55">
+            </div>
+            <div>
+              <label class="jlabel">Target liczba transakcji</label>
+              <input id="yearly-goal-trades" class="form-input-modal" type="number" placeholder="np. 200">
+            </div>
+            <div class="full">
+              <label class="jlabel">Główny focus na rok</label>
+              <input id="yearly-goal-focus" class="form-input-modal" placeholder="np. Konsekwencja w zarządzaniu ryzykiem — max 1% per trade">
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;gap:10px;margin-bottom:32px">
+          <button class="btn-sm btn-accent" onclick="saveYearlySummary()" style="padding:10px 24px;font-size:14px">💾 Zamknij rok</button>
+        </div>
+      </div>
+    </div><!-- /page-yearly -->
 
 
   </main>
@@ -5165,6 +5327,8 @@ function showPage(page) {
   if (page === 'library') { if(typeof renderLibrary==='function') renderLibrary(); }
   if (page === 'ideas')   { if(typeof renderIdeasPage==='function') renderIdeasPage(); }
   if (page === 'macro')   { if(typeof renderMacroCalendar==='function') renderMacroCalendar(); }
+  if (page === 'monthly') { if(typeof renderMonthlySummary==='function') renderMonthlySummary(); }
+  if (page === 'yearly')  { if(typeof renderYearlySummary==='function') renderYearlySummary(); }
   if (page === 'portfolio') { if(typeof renderPortfolio==='function') renderPortfolio(); }
   // Aktualizuj tytuł w topstrip
   const PAGE_TITLES = {
@@ -5184,6 +5348,8 @@ function showPage(page) {
     admin:     t('nav_admin'),
     calendar:  t('nav_calendar').replace(/^\S+\s/,''),
     portfolio: '💼 Portfel',
+    monthly:   '📅 Podsumowanie miesiąca',
+    yearly:    '📆 Podsumowanie roku',
     ai:        '🤖 AI Asystent'
   };
   const topstripTitle = document.getElementById('topstrip-title');
@@ -13687,6 +13853,216 @@ function updateSyncIndicator() {
   if (btn) btn.style.display = state.currentUser ? 'inline-block' : 'none';
 }
 
+// ===== MONTHLY SUMMARY =====
+let _monthlyYear  = new Date().getFullYear();
+let _monthlyMonth = new Date().getMonth() + 1;
+
+function _getMonthlySummary(y, m) {
+  const db = getDB();
+  return (db['monthly_summary_' + (state.currentUser||'')] || {})[y + '_' + m] || {};
+}
+function _saveMonthlySummaryData(y, m, data) {
+  const db = getDB();
+  if (!db['monthly_summary_' + (state.currentUser||'')]) db['monthly_summary_' + (state.currentUser||'')] = {};
+  db['monthly_summary_' + (state.currentUser||'')][y + '_' + m] = data;
+  saveDB(db);
+}
+
+function monthlyNav(dir) {
+  _monthlyMonth += dir;
+  if (_monthlyMonth > 12) { _monthlyMonth = 1; _monthlyYear++; }
+  if (_monthlyMonth < 1)  { _monthlyMonth = 12; _monthlyYear--; }
+  renderMonthlySummary();
+}
+
+function renderMonthlySummary() {
+  const y = _monthlyYear, m = _monthlyMonth;
+  const monthNames = ['Styczeń','Luty','Marzec','Kwiecień','Maj','Czerwiec','Lipiec','Sierpień','Wrzesień','Październik','Listopad','Grudzień'];
+  const label = document.getElementById('monthly-label');
+  if (label) label.textContent = monthNames[m-1] + ' ' + y;
+
+  const sym    = getCurrSym(state.currentAccountId);
+  const trades = getTrades(state.currentAccountId).filter(tr => {
+    if (tr.status !== 'closed') return false;
+    const d = new Date(tr.date);
+    return d.getFullYear() === y && (d.getMonth()+1) === m;
+  });
+
+  // Status badge
+  const saved = _getMonthlySummary(y, m);
+  const bar = document.getElementById('monthly-status-bar');
+  if (bar) {
+    if (saved.reviewed) {
+      bar.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px;padding:5px 14px;background:rgba(0,212,161,.12);border:1px solid rgba(0,212,161,.3);border-radius:20px;font-size:12px;color:var(--accent);font-weight:600">✅ Miesiąc zamknięty · ${new Date(saved.reviewedAt).toLocaleDateString('pl-PL')}</span>`;
+    } else if (trades.length) {
+      bar.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px;padding:5px 14px;background:rgba(255,170,0,.1);border:1px solid rgba(255,170,0,.3);border-radius:20px;font-size:12px;color:var(--amber);font-weight:600">📝 Do uzupełnienia — wypełnij refleksję i zamknij miesiąc</span>`;
+    } else { bar.innerHTML = ''; }
+  }
+
+  // Metryki
+  const mEl = document.getElementById('monthly-metrics');
+  if (mEl) {
+    if (!trades.length) {
+      mEl.innerHTML = '<div style="color:var(--text3);font-size:13px;text-align:center;padding:16px">Brak zamkniętych transakcji w tym miesiącu</div>';
+    } else {
+      const wins    = trades.filter(tr => (tr.pnl||0) > 0).length;
+      const totalPnl= trades.reduce((s,tr) => s+(tr.pnl||0), 0);
+      const wr      = Math.round(wins/trades.length*100);
+      const rrT     = trades.filter(tr=>tr.entry&&tr.sl&&tr.tp);
+      const avgRR   = rrT.length ? (rrT.reduce((s,tr)=>{const r=Math.abs(tr.entry-tr.sl),w=Math.abs(tr.tp-tr.entry);return r>0?s+w/r:s;},0)/rrT.length).toFixed(2) : '—';
+      const pnls    = trades.map(tr=>tr.pnl||0);
+      const drawdowns= []; let peak=0, dd=0;
+      pnls.forEach(p=>{ peak=Math.max(peak,p); dd=Math.max(dd,peak-p); drawdowns.push(dd); });
+      const maxDD   = Math.max(...drawdowns);
+      const pnlCol  = totalPnl>0?'var(--green)':totalPnl<0?'var(--red)':'var(--text3)';
+      mEl.innerHTML = `<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px">
+        ${[['Win Rate',wr+'%',wr>=50?'var(--green)':'var(--red)'],['P&L',(totalPnl>=0?'+':'')+sym+Math.abs(totalPnl).toFixed(2),pnlCol],['Transakcji',trades.length,'var(--text)'],['Avg R:R',avgRR,'var(--accent)'],['Max DD',sym+maxDD.toFixed(2),'var(--amber)']].map(([l,v,c])=>`<div style="text-align:center;background:var(--bg3);border-radius:8px;padding:10px 6px"><div style="font-size:10px;color:var(--text3);margin-bottom:4px">${l}</div><div style="font-size:18px;font-weight:800;color:${c}">${v}</div></div>`).join('')}
+      </div>`;
+    }
+  }
+
+  // Top 3 / Bottom 3
+  const sorted = [...trades].sort((a,b)=>(b.pnl||0)-(a.pnl||0));
+  const _tradeCard = (tr) => {
+    const pnl=tr.pnl||0; const c=pnl>0?'var(--green)':'var(--red)';
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:var(--bg3);border-radius:7px;margin-bottom:5px;font-size:12px">
+      <span style="font-weight:700">${escHtml(tr.symbol||'—')}</span>
+      ${tr.setup?`<span class="tag" style="font-size:10px">${escHtml(tr.setup)}</span>`:''}
+      <span style="font-family:var(--font-mono);color:${c};font-weight:700">${(pnl>=0?'+':'')+sym+Math.abs(pnl).toFixed(2)}</span>
+    </div>`;
+  };
+  const t3El = document.getElementById('monthly-top3');
+  const b3El = document.getElementById('monthly-bottom3');
+  if (t3El) t3El.innerHTML = sorted.slice(0,3).map(_tradeCard).join('')||'<div style="color:var(--text3);font-size:12px;padding:8px">Brak danych</div>';
+  if (b3El) b3El.innerHTML = sorted.slice(-3).reverse().map(_tradeCard).join('')||'<div style="color:var(--text3);font-size:12px;padding:8px">Brak danych</div>';
+
+  // Formularz refleksji
+  const setV = (id,v) => { const el=document.getElementById(id); if(el) el.value=v||''; };
+  setV('monthly-q1', saved.q1); setV('monthly-q2', saved.q2); setV('monthly-q3', saved.q3);
+  setV('monthly-goal-wr', saved.goalWr); setV('monthly-goal-trades', saved.goalTrades);
+  setV('monthly-goal-dd', saved.goalDd); setV('monthly-goal-focus', saved.goalFocus);
+}
+
+function saveMonthlySummary() {
+  const g = id => document.getElementById(id)?.value||'';
+  const existing = _getMonthlySummary(_monthlyYear, _monthlyMonth);
+  _saveMonthlySummaryData(_monthlyYear, _monthlyMonth, {
+    q1: g('monthly-q1'), q2: g('monthly-q2'), q3: g('monthly-q3'),
+    goalWr: g('monthly-goal-wr'), goalTrades: g('monthly-goal-trades'),
+    goalDd: g('monthly-goal-dd'), goalFocus: g('monthly-goal-focus'),
+    reviewed: true, reviewedAt: existing.reviewedAt || Date.now(),
+    savedAt: Date.now(),
+  });
+  renderMonthlySummary();
+  toast('✅ Miesiąc zamknięty!', 'success');
+}
+
+// ===== YEARLY SUMMARY =====
+let _yearlyYear = new Date().getFullYear();
+
+function _getYearlySummary(y) {
+  const db = getDB();
+  return (db['yearly_summary_' + (state.currentUser||'')] || {})[y] || {};
+}
+function _saveYearlySummaryData(y, data) {
+  const db = getDB();
+  if (!db['yearly_summary_' + (state.currentUser||'')]) db['yearly_summary_' + (state.currentUser||'')] = {};
+  db['yearly_summary_' + (state.currentUser||'')][y] = data;
+  saveDB(db);
+}
+
+function yearlyNav(dir) { _yearlyYear += dir; renderYearlySummary(); }
+
+function renderYearlySummary() {
+  const y   = _yearlyYear;
+  const sym = getCurrSym(state.currentAccountId);
+  const label = document.getElementById('yearly-label');
+  if (label) label.textContent = y;
+
+  const trades = getTrades(state.currentAccountId).filter(tr => {
+    if (tr.status !== 'closed') return false;
+    return new Date(tr.date).getFullYear() === y;
+  });
+
+  // Status badge
+  const saved = _getYearlySummary(y);
+  const bar = document.getElementById('yearly-status-bar');
+  if (bar) {
+    if (saved.reviewed) {
+      bar.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px;padding:5px 14px;background:rgba(0,212,161,.12);border:1px solid rgba(0,212,161,.3);border-radius:20px;font-size:12px;color:var(--accent);font-weight:600">✅ Rok zamknięty · ${new Date(saved.reviewedAt).toLocaleDateString('pl-PL')}</span>`;
+    } else if (trades.length) {
+      bar.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px;padding:5px 14px;background:rgba(255,170,0,.1);border:1px solid rgba(255,170,0,.3);border-radius:20px;font-size:12px;color:var(--amber);font-weight:600">📝 Do uzupełnienia — wypełnij refleksję i zamknij rok</span>`;
+    } else { bar.innerHTML = ''; }
+  }
+
+  // Metryki roczne
+  const mEl = document.getElementById('yearly-metrics');
+  if (mEl) {
+    if (!trades.length) {
+      mEl.innerHTML = '<div style="color:var(--text3);font-size:13px;text-align:center;padding:16px">Brak danych za ' + y + '</div>';
+    } else {
+      const wins=trades.filter(tr=>(tr.pnl||0)>0).length;
+      const totalPnl=trades.reduce((s,tr)=>s+(tr.pnl||0),0);
+      const wr=Math.round(wins/trades.length*100);
+      const rrT=trades.filter(tr=>tr.entry&&tr.sl&&tr.tp);
+      const avgRR=rrT.length?(rrT.reduce((s,tr)=>{const r=Math.abs(tr.entry-tr.sl),w=Math.abs(tr.tp-tr.entry);return r>0?s+w/r:s;},0)/rrT.length).toFixed(2):'—';
+      const pnlCol=totalPnl>0?'var(--green)':totalPnl<0?'var(--red)':'var(--text3)';
+      mEl.innerHTML = `<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px">
+        ${[['Win Rate',wr+'%',wr>=50?'var(--green)':'var(--red)'],['Total P&L',(totalPnl>=0?'+':'')+sym+Math.abs(totalPnl).toFixed(2),pnlCol],['Transakcji',trades.length,'var(--text)'],['Avg R:R',avgRR,'var(--accent)'],['Najlepszy m-c','—','var(--text3)']].map(([l,v,c])=>`<div style="text-align:center;background:var(--bg3);border-radius:8px;padding:10px 6px"><div style="font-size:10px;color:var(--text3);margin-bottom:4px">${l}</div><div style="font-size:18px;font-weight:800;color:${c}">${v}</div></div>`).join('')}
+      </div>`;
+    }
+  }
+
+  // Monthly breakdown
+  const bEl = document.getElementById('yearly-monthly-breakdown');
+  if (bEl) {
+    const months=['Sty','Lut','Mar','Kwi','Maj','Cze','Lip','Sie','Wrz','Paź','Lis','Gru'];
+    let html='<div style="display:flex;gap:6px;flex-wrap:wrap">';
+    months.forEach((mn,i)=>{
+      const mTrades=trades.filter(tr=>(new Date(tr.date).getMonth())===i);
+      const mPnl=mTrades.reduce((s,tr)=>s+(tr.pnl||0),0);
+      const mWins=mTrades.filter(tr=>(tr.pnl||0)>0).length;
+      const col=mPnl>0?'var(--green)':mPnl<0?'var(--red)':'var(--text3)';
+      const wr2=mTrades.length?Math.round(mWins/mTrades.length*100):null;
+      html+=`<div style="flex:1;min-width:80px;background:var(--bg3);border-radius:8px;padding:8px;text-align:center;border:1px solid var(--border)">
+        <div style="font-size:11px;font-weight:600;color:var(--text3);margin-bottom:4px">${mn}</div>
+        ${mTrades.length?`<div style="font-size:13px;font-weight:700;color:${col}">${(mPnl>=0?'+':'')+sym+Math.abs(mPnl).toFixed(0)}</div><div style="font-size:10px;color:var(--text3)">${wr2}% WR</div>`:`<div style="font-size:11px;color:var(--text3)">—</div>`}
+      </div>`;
+    });
+    bEl.innerHTML=html+'</div>';
+  }
+
+  // Słownik błędów (najczęstsze reguły złamane)
+  const eEl = document.getElementById('yearly-errors');
+  if (eEl) {
+    const errorMap = {};
+    trades.forEach(tr=>(tr.rulesBroken||[]).forEach(r=>{ errorMap[r]=(errorMap[r]||0)+1; }));
+    const errors = Object.entries(errorMap).sort((a,b)=>b[1]-a[1]).slice(0,8);
+    if (!errors.length) {
+      eEl.innerHTML='<div style="color:var(--text3);font-size:13px;text-align:center;padding:16px">Brak złamanych reguł — świetna robota! 🎯</div>';
+    } else {
+      eEl.innerHTML='<div style="display:flex;flex-direction:column;gap:6px">'+errors.map(([r,n])=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 12px;background:var(--bg3);border-radius:7px"><span style="font-size:13px">${escHtml(r)}</span><span style="background:rgba(255,170,0,.2);color:var(--amber);border-radius:12px;padding:2px 10px;font-size:12px;font-weight:700">${n}×</span></div>`).join('')+'</div>';
+    }
+  }
+
+  // Formularz
+  const setV=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v||'';};
+  setV('yearly-q1',saved.q1); setV('yearly-q2',saved.q2); setV('yearly-q3',saved.q3);
+  setV('yearly-goal-wr',saved.goalWr); setV('yearly-goal-trades',saved.goalTrades); setV('yearly-goal-focus',saved.goalFocus);
+}
+
+function saveYearlySummary() {
+  const g=id=>document.getElementById(id)?.value||'';
+  const existing=_getYearlySummary(_yearlyYear);
+  _saveYearlySummaryData(_yearlyYear,{
+    q1:g('yearly-q1'), q2:g('yearly-q2'), q3:g('yearly-q3'),
+    goalWr:g('yearly-goal-wr'), goalTrades:g('yearly-goal-trades'), goalFocus:g('yearly-goal-focus'),
+    reviewed:true, reviewedAt:existing.reviewedAt||Date.now(), savedAt:Date.now(),
+  });
+  renderYearlySummary();
+  toast('✅ Rok zamknięty!', 'success');
+}
+
 function _postSyncRender() {
   const accs = getAccounts();
   if (accs.length && (!state.currentAccountId || !accs.find(a => a.id === state.currentAccountId))) {
@@ -17535,6 +17911,7 @@ function escHtml(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').
 
 function renderWeeklyReview() {
   renderWeeklyLabel();
+  renderWeeklyStatusBadge();
   renderWeeklyStats();
   renderWeeklyDays();
   renderWeeklyTrades();
@@ -17550,51 +17927,122 @@ function renderWeeklyTrades() {
   const cntEl = document.getElementById('weekly-trades-count');
   const {monday, sunday} = getWeekDates(_weeklyKey);
   const sym = getCurrSym(state.currentAccountId);
-  const trades = getTrades(state.currentAccountId).filter(t => {
-    const d = new Date(t.date); return d >= monday && d <= sunday && t.status === 'closed';
+  const allTrades = getTrades(state.currentAccountId).filter(tr => {
+    const d = new Date(tr.date); return d >= monday && d <= sunday && tr.status === 'closed';
   }).sort((a,b) => new Date(a.date) - new Date(b.date));
-  if (cntEl) cntEl.textContent = trades.length ? `${trades.length} ${t('weekly_trades_suffix')}` : '';
-  if (!trades.length) {
-    el.innerHTML = `<div style="color:var(--text3);font-size:13px;text-align:center;padding:16px">${t('weekly_no_trades')}</div>`;
+
+  if (cntEl) cntEl.textContent = allTrades.length ? `${allTrades.length} ${t('weekly_trades_suffix')}` : '';
+  if (!allTrades.length) {
+    el.innerHTML = `<div style="color:var(--text3);font-size:13px;text-align:center;padding:24px">${t('weekly_no_trades')}</div>`;
     return;
   }
-  const emoColors = { 'Spokojny':'var(--green)', 'Pewny':'var(--green)', 'Podekscytowany':'var(--amber)', 'FOMO':'var(--red)', 'Revenge':'var(--red)', 'Zaniepokojony':'var(--red)', 'Zmęczony':'var(--amber)', 'Sfrustrowany':'var(--red)', 'Neutralny':'var(--text3)' };
-  let html = `<div style="overflow-x:auto">
-    <table style="width:100%;border-collapse:collapse;font-size:12px">
-      <thead><tr style="border-bottom:1px solid var(--border)">
-        <th style="padding:6px 8px;text-align:left;color:var(--text3);font-weight:600">${t('weekly_col_date')}</th>
-        <th style="padding:6px 8px;text-align:left;color:var(--text3);font-weight:600">${t('th_instrument')}</th>
-        <th style="padding:6px 8px;text-align:center;color:var(--text3);font-weight:600">${t('weekly_col_dir')}</th>
-        <th style="padding:6px 8px;text-align:left;color:var(--text3);font-weight:600">${t('trade_setup')}</th>
-        <th style="padding:6px 8px;text-align:center;color:var(--text3);font-weight:600">${t('weekly_col_emo_pre')}</th>
-        <th style="padding:6px 8px;text-align:center;color:var(--text3);font-weight:600">${t('weekly_col_emo_post')}</th>
-        <th style="padding:6px 8px;text-align:right;color:var(--text3);font-weight:600">P&L</th>
-      </tr></thead>
-      <tbody>`;
-  trades.forEach(t => {
-    const pnl = t.pnl || 0;
-    const pnlColor = pnl > 0 ? 'var(--green)' : pnl < 0 ? 'var(--red)' : 'var(--text3)';
-    const pnlStr = (pnl >= 0 ? '+' : '') + sym + Math.abs(pnl).toFixed(2);
-    const dir = (t.direction||'').toLowerCase();
-    const dirStr = dir === 'buy' || dir === 'long' ? '<span style="color:var(--green);font-weight:700">▲</span>' : dir === 'sell' || dir === 'short' ? '<span style="color:var(--red);font-weight:700">▼</span>' : '—';
-    const setupStr = t.setup ? `<span class="tag" style="font-size:10px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block">${escHtml(t.setup)}</span>` : '<span style="color:var(--text3)">—</span>';
-    const ePre  = t.emotionPre  || '';
-    const ePost = t.emotionPost || '';
-    const preStr  = ePre  ? `<span style="color:${emoColors[ePre]||'var(--text3)'};font-size:11px">${ePre}</span>`  : '<span style="color:var(--text3)">—</span>';
-    const postStr = ePost ? `<span style="color:${emoColors[ePost]||'var(--text3)'};font-size:11px">${ePost}</span>` : '<span style="color:var(--text3)">—</span>';
-    const dateStr = (t.date||'').slice(0,10).split('-').reverse().slice(0,2).join('.');
-    html += `<tr style="border-bottom:1px solid var(--border);transition:background .1s" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
-      <td style="padding:7px 8px;font-family:var(--font-mono);color:var(--text3)">${dateStr}</td>
-      <td style="padding:7px 8px;font-weight:700">${escHtml(t.symbol||'—')}</td>
-      <td style="padding:7px 8px;text-align:center">${dirStr}</td>
-      <td style="padding:7px 8px">${setupStr}</td>
-      <td style="padding:7px 8px;text-align:center">${preStr}</td>
-      <td style="padding:7px 8px;text-align:center">${postStr}</td>
-      <td style="padding:7px 8px;text-align:right;font-family:var(--font-mono);font-weight:700;color:${pnlColor}">${pnlStr}</td>
-    </tr>`;
+
+  // Podsumowanie tygodnia
+  const wins    = allTrades.filter(tr => (tr.pnl||0) > 0).length;
+  const totalPnl= allTrades.reduce((s,tr) => s+(tr.pnl||0), 0);
+  const rrTrades= allTrades.filter(tr => tr.entry&&tr.sl&&tr.tp);
+  const avgRR   = rrTrades.length ? (rrTrades.reduce((s,tr)=>{const r=Math.abs(tr.entry-tr.sl),w=Math.abs(tr.tp-tr.entry);return r>0?s+w/r:s;},0)/rrTrades.length).toFixed(2) : null;
+  const best    = [...allTrades].sort((a,b)=>(b.pnl||0)-(a.pnl||0))[0];
+  const worst   = [...allTrades].sort((a,b)=>(a.pnl||0)-(b.pnl||0))[0];
+  const wr      = Math.round(wins/allTrades.length*100);
+  const totalStr= (totalPnl>=0?'+':'')+sym+Math.abs(totalPnl).toFixed(2);
+  const pnlCol  = totalPnl>0?'var(--green)':totalPnl<0?'var(--red)':'var(--text3)';
+
+  let html = `
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;padding:12px;background:var(--bg3);border-radius:10px">
+    <div style="text-align:center">
+      <div style="font-size:11px;color:var(--text3);margin-bottom:2px">Win Rate</div>
+      <div style="font-size:20px;font-weight:800;color:${wr>=50?'var(--green)':'var(--red)'}">${wr}%</div>
+      <div style="font-size:10px;color:var(--text3)">${wins}/${allTrades.length} trade'ów</div>
+    </div>
+    <div style="text-align:center">
+      <div style="font-size:11px;color:var(--text3);margin-bottom:2px">Łączny P&L</div>
+      <div style="font-size:20px;font-weight:800;color:${pnlCol}">${totalStr}</div>
+    </div>
+    <div style="text-align:center">
+      <div style="font-size:11px;color:var(--text3);margin-bottom:2px">Avg R:R</div>
+      <div style="font-size:20px;font-weight:800;color:var(--accent)">${avgRR||'—'}</div>
+    </div>
+    <div style="text-align:center">
+      <div style="font-size:11px;color:var(--text3);margin-bottom:2px">Najlepszy</div>
+      <div style="font-size:14px;font-weight:700;color:var(--green)">${best?('+'+sym+Math.abs(best.pnl||0).toFixed(2)):'—'}</div>
+      <div style="font-size:10px;color:var(--text3)">${best?escHtml(best.symbol||''):''}${worst&&worst!==best?' / '+sym+Math.abs(worst.pnl||0).toFixed(2):''}</div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:6px;margin-bottom:12px">
+    <button onclick="_wkFilter(this,'all')" id="wkf-all" class="btn-sm" style="font-size:11px;background:var(--accent);color:#000;border-color:var(--accent)">Wszystkie (${allTrades.length})</button>
+    <button onclick="_wkFilter(this,'win')" id="wkf-win" class="btn-sm" style="font-size:11px">✅ Zyski (${wins})</button>
+    <button onclick="_wkFilter(this,'loss')" id="wkf-loss" class="btn-sm" style="font-size:11px">❌ Straty (${allTrades.length-wins})</button>
+  </div>
+
+  <div id="wk-trade-cards" style="display:flex;flex-direction:column;gap:8px">`;
+
+  allTrades.forEach((tr,i) => {
+    const pnl    = tr.pnl||0;
+    const pnlCol2= pnl>0?'var(--green)':pnl<0?'var(--red)':'var(--text3)';
+    const pnlStr = (pnl>=0?'+':'')+sym+Math.abs(pnl).toFixed(2);
+    const dir    = (tr.direction||'').toLowerCase();
+    const isLong = dir==='buy'||dir==='long';
+    const dirIcon= isLong?'<span style="color:var(--green);font-weight:800">▲ LONG</span>':'<span style="color:var(--red);font-weight:800">▼ SHORT</span>';
+    const dateStr= (tr.date||'').slice(0,16).replace('T',' ');
+    const hasRR  = tr.entry&&tr.sl&&tr.tp;
+    const rrVal  = hasRR?(Math.abs(tr.tp-tr.entry)/Math.abs(tr.entry-tr.sl)).toFixed(1):null;
+    const shots  = (tr.screenshots||[]).slice(0,1);
+    const wkClass= pnl>0?'win':'loss';
+
+    html += `<div class="wk-trade-card" data-result="${wkClass}" style="border:1px solid ${pnl>0?'rgba(0,212,161,.25)':pnl<0?'rgba(255,80,80,.25)':'var(--border)'};border-radius:10px;overflow:hidden;background:var(--bg2)">
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer" onclick="_wkToggle('wkd-${i}',this)">
+        <div style="font-size:18px">${pnl>0?'✅':'❌'}</div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <span style="font-size:14px;font-weight:800">${escHtml(tr.symbol||'—')}</span>
+            <span style="font-size:11px">${dirIcon}</span>
+            ${tr.setup?`<span class="tag" style="font-size:10px">${escHtml(tr.setup)}</span>`:''}
+          </div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px">${dateStr}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-size:16px;font-weight:800;color:${pnlCol2}">${pnlStr}</div>
+          ${rrVal?`<div style="font-size:10px;color:var(--text3)">R:R ${rrVal}</div>`:''}
+        </div>
+        <div style="color:var(--text3);font-size:12px;margin-left:4px" id="wkd-${i}-arr">▶</div>
+      </div>
+      <div id="wkd-${i}" style="display:none;padding:0 14px 14px;border-top:1px solid var(--border)">
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0;font-size:12px">
+          ${tr.entry!=null?`<div><div style="color:var(--text3);font-size:10px;margin-bottom:2px">ENTRY</div><div style="font-family:var(--font-mono);font-weight:700">${tr.entry}</div></div>`:''}
+          ${tr.exit!=null?`<div><div style="color:var(--text3);font-size:10px;margin-bottom:2px">EXIT</div><div style="font-family:var(--font-mono);font-weight:700">${tr.exit}</div></div>`:''}
+          ${tr.sl!=null?`<div><div style="color:var(--red);font-size:10px;margin-bottom:2px">SL</div><div style="font-family:var(--font-mono);color:var(--red)">${tr.sl}</div></div>`:''}
+          ${tr.tp!=null?`<div><div style="color:var(--green);font-size:10px;margin-bottom:2px">TP</div><div style="font-family:var(--font-mono);color:var(--green)">${tr.tp}</div></div>`:''}
+        </div>
+        ${tr.emotionPre||tr.emotionPost?`<div style="font-size:11px;color:var(--text3);margin-bottom:8px">Emocja przed: <b>${tr.emotionPre||'—'}</b> · po: <b>${tr.emotionPost||'—'}</b></div>`:''}
+        ${tr.note?`<div style="font-size:12px;color:var(--text2);background:var(--bg3);border-radius:6px;padding:8px 10px;margin-bottom:8px;line-height:1.6">${escHtml(tr.note)}</div>`:''}
+        ${shots.length?`<img src="${shots[0]}" style="max-width:100%;max-height:200px;border-radius:6px;object-fit:contain;margin-top:4px" onclick="this.style.maxHeight=this.style.maxHeight==='none'?'200px':'none'" title="Kliknij aby powiększyć">`:''}
+      </div>
+    </div>`;
   });
-  html += '</tbody></table></div>';
+
+  html += `</div>`;
   el.innerHTML = html;
+}
+
+function _wkToggle(id, header) {
+  const body = document.getElementById(id);
+  const arr  = document.getElementById(id+'-arr');
+  if (!body) return;
+  const open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  if (arr) arr.textContent = open ? '▶' : '▼';
+}
+
+function _wkFilter(btn, type) {
+  document.querySelectorAll('[id^="wkf-"]').forEach(b => {
+    b.style.background=''; b.style.color=''; b.style.borderColor='';
+  });
+  btn.style.background='var(--accent)'; btn.style.color='#000'; btn.style.borderColor='var(--accent)';
+  document.querySelectorAll('.wk-trade-card').forEach(card => {
+    card.style.display = (type==='all'||card.dataset.result===type) ? '' : 'none';
+  });
 }
 
 function renderWeeklyAnalyses() {
@@ -17817,18 +18265,46 @@ function setWeeklyPlan(val, btn) {
 }
 
 function saveWeeklyReview() {
+  const existing = getWeeklyReview(_weeklyKey) || {};
   const data = {
-    weekKey:  _weeklyKey,
-    q1:       document.getElementById('weekly-q1')?.value||'',
-    q2:       document.getElementById('weekly-q2')?.value||'',
-    q3:       document.getElementById('weekly-q3')?.value||'',
-    rating:   parseInt(document.getElementById('weekly-rating')?.value)||5,
-    planVal:  _weeklyPlanVal,
-    savedAt:  Date.now(),
+    weekKey:    _weeklyKey,
+    q1:         document.getElementById('weekly-q1')?.value||'',
+    q2:         document.getElementById('weekly-q2')?.value||'',
+    q3:         document.getElementById('weekly-q3')?.value||'',
+    rating:     parseInt(document.getElementById('weekly-rating')?.value)||5,
+    planVal:    _weeklyPlanVal,
+    savedAt:    Date.now(),
+    reviewed:   true,
+    reviewedAt: existing.reviewedAt || Date.now(),
   };
   saveWeeklyReviewData(_weeklyKey, data);
+  renderWeeklyStatusBadge();
   renderWeeklyMotivation();
   toast(t('weekly_saved'), 'success');
+}
+
+function renderWeeklyStatusBadge() {
+  const bar = document.getElementById('weekly-status-bar');
+  if (!bar) return;
+  const review = getWeeklyReview(_weeklyKey) || {};
+  const {monday, sunday} = getWeekDates(_weeklyKey);
+  const hasTrades = getTrades(state.currentAccountId).some(tr => {
+    const d = new Date(tr.date); return d >= monday && d <= sunday && tr.status === 'closed';
+  });
+  const hasData = hasTrades || review.q1 || review.q2 || review.q3;
+
+  if (review.reviewed) {
+    const dt = review.reviewedAt ? new Date(review.reviewedAt).toLocaleDateString('pl-PL') : '';
+    bar.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px;padding:5px 14px;background:rgba(0,212,161,.12);border:1px solid rgba(0,212,161,.3);border-radius:20px;font-size:12px;color:var(--accent);font-weight:600">
+      ✅ Tydzień zamknięty${dt?' · '+dt:''}
+    </span>`;
+  } else if (hasData) {
+    bar.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px;padding:5px 14px;background:rgba(255,170,0,.1);border:1px solid rgba(255,170,0,.3);border-radius:20px;font-size:12px;color:var(--amber);font-weight:600">
+      📝 Do uzupełnienia — wypełnij refleksję i zapisz tydzień
+    </span>`;
+  } else {
+    bar.innerHTML = '';
+  }
 }
 
 function renderWeeklyDays() {
