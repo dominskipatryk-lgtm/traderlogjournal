@@ -2685,6 +2685,14 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
                     </div>
                     <input type="hidden" id="journal-pre-exercise">
                   </div>
+                  <div>
+                    <label class="jlabel">🧘 Stress zewnętrzny dziś: <span id="journal-pre-stress-val" style="color:var(--accent)">1</span>/5
+                      <span style="font-size:10px;color:var(--text3);margin-left:6px">(1 = brak, 5 = bardzo wysoki)</span>
+                    </label>
+                    <input type="range" id="journal-pre-stress" min="1" max="5" value="1"
+                      oninput="document.getElementById('journal-pre-stress-val').textContent=this.value;updateJournalPreProgress()"
+                      style="width:100%;accent-color:var(--amber)">
+                  </div>
                 </div>
               </div>
 
@@ -2729,6 +2737,16 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
                       <button onclick="setJournalBtn('pre-bias',this,'unknown','unknown')" class="journal-opt-btn">❓ Nie wiem jeszcze</button>
                     </div>
                     <input type="hidden" id="journal-pre-bias">
+                  </div>
+                  <div style="margin-bottom:12px">
+                    <label class="jlabel">🌊 Warunki rynkowe dziś</label>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap">
+                      <button onclick="setJournalBtn('pre-conditions',this,'trend','trend')" class="journal-opt-btn">📈 Trend</button>
+                      <button onclick="setJournalBtn('pre-conditions',this,'range','range')" class="journal-opt-btn">📊 Konsolidacja</button>
+                      <button onclick="setJournalBtn('pre-conditions',this,'volatile','volatile')" class="journal-opt-btn">⚡ Wysoka zmienność</button>
+                      <button onclick="setJournalBtn('pre-conditions',this,'unclear','unclear')" class="journal-opt-btn">❓ Niejasne</button>
+                    </div>
+                    <input type="hidden" id="journal-pre-conditions">
                   </div>
                 </div>
               </div>
@@ -2872,7 +2890,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
                     </div>
                     <input type="hidden" id="journal-post-limit-broken">
                   </div>
-                  <div>
+                  <div style="margin-bottom:12px">
                     <label class="jlabel">⚡ Czy wchodziłem impulsywnie (bez setupu)?</label>
                     <div style="display:flex;gap:6px">
                       <button onclick="setJournalBtn('post-impulsive',this,'no','no')" class="journal-opt-btn">✅ Nie</button>
@@ -2880,6 +2898,23 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
                       <button onclick="setJournalBtn('post-impulsive',this,'yes','yes')" class="journal-opt-btn">❌ Tak, kilkukrotnie</button>
                     </div>
                     <input type="hidden" id="journal-post-impulsive">
+                  </div>
+                  <div style="margin-bottom:12px">
+                    <label class="jlabel">🎯 Czy handlowałem zgodnie z zaplanowaną strategią?</label>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap">
+                      <button onclick="setJournalBtn('post-strategy-match',this,'yes','yes')" class="journal-opt-btn">✅ Tak, zgodnie z planem</button>
+                      <button onclick="setJournalBtn('post-strategy-match',this,'partial','partial')" class="journal-opt-btn">⚠️ Częściowo odszedłem</button>
+                      <button onclick="setJournalBtn('post-strategy-match',this,'no','no')" class="journal-opt-btn">❌ Inna strategia</button>
+                    </div>
+                    <input type="hidden" id="journal-post-strategy-match">
+                  </div>
+                  <div>
+                    <label class="jlabel">👁 Setupy widziane ale nie wzięte: <span id="journal-post-setups-seen-val" style="color:var(--accent)">0</span>
+                      <span style="font-size:10px;color:var(--text3);margin-left:6px">(miara cierpliwości i dyscypliny)</span>
+                    </label>
+                    <input type="range" id="journal-post-setups-seen" min="0" max="10" value="0"
+                      oninput="document.getElementById('journal-post-setups-seen-val').textContent=this.value;updateJournalPostProgress()"
+                      style="width:100%;accent-color:var(--accent)">
                   </div>
                 </div>
               </div>
@@ -14618,6 +14653,12 @@ function finishRoutineAction() {
         if (planInput) setTimeout(() => planInput.focus(), 300);
       }, 150);
     }, 100);
+    // Auto-timestamp sessionStart (tylko raz na dzień)
+    const _todayEntry = getJournalEntry(_jSelectedDate) || {};
+    if (!_todayEntry.sessionStart) {
+      _todayEntry.sessionStart = Date.now();
+      saveJournalEntryData(_jSelectedDate, _todayEntry);
+    }
     // Komunikat gotowości po chwili
     setTimeout(() => {
       const rm = document.getElementById('readiness-msg');
@@ -17167,7 +17208,14 @@ function loadJournalEntryForm(ds) {
     }
   };
   // Restore opt buttons via hidden inputs
-  ['pre-sleep','pre-energy','pre-calendar','pre-bias','pre-exercise'].forEach(f => {
+  // Stress slider
+  const stressEl = document.getElementById('journal-pre-stress');
+  if (stressEl) { stressEl.value = entry.preStress||1; document.getElementById('journal-pre-stress-val').textContent = entry.preStress||1; }
+  // Setups seen slider
+  const setupsEl = document.getElementById('journal-post-setups-seen');
+  if (setupsEl) { setupsEl.value = entry.postSetupsSeenNotTaken||0; document.getElementById('journal-post-setups-seen-val').textContent = entry.postSetupsSeenNotTaken||0; }
+
+  ['pre-sleep','pre-energy','pre-calendar','pre-bias','pre-exercise','pre-conditions'].forEach(f => {
     const stored = entry[f.replace('-','').replace(/-(.)/g, (_,c)=>c.toUpperCase())] || entry[f] || '';
     const input = document.getElementById('journal-' + f);
     if (input && stored) {
@@ -17204,7 +17252,7 @@ function loadJournalEntryForm(ds) {
   if (decisionEl) { decisionEl.value = entry.postDecisionRating||5; document.getElementById('journal-post-decision-val').textContent = entry.postDecisionRating||5; }
 
   // POST — opt buttons
-  ['post-plan-followed','post-limit-broken','post-impulsive'].forEach(f => {
+  ['post-plan-followed','post-limit-broken','post-impulsive','post-strategy-match'].forEach(f => {
     const stored = entry[f] || '';
     const input = document.getElementById('journal-' + f);
     if (input && stored) {
@@ -17297,11 +17345,13 @@ function saveJournalEntry() {
     preSleep:          g('journal-pre-sleep'),
     preEnergy:         g('journal-pre-energy'),
     preExercise:       g('journal-pre-exercise'),
+    preStress:         parseInt(g('journal-pre-stress'))||1,
     preCalendar:       g('journal-pre-calendar'),
     preCalendarNotes:  g('journal-pre-calendar-notes'),
     preInstruments:    g('journal-pre-instruments'),
     preLevels:         g('journal-pre-levels'),
     preBias:           g('journal-pre-bias'),
+    preConditions:     g('journal-pre-conditions'),
     preFocus:          parseInt(g('journal-pre-focus'))||5,
     preStrategy:       g('journal-pre-strategy'),
     prePlan:           g('journal-pre-plan'),
@@ -17311,9 +17361,11 @@ function saveJournalEntry() {
     preIntention:      g('journal-pre-intention'),
     // POST
     postMood:          getJournalMood('post'),
-    'post-plan-followed': g('journal-post-plan-followed'),
-    'post-limit-broken':  g('journal-post-limit-broken'),
-    'post-impulsive':     g('journal-post-impulsive'),
+    'post-plan-followed':    g('journal-post-plan-followed'),
+    'post-limit-broken':     g('journal-post-limit-broken'),
+    'post-impulsive':        g('journal-post-impulsive'),
+    'post-strategy-match':   g('journal-post-strategy-match'),
+    postSetupsSeenNotTaken:  parseInt(g('journal-post-setups-seen'))||0,
     postReview:        g('journal-post-review'),
     postLearning:      g('journal-post-learning'),
     postChange:        g('journal-post-change'),
@@ -17322,6 +17374,13 @@ function saveJournalEntry() {
     postTomorrow:      g('journal-post-tomorrow'),
     updatedAt:         Date.now(),
   };
+  // Auto-timestamp: sessionEnd gdy zapisywany jest post-review
+  const existing = getJournalEntry(_jSelectedDate) || {};
+  if (entry.postReview || entry.postRating) {
+    entry.sessionEnd = existing.sessionEnd || Date.now();
+  }
+  // Zachowaj sessionStart jeśli już był
+  if (existing.sessionStart) entry.sessionStart = existing.sessionStart;
   saveJournalEntryData(_jSelectedDate, entry);
   renderJournalCal();
   updateJournalPreProgress();
