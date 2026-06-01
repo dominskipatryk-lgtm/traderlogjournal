@@ -2746,6 +2746,11 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
                   <div id="jstep-pre-3-done" class="journal-step-check" style="display:none">✅</div>
                 </div>
                 <div class="journal-step-body">
+                  <div style="margin-bottom:14px">
+                    <label class="jlabel">🎯 Strategia na dziś</label>
+                    <div id="journal-pre-strategy-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px"></div>
+                    <input type="hidden" id="journal-pre-strategy">
+                  </div>
                   <div style="margin-bottom:12px">
                     <label class="jlabel">📝 Plan sesji</label>
                     <textarea id="journal-pre-plan" class="form-input-modal" style="min-height:80px;line-height:1.7"
@@ -17132,6 +17137,9 @@ function loadJournalEntryForm(ds) {
   if (sub) sub.textContent = ds;
   const entry = getJournalEntry(ds) || {};
 
+  // PRE — selektor strategii
+  _renderPreStrategyChips(entry.preStrategy || '');
+
   // PRE — pola podstawowe
   setFieldVal('journal-pre-plan', entry.prePlan||'');
   setFieldVal('journal-pre-goal', entry.preGoal||'');
@@ -17247,6 +17255,39 @@ function getJournalMood(type) {
   return selected ? parseInt(selected.dataset.val) : 0;
 }
 
+function _renderPreStrategyChips(selected) {
+  const wrap = document.getElementById('journal-pre-strategy-chips');
+  const hidden = document.getElementById('journal-pre-strategy');
+  if (!wrap) return;
+  const strategies = getStrategies();
+  if (!strategies.length) {
+    wrap.innerHTML = '<span style="font-size:12px;color:var(--text3)">Brak strategii — <a onclick="showPage(\'tools\')" style="color:var(--accent);cursor:pointer">dodaj w Narzędziach</a></span>';
+    return;
+  }
+  wrap.innerHTML = strategies.map(s => `
+    <button type="button"
+      onclick="_selectPreStrategy('${s.id}','${escHtml(s.name)}')"
+      id="jstrat-${s.id}"
+      class="journal-opt-btn${selected === s.id ? ' active' : ''}"
+      style="font-size:12px">
+      🎯 ${escHtml(s.name)}
+    </button>`).join('');
+  if (hidden) hidden.value = selected || '';
+}
+
+function _selectPreStrategy(id, name) {
+  const hidden = document.getElementById('journal-pre-strategy');
+  const current = hidden?.value;
+  const next = current === id ? '' : id;
+  if (hidden) hidden.value = next;
+  document.querySelectorAll('[id^="jstrat-"]').forEach(b => b.classList.remove('active'));
+  if (next) {
+    const btn = document.getElementById('jstrat-' + id);
+    if (btn) btn.classList.add('active');
+  }
+  updateJournalPreProgress();
+}
+
 function saveJournalEntry() {
   const g = id => document.getElementById(id)?.value || '';
   const entry = {
@@ -17262,6 +17303,7 @@ function saveJournalEntry() {
     preLevels:         g('journal-pre-levels'),
     preBias:           g('journal-pre-bias'),
     preFocus:          parseInt(g('journal-pre-focus'))||5,
+    preStrategy:       g('journal-pre-strategy'),
     prePlan:           g('journal-pre-plan'),
     preGoal:           g('journal-pre-goal'),
     preLossLimit:      parseFloat(g('journal-pre-loss-limit'))||null,
