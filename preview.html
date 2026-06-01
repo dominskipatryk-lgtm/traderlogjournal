@@ -2719,10 +2719,20 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
                     <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
                       <label class="jlabel" style="margin:0">📅 Sprawdziłem kalendarz ekonomiczny?</label>
                       <div style="display:flex;gap:6px">
-                        <button onclick="setJournalBtn('pre-calendar',this,'yes','yes')" class="journal-opt-btn">✅ Tak</button>
-                        <button onclick="setJournalBtn('pre-calendar',this,'no','no')" class="journal-opt-btn">❌ Nie</button>
+                        <button onclick="setJournalBtn('pre-calendar',this,'yes','yes');_calendarWarning(false)" class="journal-opt-btn">✅ Tak</button>
+                        <button onclick="setJournalBtn('pre-calendar',this,'no','no');_calendarWarning(true)" class="journal-opt-btn">❌ Nie</button>
                       </div>
                       <input type="hidden" id="journal-pre-calendar">
+                    </div>
+                    <div id="journal-calendar-warning" style="display:none;margin-top:10px;padding:12px 14px;background:rgba(255,170,0,.08);border:1px solid rgba(255,170,0,.35);border-radius:10px">
+                      <div style="font-size:13px;font-weight:700;color:var(--amber);margin-bottom:6px">⚠️ Kalendarz makro to fundament analizy rynku</div>
+                      <div style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:10px">
+                        Bez sprawdzenia kalendarza ryzykujesz wejście tuż przed publikacją danych (NFP, CPI, decyzja FED) — rynek może się gwałtownie odwrócić niezależnie od Twojej analizy technicznej.
+                      </div>
+                      <div style="display:flex;gap:8px;flex-wrap:wrap">
+                        <button onclick="showPage('macro');closeSidebar()" class="btn-sm" style="font-size:11px;border-color:var(--amber);color:var(--amber)">📅 Otwórz kalendarz makro</button>
+                        <button onclick="showPage('settings');setTimeout(()=>document.getElementById('sr-monday')?.scrollIntoView({behavior:'smooth'}),300)" class="btn-sm" style="font-size:11px">🔔 Ustaw przypomnienia makro</button>
+                      </div>
                     </div>
                     <input id="journal-pre-calendar-notes" class="form-input-modal" style="margin-top:8px;font-size:12px" placeholder="Ważne newsy dziś (NFP, CPI, FED…) — wpisz lub zostaw puste">
                   </div>
@@ -17591,6 +17601,7 @@ function loadJournalEntryForm(ds) {
   const setupsEl = document.getElementById('journal-post-setups-seen');
   if (setupsEl) { setupsEl.value = entry.postSetupsSeenNotTaken||0; document.getElementById('journal-post-setups-seen-val').textContent = entry.postSetupsSeenNotTaken||0; }
 
+  _calendarWarning(entry.preCalendar === 'no');
   ['pre-sleep','pre-energy','pre-calendar','pre-bias','pre-exercise','pre-conditions'].forEach(f => {
     const stored = entry[f.replace('-','').replace(/-(.)/g, (_,c)=>c.toUpperCase())] || entry[f] || '';
     const input = document.getElementById('journal-' + f);
@@ -17677,6 +17688,11 @@ function setJournalMoodDisplay(type, val) {
 function getJournalMood(type) {
   const selected = document.querySelector('#journal-'+type+'-mood-btns .mood-btn.selected');
   return selected ? parseInt(selected.dataset.val) : 0;
+}
+
+function _calendarWarning(show) {
+  const el = document.getElementById('journal-calendar-warning');
+  if (el) el.style.display = show ? 'block' : 'none';
 }
 
 function _renderPreStrategyChips(selected) {
