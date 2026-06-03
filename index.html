@@ -765,6 +765,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 .draft-dot { width:7px; height:7px; border-radius:50%; background:var(--amber); flex-shrink:0; animation:pulse-amber 1.4s infinite; }
 @keyframes pulse-amber { 0%,100%{opacity:1} 50%{opacity:.4} }
 @keyframes slideInRight { from{opacity:0;transform:translateX(30px)} to{opacity:1;transform:translateX(0)} }
+@keyframes slideUp { from{opacity:0;transform:translateX(-50%) translateY(20px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
 .reminder-time-btn.active { background:var(--accent-dim)!important;color:var(--accent)!important;border-color:var(--accent)!important; }
 .stats-tab-btn { padding:10px 20px;background:none;border:none;color:var(--text3);font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color .15s; }
 .stats-tab-btn.active { color:var(--text);border-bottom-color:var(--accent); }
@@ -1329,6 +1330,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
         </div>
       </div>
       <div class="sidebar-controls">
+        <div id="freemium-badge" style="display:none;justify-content:center;margin-bottom:4px;cursor:pointer" onclick="showUpsellModal()"></div>
         <button class="theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()" title="Motyw" aria-label="Przełącz motyw">🌙</button>
         <div class="lang-switch" role="group" aria-label="Język">
           <button class="lang-btn active" id="lang-pl" onclick="setLang('pl')">PL</button>
@@ -2020,6 +2022,9 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
         <!-- MT4 Integration -->
         <div class="settings-section">
           <div class="settings-section-title">🔌 Integracja z MT4</div>
+          <div id="mt4-listener-badge" style="margin-bottom:12px;padding:8px 12px;background:var(--bg2);border-radius:8px;border:1px solid var(--border)">
+            <span style="color:var(--text3);font-size:12px">⏳ Inicjalizacja…</span>
+          </div>
           <p style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.6">
             Skopiuj swój <strong>User ID</strong> i wklej go w ustawieniach EA w MetaTrader 4.
             EA automatycznie otworzy panel transakcji przy każdej pozycji.
@@ -2588,7 +2593,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
         </button>
         <button class="journal-tab" id="jtab-weekly" onclick="switchJournalTab('weekly')"
           style="padding:10px 20px;background:none;border:none;color:var(--text3);font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px">
-          📋 Tygodniowy Przegląd
+          📊 Przeglądy
         </button>
       </div>
 
@@ -2684,6 +2689,14 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
                     </div>
                     <input type="hidden" id="journal-pre-exercise">
                   </div>
+                  <div>
+                    <label class="jlabel">🧘 Stress zewnętrzny dziś: <span id="journal-pre-stress-val" style="color:var(--accent)">1</span>/5
+                      <span style="font-size:10px;color:var(--text3);margin-left:6px">(1 = brak, 5 = bardzo wysoki)</span>
+                    </label>
+                    <input type="range" id="journal-pre-stress" min="1" max="5" value="1"
+                      oninput="document.getElementById('journal-pre-stress-val').textContent=this.value;updateJournalPreProgress()"
+                      style="width:100%;accent-color:var(--amber)">
+                  </div>
                 </div>
               </div>
 
@@ -2704,10 +2717,20 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
                     <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
                       <label class="jlabel" style="margin:0">📅 Sprawdziłem kalendarz ekonomiczny?</label>
                       <div style="display:flex;gap:6px">
-                        <button onclick="setJournalBtn('pre-calendar',this,'yes','yes')" class="journal-opt-btn">✅ Tak</button>
-                        <button onclick="setJournalBtn('pre-calendar',this,'no','no')" class="journal-opt-btn">❌ Nie</button>
+                        <button onclick="setJournalBtn('pre-calendar',this,'yes','yes');_calendarWarning(false)" class="journal-opt-btn">✅ Tak</button>
+                        <button onclick="setJournalBtn('pre-calendar',this,'no','no');_calendarWarning(true)" class="journal-opt-btn">❌ Nie</button>
                       </div>
                       <input type="hidden" id="journal-pre-calendar">
+                    </div>
+                    <div id="journal-calendar-warning" style="display:none;margin-top:10px;padding:12px 14px;background:rgba(255,170,0,.08);border:1px solid rgba(255,170,0,.35);border-radius:10px">
+                      <div style="font-size:13px;font-weight:700;color:var(--amber);margin-bottom:6px">⚠️ Kalendarz makro to fundament analizy rynku</div>
+                      <div style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:10px">
+                        Bez sprawdzenia kalendarza ryzykujesz wejście tuż przed publikacją danych (NFP, CPI, decyzja FED) — rynek może się gwałtownie odwrócić niezależnie od Twojej analizy technicznej.
+                      </div>
+                      <div style="display:flex;gap:8px;flex-wrap:wrap">
+                        <button onclick="showPage('macro');closeSidebar()" class="btn-sm" style="font-size:11px;border-color:var(--amber);color:var(--amber)">📅 Otwórz kalendarz makro</button>
+                        <button onclick="showPage('settings');setTimeout(()=>document.getElementById('sr-monday')?.scrollIntoView({behavior:'smooth'}),300)" class="btn-sm" style="font-size:11px">🔔 Ustaw przypomnienia makro</button>
+                      </div>
                     </div>
                     <input id="journal-pre-calendar-notes" class="form-input-modal" style="margin-top:8px;font-size:12px" placeholder="Ważne newsy dziś (NFP, CPI, FED…) — wpisz lub zostaw puste">
                   </div>
@@ -2729,6 +2752,16 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
                     </div>
                     <input type="hidden" id="journal-pre-bias">
                   </div>
+                  <div style="margin-bottom:12px">
+                    <label class="jlabel">🌊 Warunki rynkowe dziś</label>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap">
+                      <button onclick="setJournalBtn('pre-conditions',this,'trend','trend')" class="journal-opt-btn">📈 Trend</button>
+                      <button onclick="setJournalBtn('pre-conditions',this,'range','range')" class="journal-opt-btn">📊 Konsolidacja</button>
+                      <button onclick="setJournalBtn('pre-conditions',this,'volatile','volatile')" class="journal-opt-btn">⚡ Wysoka zmienność</button>
+                      <button onclick="setJournalBtn('pre-conditions',this,'unclear','unclear')" class="journal-opt-btn">❓ Niejasne</button>
+                    </div>
+                    <input type="hidden" id="journal-pre-conditions">
+                  </div>
                 </div>
               </div>
 
@@ -2745,6 +2778,11 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
                   <div id="jstep-pre-3-done" class="journal-step-check" style="display:none">✅</div>
                 </div>
                 <div class="journal-step-body">
+                  <div style="margin-bottom:14px">
+                    <label class="jlabel">🎯 Strategia na dziś</label>
+                    <div id="journal-pre-strategy-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px"></div>
+                    <input type="hidden" id="journal-pre-strategy">
+                  </div>
                   <div style="margin-bottom:12px">
                     <label class="jlabel">📝 Plan sesji</label>
                     <textarea id="journal-pre-plan" class="form-input-modal" style="min-height:80px;line-height:1.7"
@@ -2866,7 +2904,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
                     </div>
                     <input type="hidden" id="journal-post-limit-broken">
                   </div>
-                  <div>
+                  <div style="margin-bottom:12px">
                     <label class="jlabel">⚡ Czy wchodziłem impulsywnie (bez setupu)?</label>
                     <div style="display:flex;gap:6px">
                       <button onclick="setJournalBtn('post-impulsive',this,'no','no')" class="journal-opt-btn">✅ Nie</button>
@@ -2874,6 +2912,23 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
                       <button onclick="setJournalBtn('post-impulsive',this,'yes','yes')" class="journal-opt-btn">❌ Tak, kilkukrotnie</button>
                     </div>
                     <input type="hidden" id="journal-post-impulsive">
+                  </div>
+                  <div style="margin-bottom:12px">
+                    <label class="jlabel">🎯 Czy handlowałem zgodnie z zaplanowaną strategią?</label>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap">
+                      <button onclick="setJournalBtn('post-strategy-match',this,'yes','yes')" class="journal-opt-btn">✅ Tak, zgodnie z planem</button>
+                      <button onclick="setJournalBtn('post-strategy-match',this,'partial','partial')" class="journal-opt-btn">⚠️ Częściowo odszedłem</button>
+                      <button onclick="setJournalBtn('post-strategy-match',this,'no','no')" class="journal-opt-btn">❌ Inna strategia</button>
+                    </div>
+                    <input type="hidden" id="journal-post-strategy-match">
+                  </div>
+                  <div>
+                    <label class="jlabel">👁 Setupy widziane ale nie wzięte: <span id="journal-post-setups-seen-val" style="color:var(--accent)">0</span>
+                      <span style="font-size:10px;color:var(--text3);margin-left:6px">(miara cierpliwości i dyscypliny)</span>
+                    </label>
+                    <input type="range" id="journal-post-setups-seen" min="0" max="10" value="0"
+                      oninput="document.getElementById('journal-post-setups-seen-val').textContent=this.value;updateJournalPostProgress()"
+                      style="width:100%;accent-color:var(--accent)">
                   </div>
                 </div>
               </div>
@@ -3043,16 +3098,40 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
         </div>
       </div>
 
-      <!-- TAB: Tygodniowy Przegląd -->
+      <!-- TAB: Przeglądy (Tygodniowy / Miesięczny / Roczny) -->
       <div id="journal-tab-weekly" style="display:none">
+
+        <!-- Podzakładki przeglądu -->
+        <div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:24px">
+          <button class="review-sub-tab active" id="rstab-weekly"
+            onclick="switchReviewTab('weekly')"
+            style="padding:8px 18px;background:none;border:none;color:var(--text);font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid var(--accent);margin-bottom:-2px">
+            📋 Tygodniowy
+          </button>
+          <button class="review-sub-tab" id="rstab-monthly"
+            onclick="switchReviewTab('monthly')"
+            style="padding:8px 18px;background:none;border:none;color:var(--text3);font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px">
+            📅 Miesięczny
+          </button>
+          <button class="review-sub-tab" id="rstab-yearly"
+            onclick="switchReviewTab('yearly')"
+            style="padding:8px 18px;background:none;border:none;color:var(--text3);font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px">
+            📆 Roczny
+          </button>
+        </div>
+
+        <!-- SUB-TAB: Tygodniowy -->
+        <div id="review-tab-weekly">
         <div style="max-width:820px">
 
           <!-- Nawigacja tygodnia -->
-          <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
             <button onclick="weeklyNav(-1)" class="btn-sm" style="padding:5px 14px">← Poprzedni</button>
             <div id="weekly-label" style="font-family:var(--font-head);font-size:16px;font-weight:700;flex:1;text-align:center"></div>
             <button onclick="weeklyNav(1)" class="btn-sm" style="padding:5px 14px">Następny →</button>
           </div>
+          <!-- Status tygodnia -->
+          <div id="weekly-status-bar" style="display:flex;align-items:center;justify-content:center;margin-bottom:16px"></div>
 
           <!-- BLOK 1: KPI tygodnia -->
           <div class="summary-card" style="margin-bottom:16px">
@@ -3146,9 +3225,113 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 
           <input type="hidden" id="weekly-plan-val">
         </div>
-      </div>
+        </div><!-- /review-tab-weekly -->
 
-    </div>
+        <!-- SUB-TAB: Miesięczny -->
+        <div id="review-tab-monthly" style="display:none">
+          <div style="max-width:860px">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+              <button onclick="monthlyNav(-1)" class="btn-sm">← Poprzedni</button>
+              <div id="monthly-label" style="font-family:var(--font-head);font-size:16px;font-weight:700;flex:1;text-align:center"></div>
+              <button onclick="monthlyNav(1)" class="btn-sm">Następny →</button>
+            </div>
+            <div id="monthly-status-bar" style="text-align:center;margin-bottom:20px"></div>
+            <div class="summary-card" style="margin-bottom:16px">
+              <div class="summary-card-title" style="color:var(--accent)">📊 Metryki miesiąca</div>
+              <div id="monthly-metrics" style="margin-top:12px"></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+              <div class="summary-card" style="border-color:rgba(0,212,161,.3)">
+                <div class="summary-card-title" style="color:var(--green)">🏆 Top 3 trade'y</div>
+                <div id="monthly-top3" style="margin-top:10px"></div>
+              </div>
+              <div class="summary-card" style="border-color:rgba(255,80,80,.3)">
+                <div class="summary-card-title" style="color:var(--red)">⚠️ Bottom 3 trade'y</div>
+                <div id="monthly-bottom3" style="margin-top:10px"></div>
+              </div>
+            </div>
+            <div class="summary-card" style="margin-bottom:16px">
+              <div class="summary-card-title">✍️ Refleksja miesięczna</div>
+              <div style="display:flex;flex-direction:column;gap:12px;margin-top:14px">
+                <div><label class="jlabel">✅ Co działało w tym miesiącu?</label>
+                  <textarea id="monthly-q1" class="form-input-modal" style="min-height:70px;line-height:1.7" placeholder="Które setupy, instrumenty, decyzje były naprawdę dobre?"></textarea></div>
+                <div><label class="jlabel">🚫 Co chcę wyeliminować?</label>
+                  <textarea id="monthly-q2" class="form-input-modal" style="min-height:70px;line-height:1.7" placeholder="Konkretne błędy i zachowania do usunięcia w przyszłym miesiącu..."></textarea></div>
+                <div><label class="jlabel">🌱 Jeden nawyk do wdrożenia w następnym miesiącu</label>
+                  <textarea id="monthly-q3" class="form-input-modal" style="min-height:60px;line-height:1.7" placeholder="Np. 'Codziennie 15 minut analizy przed sesją'"></textarea></div>
+              </div>
+            </div>
+            <div class="summary-card" style="margin-bottom:16px">
+              <div class="summary-card-title">🎯 Cele na kolejny miesiąc</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px">
+                <div><label class="jlabel">Win Rate (cel %)</label>
+                  <input id="monthly-goal-wr" class="form-input-modal" type="number" placeholder="np. 55"></div>
+                <div><label class="jlabel">Liczba transakcji (max)</label>
+                  <input id="monthly-goal-trades" class="form-input-modal" type="number" placeholder="np. 20"></div>
+                <div><label class="jlabel">Max dzienny drawdown</label>
+                  <input id="monthly-goal-dd" class="form-input-modal" type="number" placeholder="np. 100"></div>
+                <div><label class="jlabel">Główny focus na miesiąc</label>
+                  <input id="monthly-goal-focus" class="form-input-modal" placeholder="np. Cierpliwość — czekam tylko na A+ setup"></div>
+              </div>
+            </div>
+            <div style="display:flex;justify-content:flex-end;gap:10px;margin-bottom:32px">
+              <button class="btn-sm btn-accent" onclick="saveMonthlySummary()" style="padding:10px 24px;font-size:14px">💾 Zamknij miesiąc</button>
+            </div>
+          </div>
+        </div><!-- /review-tab-monthly -->
+
+        <!-- SUB-TAB: Roczny -->
+        <div id="review-tab-yearly" style="display:none">
+          <div style="max-width:860px">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+              <button onclick="yearlyNav(-1)" class="btn-sm">← Poprzedni rok</button>
+              <div id="yearly-label" style="font-family:var(--font-head);font-size:20px;font-weight:800;flex:1;text-align:center"></div>
+              <button onclick="yearlyNav(1)" class="btn-sm">Następny rok →</button>
+            </div>
+            <div id="yearly-status-bar" style="text-align:center;margin-bottom:20px"></div>
+            <div class="summary-card" style="margin-bottom:16px">
+              <div class="summary-card-title" style="color:var(--accent)">📊 Metryki roku</div>
+              <div id="yearly-metrics" style="margin-top:12px"></div>
+            </div>
+            <div class="summary-card" style="margin-bottom:16px">
+              <div class="summary-card-title" style="color:var(--blue)">📅 Miesiąc po miesiącu</div>
+              <div id="yearly-monthly-breakdown" style="margin-top:12px"></div>
+            </div>
+            <div class="summary-card" style="margin-bottom:16px">
+              <div class="summary-card-title" style="color:var(--amber)">📖 Najczęstsze błędy roku</div>
+              <div id="yearly-errors" style="margin-top:12px"></div>
+            </div>
+            <div class="summary-card" style="margin-bottom:16px">
+              <div class="summary-card-title">✍️ Refleksja roczna</div>
+              <div style="display:flex;flex-direction:column;gap:12px;margin-top:14px">
+                <div><label class="jlabel">🏆 Moje największe osiągnięcie tradingowe tego roku</label>
+                  <textarea id="yearly-q1" class="form-input-modal" style="min-height:70px;line-height:1.7" placeholder="Co osiągnąłem? Z czego jestem dumny?"></textarea></div>
+                <div><label class="jlabel">💸 Błąd który kosztował mnie najwięcej</label>
+                  <textarea id="yearly-q2" class="form-input-modal" style="min-height:70px;line-height:1.7" placeholder="Co powtarzałem? Ile to kosztowało? Dlaczego?"></textarea></div>
+                <div><label class="jlabel">🔄 Co zmieniam w przyszłym roku</label>
+                  <textarea id="yearly-q3" class="form-input-modal" style="min-height:70px;line-height:1.7" placeholder="Konkretna zmiana — nie 'będę lepszy' ale 'zmieniam X na Y'"></textarea></div>
+              </div>
+            </div>
+            <div class="summary-card" style="margin-bottom:16px">
+              <div class="summary-card-title">🎯 Cele na przyszły rok</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px">
+                <div><label class="jlabel">Target Win Rate (%)</label>
+                  <input id="yearly-goal-wr" class="form-input-modal" type="number" placeholder="np. 55"></div>
+                <div><label class="jlabel">Target liczba transakcji</label>
+                  <input id="yearly-goal-trades" class="form-input-modal" type="number" placeholder="np. 200"></div>
+                <div class="full"><label class="jlabel">Główny focus na rok</label>
+                  <input id="yearly-goal-focus" class="form-input-modal" placeholder="np. Konsekwencja w zarządzaniu ryzykiem"></div>
+              </div>
+            </div>
+            <div style="display:flex;justify-content:flex-end;gap:10px;margin-bottom:32px">
+              <button class="btn-sm btn-accent" onclick="saveYearlySummary()" style="padding:10px 24px;font-size:14px">💾 Zamknij rok</button>
+            </div>
+          </div>
+        </div><!-- /review-tab-yearly -->
+
+      </div><!-- /journal-tab-weekly -->
+
+    </div><!-- /page-journal -->
 
     <!-- EMOTIONS PAGE (placeholder — pełna implementacja w Task 7) -->
     <div id="page-emotions" class="page">
@@ -3516,6 +3699,10 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
         </div>
       </div>
     </div><!-- /page-portfolio -->
+
+    <!-- page-monthly i page-yearly przeniesione do zakładki Przeglądy w Dzienniku -->
+    <div id="page-monthly" class="page" style="display:none"></div>
+    <div id="page-yearly"  class="page" style="display:none"></div>
 
 
   </main>
@@ -4001,10 +4188,6 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
           <option value="USDT">USDT — Tether</option>
         </select>
       </div>
-      <div class="form-group-modal" style="margin-bottom:16px">
-        <label class="form-label-modal">Strategia</label>
-        <input class="form-input-modal" id="acc-strategy" placeholder="np. Smart Money Concepts, ICT">
-      </div>
       <!-- Typ gracza: ręczny / bot -->
       <div class="form-group-modal" style="margin-bottom:16px">
         <label class="form-label-modal">Kto realizuje transakcje?</label>
@@ -4140,6 +4323,17 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 
 <!-- TOAST -->
 <div id="toast"><div class="toast-dot green" id="toast-dot"></div><span id="toast-msg"></span></div>
+
+<!-- READINESS MESSAGE -->
+<div id="readiness-msg" style="display:none;position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:5000;background:linear-gradient(135deg,#0d2b1a,#0a3d24);border:1px solid var(--accent);border-radius:14px;padding:16px 20px;box-shadow:0 8px 32px rgba(0,212,161,.25);min-width:300px;max-width:420px;text-align:center;animation:slideUp .35s ease">
+  <div style="font-size:22px;margin-bottom:6px">✅</div>
+  <div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:4px">Jesteś gotowy do tradingu!</div>
+  <div style="font-size:12px;color:rgba(255,255,255,.6);margin-bottom:14px">Rytuał otwarcia zakończony · Możesz przejść do analizy wykresów</div>
+  <div style="display:flex;gap:8px;justify-content:center">
+    <button onclick="document.getElementById('readiness-msg').style.display='none'" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.7);border-radius:8px;padding:7px 14px;font-size:12px;cursor:pointer">Zostań tutaj</button>
+    <button onclick="document.getElementById('readiness-msg').style.display='none';showPage('analysis')" style="background:var(--accent);border:none;color:#000;border-radius:8px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer">→ Przejdź do analizy</button>
+  </div>
+</div>
 
 <!-- ANNOUNCEMENT BANNER -->
 <div id="announcement-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:3000;background:linear-gradient(135deg,var(--accent),#00a87a);color:#fff;padding:0">
@@ -4305,101 +4499,101 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
           <div style="display:flex;justify-content:space-between;align-items:center">
             <div>
               <div style="font-family:var(--font-head);font-size:22px;font-weight:800;color:white">
-                TraderLog<span style="color:var(--accent)">Journal</span> <span style="color:var(--accent)">Routine</span>
+                TraderLog<span style="color:var(--accent)">Journal</span> <span style="color:var(--accent)">Rytuał</span>
               </div>
-              <div style="font-size:12px;color:var(--text3);margin-top:2px">Dzisiejsza rutyna tradera · <span id="routine-date"></span></div>
+              <div style="font-size:12px;color:var(--text3);margin-top:2px">Codzienny rytuał tradera · <span id="routine-date"></span></div>
             </div>
             <button onclick="closeRoutineModal()" style="background:rgba(255,255,255,.1);border:none;color:white;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px">✕</button>
           </div>
         </div>
 
         <div id="routine-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:0">
-          <!-- BEFORE SESSION -->
+          <!-- RYTUAŁ OTWARCIA -->
           <div id="routine-before-col" style="padding:20px 24px;border-right:1px solid var(--border)">
-            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:14px">⬛ Before Session</div>
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:14px">🌅 Rytuał Otwarcia</div>
 
             <div class="routine-item" onclick="toggleRoutine(this)">
-              <div class="routine-icon">📖</div>
+              <div class="routine-icon">💪</div>
               <div>
-                <div class="routine-title">Read your journal</div>
-                <div class="routine-sub">Set goal for the day</div>
+                <div class="routine-title">CIAŁO — Czy jesteś wypoczęty i najedzony?</div>
+                <div class="routine-sub">Ciało i umysł muszą być w gotowości</div>
               </div>
             </div>
 
             <div class="routine-item" onclick="toggleRoutine(this)">
               <div class="routine-icon">📰</div>
               <div>
-                <div class="routine-title">Check economic events</div>
-                <div class="routine-sub">Schedule time for Session</div>
+                <div class="routine-title">UMYSŁ — Czy wiesz co rynek robi dziś rano?</div>
+                <div class="routine-sub">Sprawdź kalendarz makro i kontekst rynku</div>
               </div>
             </div>
 
             <div class="routine-item" onclick="toggleRoutine(this)">
               <div class="routine-icon">🎯</div>
               <div>
-                <div class="routine-title">Choose strategy to trade</div>
-                <div class="routine-sub">When / Why / How to use it?</div>
+                <div class="routine-title">PLAN — Czy Twoje setupy są zidentyfikowane?</div>
+                <div class="routine-sub">Wiesz czego szukasz, gdzie i dlaczego</div>
+              </div>
+            </div>
+
+            <div class="routine-item" onclick="toggleRoutine(this)">
+              <div class="routine-icon">🛑</div>
+              <div>
+                <div class="routine-title">GRANICE — Czy znasz swój dzienny limit straty?</div>
+                <div class="routine-sub">Kiedy dzisiaj kończysz — bez wyjątków</div>
+              </div>
+            </div>
+
+            <div class="routine-item" onclick="toggleRoutine(this)">
+              <div class="routine-icon">✍️</div>
+              <div>
+                <div class="routine-title">INTENCJA — Co chcesz osiągnąć tej sesji?</div>
+                <div class="routine-sub">Jeden konkretny cel, nie lista życzeń</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- RYTUAŁ ZAMKNIĘCIA -->
+          <div id="routine-after-col" style="padding:20px 24px">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--amber);margin-bottom:14px">🌙 Rytuał Zamknięcia</div>
+
+            <div class="routine-item" onclick="toggleRoutine(this)">
+              <div class="routine-icon">💰</div>
+              <div>
+                <div class="routine-title">WYNIKI — Jak zakończyłeś dzień finansowo?</div>
+                <div class="routine-sub">Zysk / strata / break-even — bądź szczery</div>
+              </div>
+            </div>
+
+            <div class="routine-item" onclick="toggleRoutine(this)">
+              <div class="routine-icon">📏</div>
+              <div>
+                <div class="routine-title">DYSCYPLINA — Czy trzymałeś się planu?</div>
+                <div class="routine-sub">1 = wcale nie, 5 = idealnie — bez wymówek</div>
               </div>
             </div>
 
             <div class="routine-item" onclick="toggleRoutine(this)">
               <div class="routine-icon">🧠</div>
               <div>
-                <div class="routine-title">Build intuition — Trader's Mindset</div>
-                <div class="routine-sub">Visualize best & worst setups</div>
+                <div class="routine-title">EMOCJE — Jak oceniasz swój stan tej sesji?</div>
+                <div class="routine-sub">1 = bardzo źle, 5 = w pełni skupiony</div>
               </div>
             </div>
 
             <div class="routine-item" onclick="toggleRoutine(this)">
-              <div class="routine-icon">📊</div>
+              <div class="routine-icon">📝</div>
               <div>
-                <div class="routine-title">Time for Charts</div>
-                <div class="routine-sub">Prepare charts · Turn off your phone</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- AFTER SESSION -->
-          <div id="routine-after-col" style="padding:20px 24px">
-            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--amber);margin-bottom:14px">⬛ After Session</div>
-
-            <div class="routine-item" onclick="toggleRoutine(this)">
-              <div class="routine-icon">📸</div>
-              <div>
-                <div class="routine-title">Save screenshots of charts</div>
-                <div class="routine-sub">Add to journal · Summarize · Conclude</div>
+                <div class="routine-title">LEKCJA — Jedno zdanie: czego nauczyłeś się?</div>
+                <div class="routine-sub">Zapisz teraz — jutro zapomnisz</div>
               </div>
             </div>
 
             <div class="routine-item" onclick="toggleRoutine(this)">
-              <div class="routine-icon">🖥️</div>
+              <div class="routine-icon">🔒</div>
               <div>
-                <div class="routine-title">Set-ups · Scenarios · Opportunities</div>
-                <div class="routine-sub">Good set-ups? Which ones? Describe!</div>
-              </div>
-            </div>
-
-            <div class="routine-item" onclick="toggleRoutine(this)">
-              <div class="routine-icon">✅</div>
-              <div>
-                <div class="routine-title">Sum up goals for the day</div>
-                <div class="routine-sub">What works? What lacks? What to improve?</div>
-              </div>
-            </div>
-
-            <div class="routine-item" onclick="toggleRoutine(this)">
-              <div class="routine-icon">☕</div>
-              <div>
-                <div class="routine-title">Break & Relax</div>
-                <div class="routine-sub">Healthy food · 30 min break · Walk · Nap</div>
-              </div>
-            </div>
-
-            <div class="routine-item" onclick="toggleRoutine(this)">
-              <div class="routine-icon">📈</div>
-              <div>
-                <div class="routine-title">Learn & Grow as a Trader</div>
-                <div class="routine-sub">Market Replay · Fast habit building</div>
+                <div class="routine-title">RESET — Jutro to nowy dzień. Zamknij notes.</div>
+                <div class="routine-sub">Wyloguj się, odpocznij, wróć jutro silniejszy</div>
               </div>
             </div>
           </div>
@@ -4615,6 +4809,84 @@ const _SB_ANON = 'sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK';
 const _ADMIN_EMAIL = 'dominskipatryk@gmail.com';
 const _HELP_VIDEO_URL = ''; // ← wklej URL nagranego wideo (YouTube/Loom)
 
+// ===== FREEMIUM =====
+const FREEMIUM_LIMIT = 50;
+
+function isProUser() {
+  const u = getUsers()[state.currentUser];
+  if (!u) return false;
+  return u.subscription === 'pro' || u.subscription === 'admin' || u.role === 'admin' || u.grandfathered === true;
+}
+
+function migrateTradesStorage() {
+  // Jednorazowa migracja: przenieś transakcje z db[key] do db.trades[key]
+  const db   = getDB();
+  const user = state.currentUser;
+  if (!user) return;
+  let changed = false;
+  getAccounts().forEach(acc => {
+    const key    = user + '_' + acc.id;
+    const oldFmt = Array.isArray(db[key]) ? db[key] : [];
+    const newFmt = (db.trades || {})[key] || [];
+    if (oldFmt.length === 0) return;
+    if (!db.trades) db.trades = {};
+    if (newFmt.length === 0) {
+      db.trades[key] = oldFmt;
+    } else {
+      const ids = new Set(newFmt.map(t => t.id));
+      const extra = oldFmt.filter(t => !ids.has(t.id));
+      if (extra.length) db.trades[key] = [...newFmt, ...extra];
+    }
+    delete db[key];
+    changed = true;
+  });
+  if (changed) saveDB(db);
+}
+
+function autoGrantGrandfathered() {
+  // Istniejący użytkownicy (mają już transakcje) są zwolnieni z limitu
+  const users = getUsers();
+  const u = users[state.currentUser];
+  if (!u || u.grandfathered || isProUser()) return;
+  const hasExistingTrades = getTotalClosedCount() > 0;
+  if (hasExistingTrades) {
+    u.grandfathered = true;
+    saveUsers(users);
+  }
+}
+function getTotalClosedCount() {
+  return getAccounts().reduce((s, a) => s + getTrades(a.id).filter(t => t.status === 'closed').length, 0);
+}
+function getFreemiumRemaining() {
+  if (isProUser()) return Infinity;
+  return Math.max(0, FREEMIUM_LIMIT - getTotalClosedCount());
+}
+function checkFreemiumLimit() {
+  if (isProUser()) return true;
+  const rem = getFreemiumRemaining();
+  if (rem <= 0) { showUpsellModal(); return false; }
+  return true;
+}
+function updateFreemiumBadge() {
+  const el = document.getElementById('freemium-badge');
+  if (!el) return;
+  if (isProUser()) { el.style.display = 'none'; return; }
+  const used = getTotalClosedCount();
+  const rem  = Math.max(0, FREEMIUM_LIMIT - used);
+  el.style.display = 'flex';
+  el.innerHTML = rem > 10
+    ? `<span style="color:var(--text3);font-size:11px">${used}/${FREEMIUM_LIMIT} trans.</span>`
+    : rem > 0
+      ? `<span style="color:var(--amber);font-size:11px;font-weight:700">⚠️ ${rem} trans. zostało</span>`
+      : `<span style="color:var(--red);font-size:11px;font-weight:700">🔒 Limit osiągnięty</span>`;
+}
+function showUpsellModal() {
+  document.getElementById('upsell-modal')?.classList.add('open');
+}
+function closeUpsellModal() {
+  document.getElementById('upsell-modal')?.classList.remove('open');
+}
+
 // ===== STATE =====
 let state = {
   currentUser: null,
@@ -4628,6 +4900,55 @@ let state = {
 
 function getUsers() { return getDB().users || {}; }
 function saveUsers(u) { const db = getDB(); db.users = u; saveDB(db); }
+
+// ===== ACCOUNT FIELD ENCRYPTION (AES-GCM) =====
+const _ENC_PREFIX = 'enc::';
+const _ENC_SALT   = 'traderlog-v1-2026';
+let   _cryptoKey  = null;
+
+async function _getCryptoKey() {
+  if (_cryptoKey) return _cryptoKey;
+  const raw = (state.currentUser || 'guest') + _ENC_SALT;
+  const enc = new TextEncoder();
+  const km  = await crypto.subtle.importKey('raw', enc.encode(raw), 'PBKDF2', false, ['deriveKey']);
+  _cryptoKey = await crypto.subtle.deriveKey(
+    { name:'PBKDF2', salt:enc.encode(_ENC_SALT), iterations:100000, hash:'SHA-256' },
+    km, { name:'AES-GCM', length:256 }, false, ['encrypt','decrypt']
+  );
+  return _cryptoKey;
+}
+async function encryptField(plain) {
+  if (!plain) return plain;
+  const key = await _getCryptoKey();
+  const iv  = crypto.getRandomValues(new Uint8Array(12));
+  const enc = new TextEncoder();
+  const ct  = await crypto.subtle.encrypt({ name:'AES-GCM', iv }, key, enc.encode(String(plain)));
+  const buf = new Uint8Array(12 + ct.byteLength);
+  buf.set(iv); buf.set(new Uint8Array(ct), 12);
+  return _ENC_PREFIX + btoa(String.fromCharCode(...buf));
+}
+async function decryptField(val) {
+  if (!val || !String(val).startsWith(_ENC_PREFIX)) return val;
+  try {
+    const key = await _getCryptoKey();
+    const buf = Uint8Array.from(atob(String(val).slice(_ENC_PREFIX.length)), c => c.charCodeAt(0));
+    const dec = await crypto.subtle.decrypt({ name:'AES-GCM', iv:buf.slice(0,12) }, key, buf.slice(12));
+    return new TextDecoder().decode(dec);
+  } catch { return val; }
+}
+
+// Cache odszyfrowanych wartości — sync odczyt dla renderów
+const _accDecCache = new Map(); // accId -> { broker, server, mt4Login }
+async function _refreshAccDecCache() {
+  const accs = getAccounts();
+  for (const a of accs) {
+    _accDecCache.set(a.id, {
+      broker:   await decryptField(a.broker),
+      mt4Login: await decryptField(a.mt4Login),
+    });
+  }
+}
+function _accDec(accId) { return _accDecCache.get(accId) || {}; }
 
 function getAccounts() {
   const db = getDB();
@@ -4646,9 +4967,20 @@ function isCurrentAccountBot(accountId) {
 }
 
 function getTrades(accountId) {
-  const db = getDB();
+  const db  = getDB();
   const key = state.currentUser + '_' + accountId;
-  let trades = (db.trades || {})[key] || [];
+  // Czytaj z obu lokalizacji (db.trades[key] = nowy format, db[key] = stary format z sbSyncDown)
+  const newFmt = (db.trades || {})[key] || [];
+  const oldFmt = Array.isArray(db[key]) ? db[key] : [];
+  let trades = newFmt.length >= oldFmt.length ? newFmt : oldFmt;
+  // Migracja: scal stary format do nowego przy okazji
+  if (oldFmt.length > 0 && newFmt.length === 0) {
+    if (!db.trades) db.trades = {};
+    db.trades[key] = oldFmt;
+    delete db[key];
+    saveDB(db);
+    trades = oldFmt;
+  }
   if (trades.some(t => t.date && t.date.length === 10)) {
     trades = trades.map(t => t.date && t.date.length === 10 ? { ...t, date: t.date + 'T12:00' } : t);
     if (!db.trades) db.trades = {};
@@ -4662,6 +4994,8 @@ function saveTrades(accountId, arr) {
   if (!db.trades) db.trades = {};
   const key = state.currentUser + '_' + accountId;
   db.trades[key] = arr;
+  // Usuń stary format jeśli istnieje
+  if (db[key]) { delete db[key]; }
   saveDB(db);
 }
 
@@ -4698,10 +5032,13 @@ function loginAs(username, userData) {
   }
   refreshTopbarAccount();
   updateAdminNav();
-  renderAll();
+  _refreshAccDecCache().then(() => renderAll());
   updateDraftBadges();
+  migrateTradesStorage();
+  autoGrantGrandfathered();
+  updateFreemiumBadge();
   setTimeout(initLang, 50);
-  setTimeout(showRoutineModal, 1200);
+  setTimeout(() => { if (shouldShowOnboarding()) showOnboarding(); else showRoutineModal(); }, 1200);
   setTimeout(checkBackupReminder, 3000);
   setTimeout(checkAutoDownload, 4000);
   // [v1.7] Uruchom nasłuchiwanie sygnałów z MT4
@@ -5026,6 +5363,12 @@ function clearDemoData() {
 
 // ===== NAVIGATION =====
 function showPage(page) {
+  // Wirtualne strony z sub-nawigacją (page#tab)
+  if (page === 'journal_weekly') {
+    showPage('journal');
+    setTimeout(() => switchJournalTab('weekly'), 120);
+    return;
+  }
   // Zamknij wszystkie otwarte modale przy zmianie zakładki
   document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
   checkReminders();
@@ -5062,6 +5405,9 @@ function showPage(page) {
   if (page === 'library') { if(typeof renderLibrary==='function') renderLibrary(); }
   if (page === 'ideas')   { if(typeof renderIdeasPage==='function') renderIdeasPage(); }
   if (page === 'macro')   { if(typeof renderMacroCalendar==='function') renderMacroCalendar(); }
+  // monthly i yearly → redirect do zakładki Przeglądy w Dzienniku
+  if (page === 'monthly') { showPage('journal'); switchJournalTab('weekly'); switchReviewTab('monthly'); return; }
+  if (page === 'yearly')  { showPage('journal'); switchJournalTab('weekly'); switchReviewTab('yearly');  return; }
   if (page === 'portfolio') { if(typeof renderPortfolio==='function') renderPortfolio(); }
   // Aktualizuj tytuł w topstrip
   const PAGE_TITLES = {
@@ -5081,6 +5427,8 @@ function showPage(page) {
     admin:     t('nav_admin'),
     calendar:  t('nav_calendar').replace(/^\S+\s/,''),
     portfolio: '💼 Portfel',
+    monthly:   '📅 Podsumowanie miesiąca',
+    yearly:    '📆 Podsumowanie roku',
     ai:        '🤖 AI Asystent'
   };
   const topstripTitle = document.getElementById('topstrip-title');
@@ -5144,7 +5492,7 @@ function renderDashboard() {
     return;
   }
   document.getElementById('dash-title').textContent = acc.name;
-  document.getElementById('dash-subtitle').textContent = acc.broker + ' · ' + acc.type + ' · ' + acc.strategy;
+  document.getElementById('dash-subtitle').textContent = (_accDec(acc.id).broker || acc.broker || '') + (acc.type ? ' · ' + acc.type : '');
 
   const trades = getTrades(acc.id);
   const closed = trades.filter(t => t.status === 'closed');
@@ -5165,7 +5513,7 @@ function renderDashboard() {
         <div style="font-weight:700;font-size:14px;color:var(--accent)">Konto gotowe! Dodaj pierwszą transakcję.</div>
         <div style="font-size:12px;color:var(--text2);margin-top:3px">Śledź swoje wyniki, ucz się na błędach i rozwijaj się jako trader.</div>
       </div>
-      <button class="btn-sm btn-accent" onclick="openNewTrade()" style="flex-shrink:0">+ Transakcja</button>
+      <button class="btn-sm btn-accent" onclick="openTradeModalWithDraftCheck()" style="flex-shrink:0">+ Transakcja</button>
     </div>` : '';
   document.getElementById('dash-stats').innerHTML = `
     ${ctaBanner}
@@ -6296,7 +6644,7 @@ function renderSummary() {
   const acc = accounts.find(a => a.id === state.currentAccountId);
   const closed = getStatsTrades();
   const periodLabels = {all:'Wszystkie okresy',year:'Ten rok',month:'Ten miesiąc',week:'Ten tydzień',today:'Dziś'};
-  document.getElementById('summary-subtitle').textContent = (acc ? acc.name + ' · ' + (acc.broker||'') : '') + ' — ' + (periodLabels[_statsPeriod]||'');
+  document.getElementById('summary-subtitle').textContent = (acc ? acc.name + ' · ' + (_accDec(acc.id).broker || acc.broker || '') : '') + ' — ' + (periodLabels[_statsPeriod]||'');
   if (!closed.length) { document.getElementById('summary-content').innerHTML = emptyState('📊','Brak danych','Brak zamkniętych transakcji dla wybranego okresu'); return; }
 
   const curr = getCurrSym(acc?.id);
@@ -6750,7 +7098,7 @@ function renderAccounts() {
       <div class="account-card-header">
         <div>
           <div class="account-name">${acc.name}${acc.isBot?'<span style="font-size:10px;background:rgba(255,170,0,.15);color:var(--amber);border:1px solid rgba(255,170,0,.3);border-radius:5px;padding:1px 6px;margin-left:6px;font-weight:600;vertical-align:middle">🤖 Bot</span>':''}</div>
-          <div class="account-type">${acc.type} · ${acc.broker||'—'}</div>
+          <div class="account-type">${acc.type} · ${_accDec(acc.id).broker || acc.broker || '—'}</div>
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
           <div class="account-color" style="background:${acc.color||'#00d4a1'}"></div>
@@ -6794,7 +7142,6 @@ function openAccountModal() {
   document.getElementById('acc-name').value = '';
   document.getElementById('acc-broker').value = '';
   document.getElementById('acc-capital').value = '';
-  document.getElementById('acc-strategy').value = '';
   document.getElementById('acc-mt4-login').value = '';
   document.getElementById('acc-currency').value = 'USD';
   document.getElementById('acc-modal-title').textContent = t('modal_new_account');
@@ -6805,16 +7152,17 @@ function openAccountModal() {
   openModal('account-modal');
 }
 
-function openEditAccount(id) {
+async function openEditAccount(id) {
   const acc = getAccounts().find(a => a.id === id);
   if (!acc) return;
+  const broker   = await decryptField(acc.broker);
+  const mt4Login = await decryptField(acc.mt4Login);
   document.getElementById('acc-id').value = acc.id;
   document.getElementById('acc-name').value = acc.name;
-  document.getElementById('acc-broker').value = acc.broker || '';
+  document.getElementById('acc-broker').value = broker || '';
   document.getElementById('acc-capital').value = acc.capital || '';
-  document.getElementById('acc-strategy').value = acc.strategy || '';
   document.getElementById('acc-type').value = acc.type || 'Forex';
-  document.getElementById('acc-mt4-login').value = acc.mt4Login || '';
+  document.getElementById('acc-mt4-login').value = mt4Login || '';
   document.getElementById('acc-currency').value = acc.currency || 'USD';
   document.getElementById('acc-modal-title').textContent = t('modal_edit_account');
   document.querySelectorAll('.color-swatch').forEach(s => s.classList.toggle('selected', s.dataset.color === acc.color));
@@ -6823,26 +7171,25 @@ function openEditAccount(id) {
   openModal('account-modal');
 }
 
-function saveAccount() {
+async function saveAccount() {
   const name = document.getElementById('acc-name').value.trim();
   if (!name) return toast(t('err_account_name'), 'error');
-  const id = document.getElementById('acc-id').value || genId();
+  const id    = document.getElementById('acc-id').value || genId();
   const color = document.querySelector('.color-swatch.selected')?.dataset.color || '#00d4a1';
   const acc = {
     id, name, color,
-    type: document.getElementById('acc-type').value,
-    broker: document.getElementById('acc-broker').value,
-    capital: parseFloat(document.getElementById('acc-capital').value) || 0,
+    type:     document.getElementById('acc-type').value,
+    broker:   await encryptField(document.getElementById('acc-broker').value),
+    capital:  parseFloat(document.getElementById('acc-capital').value) || 0,
     currency: document.getElementById('acc-currency').value || 'USD',
-    strategy: document.getElementById('acc-strategy').value,
-    mt4Login: document.getElementById('acc-mt4-login').value || '',
-    isBot: document.getElementById('acc-is-bot')?.checked || false,
+    mt4Login: await encryptField(document.getElementById('acc-mt4-login').value || ''),
+    isBot:    document.getElementById('acc-is-bot')?.checked || false,
   };
   const accounts = getAccounts();
   const idx = accounts.findIndex(a => a.id === id);
-  if (idx >= 0) accounts[idx] = acc;
-  else accounts.push(acc);
+  if (idx >= 0) accounts[idx] = acc; else accounts.push(acc);
   saveAccounts(accounts);
+  await _refreshAccDecCache();
   if (!state.currentAccountId) state.currentAccountId = id;
   closeModal('account-modal');
   refreshTopbarAccount();
@@ -6917,6 +7264,7 @@ function setEmotionUI(type, value) {
 
 // ===== TRADE MODAL =====
 function openTradeModal() {
+  if (!checkFreemiumLimit()) return;
   state.editTradeId = null;
   state.tempScreenshots = [];
   document.getElementById('trade-id').value = '';
@@ -7146,6 +7494,7 @@ function saveTrade() {
   renderDashboard();
   renderTrades();
   renderSummary();
+  updateFreemiumBadge();
   toast(t('toast_trade_saved'), 'success');
   // Show post-trade survey for closed trades (not for bot accounts)
   if (trade.status === 'closed' && !isCurrentAccountBot()) {
@@ -9049,7 +9398,7 @@ function renderCalendar() {
   const map  = buildTradeMap();
   const acc  = getAccounts().find(a => a.id === state.currentAccountId);
   document.getElementById('cal-subtitle').textContent =
-    acc ? acc.name + ' · ' + acc.broker : 'Wybierz konto';
+    acc ? acc.name + ' · ' + (_accDec(acc.id).broker || acc.broker || '') : 'Wybierz konto';
 
   if (mode === 'year') renderCalendarYear(map);
   else                 renderCalendarMonth(map);
@@ -9902,6 +10251,7 @@ async function renderSettings() {
   const u = users[state.currentUser] || {};
   document.getElementById('settings-subtitle').textContent =
     (u.role === 'admin' ? '👑 Administrator' : '👤 Trader') + ' · ' + state.currentUser;
+  updateMT4ListenerBadge();
   document.getElementById('sett-login').value = state.currentUser;
   document.getElementById('sett-name').value  = u.name  || '';
   document.getElementById('sett-email').value = u.email || '';
@@ -13012,6 +13362,22 @@ function stopRealtimeSync() {
 
 // ═══ MT4 REALTIME INTEGRATION ═══
 let _mt4Channel = null;
+let _mt4ListenerStatus = 'idle'; // idle | active | error | no_uid
+let _mt4LastSignal = null; // timestamp ostatniego sygnału
+
+function updateMT4ListenerBadge() {
+  const el = document.getElementById('mt4-listener-badge');
+  if (!el) return;
+  const map = {
+    idle:    ['⏳', 'var(--text3)',  'Inicjalizacja…'],
+    active:  ['✅', 'var(--accent)', 'Listener aktywny'],
+    error:   ['❌', 'var(--red)',    'Błąd połączenia'],
+    no_uid:  ['⚠️', 'var(--amber)',  'Brak User ID — wejdź w Ustawienia → Integracja MT4']
+  };
+  const [icon, color, text] = map[_mt4ListenerStatus] || map.idle;
+  const last = _mt4LastSignal ? ' · ostatni sygnał: ' + new Date(_mt4LastSignal).toLocaleTimeString('pl-PL') : '';
+  el.innerHTML = `<span style="color:${color};font-size:12px">${icon} ${text}${last}</span>`;
+}
 
 // ═══ MT4 LIVE TERMINAL ═══
 let _mt4Positions = {}; // ticket → {symbol, dir, entry, sl, tp, size, openTime}
@@ -13100,11 +13466,31 @@ function openTradeFromMT4Terminal(ticket) {
   openTradeFromMT4(p);
 }
 
-function initMT4Listener() {
+async function initMT4Listener() {
   if (!_sb || _mt4Channel) return;
-  const users = getUsers();
-  const u = users[state.currentUser];
-  if (!u?.supabaseId) return;
+
+  // Bug fix: pobierz supabaseId z sesji jeśli nie ma w localStorage
+  let uid = getUsers()[state.currentUser]?.supabaseId;
+  if (!uid) {
+    try {
+      const { data } = await _sb.auth.getSession();
+      uid = data?.session?.user?.id;
+      if (uid) {
+        const users = getUsers();
+        if (users[state.currentUser]) {
+          users[state.currentUser].supabaseId = uid;
+          saveUsers(users);
+        }
+      }
+    } catch(e) {}
+  }
+
+  if (!uid) {
+    console.warn('MT4: brak supabaseId — listener nie startuje. Wejdź w Ustawienia → Integracja MT4.');
+    _mt4ListenerStatus = 'no_uid';
+    updateMT4ListenerBadge();
+    return;
+  }
 
   _mt4Channel = _sb
     .channel('mt4_signals_' + state.currentUser)
@@ -13112,13 +13498,16 @@ function initMT4Listener() {
       event: 'INSERT',
       schema: 'public',
       table: 'mt4_signals',
-      filter: 'user_id=eq.' + u.supabaseId
+      filter: 'user_id=eq.' + uid
     }, payload => {
       handleMT4Signal(payload.new);
     })
-    .subscribe();
-
-  console.log('✓ MT4 listener aktywny');
+    .subscribe(status => {
+      _mt4ListenerStatus = status === 'SUBSCRIBED' ? 'active' : 'error';
+      updateMT4ListenerBadge();
+      if (status === 'SUBSCRIBED') console.log('✓ MT4 listener aktywny, uid:', uid);
+      else console.warn('MT4 listener status:', status);
+    });
 }
 
 function stopMT4Listener() {
@@ -13138,16 +13527,33 @@ async function handleMT4Signal(signal) {
     if (error) { console.warn('MT4: nie udało się oznaczyć sygnału jako processed, pomijam', error); return; }
   } catch(e) { console.warn('MT4: błąd oznaczania sygnału', e); return; }
 
-  // [v1.7] Znajdź konto w dzienniku po numerze MT4
-  const accounts = getAccounts();
-  const matchedAccount = accounts.find(a =>
-    a.mt4Login && String(a.mt4Login) === String(signal.mt4_account)
-  );
+  // Bug fix: async decrypt mt4Login dla każdego konta (nie z cache który może być pusty)
+  _mt4LastSignal = Date.now();
+  updateMT4ListenerBadge();
 
+  const accounts = getAccounts();
+  let matchedAccount = null;
+  for (const a of accounts) {
+    const rawLogin = a.mt4Login;
+    const login = rawLogin
+      ? (String(rawLogin).startsWith('enc_') ? await decryptField(rawLogin) : rawLogin)
+      : null;
+    if (login && String(login).trim() === String(signal.mt4_account).trim()) {
+      matchedAccount = a;
+      break;
+    }
+  }
+
+  // Przełącz na właściwe konto
+  const targetAccId = matchedAccount ? matchedAccount.id : state.currentAccountId;
   if (matchedAccount && matchedAccount.id !== state.currentAccountId) {
     state.currentAccountId = matchedAccount.id;
     refreshTopbarAccount();
     toast('MT4: Przełączono na konto ' + matchedAccount.name, 'success');
+  }
+  if (!matchedAccount && signal.mt4_account) {
+    console.warn('MT4: Nie znaleziono konta dla MT4 login #' + signal.mt4_account +
+      '. Sprawdź czy numer MT4 jest wpisany w Ustawienia → Konta.');
   }
 
   // Aktualizuj stan terminala
@@ -13163,7 +13569,7 @@ async function handleMT4Signal(signal) {
     };
     updateMT4Terminal();
     showMT4Notification(signal, matchedAccount);
-    openTradeFromMT4(signal);
+    openTradeFromMT4(signal, targetAccId);
   } else if (signal.event === 'CLOSE') {
     delete _mt4Positions[signal.ticket];
     updateMT4Terminal();
@@ -13240,9 +13646,10 @@ async function closeMT4Trade(signal) {
   showMT4CloseNotification(signal, null);
 }
 
-function openTradeFromMT4(signal) {
-  // [v1.7] Sprawdź czy transakcja z tym ticketem już istnieje
-  const existing = getTrades(state.currentAccountId);
+function openTradeFromMT4(signal, targetAccId) {
+  const accId = targetAccId || state.currentAccountId;
+  // Sprawdź duplikat na właściwym koncie
+  const existing = getTrades(accId);
   const duplicate = existing.find(t => t.mt4Ticket && String(t.mt4Ticket) === String(signal.ticket));
   if (duplicate) {
     console.log('TLJ: Transakcja #' + signal.ticket + ' już istnieje — pomijam duplikat');
@@ -13273,9 +13680,9 @@ function openTradeFromMT4(signal) {
     mt4Ticket: signal.ticket || null,
   };
 
-  const trades = getTrades(state.currentAccountId);
+  const trades = getTrades(accId);
   trades.push(trade);
-  saveTrades(state.currentAccountId, trades);
+  saveTrades(accId, trades);
   renderTrades();
   renderDashboard();
   playMT4Sound(signal.direction === 'BUY');
@@ -13432,15 +13839,30 @@ async function sbSyncDown(userId, userLogin) {
     if (accounts?.length) {
       if (loginKey) {
         if (!db.accounts) db.accounts = {};
-        db.accounts[loginKey] = accounts.map(a => ({
-          id: a.id, sbId: a.id, name: a.name, broker: a.broker || '',
-          brokerKey: a.broker_key || '', spread: a.spread || null,
-          traderPct: a.trader_pct || null,
-          type: a.type || 'forex', capital: parseFloat(a.capital) || 0,
-          strategy: a.strategy || '', color: a.color || '#00d4a1',
-          currency: a.currency || 'USD',
-          createdAt: new Date(a.created_at).getTime()
-        }));
+        const existingAccs = db.accounts[loginKey] || [];
+        const mergedAccs = accounts.map(a => {
+          // Zachowaj lokalny ID jeśli konto już istnieje (unika osierocania transakcji)
+          const local = existingAccs.find(x => x.sbId === a.id || x.id === a.id);
+          const localId = local?.id || a.id;
+          // Jeśli klucz transakcji zmienia się — przenieś dane
+          if (local && local.id !== a.id) {
+            const oldKey = loginKey + '_' + local.id;
+            const newKey = loginKey + '_' + a.id;
+            if (db[oldKey]?.length && !db[newKey]?.length) db[newKey] = db[oldKey];
+          }
+          return {
+            id: localId, sbId: a.id, name: a.name, broker: a.broker || '',
+            brokerKey: a.broker_key || '', spread: a.spread || null,
+            traderPct: a.trader_pct || null,
+            type: a.type || 'forex', capital: parseFloat(a.capital) || 0,
+            strategy: a.strategy || '', color: a.color || '#00d4a1',
+            currency: a.currency || 'USD',
+            createdAt: new Date(a.created_at).getTime()
+          };
+        });
+        // Zachowaj konta lokalne (jeszcze nie zsynchronizowane z Supabase)
+        const localOnly = existingAccs.filter(x => !x.sbId && !accounts.find(a => a.id === x.id));
+        db.accounts[loginKey] = [...mergedAccs, ...localOnly];
         saveDB(db);
       }
 
@@ -13448,12 +13870,13 @@ async function sbSyncDown(userId, userLogin) {
       const accIds = accounts.map(a => a.id);
       const { data: trades } = await _sb.from('trades').select('*').in('account_id', accIds);
       if (trades?.length) {
+        if (!db.trades) db.trades = {};
         trades.forEach(t => {
           const key = (loginKey || '') + '_' + t.account_id;
-          if (!db[key]) db[key] = [];
-          const idx = db[key].findIndex(x => x.id === t.id);
+          if (!db.trades[key]) db.trades[key] = [];
+          const idx = db.trades[key].findIndex(x => x.id === t.id);
           // Zachowaj istniejące screenshots (Drive URLs) jeśli Supabase nie ma
-          const existing = idx >= 0 ? db[key][idx] : null;
+          const existing = idx >= 0 ? db.trades[key][idx] : null;
           const sbUpdatedAt = new Date(t.updated_at).getTime();
           // Conflict resolution: zachowaj lokalną wersję jeśli jest nowsza
           if (existing && existing.updatedAt > sbUpdatedAt) return;
@@ -13474,8 +13897,8 @@ async function sbSyncDown(userId, userLogin) {
             rulesBroken: Array.isArray(t.rules_broken) ? t.rules_broken : (existing?.rulesBroken || []),
             updatedAt: sbUpdatedAt
           };
-          if (idx >= 0) db[key][idx] = trade;
-          else db[key].push(trade);
+          if (idx >= 0) db.trades[key][idx] = trade;
+          else db.trades[key].push(trade);
         });
         saveDB(db);
       }
@@ -13584,12 +14007,222 @@ function updateSyncIndicator() {
   if (btn) btn.style.display = state.currentUser ? 'inline-block' : 'none';
 }
 
+// ===== MONTHLY SUMMARY =====
+let _monthlyYear  = new Date().getFullYear();
+let _monthlyMonth = new Date().getMonth() + 1;
+
+function _getMonthlySummary(y, m) {
+  const db = getDB();
+  return (db['monthly_summary_' + (state.currentUser||'')] || {})[y + '_' + m] || {};
+}
+function _saveMonthlySummaryData(y, m, data) {
+  const db = getDB();
+  if (!db['monthly_summary_' + (state.currentUser||'')]) db['monthly_summary_' + (state.currentUser||'')] = {};
+  db['monthly_summary_' + (state.currentUser||'')][y + '_' + m] = data;
+  saveDB(db);
+}
+
+function monthlyNav(dir) {
+  _monthlyMonth += dir;
+  if (_monthlyMonth > 12) { _monthlyMonth = 1; _monthlyYear++; }
+  if (_monthlyMonth < 1)  { _monthlyMonth = 12; _monthlyYear--; }
+  renderMonthlySummary();
+}
+
+function renderMonthlySummary() {
+  const y = _monthlyYear, m = _monthlyMonth;
+  const monthNames = ['Styczeń','Luty','Marzec','Kwiecień','Maj','Czerwiec','Lipiec','Sierpień','Wrzesień','Październik','Listopad','Grudzień'];
+  const label = document.getElementById('monthly-label');
+  if (label) label.textContent = monthNames[m-1] + ' ' + y;
+
+  const sym    = getCurrSym(state.currentAccountId);
+  const trades = getTrades(state.currentAccountId).filter(tr => {
+    if (tr.status !== 'closed') return false;
+    const d = new Date(tr.date);
+    return d.getFullYear() === y && (d.getMonth()+1) === m;
+  });
+
+  // Status badge
+  const saved = _getMonthlySummary(y, m);
+  const bar = document.getElementById('monthly-status-bar');
+  if (bar) {
+    if (saved.reviewed) {
+      bar.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px;padding:5px 14px;background:rgba(0,212,161,.12);border:1px solid rgba(0,212,161,.3);border-radius:20px;font-size:12px;color:var(--accent);font-weight:600">✅ Miesiąc zamknięty · ${new Date(saved.reviewedAt).toLocaleDateString('pl-PL')}</span>`;
+    } else if (trades.length) {
+      bar.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px;padding:5px 14px;background:rgba(255,170,0,.1);border:1px solid rgba(255,170,0,.3);border-radius:20px;font-size:12px;color:var(--amber);font-weight:600">📝 Do uzupełnienia — wypełnij refleksję i zamknij miesiąc</span>`;
+    } else { bar.innerHTML = ''; }
+  }
+
+  // Metryki
+  const mEl = document.getElementById('monthly-metrics');
+  if (mEl) {
+    if (!trades.length) {
+      mEl.innerHTML = '<div style="color:var(--text3);font-size:13px;text-align:center;padding:16px">Brak zamkniętych transakcji w tym miesiącu</div>';
+    } else {
+      const wins    = trades.filter(tr => (tr.pnl||0) > 0).length;
+      const totalPnl= trades.reduce((s,tr) => s+(tr.pnl||0), 0);
+      const wr      = Math.round(wins/trades.length*100);
+      const rrT     = trades.filter(tr=>tr.entry&&tr.sl&&tr.tp);
+      const avgRR   = rrT.length ? (rrT.reduce((s,tr)=>{const r=Math.abs(tr.entry-tr.sl),w=Math.abs(tr.tp-tr.entry);return r>0?s+w/r:s;},0)/rrT.length).toFixed(2) : '—';
+      const pnls    = trades.map(tr=>tr.pnl||0);
+      const drawdowns= []; let peak=0, dd=0;
+      pnls.forEach(p=>{ peak=Math.max(peak,p); dd=Math.max(dd,peak-p); drawdowns.push(dd); });
+      const maxDD   = Math.max(...drawdowns);
+      const pnlCol  = totalPnl>0?'var(--green)':totalPnl<0?'var(--red)':'var(--text3)';
+      mEl.innerHTML = `<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px">
+        ${[['Win Rate',wr+'%',wr>=50?'var(--green)':'var(--red)'],['P&L',(totalPnl>=0?'+':'')+sym+Math.abs(totalPnl).toFixed(2),pnlCol],['Transakcji',trades.length,'var(--text)'],['Avg R:R',avgRR,'var(--accent)'],['Max DD',sym+maxDD.toFixed(2),'var(--amber)']].map(([l,v,c])=>`<div style="text-align:center;background:var(--bg3);border-radius:8px;padding:10px 6px"><div style="font-size:10px;color:var(--text3);margin-bottom:4px">${l}</div><div style="font-size:18px;font-weight:800;color:${c}">${v}</div></div>`).join('')}
+      </div>`;
+    }
+  }
+
+  // Top 3 / Bottom 3
+  const sorted = [...trades].sort((a,b)=>(b.pnl||0)-(a.pnl||0));
+  const _tradeCard = (tr) => {
+    const pnl=tr.pnl||0; const c=pnl>0?'var(--green)':'var(--red)';
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:var(--bg3);border-radius:7px;margin-bottom:5px;font-size:12px">
+      <span style="font-weight:700">${escHtml(tr.symbol||'—')}</span>
+      ${tr.setup?`<span class="tag" style="font-size:10px">${escHtml(tr.setup)}</span>`:''}
+      <span style="font-family:var(--font-mono);color:${c};font-weight:700">${(pnl>=0?'+':'')+sym+Math.abs(pnl).toFixed(2)}</span>
+    </div>`;
+  };
+  const t3El = document.getElementById('monthly-top3');
+  const b3El = document.getElementById('monthly-bottom3');
+  if (t3El) t3El.innerHTML = sorted.slice(0,3).map(_tradeCard).join('')||'<div style="color:var(--text3);font-size:12px;padding:8px">Brak danych</div>';
+  if (b3El) b3El.innerHTML = sorted.slice(-3).reverse().map(_tradeCard).join('')||'<div style="color:var(--text3);font-size:12px;padding:8px">Brak danych</div>';
+
+  // Formularz refleksji
+  const setV = (id,v) => { const el=document.getElementById(id); if(el) el.value=v||''; };
+  setV('monthly-q1', saved.q1); setV('monthly-q2', saved.q2); setV('monthly-q3', saved.q3);
+  setV('monthly-goal-wr', saved.goalWr); setV('monthly-goal-trades', saved.goalTrades);
+  setV('monthly-goal-dd', saved.goalDd); setV('monthly-goal-focus', saved.goalFocus);
+}
+
+function saveMonthlySummary() {
+  const g = id => document.getElementById(id)?.value||'';
+  const existing = _getMonthlySummary(_monthlyYear, _monthlyMonth);
+  _saveMonthlySummaryData(_monthlyYear, _monthlyMonth, {
+    q1: g('monthly-q1'), q2: g('monthly-q2'), q3: g('monthly-q3'),
+    goalWr: g('monthly-goal-wr'), goalTrades: g('monthly-goal-trades'),
+    goalDd: g('monthly-goal-dd'), goalFocus: g('monthly-goal-focus'),
+    reviewed: true, reviewedAt: existing.reviewedAt || Date.now(),
+    savedAt: Date.now(),
+  });
+  renderMonthlySummary();
+  toast('✅ Miesiąc zamknięty!', 'success');
+}
+
+// ===== YEARLY SUMMARY =====
+let _yearlyYear = new Date().getFullYear();
+
+function _getYearlySummary(y) {
+  const db = getDB();
+  return (db['yearly_summary_' + (state.currentUser||'')] || {})[y] || {};
+}
+function _saveYearlySummaryData(y, data) {
+  const db = getDB();
+  if (!db['yearly_summary_' + (state.currentUser||'')]) db['yearly_summary_' + (state.currentUser||'')] = {};
+  db['yearly_summary_' + (state.currentUser||'')][y] = data;
+  saveDB(db);
+}
+
+function yearlyNav(dir) { _yearlyYear += dir; renderYearlySummary(); }
+
+function renderYearlySummary() {
+  const y   = _yearlyYear;
+  const sym = getCurrSym(state.currentAccountId);
+  const label = document.getElementById('yearly-label');
+  if (label) label.textContent = y;
+
+  const trades = getTrades(state.currentAccountId).filter(tr => {
+    if (tr.status !== 'closed') return false;
+    return new Date(tr.date).getFullYear() === y;
+  });
+
+  // Status badge
+  const saved = _getYearlySummary(y);
+  const bar = document.getElementById('yearly-status-bar');
+  if (bar) {
+    if (saved.reviewed) {
+      bar.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px;padding:5px 14px;background:rgba(0,212,161,.12);border:1px solid rgba(0,212,161,.3);border-radius:20px;font-size:12px;color:var(--accent);font-weight:600">✅ Rok zamknięty · ${new Date(saved.reviewedAt).toLocaleDateString('pl-PL')}</span>`;
+    } else if (trades.length) {
+      bar.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px;padding:5px 14px;background:rgba(255,170,0,.1);border:1px solid rgba(255,170,0,.3);border-radius:20px;font-size:12px;color:var(--amber);font-weight:600">📝 Do uzupełnienia — wypełnij refleksję i zamknij rok</span>`;
+    } else { bar.innerHTML = ''; }
+  }
+
+  // Metryki roczne
+  const mEl = document.getElementById('yearly-metrics');
+  if (mEl) {
+    if (!trades.length) {
+      mEl.innerHTML = '<div style="color:var(--text3);font-size:13px;text-align:center;padding:16px">Brak danych za ' + y + '</div>';
+    } else {
+      const wins=trades.filter(tr=>(tr.pnl||0)>0).length;
+      const totalPnl=trades.reduce((s,tr)=>s+(tr.pnl||0),0);
+      const wr=Math.round(wins/trades.length*100);
+      const rrT=trades.filter(tr=>tr.entry&&tr.sl&&tr.tp);
+      const avgRR=rrT.length?(rrT.reduce((s,tr)=>{const r=Math.abs(tr.entry-tr.sl),w=Math.abs(tr.tp-tr.entry);return r>0?s+w/r:s;},0)/rrT.length).toFixed(2):'—';
+      const pnlCol=totalPnl>0?'var(--green)':totalPnl<0?'var(--red)':'var(--text3)';
+      mEl.innerHTML = `<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px">
+        ${[['Win Rate',wr+'%',wr>=50?'var(--green)':'var(--red)'],['Total P&L',(totalPnl>=0?'+':'')+sym+Math.abs(totalPnl).toFixed(2),pnlCol],['Transakcji',trades.length,'var(--text)'],['Avg R:R',avgRR,'var(--accent)'],['Najlepszy m-c','—','var(--text3)']].map(([l,v,c])=>`<div style="text-align:center;background:var(--bg3);border-radius:8px;padding:10px 6px"><div style="font-size:10px;color:var(--text3);margin-bottom:4px">${l}</div><div style="font-size:18px;font-weight:800;color:${c}">${v}</div></div>`).join('')}
+      </div>`;
+    }
+  }
+
+  // Monthly breakdown
+  const bEl = document.getElementById('yearly-monthly-breakdown');
+  if (bEl) {
+    const months=['Sty','Lut','Mar','Kwi','Maj','Cze','Lip','Sie','Wrz','Paź','Lis','Gru'];
+    let html='<div style="display:flex;gap:6px;flex-wrap:wrap">';
+    months.forEach((mn,i)=>{
+      const mTrades=trades.filter(tr=>(new Date(tr.date).getMonth())===i);
+      const mPnl=mTrades.reduce((s,tr)=>s+(tr.pnl||0),0);
+      const mWins=mTrades.filter(tr=>(tr.pnl||0)>0).length;
+      const col=mPnl>0?'var(--green)':mPnl<0?'var(--red)':'var(--text3)';
+      const wr2=mTrades.length?Math.round(mWins/mTrades.length*100):null;
+      html+=`<div style="flex:1;min-width:80px;background:var(--bg3);border-radius:8px;padding:8px;text-align:center;border:1px solid var(--border)">
+        <div style="font-size:11px;font-weight:600;color:var(--text3);margin-bottom:4px">${mn}</div>
+        ${mTrades.length?`<div style="font-size:13px;font-weight:700;color:${col}">${(mPnl>=0?'+':'')+sym+Math.abs(mPnl).toFixed(0)}</div><div style="font-size:10px;color:var(--text3)">${wr2}% WR</div>`:`<div style="font-size:11px;color:var(--text3)">—</div>`}
+      </div>`;
+    });
+    bEl.innerHTML=html+'</div>';
+  }
+
+  // Słownik błędów (najczęstsze reguły złamane)
+  const eEl = document.getElementById('yearly-errors');
+  if (eEl) {
+    const errorMap = {};
+    trades.forEach(tr=>(tr.rulesBroken||[]).forEach(r=>{ errorMap[r]=(errorMap[r]||0)+1; }));
+    const errors = Object.entries(errorMap).sort((a,b)=>b[1]-a[1]).slice(0,8);
+    if (!errors.length) {
+      eEl.innerHTML='<div style="color:var(--text3);font-size:13px;text-align:center;padding:16px">Brak złamanych reguł — świetna robota! 🎯</div>';
+    } else {
+      eEl.innerHTML='<div style="display:flex;flex-direction:column;gap:6px">'+errors.map(([r,n])=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 12px;background:var(--bg3);border-radius:7px"><span style="font-size:13px">${escHtml(r)}</span><span style="background:rgba(255,170,0,.2);color:var(--amber);border-radius:12px;padding:2px 10px;font-size:12px;font-weight:700">${n}×</span></div>`).join('')+'</div>';
+    }
+  }
+
+  // Formularz
+  const setV=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v||'';};
+  setV('yearly-q1',saved.q1); setV('yearly-q2',saved.q2); setV('yearly-q3',saved.q3);
+  setV('yearly-goal-wr',saved.goalWr); setV('yearly-goal-trades',saved.goalTrades); setV('yearly-goal-focus',saved.goalFocus);
+}
+
+function saveYearlySummary() {
+  const g=id=>document.getElementById(id)?.value||'';
+  const existing=_getYearlySummary(_yearlyYear);
+  _saveYearlySummaryData(_yearlyYear,{
+    q1:g('yearly-q1'), q2:g('yearly-q2'), q3:g('yearly-q3'),
+    goalWr:g('yearly-goal-wr'), goalTrades:g('yearly-goal-trades'), goalFocus:g('yearly-goal-focus'),
+    reviewed:true, reviewedAt:existing.reviewedAt||Date.now(), savedAt:Date.now(),
+  });
+  renderYearlySummary();
+  toast('✅ Rok zamknięty!', 'success');
+}
+
 function _postSyncRender() {
   const accs = getAccounts();
   if (accs.length && (!state.currentAccountId || !accs.find(a => a.id === state.currentAccountId))) {
     state.currentAccountId = accs[0].id;
   }
-  renderAll();
+  _refreshAccDecCache().then(() => renderAll());
   renderTrades();
   renderAccounts();
   renderSummary();
@@ -14546,11 +15179,25 @@ function finishRoutineAction() {
       setTimeout(() => {
         const card = document.getElementById('journal-card-pre');
         if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        // Fokus na pierwszym polu
         const planInput = document.getElementById('journal-pre-plan');
         if (planInput) setTimeout(() => planInput.focus(), 300);
       }, 150);
     }, 100);
+    // Auto-timestamp sessionStart (tylko raz na dzień)
+    const _todayEntry = getJournalEntry(_jSelectedDate) || {};
+    if (!_todayEntry.sessionStart) {
+      _todayEntry.sessionStart = Date.now();
+      saveJournalEntryData(_jSelectedDate, _todayEntry);
+    }
+    // Komunikat gotowości po chwili
+    setTimeout(() => {
+      const rm = document.getElementById('readiness-msg');
+      if (rm) {
+        rm.style.display = 'block';
+        // Auto-ukryj po 8 sekundach jeśli user nie kliknął
+        setTimeout(() => { if (rm) rm.style.display = 'none'; }, 8000);
+      }
+    }, 900);
   } else if (_routineMode === 'after') {
     // Nawiguj do dziennika → sekcja "Po sesji" + pokaż przycisk wylogowania
     showPage('journal');
@@ -14916,24 +15563,18 @@ function saveWithdrawal() {
   if (type === 'balance') {
     const actual = parseFloat(document.getElementById('balance-actual')?.value) || 0;
     if (!actual) return toast(t('err_balance_missing'), 'error');
-    const trades = getTrades(state.currentAccountId);
-    const closedPnl = trades.filter(t => t.status === 'closed').reduce((s, t) => s + (t.pnl || 0), 0);
-    const equity = (acc.capital || 0) + closedPnl;
-    amount = actual - equity;
-    // Adjust capital
-    const db = getDB();
-    if (!db.accounts) db.accounts = {};
-    if (db.accounts[acc.id]) db.accounts[acc.id].capital = actual - closedPnl;
-    saveDB(db);
+    const closedPnl = getTrades(state.currentAccountId).filter(t => t.status==='closed').reduce((s,t)=>s+(t.pnl||0),0);
+    amount = actual - ((acc.capital||0) + closedPnl);
+    // Fix: użyj saveAccounts zamiast db.accounts[acc.id] (zły klucz)
+    acc.capital = actual - closedPnl;
+    saveAccounts(accounts);
   } else {
     amount = parseFloat(document.getElementById('withdrawal-amount')?.value) || 0;
     if (!amount) return toast('Wpisz kwotę', 'error');
-    if (type === 'withdrawal') amount = -amount; // ujemna
-    // Update capital
-    const db = getDB();
-    if (!db.accounts) db.accounts = {};
-    if (db.accounts[acc.id]) db.accounts[acc.id].capital = (db.accounts[acc.id].capital || 0) + amount;
-    saveDB(db);
+    if (type === 'withdrawal') amount = -amount;
+    // Fix: użyj saveAccounts zamiast db.accounts[acc.id] (zły klucz)
+    acc.capital = (acc.capital || 0) + amount;
+    saveAccounts(accounts);
   }
 
   // Save withdrawal record
@@ -16864,9 +17505,23 @@ function switchJournalTab(tab) {
       btn.style.borderBottomColor = t === tab ? 'var(--accent)' : 'transparent';
     }
   });
-  if (tab === 'notes') renderNotesList();
-  if (tab === 'weekly') renderWeeklyReview();
-  if (tab === 'daily') _hookJournalProgressInputs();
+  if (tab === 'notes')  renderNotesList();
+  if (tab === 'weekly') { switchReviewTab('weekly'); renderWeeklyReview(); }
+  if (tab === 'daily')  _hookJournalProgressInputs();
+}
+
+function switchReviewTab(sub) {
+  ['weekly','monthly','yearly'].forEach(t => {
+    const el  = document.getElementById('review-tab-' + t);
+    const btn = document.getElementById('rstab-' + t);
+    if (el)  el.style.display = t === sub ? 'block' : 'none';
+    if (btn) {
+      btn.style.color = t === sub ? 'var(--text)' : 'var(--text3)';
+      btn.style.borderBottomColor = t === sub ? 'var(--accent)' : 'transparent';
+    }
+  });
+  if (sub === 'monthly') renderMonthlySummary();
+  if (sub === 'yearly')  renderYearlySummary();
 }
 
 function _hookJournalProgressInputs() {
@@ -17061,6 +17716,9 @@ function loadJournalEntryForm(ds) {
   if (sub) sub.textContent = ds;
   const entry = getJournalEntry(ds) || {};
 
+  // PRE — selektor strategii
+  _renderPreStrategyChips(entry.preStrategy || '');
+
   // PRE — pola podstawowe
   setFieldVal('journal-pre-plan', entry.prePlan||'');
   setFieldVal('journal-pre-goal', entry.preGoal||'');
@@ -17088,7 +17746,15 @@ function loadJournalEntryForm(ds) {
     }
   };
   // Restore opt buttons via hidden inputs
-  ['pre-sleep','pre-energy','pre-calendar','pre-bias','pre-exercise'].forEach(f => {
+  // Stress slider
+  const stressEl = document.getElementById('journal-pre-stress');
+  if (stressEl) { stressEl.value = entry.preStress||1; document.getElementById('journal-pre-stress-val').textContent = entry.preStress||1; }
+  // Setups seen slider
+  const setupsEl = document.getElementById('journal-post-setups-seen');
+  if (setupsEl) { setupsEl.value = entry.postSetupsSeenNotTaken||0; document.getElementById('journal-post-setups-seen-val').textContent = entry.postSetupsSeenNotTaken||0; }
+
+  _calendarWarning(entry.preCalendar === 'no');
+  ['pre-sleep','pre-energy','pre-calendar','pre-bias','pre-exercise','pre-conditions'].forEach(f => {
     const stored = entry[f.replace('-','').replace(/-(.)/g, (_,c)=>c.toUpperCase())] || entry[f] || '';
     const input = document.getElementById('journal-' + f);
     if (input && stored) {
@@ -17125,7 +17791,7 @@ function loadJournalEntryForm(ds) {
   if (decisionEl) { decisionEl.value = entry.postDecisionRating||5; document.getElementById('journal-post-decision-val').textContent = entry.postDecisionRating||5; }
 
   // POST — opt buttons
-  ['post-plan-followed','post-limit-broken','post-impulsive'].forEach(f => {
+  ['post-plan-followed','post-limit-broken','post-impulsive','post-strategy-match'].forEach(f => {
     const stored = entry[f] || '';
     const input = document.getElementById('journal-' + f);
     if (input && stored) {
@@ -17176,6 +17842,44 @@ function getJournalMood(type) {
   return selected ? parseInt(selected.dataset.val) : 0;
 }
 
+function _calendarWarning(show) {
+  const el = document.getElementById('journal-calendar-warning');
+  if (el) el.style.display = show ? 'block' : 'none';
+}
+
+function _renderPreStrategyChips(selected) {
+  const wrap = document.getElementById('journal-pre-strategy-chips');
+  const hidden = document.getElementById('journal-pre-strategy');
+  if (!wrap) return;
+  const strategies = getStrategies();
+  if (!strategies.length) {
+    wrap.innerHTML = '<span style="font-size:12px;color:var(--text3)">Brak strategii — <a onclick="showPage(\'tools\')" style="color:var(--accent);cursor:pointer">dodaj w Narzędziach</a></span>';
+    return;
+  }
+  wrap.innerHTML = strategies.map(s => `
+    <button type="button"
+      onclick="_selectPreStrategy('${s.id}','${escHtml(s.name)}')"
+      id="jstrat-${s.id}"
+      class="journal-opt-btn${selected === s.id ? ' active' : ''}"
+      style="font-size:12px">
+      🎯 ${escHtml(s.name)}
+    </button>`).join('');
+  if (hidden) hidden.value = selected || '';
+}
+
+function _selectPreStrategy(id, name) {
+  const hidden = document.getElementById('journal-pre-strategy');
+  const current = hidden?.value;
+  const next = current === id ? '' : id;
+  if (hidden) hidden.value = next;
+  document.querySelectorAll('[id^="jstrat-"]').forEach(b => b.classList.remove('active'));
+  if (next) {
+    const btn = document.getElementById('jstrat-' + id);
+    if (btn) btn.classList.add('active');
+  }
+  updateJournalPreProgress();
+}
+
 function saveJournalEntry() {
   const g = id => document.getElementById(id)?.value || '';
   const entry = {
@@ -17185,12 +17889,15 @@ function saveJournalEntry() {
     preSleep:          g('journal-pre-sleep'),
     preEnergy:         g('journal-pre-energy'),
     preExercise:       g('journal-pre-exercise'),
+    preStress:         parseInt(g('journal-pre-stress'))||1,
     preCalendar:       g('journal-pre-calendar'),
     preCalendarNotes:  g('journal-pre-calendar-notes'),
     preInstruments:    g('journal-pre-instruments'),
     preLevels:         g('journal-pre-levels'),
     preBias:           g('journal-pre-bias'),
+    preConditions:     g('journal-pre-conditions'),
     preFocus:          parseInt(g('journal-pre-focus'))||5,
+    preStrategy:       g('journal-pre-strategy'),
     prePlan:           g('journal-pre-plan'),
     preGoal:           g('journal-pre-goal'),
     preLossLimit:      parseFloat(g('journal-pre-loss-limit'))||null,
@@ -17198,9 +17905,11 @@ function saveJournalEntry() {
     preIntention:      g('journal-pre-intention'),
     // POST
     postMood:          getJournalMood('post'),
-    'post-plan-followed': g('journal-post-plan-followed'),
-    'post-limit-broken':  g('journal-post-limit-broken'),
-    'post-impulsive':     g('journal-post-impulsive'),
+    'post-plan-followed':    g('journal-post-plan-followed'),
+    'post-limit-broken':     g('journal-post-limit-broken'),
+    'post-impulsive':        g('journal-post-impulsive'),
+    'post-strategy-match':   g('journal-post-strategy-match'),
+    postSetupsSeenNotTaken:  parseInt(g('journal-post-setups-seen'))||0,
     postReview:        g('journal-post-review'),
     postLearning:      g('journal-post-learning'),
     postChange:        g('journal-post-change'),
@@ -17209,6 +17918,13 @@ function saveJournalEntry() {
     postTomorrow:      g('journal-post-tomorrow'),
     updatedAt:         Date.now(),
   };
+  // Auto-timestamp: sessionEnd gdy zapisywany jest post-review
+  const existing = getJournalEntry(_jSelectedDate) || {};
+  if (entry.postReview || entry.postRating) {
+    entry.sessionEnd = existing.sessionEnd || Date.now();
+  }
+  // Zachowaj sessionStart jeśli już był
+  if (existing.sessionStart) entry.sessionStart = existing.sessionStart;
   saveJournalEntryData(_jSelectedDate, entry);
   renderJournalCal();
   updateJournalPreProgress();
@@ -17363,6 +18079,7 @@ function escHtml(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').
 
 function renderWeeklyReview() {
   renderWeeklyLabel();
+  renderWeeklyStatusBadge();
   renderWeeklyStats();
   renderWeeklyDays();
   renderWeeklyTrades();
@@ -17378,51 +18095,122 @@ function renderWeeklyTrades() {
   const cntEl = document.getElementById('weekly-trades-count');
   const {monday, sunday} = getWeekDates(_weeklyKey);
   const sym = getCurrSym(state.currentAccountId);
-  const trades = getTrades(state.currentAccountId).filter(t => {
-    const d = new Date(t.date); return d >= monday && d <= sunday && t.status === 'closed';
+  const allTrades = getTrades(state.currentAccountId).filter(tr => {
+    const d = new Date(tr.date); return d >= monday && d <= sunday && tr.status === 'closed';
   }).sort((a,b) => new Date(a.date) - new Date(b.date));
-  if (cntEl) cntEl.textContent = trades.length ? `${trades.length} ${t('weekly_trades_suffix')}` : '';
-  if (!trades.length) {
-    el.innerHTML = `<div style="color:var(--text3);font-size:13px;text-align:center;padding:16px">${t('weekly_no_trades')}</div>`;
+
+  if (cntEl) cntEl.textContent = allTrades.length ? `${allTrades.length} ${t('weekly_trades_suffix')}` : '';
+  if (!allTrades.length) {
+    el.innerHTML = `<div style="color:var(--text3);font-size:13px;text-align:center;padding:24px">${t('weekly_no_trades')}</div>`;
     return;
   }
-  const emoColors = { 'Spokojny':'var(--green)', 'Pewny':'var(--green)', 'Podekscytowany':'var(--amber)', 'FOMO':'var(--red)', 'Revenge':'var(--red)', 'Zaniepokojony':'var(--red)', 'Zmęczony':'var(--amber)', 'Sfrustrowany':'var(--red)', 'Neutralny':'var(--text3)' };
-  let html = `<div style="overflow-x:auto">
-    <table style="width:100%;border-collapse:collapse;font-size:12px">
-      <thead><tr style="border-bottom:1px solid var(--border)">
-        <th style="padding:6px 8px;text-align:left;color:var(--text3);font-weight:600">${t('weekly_col_date')}</th>
-        <th style="padding:6px 8px;text-align:left;color:var(--text3);font-weight:600">${t('th_instrument')}</th>
-        <th style="padding:6px 8px;text-align:center;color:var(--text3);font-weight:600">${t('weekly_col_dir')}</th>
-        <th style="padding:6px 8px;text-align:left;color:var(--text3);font-weight:600">${t('trade_setup')}</th>
-        <th style="padding:6px 8px;text-align:center;color:var(--text3);font-weight:600">${t('weekly_col_emo_pre')}</th>
-        <th style="padding:6px 8px;text-align:center;color:var(--text3);font-weight:600">${t('weekly_col_emo_post')}</th>
-        <th style="padding:6px 8px;text-align:right;color:var(--text3);font-weight:600">P&L</th>
-      </tr></thead>
-      <tbody>`;
-  trades.forEach(t => {
-    const pnl = t.pnl || 0;
-    const pnlColor = pnl > 0 ? 'var(--green)' : pnl < 0 ? 'var(--red)' : 'var(--text3)';
-    const pnlStr = (pnl >= 0 ? '+' : '') + sym + Math.abs(pnl).toFixed(2);
-    const dir = (t.direction||'').toLowerCase();
-    const dirStr = dir === 'buy' || dir === 'long' ? '<span style="color:var(--green);font-weight:700">▲</span>' : dir === 'sell' || dir === 'short' ? '<span style="color:var(--red);font-weight:700">▼</span>' : '—';
-    const setupStr = t.setup ? `<span class="tag" style="font-size:10px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block">${escHtml(t.setup)}</span>` : '<span style="color:var(--text3)">—</span>';
-    const ePre  = t.emotionPre  || '';
-    const ePost = t.emotionPost || '';
-    const preStr  = ePre  ? `<span style="color:${emoColors[ePre]||'var(--text3)'};font-size:11px">${ePre}</span>`  : '<span style="color:var(--text3)">—</span>';
-    const postStr = ePost ? `<span style="color:${emoColors[ePost]||'var(--text3)'};font-size:11px">${ePost}</span>` : '<span style="color:var(--text3)">—</span>';
-    const dateStr = (t.date||'').slice(0,10).split('-').reverse().slice(0,2).join('.');
-    html += `<tr style="border-bottom:1px solid var(--border);transition:background .1s" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
-      <td style="padding:7px 8px;font-family:var(--font-mono);color:var(--text3)">${dateStr}</td>
-      <td style="padding:7px 8px;font-weight:700">${escHtml(t.symbol||'—')}</td>
-      <td style="padding:7px 8px;text-align:center">${dirStr}</td>
-      <td style="padding:7px 8px">${setupStr}</td>
-      <td style="padding:7px 8px;text-align:center">${preStr}</td>
-      <td style="padding:7px 8px;text-align:center">${postStr}</td>
-      <td style="padding:7px 8px;text-align:right;font-family:var(--font-mono);font-weight:700;color:${pnlColor}">${pnlStr}</td>
-    </tr>`;
+
+  // Podsumowanie tygodnia
+  const wins    = allTrades.filter(tr => (tr.pnl||0) > 0).length;
+  const totalPnl= allTrades.reduce((s,tr) => s+(tr.pnl||0), 0);
+  const rrTrades= allTrades.filter(tr => tr.entry&&tr.sl&&tr.tp);
+  const avgRR   = rrTrades.length ? (rrTrades.reduce((s,tr)=>{const r=Math.abs(tr.entry-tr.sl),w=Math.abs(tr.tp-tr.entry);return r>0?s+w/r:s;},0)/rrTrades.length).toFixed(2) : null;
+  const best    = [...allTrades].sort((a,b)=>(b.pnl||0)-(a.pnl||0))[0];
+  const worst   = [...allTrades].sort((a,b)=>(a.pnl||0)-(b.pnl||0))[0];
+  const wr      = Math.round(wins/allTrades.length*100);
+  const totalStr= (totalPnl>=0?'+':'')+sym+Math.abs(totalPnl).toFixed(2);
+  const pnlCol  = totalPnl>0?'var(--green)':totalPnl<0?'var(--red)':'var(--text3)';
+
+  let html = `
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;padding:12px;background:var(--bg3);border-radius:10px">
+    <div style="text-align:center">
+      <div style="font-size:11px;color:var(--text3);margin-bottom:2px">Win Rate</div>
+      <div style="font-size:20px;font-weight:800;color:${wr>=50?'var(--green)':'var(--red)'}">${wr}%</div>
+      <div style="font-size:10px;color:var(--text3)">${wins}/${allTrades.length} trade'ów</div>
+    </div>
+    <div style="text-align:center">
+      <div style="font-size:11px;color:var(--text3);margin-bottom:2px">Łączny P&L</div>
+      <div style="font-size:20px;font-weight:800;color:${pnlCol}">${totalStr}</div>
+    </div>
+    <div style="text-align:center">
+      <div style="font-size:11px;color:var(--text3);margin-bottom:2px">Avg R:R</div>
+      <div style="font-size:20px;font-weight:800;color:var(--accent)">${avgRR||'—'}</div>
+    </div>
+    <div style="text-align:center">
+      <div style="font-size:11px;color:var(--text3);margin-bottom:2px">Najlepszy</div>
+      <div style="font-size:14px;font-weight:700;color:var(--green)">${best?('+'+sym+Math.abs(best.pnl||0).toFixed(2)):'—'}</div>
+      <div style="font-size:10px;color:var(--text3)">${best?escHtml(best.symbol||''):''}${worst&&worst!==best?' / '+sym+Math.abs(worst.pnl||0).toFixed(2):''}</div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:6px;margin-bottom:12px">
+    <button onclick="_wkFilter(this,'all')" id="wkf-all" class="btn-sm" style="font-size:11px;background:var(--accent);color:#000;border-color:var(--accent)">Wszystkie (${allTrades.length})</button>
+    <button onclick="_wkFilter(this,'win')" id="wkf-win" class="btn-sm" style="font-size:11px">✅ Zyski (${wins})</button>
+    <button onclick="_wkFilter(this,'loss')" id="wkf-loss" class="btn-sm" style="font-size:11px">❌ Straty (${allTrades.length-wins})</button>
+  </div>
+
+  <div id="wk-trade-cards" style="display:flex;flex-direction:column;gap:8px">`;
+
+  allTrades.forEach((tr,i) => {
+    const pnl    = tr.pnl||0;
+    const pnlCol2= pnl>0?'var(--green)':pnl<0?'var(--red)':'var(--text3)';
+    const pnlStr = (pnl>=0?'+':'')+sym+Math.abs(pnl).toFixed(2);
+    const dir    = (tr.direction||'').toLowerCase();
+    const isLong = dir==='buy'||dir==='long';
+    const dirIcon= isLong?'<span style="color:var(--green);font-weight:800">▲ LONG</span>':'<span style="color:var(--red);font-weight:800">▼ SHORT</span>';
+    const dateStr= (tr.date||'').slice(0,16).replace('T',' ');
+    const hasRR  = tr.entry&&tr.sl&&tr.tp;
+    const rrVal  = hasRR?(Math.abs(tr.tp-tr.entry)/Math.abs(tr.entry-tr.sl)).toFixed(1):null;
+    const shots  = (tr.screenshots||[]).slice(0,1);
+    const wkClass= pnl>0?'win':'loss';
+
+    html += `<div class="wk-trade-card" data-result="${wkClass}" style="border:1px solid ${pnl>0?'rgba(0,212,161,.25)':pnl<0?'rgba(255,80,80,.25)':'var(--border)'};border-radius:10px;overflow:hidden;background:var(--bg2)">
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer" onclick="_wkToggle('wkd-${i}',this)">
+        <div style="font-size:18px">${pnl>0?'✅':'❌'}</div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <span style="font-size:14px;font-weight:800">${escHtml(tr.symbol||'—')}</span>
+            <span style="font-size:11px">${dirIcon}</span>
+            ${tr.setup?`<span class="tag" style="font-size:10px">${escHtml(tr.setup)}</span>`:''}
+          </div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px">${dateStr}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-size:16px;font-weight:800;color:${pnlCol2}">${pnlStr}</div>
+          ${rrVal?`<div style="font-size:10px;color:var(--text3)">R:R ${rrVal}</div>`:''}
+        </div>
+        <div style="color:var(--text3);font-size:12px;margin-left:4px" id="wkd-${i}-arr">▶</div>
+      </div>
+      <div id="wkd-${i}" style="display:none;padding:0 14px 14px;border-top:1px solid var(--border)">
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0;font-size:12px">
+          ${tr.entry!=null?`<div><div style="color:var(--text3);font-size:10px;margin-bottom:2px">ENTRY</div><div style="font-family:var(--font-mono);font-weight:700">${tr.entry}</div></div>`:''}
+          ${tr.exit!=null?`<div><div style="color:var(--text3);font-size:10px;margin-bottom:2px">EXIT</div><div style="font-family:var(--font-mono);font-weight:700">${tr.exit}</div></div>`:''}
+          ${tr.sl!=null?`<div><div style="color:var(--red);font-size:10px;margin-bottom:2px">SL</div><div style="font-family:var(--font-mono);color:var(--red)">${tr.sl}</div></div>`:''}
+          ${tr.tp!=null?`<div><div style="color:var(--green);font-size:10px;margin-bottom:2px">TP</div><div style="font-family:var(--font-mono);color:var(--green)">${tr.tp}</div></div>`:''}
+        </div>
+        ${tr.emotionPre||tr.emotionPost?`<div style="font-size:11px;color:var(--text3);margin-bottom:8px">Emocja przed: <b>${tr.emotionPre||'—'}</b> · po: <b>${tr.emotionPost||'—'}</b></div>`:''}
+        ${tr.note?`<div style="font-size:12px;color:var(--text2);background:var(--bg3);border-radius:6px;padding:8px 10px;margin-bottom:8px;line-height:1.6">${escHtml(tr.note)}</div>`:''}
+        ${shots.length?`<img src="${shots[0]}" style="max-width:100%;max-height:200px;border-radius:6px;object-fit:contain;margin-top:4px" onclick="this.style.maxHeight=this.style.maxHeight==='none'?'200px':'none'" title="Kliknij aby powiększyć">`:''}
+      </div>
+    </div>`;
   });
-  html += '</tbody></table></div>';
+
+  html += `</div>`;
   el.innerHTML = html;
+}
+
+function _wkToggle(id, header) {
+  const body = document.getElementById(id);
+  const arr  = document.getElementById(id+'-arr');
+  if (!body) return;
+  const open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  if (arr) arr.textContent = open ? '▶' : '▼';
+}
+
+function _wkFilter(btn, type) {
+  document.querySelectorAll('[id^="wkf-"]').forEach(b => {
+    b.style.background=''; b.style.color=''; b.style.borderColor='';
+  });
+  btn.style.background='var(--accent)'; btn.style.color='#000'; btn.style.borderColor='var(--accent)';
+  document.querySelectorAll('.wk-trade-card').forEach(card => {
+    card.style.display = (type==='all'||card.dataset.result===type) ? '' : 'none';
+  });
 }
 
 function renderWeeklyAnalyses() {
@@ -17645,18 +18433,46 @@ function setWeeklyPlan(val, btn) {
 }
 
 function saveWeeklyReview() {
+  const existing = getWeeklyReview(_weeklyKey) || {};
   const data = {
-    weekKey:  _weeklyKey,
-    q1:       document.getElementById('weekly-q1')?.value||'',
-    q2:       document.getElementById('weekly-q2')?.value||'',
-    q3:       document.getElementById('weekly-q3')?.value||'',
-    rating:   parseInt(document.getElementById('weekly-rating')?.value)||5,
-    planVal:  _weeklyPlanVal,
-    savedAt:  Date.now(),
+    weekKey:    _weeklyKey,
+    q1:         document.getElementById('weekly-q1')?.value||'',
+    q2:         document.getElementById('weekly-q2')?.value||'',
+    q3:         document.getElementById('weekly-q3')?.value||'',
+    rating:     parseInt(document.getElementById('weekly-rating')?.value)||5,
+    planVal:    _weeklyPlanVal,
+    savedAt:    Date.now(),
+    reviewed:   true,
+    reviewedAt: existing.reviewedAt || Date.now(),
   };
   saveWeeklyReviewData(_weeklyKey, data);
+  renderWeeklyStatusBadge();
   renderWeeklyMotivation();
   toast(t('weekly_saved'), 'success');
+}
+
+function renderWeeklyStatusBadge() {
+  const bar = document.getElementById('weekly-status-bar');
+  if (!bar) return;
+  const review = getWeeklyReview(_weeklyKey) || {};
+  const {monday, sunday} = getWeekDates(_weeklyKey);
+  const hasTrades = getTrades(state.currentAccountId).some(tr => {
+    const d = new Date(tr.date); return d >= monday && d <= sunday && tr.status === 'closed';
+  });
+  const hasData = hasTrades || review.q1 || review.q2 || review.q3;
+
+  if (review.reviewed) {
+    const dt = review.reviewedAt ? new Date(review.reviewedAt).toLocaleDateString('pl-PL') : '';
+    bar.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px;padding:5px 14px;background:rgba(0,212,161,.12);border:1px solid rgba(0,212,161,.3);border-radius:20px;font-size:12px;color:var(--accent);font-weight:600">
+      ✅ Tydzień zamknięty${dt?' · '+dt:''}
+    </span>`;
+  } else if (hasData) {
+    bar.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px;padding:5px 14px;background:rgba(255,170,0,.1);border:1px solid rgba(255,170,0,.3);border-radius:20px;font-size:12px;color:var(--amber);font-weight:600">
+      📝 Do uzupełnienia — wypełnij refleksję i zapisz tydzień
+    </span>`;
+  } else {
+    bar.innerHTML = '';
+  }
 }
 
 function renderWeeklyDays() {
@@ -18108,8 +18924,8 @@ function checkSmartReminders() {
   // Friday 16:30 — weekly review
   if (s.friday && dow === 5 && (h > 16 || (h === 16 && m >= 30)) && !_smartReminderSentToday('friday')) {
     _markSmartReminderSent('friday');
-    _addSmartReminderToList('📊 Weekly review — jak minął tydzień?', 'journal', Date.now());
-    showNativeNotification('📊 Weekly review', 'Czas ocenić miniony tydzień — wypełnij weekly review', 'journal');
+    _addSmartReminderToList('📊 Weekly review — jak minął tydzień?', 'journal_weekly', Date.now());
+    showNativeNotification('📊 Weekly review', 'Czas ocenić miniony tydzień — wypełnij weekly review', 'journal_weekly');
   }
 
   // Daily 20:00 — journal evening (only if no post-session entry today)
@@ -19809,7 +20625,7 @@ function tEmoShort(key) {
 
 let _importBuffer = [];
 let _importFormat = '';
-let _importMeta   = null; // { initialBalance, entries:[{amount,date,comment}], sumPnl, finalBalance }
+let _importMeta   = null; // { initialBalance, entries, deposits, withdrawals, sumPnl }
 
 function initImportTab() {
   const sel = document.getElementById('import-account-sel');
@@ -19849,13 +20665,14 @@ function handleImportFile(file) {
       showImportStatus('warning', 'Nie znaleziono żadnych transakcji w pliku. Sprawdź format eksportu (patrz instrukcja poniżej).');
       return;
     }
-    // Extract balance entries for verification
+
+    // Wyciągnij wpłaty/wypłaty i weryfikuj saldo
     _importMeta = null;
     if (fmt === 'mt4csv')  _importMeta = extractMT4BalanceCSV(raw);
     if (fmt === 'mt4html') _importMeta = extractMT4BalanceHTML(raw);
     if (_importMeta) _importMeta.sumPnl = trades.reduce((s,t) => s + (t.pnl||0) + (t.commission||0) + (t.swap||0), 0);
 
-    // Auto-match account by MT4 login number from file
+    // Auto-match konta po numerze MT4 z nagłówka pliku
     const mt4Num = extractMT4AccountNumber(raw, fmt);
     if (mt4Num) {
       const matched = autoMatchImportAccount(mt4Num);
@@ -19871,6 +20688,61 @@ function handleImportFile(file) {
     renderImportPreview(trades, fmt, file.name);
   };
   reader.readAsText(file, 'UTF-8');
+}
+
+// ---- MT4 account number + balance extraction ----
+function extractMT4AccountNumber(raw, fmt) {
+  if (fmt === 'mt4html') {
+    const m1 = raw.match(/account[:\s#]+(\d{4,10})/i);
+    if (m1) return m1[1];
+    const m2 = raw.match(/<title[^>]*>.*?(\d{4,10}).*?<\/title>/i);
+    if (m2) return m2[1];
+  }
+  if (fmt === 'mt4csv') {
+    const m = raw.slice(0,500).match(/account[:\s,;#]+(\d{4,10})/i);
+    if (m) return m[1];
+  }
+  return null;
+}
+function autoMatchImportAccount(mt4Num) {
+  if (!mt4Num) return null;
+  return getAccounts().find(a => a.mt4Login && String(a.mt4Login).trim() === String(mt4Num).trim()) || null;
+}
+function extractMT4BalanceCSV(text) {
+  const sep = text.split('\n')[0].includes(';') ? ';' : ',';
+  const { rows } = _parseCSV(text, sep);
+  const entries = [];
+  rows.forEach(c => {
+    if (c.length < 10) return;
+    const type = (c[2]||'').toLowerCase().trim();
+    if (!type.includes('balance') && !type.includes('credit') && !type.includes('deposit') && !type.includes('withdrawal')) return;
+    const amount = _num(c[13]||c[12]||c[11]||'0');
+    if (amount === 0) return;
+    entries.push({ amount, date: _dt(c[1]||''), comment: (c[3]||type).trim() });
+  });
+  return _buildBalanceMeta(entries);
+}
+function extractMT4BalanceHTML(text) {
+  const doc = new DOMParser().parseFromString(text, 'text/html');
+  const entries = [];
+  const BAL_KEYS = ['balance','credit','deposit','withdrawal','saldo','depozyt','wypłata','wyplata','korekta','adjustment'];
+  doc.querySelectorAll('tr').forEach(row => {
+    const cells = [...row.querySelectorAll('td')].map(td => td.textContent.trim());
+    if (cells.length < 3) return;
+    const type = (cells[2]||'').toLowerCase().trim();
+    if (!BAL_KEYS.some(k => type.includes(k))) return;
+    // Bug fix: sprawdzaj kolejno kolumny — nie łącz stringów przed _num()
+    const amount = _num(cells[13]) || _num(cells[12]) || _num(cells[11]) || 0;
+    if (amount === 0) return;
+    entries.push({ amount, date: _dt(cells[1]||cells[8]||''), comment: (cells[4]||cells[3]||type).trim() });
+  });
+  return _buildBalanceMeta(entries);
+}
+function _buildBalanceMeta(entries) {
+  if (!entries.length) return null;
+  const initialBalance = entries[0].amount;
+  const later = entries.slice(1);
+  return { initialBalance, entries, deposits: later.filter(e=>e.amount>0), withdrawals: later.filter(e=>e.amount<0) };
 }
 
 function detectImportFormat(text, filename) {
@@ -19934,72 +20806,6 @@ function _dt(s) {
 }
 function _uid() { return 'imp_' + Date.now() + '_' + Math.random().toString(36).slice(2,6); }
 
-// ---- MT4 account number extraction from file header ----
-function extractMT4AccountNumber(raw, fmt) {
-  if (fmt === 'mt4html') {
-    // MT4 HTML: <title>Statement for account 12345</title>
-    // or table cell with "Account:" label
-    const m1 = raw.match(/account[:\s#]+(\d{4,10})/i);
-    if (m1) return m1[1];
-    const m2 = raw.match(/<title[^>]*>.*?(\d{4,10}).*?<\/title>/i);
-    if (m2) return m2[1];
-  }
-  if (fmt === 'mt4csv') {
-    // MT4 CSV first lines may contain: "#Account: 12345" or "Account,12345"
-    const head = raw.slice(0, 500);
-    const m = head.match(/account[:\s,;#]+(\d{4,10})/i);
-    if (m) return m[1];
-  }
-  return null;
-}
-
-function autoMatchImportAccount(mt4Number) {
-  if (!mt4Number) return null;
-  const accs = getAccounts();
-  return accs.find(a => a.mt4Login && String(a.mt4Login).trim() === String(mt4Number).trim()) || null;
-}
-
-// ---- Balance extraction (MT4 CSV / HTML) ----
-function extractMT4BalanceCSV(text) {
-  const sep = text.split('\n')[0].includes(';') ? ';' : ',';
-  const { rows } = _parseCSV(text, sep);
-  const entries = [];
-  rows.forEach(c => {
-    if (c.length < 10) return;
-    const type = (c[2]||'').toLowerCase().trim();
-    if (!type.includes('balance') && !type.includes('credit') && !type.includes('deposit') && !type.includes('withdrawal')) return;
-    const amount = _num(c[13]||c[12]||c[11]||'0');
-    if (amount === 0) return;
-    entries.push({ amount, date: _dt(c[1]||''), comment: (c[3]||type).trim() });
-  });
-  return _buildBalanceMeta(entries);
-}
-
-function extractMT4BalanceHTML(text) {
-  const doc = new DOMParser().parseFromString(text, 'text/html');
-  const entries = [];
-  doc.querySelectorAll('tr').forEach(row => {
-    const cells = [...row.querySelectorAll('td')].map(td => td.textContent.trim());
-    if (cells.length < 10) return;
-    const type = (cells[2]||'').toLowerCase();
-    if (!type.includes('balance') && !type.includes('credit') && !type.includes('deposit') && !type.includes('withdrawal')) return;
-    // MT4 HTML: col 13 = profit, col 11 = comment or swap
-    const amount = _num(cells[13]||cells[12]||'0');
-    if (amount === 0) return;
-    entries.push({ amount, date: _dt(cells[1]||cells[8]||''), comment: (cells[11]||cells[3]||type).trim() });
-  });
-  return _buildBalanceMeta(entries);
-}
-
-function _buildBalanceMeta(entries) {
-  if (!entries.length) return null;
-  const initialBalance = entries[0].amount;
-  const later = entries.slice(1);
-  const deposits    = later.filter(e => e.amount > 0);
-  const withdrawals = later.filter(e => e.amount < 0);
-  return { initialBalance, entries, deposits, withdrawals };
-}
-
 // ---- MT4 CSV ----
 function parseMT4CSV(text) {
   const sep = text.split('\n')[0].includes(';') ? ';' : ',';
@@ -20010,16 +20816,23 @@ function parseMT4CSV(text) {
     const type = (c[2]||'').toLowerCase().trim();
     if (!BUY_SELL.includes(type)) return [];
     const sym = (c[4]||'').toUpperCase().trim();
-    const entry = _num(c[5]), exit = _num(c[9]);
+    const entry = _num(c[5]);
     if (!sym || !entry) return [];
+    const closeTime = (c[8]||'').trim();
+    const exit     = _num(c[9]);
+    // Otwarta pozycja: brak czasu zamknięcia lub cena zamknięcia = 0
+    const isOpen = !closeTime || closeTime.startsWith('0000') || exit === 0;
+    const ticket = _num(c[0]) || null;
     return [{
       id: _uid(), symbol: sym,
       dir: type.startsWith('sell') ? 'short' : 'long',
-      size: _num(c[3]), entry, exit,
+      size: _num(c[3]), entry, exit: isOpen ? null : exit,
       sl: _num(c[6]), tp: _num(c[7]),
       commission: _num(c[10]), swap: _num(c[12]),
-      pnl: _num(c[13]), status: 'closed',
-      date: _dt(c[1]), dateClose: _dt(c[8]),
+      pnl: isOpen ? null : _num(c[13]),
+      status: isOpen ? 'open' : 'closed',
+      date: _dt(c[1]), dateClose: isOpen ? null : _dt(c[8]),
+      mt4Ticket: ticket,
       _src: 'MT4'
     }];
   });
@@ -20035,16 +20848,23 @@ function parseMT4HTML(text) {
     if (cells.length < 13) return;
     const type = (cells[2]||'').toLowerCase();
     if (!BUY_SELL.some(t => type.startsWith(t))) return;
-    const sym = (cells[4]||'').toUpperCase(), entry = _num(cells[5]), exit = _num(cells[9]);
-    if (!sym || !entry || !exit) return;
+    const sym = (cells[4]||'').toUpperCase(), entry = _num(cells[5]);
+    if (!sym || !entry) return;
+    const closeTime = (cells[8]||'').trim();
+    const exit      = _num(cells[9]);
+    // Otwarta pozycja: brak czasu zamknięcia lub cena zamknięcia = 0
+    const isOpen = !closeTime || exit === 0;
+    const ticket = _num(cells[0]) || null;
     trades.push({
       id: _uid(), symbol: sym,
       dir: type.startsWith('sell') ? 'short' : 'long',
-      size: _num(cells[3]), entry, exit,
+      size: _num(cells[3]), entry, exit: isOpen ? null : exit,
       sl: _num(cells[6]), tp: _num(cells[7]),
       commission: _num(cells[10]), swap: _num(cells[12]),
-      pnl: _num(cells[13]), status: 'closed',
-      date: _dt(cells[1]), dateClose: _dt(cells[8]),
+      pnl: isOpen ? null : _num(cells[13]),
+      status: isOpen ? 'open' : 'closed',
+      date: _dt(cells[1]), dateClose: isOpen ? null : _dt(cells[8]),
+      mt4Ticket: ticket,
       _src: 'MT4'
     });
   });
@@ -20303,61 +21123,51 @@ function renderImportPreview(trades, fmt, filename) {
   const dupCnt = withFlags.filter(t =>  t._dup).length;
   const FMT = { 'mt4csv':'MT4 CSV','mt4html':'MT4 HTML','mt5csv':'MT5','mt5html':'MT5 HTML','bybit-fut':'Bybit Futures','bybit-spot':'Bybit Spot','mexc-fut':'MEXC Futures','mexc-spot':'MEXC Spot' };
 
-  // Balance verification panel
+  // Panel weryfikacji salda
   let balanceHtml = '';
   if (_importMeta) {
     const acc = accId ? getAccounts().find(a => a.id === accId) : null;
     const accCapital = acc ? (acc.capital || 0) : 0;
     const meta = _importMeta;
     const expectedFinal = meta.initialBalance
-      + meta.deposits.reduce((s,e) => s + e.amount, 0)
-      + meta.withdrawals.reduce((s,e) => s + e.amount, 0)
+      + meta.deposits.reduce((s,e) => s+e.amount, 0)
+      + meta.withdrawals.reduce((s,e) => s+e.amount, 0)
       + meta.sumPnl;
     const appFinal = accCapital + meta.sumPnl;
     const diff = expectedFinal - appFinal;
-    const diffAbs = Math.abs(diff);
-    const fmtN = v => (v >= 0 ? '+' : '') + v.toFixed(2);
-    const ok = diffAbs < 0.01;
-
-    const depositSum = meta.deposits.reduce((s,e) => s + e.amount, 0);
-    const withdrawSum = meta.withdrawals.reduce((s,e) => s + e.amount, 0);
-
-    balanceHtml = `
-      <div style="margin:12px 0 8px;padding:12px 14px;border-radius:8px;background:var(--bg2);border:1px solid ${ok?'var(--accent)':'var(--red)'};font-size:12px">
-        <div style="font-weight:700;margin-bottom:8px;color:${ok?'var(--accent)':'var(--red)'}">
-          ${ok ? '✅ Weryfikacja salda — OK' : '⚠️ Weryfikacja salda — wykryto rozbieżność'}
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;color:var(--text2)">
-          <span>Kapitał startowy (plik):</span><span style="font-weight:600;color:var(--text)">${meta.initialBalance.toFixed(2)}</span>
-          <span>Wpłaty po starcie:</span><span style="font-weight:600;color:var(--green)">${depositSum > 0 ? '+'+depositSum.toFixed(2) : '—'} (${meta.deposits.length})</span>
-          <span>Wypłaty:</span><span style="font-weight:600;color:var(--red)">${withdrawSum < 0 ? withdrawSum.toFixed(2) : '—'} (${meta.withdrawals.length})</span>
-          <span>Suma PnL transakcji:</span><span style="font-weight:600;color:${meta.sumPnl>=0?'var(--green)':'var(--red)'}">${fmtN(meta.sumPnl)}</span>
-          <span>Saldo końcowe (plik):</span><span style="font-weight:600;color:var(--text)">${expectedFinal.toFixed(2)}</span>
-          <span>Saldo wg konta (app):</span><span style="font-weight:600;color:${ok?'var(--accent)':'var(--red)'}">${appFinal.toFixed(2)}</span>
-        </div>
-        ${!ok ? `<div style="margin-top:8px;padding:6px 10px;background:rgba(255,79,107,0.1);border-radius:6px;color:var(--red)">
-          Różnica: <strong>${fmtN(diff)}</strong> — po imporcie zostanie automatycznie wykonana korekta:
-          kapitał startowy zostanie ustawiony na <strong>${meta.initialBalance.toFixed(2)}</strong>
-          ${meta.deposits.length+meta.withdrawals.length > 0 ? `i zapisanych zostanie <strong>${meta.deposits.length+meta.withdrawals.length} operacji</strong> (wpłaty/wypłaty)` : ''}.
-        </div>` : ''}
-      </div>`;
+    const ok = Math.abs(diff) < 0.01;
+    const fmtN = v => (v>=0?'+':'')+v.toFixed(2);
+    const dSum = meta.deposits.reduce((s,e)=>s+e.amount,0);
+    const wSum = meta.withdrawals.reduce((s,e)=>s+e.amount,0);
+    balanceHtml = `<div style="margin:12px 0 8px;padding:12px 14px;border-radius:8px;background:var(--bg2);border:1px solid ${ok?'var(--accent)':'var(--red)'};font-size:12px">
+      <div style="font-weight:700;margin-bottom:8px;color:${ok?'var(--accent)':'var(--red)'}">
+        ${ok?'✅ Weryfikacja salda — OK':'⚠️ Weryfikacja salda — wykryto rozbieżność'}
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;color:var(--text2)">
+        <span>Kapitał startowy (plik):</span><span style="font-weight:600;color:var(--text)">${meta.initialBalance.toFixed(2)}</span>
+        <span>Wpłaty po starcie:</span><span style="font-weight:600;color:var(--green)">${dSum>0?'+'+dSum.toFixed(2):'—'} (${meta.deposits.length})</span>
+        <span>Wypłaty:</span><span style="font-weight:600;color:var(--red)">${wSum<0?wSum.toFixed(2):'—'} (${meta.withdrawals.length})</span>
+        <span>Suma PnL:</span><span style="font-weight:600;color:${meta.sumPnl>=0?'var(--green)':'var(--red)'}">${fmtN(meta.sumPnl)}</span>
+        <span>Saldo końcowe (plik):</span><span style="font-weight:600;color:var(--text)">${expectedFinal.toFixed(2)}</span>
+        <span>Saldo wg konta (app):</span><span style="font-weight:600;color:${ok?'var(--accent)':'var(--red)'}">${appFinal.toFixed(2)}</span>
+      </div>
+      ${!ok?`<div style="margin-top:8px;padding:6px 10px;background:rgba(255,79,107,0.1);border-radius:6px;color:var(--red)">
+        Różnica: <strong>${fmtN(diff)}</strong> — po imporcie kapitał zostanie ustawiony na <strong>${meta.initialBalance.toFixed(2)}</strong>
+        ${meta.deposits.length+meta.withdrawals.length>0?`i zapisanych zostanie <strong>${meta.deposits.length+meta.withdrawals.length} operacji</strong>`:''}
+      </div>`:''}
+    </div>`;
   }
 
-  // Account match banner
+  // Banner auto-match konta
   let accountHtml = '';
-  if (_importMeta && _importMeta.detectedMT4Login) {
+  if (_importMeta?.detectedMT4Login) {
     const det = _importMeta.detectedMT4Login;
     const matched = _importMeta.autoMatchedAccount;
-    if (matched) {
-      accountHtml = `<div style="margin:8px 0;padding:7px 12px;border-radius:6px;background:rgba(0,212,161,0.08);border:1px solid var(--accent);font-size:12px;color:var(--accent)">
-        ✅ Auto-dopasowano konto MT4 <strong>#${det}</strong> → <strong>${matched.name}${matched.broker ? ' ('+matched.broker+')' : ''}</strong>
-      </div>`;
-    } else {
-      accountHtml = `<div style="margin:8px 0;padding:7px 12px;border-radius:6px;background:rgba(255,193,7,0.08);border:1px solid #ffc107;font-size:12px;color:#ffc107">
-        ⚠️ Wykryto numer konta MT4 <strong>#${det}</strong> — brak dopasowania w aplikacji.<br>
-        <span style="font-size:11px;color:var(--text3)">Wybierz konto ręcznie lub dodaj numer MT4 w ustawieniach konta.</span>
-      </div>`;
-    }
+    accountHtml = matched
+      ? `<div style="margin:8px 0;padding:7px 12px;border-radius:6px;background:rgba(0,212,161,0.08);border:1px solid var(--accent);font-size:12px;color:var(--accent)">
+          ✅ Auto-dopasowano konto MT4 <strong>#${det}</strong> → <strong>${matched.name}</strong></div>`
+      : `<div style="margin:8px 0;padding:7px 12px;border-radius:6px;background:rgba(255,193,7,0.08);border:1px solid #ffc107;font-size:12px;color:#ffc107">
+          ⚠️ Wykryto numer konta MT4 <strong>#${det}</strong> — brak dopasowania. Wybierz konto ręcznie.</div>`;
   }
 
   document.getElementById('import-summary-text').innerHTML =
@@ -20396,6 +21206,18 @@ function renderImportPreview(trades, fmt, filename) {
 function confirmImportTrades() {
   const accId = document.getElementById('import-account-sel')?.value;
   if (!accId) return toast('Wybierz konto docelowe', 'error');
+  if (!isProUser()) {
+    const newClosed = _importBuffer.filter(t => !t._dup && t.status === 'closed').length;
+    if (getTotalClosedCount() + newClosed > FREEMIUM_LIMIT) {
+      const allowed = Math.max(0, FREEMIUM_LIMIT - getTotalClosedCount());
+      if (allowed === 0) { showUpsellModal(); return; }
+      toast(`⚠️ Plan Free: możesz dodać jeszcze ${allowed} transakcji. Import ograniczony.`, 'warning');
+      _importBuffer = _importBuffer.filter((t,i) => {
+        if (t._dup || t.status !== 'closed') return true;
+        allowed--; return allowed >= 0;
+      });
+    }
+  }
   const toAdd = _importBuffer.filter(t => !t._dup).map(({ _dup, _src, dateClose, ...rest }) => ({
     ...rest,
     note: (rest.note || '') + (rest.note ? '\n' : '') + 'Import: ' + (_src||''),
@@ -20403,63 +21225,34 @@ function confirmImportTrades() {
   }));
   if (!toAdd.length) return toast('Brak nowych transakcji do importu', 'error');
 
-  // Save trades
   const existing = getTrades(accId);
   saveTrades(accId, [...existing, ...toAdd]);
 
-  // Balance auto-correction
+  // Auto-korekta kapitału startowego
+  // Logika: equity = acc.capital + sum(pnl) — capital musi = initialBalance + depozyty - wypłaty
+  let fixMsg = '';
   if (_importMeta) {
-    const db   = getDB();
+    const meta = _importMeta;
     const accs = getAccounts();
     const acc  = accs.find(a => a.id === accId);
     if (acc) {
-      const meta = _importMeta;
-      const currentCapital = acc.capital || 0;
-      const needsCapitalFix = Math.abs(currentCapital - meta.initialBalance) > 0.01;
-
-      // 1. Fix starting capital if wrong
-      if (needsCapitalFix) {
-        acc.capital = meta.initialBalance;
-        db['accounts_' + state.currentUser] = accs;
-        saveDB(db);
+      const depositSum    = meta.deposits.reduce((s,e) => s+e.amount, 0);
+      const withdrawalSum = meta.withdrawals.reduce((s,e) => s+e.amount, 0); // ujemne
+      // Prawidłowy kapitał = initialBalance + wszystkie późniejsze depozyty/wypłaty
+      const correctCapital = meta.initialBalance + depositSum + withdrawalSum;
+      if (Math.abs((acc.capital||0) - correctCapital) > 0.01) {
+        acc.capital = correctCapital;
+        saveAccounts(accs);  // Fix: saveAccounts zamiast db.accounts[acc.id]
+        fixMsg = ` | Kapitał → ${correctCapital.toFixed(2)}`;
       }
-
-      // 2. Save detected deposits / withdrawals as operations
-      const ops = [...meta.deposits, ...meta.withdrawals].sort((a,b) => (a.date||'') > (b.date||'') ? 1 : -1);
-      if (ops.length) {
-        const existingW = getWithdrawals(accId);
-        const newOps = ops.map(e => ({
-          id: 'imp_bal_' + Date.now() + '_' + Math.random().toString(36).slice(2,5),
-          type: e.amount > 0 ? 'in' : 'out',
-          amount: Math.abs(e.amount),
-          date: e.date || '',
-          note: (e.comment || '') + ' (auto-import)'
-        }));
-        // Deduplicate by amount+date
-        const filtered = newOps.filter(n =>
-          !existingW.some(w => w.date === n.date && Math.abs(w.amount - n.amount) < 0.01)
-        );
-        if (filtered.length) {
-          db['withdrawals_' + accId] = [...existingW, ...filtered];
-          saveDB(db);
-        }
-      }
-
-      const fixMsg = needsCapitalFix
-        ? ` | Kapitał → ${meta.initialBalance.toFixed(2)}`
-        : '';
-      const opsMsg = ops.length ? ` | +${ops.length} operacji` : '';
-      toast(`✓ Zaimportowano ${toAdd.length} transakcji${fixMsg}${opsMsg}`, 'success');
-    } else {
-      toast(`✓ Zaimportowano ${toAdd.length} transakcji`, 'success');
     }
-  } else {
-    toast(`✓ Zaimportowano ${toAdd.length} transakcji`, 'success');
   }
 
+  toast(`✓ Zaimportowano ${toAdd.length} transakcji${fixMsg}${opsMsg}`, 'success');
   resetImportTab();
-  _importMeta = null;
   if (document.getElementById('page-trades')?.classList.contains('active')) renderTrades();
+  // Natychmiast wyślij do Supabase — zapobiega utracie danych przy kolejnym sbSyncDown
+  if (_sb) setTimeout(() => sbFullSyncUp().catch(() => {}), 500);
 }
 
 function resetImportTab() {
@@ -20955,6 +21748,235 @@ if ('serviceWorker' in navigator) {
       .catch(() => {}); // SW opcjonalny — nie blokuje działania aplikacji
   });
 }
+
+// ===== ONBOARDING =====
+let _obStep = 1;
+
+function shouldShowOnboarding() {
+  if (!state.currentUser) return false;
+  const u = getUsers()[state.currentUser];
+  if (!u || u.onboardingDone) return false;
+  return getAccounts().length === 0;
+}
+
+function showOnboarding() {
+  if (!shouldShowOnboarding()) return;
+  _obStep = 1;
+  _renderObStep();
+  document.getElementById('onboarding-modal')?.classList.add('open');
+}
+
+function closeOnboarding() {
+  document.getElementById('onboarding-modal')?.classList.remove('open');
+  const users = getUsers();
+  if (users[state.currentUser]) {
+    users[state.currentUser].onboardingDone = true;
+    saveUsers(users);
+  }
+}
+
+function obNext() {
+  if (_obStep === 1) {
+    // Krok 1 → 2: stwórz konto
+    const name    = document.getElementById('ob-acc-name')?.value.trim();
+    const capital = parseFloat(document.getElementById('ob-acc-capital')?.value) || 0;
+    const currency= document.getElementById('ob-acc-currency')?.value || 'USD';
+    const broker  = document.getElementById('ob-acc-broker')?.value.trim() || '';
+    if (!name) { toast('Wpisz nazwę konta', 'error'); return; }
+    const db = getDB();
+    if (!db.accounts) db.accounts = {};
+    if (!db.accounts[state.currentUser]) db.accounts[state.currentUser] = [];
+    const newAcc = { id: genId(), name, capital, currency, broker, type: 'forex', createdAt: Date.now() };
+    db.accounts[state.currentUser].push(newAcc);
+    saveDB(db);
+    state.currentAccountId = newAcc.id;
+    refreshTopbarAccount();
+  }
+  if (_obStep === 2) {
+    // Krok 2 → 3: godziny sesji (opcjonalne, skip ok)
+    const from = document.getElementById('ob-session-from')?.value;
+    const to   = document.getElementById('ob-session-to')?.value;
+    if (from && to && state.currentUser) {
+      const users = getUsers();
+      if (users[state.currentUser]) {
+        users[state.currentUser].sessionFrom = from;
+        users[state.currentUser].sessionTo   = to;
+        saveUsers(users);
+      }
+    }
+  }
+  if (_obStep === 3) {
+    // Krok 3: dane demo
+    const wantDemo = document.getElementById('ob-demo-yes')?.checked;
+    if (wantDemo) generateDemoData();
+  }
+  if (_obStep >= 4) { closeOnboarding(); renderAll(); updateFreemiumBadge(); return; }
+  _obStep++;
+  _renderObStep();
+}
+
+function obBack() {
+  if (_obStep <= 1) return;
+  _obStep--;
+  _renderObStep();
+}
+
+function _renderObStep() {
+  const content = document.getElementById('ob-content');
+  const dots = document.querySelectorAll('.ob-dot');
+  dots.forEach((d, i) => d.classList.toggle('active', i + 1 === _obStep));
+  const backBtn = document.getElementById('ob-back-btn');
+  if (backBtn) backBtn.style.visibility = _obStep > 1 ? 'visible' : 'hidden';
+  const nextBtn = document.getElementById('ob-next-btn');
+
+  const steps = {
+    1: `
+      <div style="text-align:center;margin-bottom:24px">
+        <div style="font-size:48px;margin-bottom:12px">📊</div>
+        <div style="font-size:22px;font-weight:800;color:var(--text);margin-bottom:8px">Utwórz swoje pierwsze konto</div>
+        <div style="font-size:14px;color:var(--text3)">Każde konto tradingowe ma osobną historię transakcji i statystyki</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div><label class="form-label-modal">Nazwa konta *</label>
+          <input id="ob-acc-name" class="form-input-modal" placeholder="np. Live EUR, Prop FTMO, Krypto Binance"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div><label class="form-label-modal">Kapitał startowy</label>
+            <input id="ob-acc-capital" class="form-input-modal" type="number" placeholder="10000"></div>
+          <div><label class="form-label-modal">Waluta</label>
+            <select id="ob-acc-currency" class="form-select-modal">
+              <option>USD</option><option>EUR</option><option>GBP</option><option>PLN</option><option>CHF</option><option>BTC</option><option>USDT</option>
+            </select></div>
+        </div>
+        <div><label class="form-label-modal">Broker (opcjonalnie)</label>
+          <input id="ob-acc-broker" class="form-input-modal" placeholder="np. IC Markets, Binance, FTMO"></div>
+      </div>`,
+    2: `
+      <div style="text-align:center;margin-bottom:24px">
+        <div style="font-size:48px;margin-bottom:12px">⏰</div>
+        <div style="font-size:22px;font-weight:800;color:var(--text);margin-bottom:8px">Kiedy handlujesz?</div>
+        <div style="font-size:14px;color:var(--text3)">Ustawimy automatyczne przypomnienia o rytuale przed i po sesji</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+        <div><label class="form-label-modal">Początek sesji</label>
+          <input id="ob-session-from" class="form-input-modal" type="time" value="08:00"></div>
+        <div><label class="form-label-modal">Koniec sesji</label>
+          <input id="ob-session-to" class="form-input-modal" type="time" value="17:00"></div>
+      </div>
+      <div style="padding:12px 14px;background:var(--bg2);border-radius:10px;font-size:13px;color:var(--text2)">
+        💡 Możesz zmienić to w <strong>Ustawieniach → Przypomnienia</strong> w każdej chwili
+      </div>`,
+    3: `
+      <div style="text-align:center;margin-bottom:24px">
+        <div style="font-size:48px;margin-bottom:12px">🎮</div>
+        <div style="font-size:22px;font-weight:800;color:var(--text);margin-bottom:8px">Dane demonstracyjne</div>
+        <div style="font-size:14px;color:var(--text3)">Chcesz zobaczyć jak wygląda aplikacja z wypełnionymi danymi?</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <label style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--bg2);border-radius:10px;cursor:pointer;border:2px solid transparent" id="ob-demo-yes-wrap">
+          <input type="radio" name="ob-demo" id="ob-demo-yes" value="yes" onchange="document.getElementById('ob-demo-yes-wrap').style.borderColor='var(--accent)';document.getElementById('ob-demo-no-wrap').style.borderColor='transparent'">
+          <div><div style="font-weight:600;color:var(--text)">✅ Tak, wygeneruj ~60 dni danych demo</div>
+          <div style="font-size:12px;color:var(--text3)">Transakcje, dziennik, analizy — osobne konto demo, Twoje dane są bezpieczne</div></div>
+        </label>
+        <label style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--bg2);border-radius:10px;cursor:pointer;border:2px solid var(--accent)" id="ob-demo-no-wrap">
+          <input type="radio" name="ob-demo" id="ob-demo-no" value="no" checked onchange="document.getElementById('ob-demo-no-wrap').style.borderColor='var(--accent)';document.getElementById('ob-demo-yes-wrap').style.borderColor='transparent'">
+          <div><div style="font-weight:600;color:var(--text)">➡️ Nie, zaczynam od razu od zera</div>
+          <div style="font-size:12px;color:var(--text3)">Czyste konto, zaczynam wpisywać własne transakcje</div></div>
+        </label>
+      </div>`,
+    4: `
+      <div style="text-align:center;padding:20px 0">
+        <div style="font-size:64px;margin-bottom:16px">🚀</div>
+        <div style="font-size:24px;font-weight:800;color:var(--accent);margin-bottom:12px">Jesteś gotowy!</div>
+        <div style="font-size:14px;color:var(--text2);line-height:1.8;max-width:340px;margin:0 auto">
+          Twoje konto jest skonfigurowane.<br>
+          Zacznij od <strong>Rytuału Otwarcia</strong> przed pierwszą sesją —<br>
+          znajdziesz go w zakładce <strong>Dziennik</strong>.
+        </div>
+        <div style="margin-top:24px;padding:14px 20px;background:rgba(0,212,161,.08);border:1px solid rgba(0,212,161,.25);border-radius:12px;font-size:13px;color:var(--text2);text-align:left;max-width:340px;margin-left:auto;margin-right:auto">
+          <div style="font-weight:700;color:var(--accent);margin-bottom:8px">Plan Free — co masz:</div>
+          <div>✅ Do 50 zamkniętych transakcji</div>
+          <div>✅ Pełny dziennik i rytuały</div>
+          <div>✅ Statystyki i raporty</div>
+          <div>✅ Import CSV/HTML</div>
+          <div style="margin-top:8px;color:var(--text3)">🔓 Plan Pro: bez limitów + AI Coach + więcej</div>
+        </div>
+      </div>`
+  };
+
+  if (content) content.innerHTML = steps[_obStep] || '';
+  if (nextBtn) nextBtn.textContent = _obStep === 4 ? '🚀 Zaczynamy!' : 'Dalej →';
+}
 </script>
+
+<!-- ===== MODAL: UPSELL ===== -->
+<div class="modal-overlay" id="upsell-modal" onclick="if(event.target===this)closeUpsellModal()">
+  <div class="modal" style="max-width:520px;text-align:center">
+    <div style="font-size:52px;margin-bottom:12px">🔒</div>
+    <div style="font-size:22px;font-weight:800;margin-bottom:8px;color:var(--text)">Osiągnięto limit planu Free</div>
+    <div style="font-size:14px;color:var(--text3);margin-bottom:28px">Wykorzystałeś 50 transakcji dostępnych w planie darmowym.<br>Przejdź na Pro — bez limitów, z AI Coach i pełną historią.</div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:28px;text-align:left">
+      <div style="padding:16px;background:var(--bg2);border-radius:12px;border:1px solid var(--border2)">
+        <div style="font-weight:700;margin-bottom:10px;color:var(--text2)">Free</div>
+        <div style="font-size:28px;font-weight:800;color:var(--text);margin-bottom:12px">0 zł</div>
+        <div style="font-size:13px;color:var(--text3);line-height:2">
+          ✅ 50 transakcji<br>
+          ✅ Pełny dziennik<br>
+          ✅ Statystyki<br>
+          ✅ Import CSV<br>
+          ❌ Nieograniczone trans.<br>
+          ❌ AI Coach<br>
+          ❌ Eksport PDF<br>
+        </div>
+      </div>
+      <div style="padding:16px;background:rgba(0,212,161,.06);border-radius:12px;border:2px solid var(--accent);position:relative">
+        <div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--accent);color:#000;font-size:11px;font-weight:700;padding:2px 12px;border-radius:20px">POPULARNY</div>
+        <div style="font-weight:700;margin-bottom:10px;color:var(--accent)">Pro</div>
+        <div style="font-size:28px;font-weight:800;color:var(--text);margin-bottom:2px">29 zł<span style="font-size:14px;color:var(--text3)">/mies.</span></div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:12px">lub 249 zł/rok</div>
+        <div style="font-size:13px;color:var(--text2);line-height:2">
+          ✅ <strong>Bez limitów transakcji</strong><br>
+          ✅ Pełny dziennik<br>
+          ✅ Statystyki<br>
+          ✅ Import CSV<br>
+          ✅ <strong>AI Coach (wkrótce)</strong><br>
+          ✅ <strong>Eksport PDF</strong><br>
+          ✅ <strong>Priorytetowe wsparcie</strong><br>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn-primary" style="width:100%;font-size:15px;padding:14px" onclick="toast('Płatności wkrótce — napisz na dominskipatryk@gmail.com','success');closeUpsellModal()">
+      🚀 Przejdź na Pro — 29 zł/mies.
+    </button>
+    <button class="btn-sm" onclick="closeUpsellModal()" style="margin-top:12px;width:100%;color:var(--text3)">Zostań na planie Free</button>
+    <div style="margin-top:16px;font-size:11px;color:var(--text3)">Pytania? <a href="mailto:dominskipatryk@gmail.com" style="color:var(--accent)">dominskipatryk@gmail.com</a></div>
+  </div>
+</div>
+
+<!-- ===== MODAL: ONBOARDING ===== -->
+<div class="modal-overlay" id="onboarding-modal">
+  <div class="modal" style="max-width:480px">
+    <!-- Header -->
+    <div style="text-align:center;margin-bottom:8px">
+      <div style="font-size:13px;font-weight:700;color:var(--accent);letter-spacing:.05em">TRADER LOG JOURNAL</div>
+    </div>
+    <!-- Step dots -->
+    <div style="display:flex;justify-content:center;gap:8px;margin-bottom:24px">
+      <div class="ob-dot active" style="width:8px;height:8px;border-radius:50%;background:var(--accent);transition:background .2s"></div>
+      <div class="ob-dot"       style="width:8px;height:8px;border-radius:50%;background:var(--bg3);transition:background .2s"></div>
+      <div class="ob-dot"       style="width:8px;height:8px;border-radius:50%;background:var(--bg3);transition:background .2s"></div>
+      <div class="ob-dot"       style="width:8px;height:8px;border-radius:50%;background:var(--bg3);transition:background .2s"></div>
+    </div>
+    <!-- Content -->
+    <div id="ob-content" style="min-height:280px"></div>
+    <!-- Footer -->
+    <div style="display:flex;gap:10px;margin-top:24px">
+      <button id="ob-back-btn" class="btn-sm" style="visibility:hidden" onclick="obBack()">← Wstecz</button>
+      <button id="ob-next-btn" class="btn-primary" style="flex:1" onclick="obNext()">Dalej →</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
