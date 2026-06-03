@@ -1302,12 +1302,6 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
         <span class="nav-label">Szkice</span>
         <span id="nav-draft-badge" style="display:none;background:var(--amber);color:#000;border-radius:10px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:auto"></span>
       </button>
-      <button class="nav-btn" onclick="showPage('monthly')" id="nav-monthly">
-        <span class="nav-icon">📅</span><span class="nav-label">Mies. przegląd</span>
-      </button>
-      <button class="nav-btn" onclick="showPage('yearly')" id="nav-yearly">
-        <span class="nav-icon">📆</span><span class="nav-label">Roczny przegląd</span>
-      </button>
       <button class="nav-btn" onclick="showPage('settings')" id="nav-settings" data-i18n="nav_settings">
         <span class="nav-icon">⚙️</span><span class="nav-label">Ustawienia</span>
       </button>
@@ -2028,6 +2022,9 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
         <!-- MT4 Integration -->
         <div class="settings-section">
           <div class="settings-section-title">🔌 Integracja z MT4</div>
+          <div id="mt4-listener-badge" style="margin-bottom:12px;padding:8px 12px;background:var(--bg2);border-radius:8px;border:1px solid var(--border)">
+            <span style="color:var(--text3);font-size:12px">⏳ Inicjalizacja…</span>
+          </div>
           <p style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.6">
             Skopiuj swój <strong>User ID</strong> i wklej go w ustawieniach EA w MetaTrader 4.
             EA automatycznie otworzy panel transakcji przy każdej pozycji.
@@ -2596,7 +2593,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
         </button>
         <button class="journal-tab" id="jtab-weekly" onclick="switchJournalTab('weekly')"
           style="padding:10px 20px;background:none;border:none;color:var(--text3);font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px">
-          📋 Tygodniowy Przegląd
+          📊 Przeglądy
         </button>
       </div>
 
@@ -3101,8 +3098,30 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
         </div>
       </div>
 
-      <!-- TAB: Tygodniowy Przegląd -->
+      <!-- TAB: Przeglądy (Tygodniowy / Miesięczny / Roczny) -->
       <div id="journal-tab-weekly" style="display:none">
+
+        <!-- Podzakładki przeglądu -->
+        <div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:24px">
+          <button class="review-sub-tab active" id="rstab-weekly"
+            onclick="switchReviewTab('weekly')"
+            style="padding:8px 18px;background:none;border:none;color:var(--text);font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid var(--accent);margin-bottom:-2px">
+            📋 Tygodniowy
+          </button>
+          <button class="review-sub-tab" id="rstab-monthly"
+            onclick="switchReviewTab('monthly')"
+            style="padding:8px 18px;background:none;border:none;color:var(--text3);font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px">
+            📅 Miesięczny
+          </button>
+          <button class="review-sub-tab" id="rstab-yearly"
+            onclick="switchReviewTab('yearly')"
+            style="padding:8px 18px;background:none;border:none;color:var(--text3);font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px">
+            📆 Roczny
+          </button>
+        </div>
+
+        <!-- SUB-TAB: Tygodniowy -->
+        <div id="review-tab-weekly">
         <div style="max-width:820px">
 
           <!-- Nawigacja tygodnia -->
@@ -3206,9 +3225,113 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 
           <input type="hidden" id="weekly-plan-val">
         </div>
-      </div>
+        </div><!-- /review-tab-weekly -->
 
-    </div>
+        <!-- SUB-TAB: Miesięczny -->
+        <div id="review-tab-monthly" style="display:none">
+          <div style="max-width:860px">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+              <button onclick="monthlyNav(-1)" class="btn-sm">← Poprzedni</button>
+              <div id="monthly-label" style="font-family:var(--font-head);font-size:16px;font-weight:700;flex:1;text-align:center"></div>
+              <button onclick="monthlyNav(1)" class="btn-sm">Następny →</button>
+            </div>
+            <div id="monthly-status-bar" style="text-align:center;margin-bottom:20px"></div>
+            <div class="summary-card" style="margin-bottom:16px">
+              <div class="summary-card-title" style="color:var(--accent)">📊 Metryki miesiąca</div>
+              <div id="monthly-metrics" style="margin-top:12px"></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+              <div class="summary-card" style="border-color:rgba(0,212,161,.3)">
+                <div class="summary-card-title" style="color:var(--green)">🏆 Top 3 trade'y</div>
+                <div id="monthly-top3" style="margin-top:10px"></div>
+              </div>
+              <div class="summary-card" style="border-color:rgba(255,80,80,.3)">
+                <div class="summary-card-title" style="color:var(--red)">⚠️ Bottom 3 trade'y</div>
+                <div id="monthly-bottom3" style="margin-top:10px"></div>
+              </div>
+            </div>
+            <div class="summary-card" style="margin-bottom:16px">
+              <div class="summary-card-title">✍️ Refleksja miesięczna</div>
+              <div style="display:flex;flex-direction:column;gap:12px;margin-top:14px">
+                <div><label class="jlabel">✅ Co działało w tym miesiącu?</label>
+                  <textarea id="monthly-q1" class="form-input-modal" style="min-height:70px;line-height:1.7" placeholder="Które setupy, instrumenty, decyzje były naprawdę dobre?"></textarea></div>
+                <div><label class="jlabel">🚫 Co chcę wyeliminować?</label>
+                  <textarea id="monthly-q2" class="form-input-modal" style="min-height:70px;line-height:1.7" placeholder="Konkretne błędy i zachowania do usunięcia w przyszłym miesiącu..."></textarea></div>
+                <div><label class="jlabel">🌱 Jeden nawyk do wdrożenia w następnym miesiącu</label>
+                  <textarea id="monthly-q3" class="form-input-modal" style="min-height:60px;line-height:1.7" placeholder="Np. 'Codziennie 15 minut analizy przed sesją'"></textarea></div>
+              </div>
+            </div>
+            <div class="summary-card" style="margin-bottom:16px">
+              <div class="summary-card-title">🎯 Cele na kolejny miesiąc</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px">
+                <div><label class="jlabel">Win Rate (cel %)</label>
+                  <input id="monthly-goal-wr" class="form-input-modal" type="number" placeholder="np. 55"></div>
+                <div><label class="jlabel">Liczba transakcji (max)</label>
+                  <input id="monthly-goal-trades" class="form-input-modal" type="number" placeholder="np. 20"></div>
+                <div><label class="jlabel">Max dzienny drawdown</label>
+                  <input id="monthly-goal-dd" class="form-input-modal" type="number" placeholder="np. 100"></div>
+                <div><label class="jlabel">Główny focus na miesiąc</label>
+                  <input id="monthly-goal-focus" class="form-input-modal" placeholder="np. Cierpliwość — czekam tylko na A+ setup"></div>
+              </div>
+            </div>
+            <div style="display:flex;justify-content:flex-end;gap:10px;margin-bottom:32px">
+              <button class="btn-sm btn-accent" onclick="saveMonthlySummary()" style="padding:10px 24px;font-size:14px">💾 Zamknij miesiąc</button>
+            </div>
+          </div>
+        </div><!-- /review-tab-monthly -->
+
+        <!-- SUB-TAB: Roczny -->
+        <div id="review-tab-yearly" style="display:none">
+          <div style="max-width:860px">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+              <button onclick="yearlyNav(-1)" class="btn-sm">← Poprzedni rok</button>
+              <div id="yearly-label" style="font-family:var(--font-head);font-size:20px;font-weight:800;flex:1;text-align:center"></div>
+              <button onclick="yearlyNav(1)" class="btn-sm">Następny rok →</button>
+            </div>
+            <div id="yearly-status-bar" style="text-align:center;margin-bottom:20px"></div>
+            <div class="summary-card" style="margin-bottom:16px">
+              <div class="summary-card-title" style="color:var(--accent)">📊 Metryki roku</div>
+              <div id="yearly-metrics" style="margin-top:12px"></div>
+            </div>
+            <div class="summary-card" style="margin-bottom:16px">
+              <div class="summary-card-title" style="color:var(--blue)">📅 Miesiąc po miesiącu</div>
+              <div id="yearly-monthly-breakdown" style="margin-top:12px"></div>
+            </div>
+            <div class="summary-card" style="margin-bottom:16px">
+              <div class="summary-card-title" style="color:var(--amber)">📖 Najczęstsze błędy roku</div>
+              <div id="yearly-errors" style="margin-top:12px"></div>
+            </div>
+            <div class="summary-card" style="margin-bottom:16px">
+              <div class="summary-card-title">✍️ Refleksja roczna</div>
+              <div style="display:flex;flex-direction:column;gap:12px;margin-top:14px">
+                <div><label class="jlabel">🏆 Moje największe osiągnięcie tradingowe tego roku</label>
+                  <textarea id="yearly-q1" class="form-input-modal" style="min-height:70px;line-height:1.7" placeholder="Co osiągnąłem? Z czego jestem dumny?"></textarea></div>
+                <div><label class="jlabel">💸 Błąd który kosztował mnie najwięcej</label>
+                  <textarea id="yearly-q2" class="form-input-modal" style="min-height:70px;line-height:1.7" placeholder="Co powtarzałem? Ile to kosztowało? Dlaczego?"></textarea></div>
+                <div><label class="jlabel">🔄 Co zmieniam w przyszłym roku</label>
+                  <textarea id="yearly-q3" class="form-input-modal" style="min-height:70px;line-height:1.7" placeholder="Konkretna zmiana — nie 'będę lepszy' ale 'zmieniam X na Y'"></textarea></div>
+              </div>
+            </div>
+            <div class="summary-card" style="margin-bottom:16px">
+              <div class="summary-card-title">🎯 Cele na przyszły rok</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px">
+                <div><label class="jlabel">Target Win Rate (%)</label>
+                  <input id="yearly-goal-wr" class="form-input-modal" type="number" placeholder="np. 55"></div>
+                <div><label class="jlabel">Target liczba transakcji</label>
+                  <input id="yearly-goal-trades" class="form-input-modal" type="number" placeholder="np. 200"></div>
+                <div class="full"><label class="jlabel">Główny focus na rok</label>
+                  <input id="yearly-goal-focus" class="form-input-modal" placeholder="np. Konsekwencja w zarządzaniu ryzykiem"></div>
+              </div>
+            </div>
+            <div style="display:flex;justify-content:flex-end;gap:10px;margin-bottom:32px">
+              <button class="btn-sm btn-accent" onclick="saveYearlySummary()" style="padding:10px 24px;font-size:14px">💾 Zamknij rok</button>
+            </div>
+          </div>
+        </div><!-- /review-tab-yearly -->
+
+      </div><!-- /journal-tab-weekly -->
+
+    </div><!-- /page-journal -->
 
     <!-- EMOTIONS PAGE (placeholder — pełna implementacja w Task 7) -->
     <div id="page-emotions" class="page">
@@ -3577,159 +3700,9 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
       </div>
     </div><!-- /page-portfolio -->
 
-    <!-- PAGE: MONTHLY SUMMARY -->
-    <div id="page-monthly" class="page">
-      <div style="max-width:860px;margin:0 auto">
-        <div class="page-title">📅 Podsumowanie miesiąca</div>
-
-        <!-- Nawigacja miesiąca -->
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
-          <button onclick="monthlyNav(-1)" class="btn-sm">← Poprzedni</button>
-          <div id="monthly-label" style="font-family:var(--font-head);font-size:16px;font-weight:700;flex:1;text-align:center"></div>
-          <button onclick="monthlyNav(1)" class="btn-sm">Następny →</button>
-        </div>
-        <div id="monthly-status-bar" style="text-align:center;margin-bottom:20px"></div>
-
-        <!-- Metryki -->
-        <div class="summary-card" style="margin-bottom:16px">
-          <div class="summary-card-title" style="color:var(--accent)">📊 Metryki miesiąca</div>
-          <div id="monthly-metrics" style="margin-top:12px"></div>
-        </div>
-
-        <!-- Top / Bottom trade'y -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
-          <div class="summary-card" style="border-color:rgba(0,212,161,.3)">
-            <div class="summary-card-title" style="color:var(--green)">🏆 Top 3 trade'y</div>
-            <div id="monthly-top3" style="margin-top:10px"></div>
-          </div>
-          <div class="summary-card" style="border-color:rgba(255,80,80,.3)">
-            <div class="summary-card-title" style="color:var(--red)">⚠️ Bottom 3 trade'y</div>
-            <div id="monthly-bottom3" style="margin-top:10px"></div>
-          </div>
-        </div>
-
-        <!-- Refleksja -->
-        <div class="summary-card" style="margin-bottom:16px">
-          <div class="summary-card-title">✍️ Refleksja miesięczna</div>
-          <div style="display:flex;flex-direction:column;gap:12px;margin-top:14px">
-            <div>
-              <label class="jlabel">✅ Co działało w tym miesiącu?</label>
-              <textarea id="monthly-q1" class="form-input-modal" style="min-height:70px;line-height:1.7" placeholder="Które setupy, instrumenty, decyzje były naprawdę dobre?"></textarea>
-            </div>
-            <div>
-              <label class="jlabel">🚫 Co chcę wyeliminować?</label>
-              <textarea id="monthly-q2" class="form-input-modal" style="min-height:70px;line-height:1.7" placeholder="Konkretne błędy i zachowania do usunięcia w przyszłym miesiącu..."></textarea>
-            </div>
-            <div>
-              <label class="jlabel">🌱 Jeden nawyk do wdrożenia w następnym miesiącu</label>
-              <textarea id="monthly-q3" class="form-input-modal" style="min-height:60px;line-height:1.7" placeholder="Np. 'Codziennie 15 minut analizy przed sesją'"></textarea>
-            </div>
-          </div>
-        </div>
-
-        <!-- Cele na kolejny miesiąc -->
-        <div class="summary-card" style="margin-bottom:16px">
-          <div class="summary-card-title">🎯 Cele na kolejny miesiąc</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px">
-            <div>
-              <label class="jlabel">Win Rate (cel %)</label>
-              <input id="monthly-goal-wr" class="form-input-modal" type="number" placeholder="np. 55">
-            </div>
-            <div>
-              <label class="jlabel">Liczba transakcji (max)</label>
-              <input id="monthly-goal-trades" class="form-input-modal" type="number" placeholder="np. 20">
-            </div>
-            <div>
-              <label class="jlabel">Max dzienny drawdown</label>
-              <input id="monthly-goal-dd" class="form-input-modal" type="number" placeholder="np. 100 (w walucie konta)">
-            </div>
-            <div>
-              <label class="jlabel">Główny focus na miesiąc</label>
-              <input id="monthly-goal-focus" class="form-input-modal" placeholder="np. Cierpliwość — czekam tylko na A+ setup">
-            </div>
-          </div>
-        </div>
-
-        <div style="display:flex;justify-content:flex-end;gap:10px;margin-bottom:32px">
-          <button class="btn-sm btn-accent" onclick="saveMonthlySummary()" style="padding:10px 24px;font-size:14px">💾 Zamknij miesiąc</button>
-        </div>
-      </div>
-    </div><!-- /page-monthly -->
-
-    <!-- PAGE: YEARLY SUMMARY -->
-    <div id="page-yearly" class="page">
-      <div style="max-width:860px;margin:0 auto">
-        <div class="page-title">📆 Podsumowanie roku</div>
-
-        <!-- Nawigacja roku -->
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
-          <button onclick="yearlyNav(-1)" class="btn-sm">← Poprzedni rok</button>
-          <div id="yearly-label" style="font-family:var(--font-head);font-size:20px;font-weight:800;flex:1;text-align:center"></div>
-          <button onclick="yearlyNav(1)" class="btn-sm">Następny rok →</button>
-        </div>
-        <div id="yearly-status-bar" style="text-align:center;margin-bottom:20px"></div>
-
-        <!-- Metryki roczne -->
-        <div class="summary-card" style="margin-bottom:16px">
-          <div class="summary-card-title" style="color:var(--accent)">📊 Metryki roku</div>
-          <div id="yearly-metrics" style="margin-top:12px"></div>
-        </div>
-
-        <!-- Miesięczny breakdown -->
-        <div class="summary-card" style="margin-bottom:16px">
-          <div class="summary-card-title" style="color:var(--blue)">📅 Miesiąc po miesiącu</div>
-          <div id="yearly-monthly-breakdown" style="margin-top:12px"></div>
-        </div>
-
-        <!-- Słownik błędów -->
-        <div class="summary-card" style="margin-bottom:16px">
-          <div class="summary-card-title" style="color:var(--amber)">📖 Najczęstsze błędy roku</div>
-          <div id="yearly-errors" style="margin-top:12px"></div>
-        </div>
-
-        <!-- Refleksja roczna -->
-        <div class="summary-card" style="margin-bottom:16px">
-          <div class="summary-card-title">✍️ Refleksja roczna</div>
-          <div style="display:flex;flex-direction:column;gap:12px;margin-top:14px">
-            <div>
-              <label class="jlabel">🏆 Moje największe osiągnięcie tradingowe tego roku</label>
-              <textarea id="yearly-q1" class="form-input-modal" style="min-height:70px;line-height:1.7" placeholder="Co osiągnąłem? Z czego jestem dumny?"></textarea>
-            </div>
-            <div>
-              <label class="jlabel">💸 Błąd który kosztował mnie najwięcej</label>
-              <textarea id="yearly-q2" class="form-input-modal" style="min-height:70px;line-height:1.7" placeholder="Co powtarzałem? Ile to kosztowało? Dlaczego?"></textarea>
-            </div>
-            <div>
-              <label class="jlabel">🔄 Co zmieniam w przyszłym roku</label>
-              <textarea id="yearly-q3" class="form-input-modal" style="min-height:70px;line-height:1.7" placeholder="Konkretna zmiana — nie 'będę lepszy' ale 'zmieniam X na Y'"></textarea>
-            </div>
-          </div>
-        </div>
-
-        <!-- Cele roczne -->
-        <div class="summary-card" style="margin-bottom:16px">
-          <div class="summary-card-title">🎯 Cele na przyszły rok</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px">
-            <div>
-              <label class="jlabel">Target Win Rate (%)</label>
-              <input id="yearly-goal-wr" class="form-input-modal" type="number" placeholder="np. 55">
-            </div>
-            <div>
-              <label class="jlabel">Target liczba transakcji</label>
-              <input id="yearly-goal-trades" class="form-input-modal" type="number" placeholder="np. 200">
-            </div>
-            <div class="full">
-              <label class="jlabel">Główny focus na rok</label>
-              <input id="yearly-goal-focus" class="form-input-modal" placeholder="np. Konsekwencja w zarządzaniu ryzykiem — max 1% per trade">
-            </div>
-          </div>
-        </div>
-
-        <div style="display:flex;justify-content:flex-end;gap:10px;margin-bottom:32px">
-          <button class="btn-sm btn-accent" onclick="saveYearlySummary()" style="padding:10px 24px;font-size:14px">💾 Zamknij rok</button>
-        </div>
-      </div>
-    </div><!-- /page-yearly -->
+    <!-- page-monthly i page-yearly przeniesione do zakładki Przeglądy w Dzienniku -->
+    <div id="page-monthly" class="page" style="display:none"></div>
+    <div id="page-yearly"  class="page" style="display:none"></div>
 
 
   </main>
@@ -5432,8 +5405,9 @@ function showPage(page) {
   if (page === 'library') { if(typeof renderLibrary==='function') renderLibrary(); }
   if (page === 'ideas')   { if(typeof renderIdeasPage==='function') renderIdeasPage(); }
   if (page === 'macro')   { if(typeof renderMacroCalendar==='function') renderMacroCalendar(); }
-  if (page === 'monthly') { if(typeof renderMonthlySummary==='function') renderMonthlySummary(); }
-  if (page === 'yearly')  { if(typeof renderYearlySummary==='function') renderYearlySummary(); }
+  // monthly i yearly → redirect do zakładki Przeglądy w Dzienniku
+  if (page === 'monthly') { showPage('journal'); switchJournalTab('weekly'); switchReviewTab('monthly'); return; }
+  if (page === 'yearly')  { showPage('journal'); switchJournalTab('weekly'); switchReviewTab('yearly');  return; }
   if (page === 'portfolio') { if(typeof renderPortfolio==='function') renderPortfolio(); }
   // Aktualizuj tytuł w topstrip
   const PAGE_TITLES = {
@@ -10277,6 +10251,7 @@ async function renderSettings() {
   const u = users[state.currentUser] || {};
   document.getElementById('settings-subtitle').textContent =
     (u.role === 'admin' ? '👑 Administrator' : '👤 Trader') + ' · ' + state.currentUser;
+  updateMT4ListenerBadge();
   document.getElementById('sett-login').value = state.currentUser;
   document.getElementById('sett-name').value  = u.name  || '';
   document.getElementById('sett-email').value = u.email || '';
@@ -13387,6 +13362,22 @@ function stopRealtimeSync() {
 
 // ═══ MT4 REALTIME INTEGRATION ═══
 let _mt4Channel = null;
+let _mt4ListenerStatus = 'idle'; // idle | active | error | no_uid
+let _mt4LastSignal = null; // timestamp ostatniego sygnału
+
+function updateMT4ListenerBadge() {
+  const el = document.getElementById('mt4-listener-badge');
+  if (!el) return;
+  const map = {
+    idle:    ['⏳', 'var(--text3)',  'Inicjalizacja…'],
+    active:  ['✅', 'var(--accent)', 'Listener aktywny'],
+    error:   ['❌', 'var(--red)',    'Błąd połączenia'],
+    no_uid:  ['⚠️', 'var(--amber)',  'Brak User ID — wejdź w Ustawienia → Integracja MT4']
+  };
+  const [icon, color, text] = map[_mt4ListenerStatus] || map.idle;
+  const last = _mt4LastSignal ? ' · ostatni sygnał: ' + new Date(_mt4LastSignal).toLocaleTimeString('pl-PL') : '';
+  el.innerHTML = `<span style="color:${color};font-size:12px">${icon} ${text}${last}</span>`;
+}
 
 // ═══ MT4 LIVE TERMINAL ═══
 let _mt4Positions = {}; // ticket → {symbol, dir, entry, sl, tp, size, openTime}
@@ -13475,11 +13466,31 @@ function openTradeFromMT4Terminal(ticket) {
   openTradeFromMT4(p);
 }
 
-function initMT4Listener() {
+async function initMT4Listener() {
   if (!_sb || _mt4Channel) return;
-  const users = getUsers();
-  const u = users[state.currentUser];
-  if (!u?.supabaseId) return;
+
+  // Bug fix: pobierz supabaseId z sesji jeśli nie ma w localStorage
+  let uid = getUsers()[state.currentUser]?.supabaseId;
+  if (!uid) {
+    try {
+      const { data } = await _sb.auth.getSession();
+      uid = data?.session?.user?.id;
+      if (uid) {
+        const users = getUsers();
+        if (users[state.currentUser]) {
+          users[state.currentUser].supabaseId = uid;
+          saveUsers(users);
+        }
+      }
+    } catch(e) {}
+  }
+
+  if (!uid) {
+    console.warn('MT4: brak supabaseId — listener nie startuje. Wejdź w Ustawienia → Integracja MT4.');
+    _mt4ListenerStatus = 'no_uid';
+    updateMT4ListenerBadge();
+    return;
+  }
 
   _mt4Channel = _sb
     .channel('mt4_signals_' + state.currentUser)
@@ -13487,13 +13498,16 @@ function initMT4Listener() {
       event: 'INSERT',
       schema: 'public',
       table: 'mt4_signals',
-      filter: 'user_id=eq.' + u.supabaseId
+      filter: 'user_id=eq.' + uid
     }, payload => {
       handleMT4Signal(payload.new);
     })
-    .subscribe();
-
-  console.log('✓ MT4 listener aktywny');
+    .subscribe(status => {
+      _mt4ListenerStatus = status === 'SUBSCRIBED' ? 'active' : 'error';
+      updateMT4ListenerBadge();
+      if (status === 'SUBSCRIBED') console.log('✓ MT4 listener aktywny, uid:', uid);
+      else console.warn('MT4 listener status:', status);
+    });
 }
 
 function stopMT4Listener() {
@@ -13513,17 +13527,33 @@ async function handleMT4Signal(signal) {
     if (error) { console.warn('MT4: nie udało się oznaczyć sygnału jako processed, pomijam', error); return; }
   } catch(e) { console.warn('MT4: błąd oznaczania sygnału', e); return; }
 
-  // [v1.7] Znajdź konto w dzienniku po numerze MT4 (odszyfrowany login z cache)
-  const accounts = getAccounts();
-  const matchedAccount = accounts.find(a => {
-    const login = _accDec(a.id).mt4Login || a.mt4Login;
-    return login && String(login) === String(signal.mt4_account);
-  });
+  // Bug fix: async decrypt mt4Login dla każdego konta (nie z cache który może być pusty)
+  _mt4LastSignal = Date.now();
+  updateMT4ListenerBadge();
 
+  const accounts = getAccounts();
+  let matchedAccount = null;
+  for (const a of accounts) {
+    const rawLogin = a.mt4Login;
+    const login = rawLogin
+      ? (String(rawLogin).startsWith('enc_') ? await decryptField(rawLogin) : rawLogin)
+      : null;
+    if (login && String(login).trim() === String(signal.mt4_account).trim()) {
+      matchedAccount = a;
+      break;
+    }
+  }
+
+  // Przełącz na właściwe konto
+  const targetAccId = matchedAccount ? matchedAccount.id : state.currentAccountId;
   if (matchedAccount && matchedAccount.id !== state.currentAccountId) {
     state.currentAccountId = matchedAccount.id;
     refreshTopbarAccount();
     toast('MT4: Przełączono na konto ' + matchedAccount.name, 'success');
+  }
+  if (!matchedAccount && signal.mt4_account) {
+    console.warn('MT4: Nie znaleziono konta dla MT4 login #' + signal.mt4_account +
+      '. Sprawdź czy numer MT4 jest wpisany w Ustawienia → Konta.');
   }
 
   // Aktualizuj stan terminala
@@ -13539,7 +13569,7 @@ async function handleMT4Signal(signal) {
     };
     updateMT4Terminal();
     showMT4Notification(signal, matchedAccount);
-    openTradeFromMT4(signal);
+    openTradeFromMT4(signal, targetAccId);
   } else if (signal.event === 'CLOSE') {
     delete _mt4Positions[signal.ticket];
     updateMT4Terminal();
@@ -13616,9 +13646,10 @@ async function closeMT4Trade(signal) {
   showMT4CloseNotification(signal, null);
 }
 
-function openTradeFromMT4(signal) {
-  // [v1.7] Sprawdź czy transakcja z tym ticketem już istnieje
-  const existing = getTrades(state.currentAccountId);
+function openTradeFromMT4(signal, targetAccId) {
+  const accId = targetAccId || state.currentAccountId;
+  // Sprawdź duplikat na właściwym koncie
+  const existing = getTrades(accId);
   const duplicate = existing.find(t => t.mt4Ticket && String(t.mt4Ticket) === String(signal.ticket));
   if (duplicate) {
     console.log('TLJ: Transakcja #' + signal.ticket + ' już istnieje — pomijam duplikat');
@@ -13649,9 +13680,9 @@ function openTradeFromMT4(signal) {
     mt4Ticket: signal.ticket || null,
   };
 
-  const trades = getTrades(state.currentAccountId);
+  const trades = getTrades(accId);
   trades.push(trade);
-  saveTrades(state.currentAccountId, trades);
+  saveTrades(accId, trades);
   renderTrades();
   renderDashboard();
   playMT4Sound(signal.direction === 'BUY');
@@ -17480,9 +17511,23 @@ function switchJournalTab(tab) {
       btn.style.borderBottomColor = t === tab ? 'var(--accent)' : 'transparent';
     }
   });
-  if (tab === 'notes') renderNotesList();
-  if (tab === 'weekly') renderWeeklyReview();
-  if (tab === 'daily') _hookJournalProgressInputs();
+  if (tab === 'notes')  renderNotesList();
+  if (tab === 'weekly') { switchReviewTab('weekly'); renderWeeklyReview(); }
+  if (tab === 'daily')  _hookJournalProgressInputs();
+}
+
+function switchReviewTab(sub) {
+  ['weekly','monthly','yearly'].forEach(t => {
+    const el  = document.getElementById('review-tab-' + t);
+    const btn = document.getElementById('rstab-' + t);
+    if (el)  el.style.display = t === sub ? 'block' : 'none';
+    if (btn) {
+      btn.style.color = t === sub ? 'var(--text)' : 'var(--text3)';
+      btn.style.borderBottomColor = t === sub ? 'var(--accent)' : 'transparent';
+    }
+  });
+  if (sub === 'monthly') renderMonthlySummary();
+  if (sub === 'yearly')  renderYearlySummary();
 }
 
 function _hookJournalProgressInputs() {
