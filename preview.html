@@ -7490,6 +7490,7 @@ function saveTrade() {
     if (trade.linkedAnalysisId) _archiveAnalysisByTrade(trade.linkedAnalysisId, trade.id, true);
   }
   clearCurrentDraft();
+  _discardingDraft = true;
   closeModal('trade-modal');
   renderDashboard();
   renderTrades();
@@ -12750,6 +12751,7 @@ function saveTradeAsAnalysis() {
 
   // Clear draft
   clearCurrentDraft();
+  _discardingDraft = true;
   closeModal('trade-modal');
   toast('Zapisano jako Analiza ✓ — znajdziesz w zakładce 🔍 Analiza', 'success');
 
