@@ -9700,6 +9700,8 @@ function collectFormDraft() {
     setup:       (()=>{ const sid=document.getElementById('trade-setup-select')?.value; const s=getAllSetups().find(x=>x.id===sid); return s?s.name:''; })(),
     pre:         document.getElementById('t-pre')?.value || '',
     post:        document.getElementById('t-post')?.value || '',
+    emotionPre:  document.getElementById('t-emotion-pre')?.value || '',
+    emotionPost: document.getElementById('t-emotion-post')?.value || '',
     screenshots: state.tempScreenshots.filter(s => s.dataUrl && !s.uploading).map(s => s.dataUrl),
     editId:      document.getElementById('trade-id')?.value || '',
     savedAt:     Date.now(),
@@ -9815,6 +9817,8 @@ function restoreDraft(id) {
   setTfFromValue(data.tf || 'H1');
   document.getElementById('t-pre').value       = data.pre    || '';
   document.getElementById('t-post').value      = data.post   || '';
+  setEmotionUI('pre',  data.emotionPre  || '');
+  setEmotionUI('post', data.emotionPost || '');
   document.getElementById('modal-title').textContent = '↩ Przywrócony szkic: ' + (data.symbol||'bez nazwy');
   _pnlManual = false;
   const _pp = document.getElementById('pnl-preview'); if(_pp) _pp.textContent='';
