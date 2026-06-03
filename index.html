@@ -3823,7 +3823,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 </div>
 
 <!-- CONFIRM MODAL -->
-<div class="modal-overlay" id="confirm-modal" role="dialog" aria-modal="true" aria-label="Potwierdzenie">
+<div class="modal-overlay" id="confirm-modal" role="dialog" aria-modal="true" aria-label="Potwierdzenie" style="z-index:1100">
   <div class="modal" style="max-width:440px">
     <div id="confirm-modal-msg" style="white-space:pre-wrap;line-height:1.6;font-size:14px;padding:8px 0 24px"></div>
     <div style="display:flex;gap:10px;justify-content:flex-end">
@@ -7504,6 +7504,8 @@ function saveTrade() {
     if (trade.linkedAnalysisId) _archiveAnalysisByTrade(trade.linkedAnalysisId, trade.id, true);
   }
   clearCurrentDraft();
+  updateDraftBadges();
+  if (document.getElementById('page-drafts')?.classList.contains('active')) renderDraftsPage();
   _discardingDraft = true;
   closeModal('trade-modal');
   renderDashboard();
