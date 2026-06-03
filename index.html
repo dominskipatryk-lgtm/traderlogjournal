@@ -19809,6 +19809,7 @@ function tEmoShort(key) {
 
 let _importBuffer = [];
 let _importFormat = '';
+let _importMeta   = null; // { initialBalance, entries:[{amount,date,comment}], sumPnl, finalBalance }
 
 function initImportTab() {
   const sel = document.getElementById('import-account-sel');
@@ -19848,6 +19849,24 @@ function handleImportFile(file) {
       showImportStatus('warning', 'Nie znaleziono żadnych transakcji w pliku. Sprawdź format eksportu (patrz instrukcja poniżej).');
       return;
     }
+    // Extract balance entries for verification
+    _importMeta = null;
+    if (fmt === 'mt4csv')  _importMeta = extractMT4BalanceCSV(raw);
+    if (fmt === 'mt4html') _importMeta = extractMT4BalanceHTML(raw);
+    if (_importMeta) _importMeta.sumPnl = trades.reduce((s,t) => s + (t.pnl||0) + (t.commission||0) + (t.swap||0), 0);
+
+    // Auto-match account by MT4 login number from file
+    const mt4Num = extractMT4AccountNumber(raw, fmt);
+    if (mt4Num) {
+      const matched = autoMatchImportAccount(mt4Num);
+      const sel = document.getElementById('import-account-sel');
+      if (matched && sel) {
+        sel.value = matched.id;
+        if (_importMeta) _importMeta.autoMatchedAccount = matched;
+      }
+      if (_importMeta) _importMeta.detectedMT4Login = mt4Num;
+    }
+
     _importBuffer = trades;
     renderImportPreview(trades, fmt, file.name);
   };
@@ -19914,6 +19933,72 @@ function _dt(s) {
   return isNaN(d.getTime()) ? s.slice(0,16) : d.toISOString().slice(0,16);
 }
 function _uid() { return 'imp_' + Date.now() + '_' + Math.random().toString(36).slice(2,6); }
+
+// ---- MT4 account number extraction from file header ----
+function extractMT4AccountNumber(raw, fmt) {
+  if (fmt === 'mt4html') {
+    // MT4 HTML: <title>Statement for account 12345</title>
+    // or table cell with "Account:" label
+    const m1 = raw.match(/account[:\s#]+(\d{4,10})/i);
+    if (m1) return m1[1];
+    const m2 = raw.match(/<title[^>]*>.*?(\d{4,10}).*?<\/title>/i);
+    if (m2) return m2[1];
+  }
+  if (fmt === 'mt4csv') {
+    // MT4 CSV first lines may contain: "#Account: 12345" or "Account,12345"
+    const head = raw.slice(0, 500);
+    const m = head.match(/account[:\s,;#]+(\d{4,10})/i);
+    if (m) return m[1];
+  }
+  return null;
+}
+
+function autoMatchImportAccount(mt4Number) {
+  if (!mt4Number) return null;
+  const accs = getAccounts();
+  return accs.find(a => a.mt4Login && String(a.mt4Login).trim() === String(mt4Number).trim()) || null;
+}
+
+// ---- Balance extraction (MT4 CSV / HTML) ----
+function extractMT4BalanceCSV(text) {
+  const sep = text.split('\n')[0].includes(';') ? ';' : ',';
+  const { rows } = _parseCSV(text, sep);
+  const entries = [];
+  rows.forEach(c => {
+    if (c.length < 10) return;
+    const type = (c[2]||'').toLowerCase().trim();
+    if (!type.includes('balance') && !type.includes('credit') && !type.includes('deposit') && !type.includes('withdrawal')) return;
+    const amount = _num(c[13]||c[12]||c[11]||'0');
+    if (amount === 0) return;
+    entries.push({ amount, date: _dt(c[1]||''), comment: (c[3]||type).trim() });
+  });
+  return _buildBalanceMeta(entries);
+}
+
+function extractMT4BalanceHTML(text) {
+  const doc = new DOMParser().parseFromString(text, 'text/html');
+  const entries = [];
+  doc.querySelectorAll('tr').forEach(row => {
+    const cells = [...row.querySelectorAll('td')].map(td => td.textContent.trim());
+    if (cells.length < 10) return;
+    const type = (cells[2]||'').toLowerCase();
+    if (!type.includes('balance') && !type.includes('credit') && !type.includes('deposit') && !type.includes('withdrawal')) return;
+    // MT4 HTML: col 13 = profit, col 11 = comment or swap
+    const amount = _num(cells[13]||cells[12]||'0');
+    if (amount === 0) return;
+    entries.push({ amount, date: _dt(cells[1]||cells[8]||''), comment: (cells[11]||cells[3]||type).trim() });
+  });
+  return _buildBalanceMeta(entries);
+}
+
+function _buildBalanceMeta(entries) {
+  if (!entries.length) return null;
+  const initialBalance = entries[0].amount;
+  const later = entries.slice(1);
+  const deposits    = later.filter(e => e.amount > 0);
+  const withdrawals = later.filter(e => e.amount < 0);
+  return { initialBalance, entries, deposits, withdrawals };
+}
 
 // ---- MT4 CSV ----
 function parseMT4CSV(text) {
@@ -20218,10 +20303,68 @@ function renderImportPreview(trades, fmt, filename) {
   const dupCnt = withFlags.filter(t =>  t._dup).length;
   const FMT = { 'mt4csv':'MT4 CSV','mt4html':'MT4 HTML','mt5csv':'MT5','mt5html':'MT5 HTML','bybit-fut':'Bybit Futures','bybit-spot':'Bybit Spot','mexc-fut':'MEXC Futures','mexc-spot':'MEXC Spot' };
 
+  // Balance verification panel
+  let balanceHtml = '';
+  if (_importMeta) {
+    const acc = accId ? getAccounts().find(a => a.id === accId) : null;
+    const accCapital = acc ? (acc.capital || 0) : 0;
+    const meta = _importMeta;
+    const expectedFinal = meta.initialBalance
+      + meta.deposits.reduce((s,e) => s + e.amount, 0)
+      + meta.withdrawals.reduce((s,e) => s + e.amount, 0)
+      + meta.sumPnl;
+    const appFinal = accCapital + meta.sumPnl;
+    const diff = expectedFinal - appFinal;
+    const diffAbs = Math.abs(diff);
+    const fmtN = v => (v >= 0 ? '+' : '') + v.toFixed(2);
+    const ok = diffAbs < 0.01;
+
+    const depositSum = meta.deposits.reduce((s,e) => s + e.amount, 0);
+    const withdrawSum = meta.withdrawals.reduce((s,e) => s + e.amount, 0);
+
+    balanceHtml = `
+      <div style="margin:12px 0 8px;padding:12px 14px;border-radius:8px;background:var(--bg2);border:1px solid ${ok?'var(--accent)':'var(--red)'};font-size:12px">
+        <div style="font-weight:700;margin-bottom:8px;color:${ok?'var(--accent)':'var(--red)'}">
+          ${ok ? '✅ Weryfikacja salda — OK' : '⚠️ Weryfikacja salda — wykryto rozbieżność'}
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;color:var(--text2)">
+          <span>Kapitał startowy (plik):</span><span style="font-weight:600;color:var(--text)">${meta.initialBalance.toFixed(2)}</span>
+          <span>Wpłaty po starcie:</span><span style="font-weight:600;color:var(--green)">${depositSum > 0 ? '+'+depositSum.toFixed(2) : '—'} (${meta.deposits.length})</span>
+          <span>Wypłaty:</span><span style="font-weight:600;color:var(--red)">${withdrawSum < 0 ? withdrawSum.toFixed(2) : '—'} (${meta.withdrawals.length})</span>
+          <span>Suma PnL transakcji:</span><span style="font-weight:600;color:${meta.sumPnl>=0?'var(--green)':'var(--red)'}">${fmtN(meta.sumPnl)}</span>
+          <span>Saldo końcowe (plik):</span><span style="font-weight:600;color:var(--text)">${expectedFinal.toFixed(2)}</span>
+          <span>Saldo wg konta (app):</span><span style="font-weight:600;color:${ok?'var(--accent)':'var(--red)'}">${appFinal.toFixed(2)}</span>
+        </div>
+        ${!ok ? `<div style="margin-top:8px;padding:6px 10px;background:rgba(255,79,107,0.1);border-radius:6px;color:var(--red)">
+          Różnica: <strong>${fmtN(diff)}</strong> — po imporcie zostanie automatycznie wykonana korekta:
+          kapitał startowy zostanie ustawiony na <strong>${meta.initialBalance.toFixed(2)}</strong>
+          ${meta.deposits.length+meta.withdrawals.length > 0 ? `i zapisanych zostanie <strong>${meta.deposits.length+meta.withdrawals.length} operacji</strong> (wpłaty/wypłaty)` : ''}.
+        </div>` : ''}
+      </div>`;
+  }
+
+  // Account match banner
+  let accountHtml = '';
+  if (_importMeta && _importMeta.detectedMT4Login) {
+    const det = _importMeta.detectedMT4Login;
+    const matched = _importMeta.autoMatchedAccount;
+    if (matched) {
+      accountHtml = `<div style="margin:8px 0;padding:7px 12px;border-radius:6px;background:rgba(0,212,161,0.08);border:1px solid var(--accent);font-size:12px;color:var(--accent)">
+        ✅ Auto-dopasowano konto MT4 <strong>#${det}</strong> → <strong>${matched.name}${matched.broker ? ' ('+matched.broker+')' : ''}</strong>
+      </div>`;
+    } else {
+      accountHtml = `<div style="margin:8px 0;padding:7px 12px;border-radius:6px;background:rgba(255,193,7,0.08);border:1px solid #ffc107;font-size:12px;color:#ffc107">
+        ⚠️ Wykryto numer konta MT4 <strong>#${det}</strong> — brak dopasowania w aplikacji.<br>
+        <span style="font-size:11px;color:var(--text3)">Wybierz konto ręcznie lub dodaj numer MT4 w ustawieniach konta.</span>
+      </div>`;
+    }
+  }
+
   document.getElementById('import-summary-text').innerHTML =
     `<span style="color:var(--text3)">Format: </span><strong>${FMT[fmt]||fmt}</strong>&ensp;` +
     `<span style="color:var(--green);font-weight:700">✓ ${newCnt} nowych</span>` +
-    (dupCnt ? `&ensp;<span style="color:var(--text3)">⊘ ${dupCnt} duplikatów (pominięte)</span>` : '');
+    (dupCnt ? `&ensp;<span style="color:var(--text3)">⊘ ${dupCnt} duplikatów (pominięte)</span>` : '') +
+    accountHtml + balanceHtml;
 
   const btn = document.getElementById('import-confirm-btn');
   if (btn) btn.disabled = newCnt === 0;
@@ -20259,15 +20402,68 @@ function confirmImportTrades() {
     dateClose: dateClose || undefined
   }));
   if (!toAdd.length) return toast('Brak nowych transakcji do importu', 'error');
+
+  // Save trades
   const existing = getTrades(accId);
   saveTrades(accId, [...existing, ...toAdd]);
-  toast(`✓ Zaimportowano ${toAdd.length} transakcji`, 'success');
+
+  // Balance auto-correction
+  if (_importMeta) {
+    const db   = getDB();
+    const accs = getAccounts();
+    const acc  = accs.find(a => a.id === accId);
+    if (acc) {
+      const meta = _importMeta;
+      const currentCapital = acc.capital || 0;
+      const needsCapitalFix = Math.abs(currentCapital - meta.initialBalance) > 0.01;
+
+      // 1. Fix starting capital if wrong
+      if (needsCapitalFix) {
+        acc.capital = meta.initialBalance;
+        db['accounts_' + state.currentUser] = accs;
+        saveDB(db);
+      }
+
+      // 2. Save detected deposits / withdrawals as operations
+      const ops = [...meta.deposits, ...meta.withdrawals].sort((a,b) => (a.date||'') > (b.date||'') ? 1 : -1);
+      if (ops.length) {
+        const existingW = getWithdrawals(accId);
+        const newOps = ops.map(e => ({
+          id: 'imp_bal_' + Date.now() + '_' + Math.random().toString(36).slice(2,5),
+          type: e.amount > 0 ? 'in' : 'out',
+          amount: Math.abs(e.amount),
+          date: e.date || '',
+          note: (e.comment || '') + ' (auto-import)'
+        }));
+        // Deduplicate by amount+date
+        const filtered = newOps.filter(n =>
+          !existingW.some(w => w.date === n.date && Math.abs(w.amount - n.amount) < 0.01)
+        );
+        if (filtered.length) {
+          db['withdrawals_' + accId] = [...existingW, ...filtered];
+          saveDB(db);
+        }
+      }
+
+      const fixMsg = needsCapitalFix
+        ? ` | Kapitał → ${meta.initialBalance.toFixed(2)}`
+        : '';
+      const opsMsg = ops.length ? ` | +${ops.length} operacji` : '';
+      toast(`✓ Zaimportowano ${toAdd.length} transakcji${fixMsg}${opsMsg}`, 'success');
+    } else {
+      toast(`✓ Zaimportowano ${toAdd.length} transakcji`, 'success');
+    }
+  } else {
+    toast(`✓ Zaimportowano ${toAdd.length} transakcji`, 'success');
+  }
+
   resetImportTab();
+  _importMeta = null;
   if (document.getElementById('page-trades')?.classList.contains('active')) renderTrades();
 }
 
 function resetImportTab() {
-  _importBuffer = []; _importFormat = '';
+  _importBuffer = []; _importFormat = ''; _importMeta = null;
   const s = document.getElementById('import-status');
   const p = document.getElementById('import-preview-wrap');
   if (s) s.style.display = 'none';

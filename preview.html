@@ -1336,6 +1336,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
         </div>
       </div>
       <div class="sidebar-controls">
+        <div id="freemium-badge" style="display:none;justify-content:center;margin-bottom:4px;cursor:pointer" onclick="showUpsellModal()"></div>
         <button class="theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()" title="Motyw" aria-label="Przełącz motyw">🌙</button>
         <div class="lang-switch" role="group" aria-label="Język">
           <button class="lang-btn active" id="lang-pl" onclick="setLang('pl')">PL</button>
@@ -4835,6 +4836,84 @@ const _SB_ANON = 'sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK';
 const _ADMIN_EMAIL = 'dominskipatryk@gmail.com';
 const _HELP_VIDEO_URL = ''; // ← wklej URL nagranego wideo (YouTube/Loom)
 
+// ===== FREEMIUM =====
+const FREEMIUM_LIMIT = 50;
+
+function isProUser() {
+  const u = getUsers()[state.currentUser];
+  if (!u) return false;
+  return u.subscription === 'pro' || u.subscription === 'admin' || u.role === 'admin' || u.grandfathered === true;
+}
+
+function migrateTradesStorage() {
+  // Jednorazowa migracja: przenieś transakcje z db[key] do db.trades[key]
+  const db   = getDB();
+  const user = state.currentUser;
+  if (!user) return;
+  let changed = false;
+  getAccounts().forEach(acc => {
+    const key    = user + '_' + acc.id;
+    const oldFmt = Array.isArray(db[key]) ? db[key] : [];
+    const newFmt = (db.trades || {})[key] || [];
+    if (oldFmt.length === 0) return;
+    if (!db.trades) db.trades = {};
+    if (newFmt.length === 0) {
+      db.trades[key] = oldFmt;
+    } else {
+      const ids = new Set(newFmt.map(t => t.id));
+      const extra = oldFmt.filter(t => !ids.has(t.id));
+      if (extra.length) db.trades[key] = [...newFmt, ...extra];
+    }
+    delete db[key];
+    changed = true;
+  });
+  if (changed) saveDB(db);
+}
+
+function autoGrantGrandfathered() {
+  // Istniejący użytkownicy (mają już transakcje) są zwolnieni z limitu
+  const users = getUsers();
+  const u = users[state.currentUser];
+  if (!u || u.grandfathered || isProUser()) return;
+  const hasExistingTrades = getTotalClosedCount() > 0;
+  if (hasExistingTrades) {
+    u.grandfathered = true;
+    saveUsers(users);
+  }
+}
+function getTotalClosedCount() {
+  return getAccounts().reduce((s, a) => s + getTrades(a.id).filter(t => t.status === 'closed').length, 0);
+}
+function getFreemiumRemaining() {
+  if (isProUser()) return Infinity;
+  return Math.max(0, FREEMIUM_LIMIT - getTotalClosedCount());
+}
+function checkFreemiumLimit() {
+  if (isProUser()) return true;
+  const rem = getFreemiumRemaining();
+  if (rem <= 0) { showUpsellModal(); return false; }
+  return true;
+}
+function updateFreemiumBadge() {
+  const el = document.getElementById('freemium-badge');
+  if (!el) return;
+  if (isProUser()) { el.style.display = 'none'; return; }
+  const used = getTotalClosedCount();
+  const rem  = Math.max(0, FREEMIUM_LIMIT - used);
+  el.style.display = 'flex';
+  el.innerHTML = rem > 10
+    ? `<span style="color:var(--text3);font-size:11px">${used}/${FREEMIUM_LIMIT} trans.</span>`
+    : rem > 0
+      ? `<span style="color:var(--amber);font-size:11px;font-weight:700">⚠️ ${rem} trans. zostało</span>`
+      : `<span style="color:var(--red);font-size:11px;font-weight:700">🔒 Limit osiągnięty</span>`;
+}
+function showUpsellModal() {
+  document.getElementById('upsell-modal')?.classList.add('open');
+}
+function closeUpsellModal() {
+  document.getElementById('upsell-modal')?.classList.remove('open');
+}
+
 // ===== STATE =====
 let state = {
   currentUser: null,
@@ -4915,9 +4994,20 @@ function isCurrentAccountBot(accountId) {
 }
 
 function getTrades(accountId) {
-  const db = getDB();
+  const db  = getDB();
   const key = state.currentUser + '_' + accountId;
-  let trades = (db.trades || {})[key] || [];
+  // Czytaj z obu lokalizacji (db.trades[key] = nowy format, db[key] = stary format z sbSyncDown)
+  const newFmt = (db.trades || {})[key] || [];
+  const oldFmt = Array.isArray(db[key]) ? db[key] : [];
+  let trades = newFmt.length >= oldFmt.length ? newFmt : oldFmt;
+  // Migracja: scal stary format do nowego przy okazji
+  if (oldFmt.length > 0 && newFmt.length === 0) {
+    if (!db.trades) db.trades = {};
+    db.trades[key] = oldFmt;
+    delete db[key];
+    saveDB(db);
+    trades = oldFmt;
+  }
   if (trades.some(t => t.date && t.date.length === 10)) {
     trades = trades.map(t => t.date && t.date.length === 10 ? { ...t, date: t.date + 'T12:00' } : t);
     if (!db.trades) db.trades = {};
@@ -4931,6 +5021,8 @@ function saveTrades(accountId, arr) {
   if (!db.trades) db.trades = {};
   const key = state.currentUser + '_' + accountId;
   db.trades[key] = arr;
+  // Usuń stary format jeśli istnieje
+  if (db[key]) { delete db[key]; }
   saveDB(db);
 }
 
@@ -4969,8 +5061,11 @@ function loginAs(username, userData) {
   updateAdminNav();
   _refreshAccDecCache().then(() => renderAll());
   updateDraftBadges();
+  migrateTradesStorage();
+  autoGrantGrandfathered();
+  updateFreemiumBadge();
   setTimeout(initLang, 50);
-  setTimeout(showRoutineModal, 1200);
+  setTimeout(() => { if (shouldShowOnboarding()) showOnboarding(); else showRoutineModal(); }, 1200);
   setTimeout(checkBackupReminder, 3000);
   setTimeout(checkAutoDownload, 4000);
   // [v1.7] Uruchom nasłuchiwanie sygnałów z MT4
@@ -7195,6 +7290,7 @@ function setEmotionUI(type, value) {
 
 // ===== TRADE MODAL =====
 function openTradeModal() {
+  if (!checkFreemiumLimit()) return;
   state.editTradeId = null;
   state.tempScreenshots = [];
   document.getElementById('trade-id').value = '';
@@ -7424,6 +7520,7 @@ function saveTrade() {
   renderDashboard();
   renderTrades();
   renderSummary();
+  updateFreemiumBadge();
   toast(t('toast_trade_saved'), 'success');
   // Show post-trade survey for closed trades (not for bot accounts)
   if (trade.status === 'closed' && !isCurrentAccountBot()) {
@@ -13711,15 +13808,30 @@ async function sbSyncDown(userId, userLogin) {
     if (accounts?.length) {
       if (loginKey) {
         if (!db.accounts) db.accounts = {};
-        db.accounts[loginKey] = accounts.map(a => ({
-          id: a.id, sbId: a.id, name: a.name, broker: a.broker || '',
-          brokerKey: a.broker_key || '', spread: a.spread || null,
-          traderPct: a.trader_pct || null,
-          type: a.type || 'forex', capital: parseFloat(a.capital) || 0,
-          strategy: a.strategy || '', color: a.color || '#00d4a1',
-          currency: a.currency || 'USD',
-          createdAt: new Date(a.created_at).getTime()
-        }));
+        const existingAccs = db.accounts[loginKey] || [];
+        const mergedAccs = accounts.map(a => {
+          // Zachowaj lokalny ID jeśli konto już istnieje (unika osierocania transakcji)
+          const local = existingAccs.find(x => x.sbId === a.id || x.id === a.id);
+          const localId = local?.id || a.id;
+          // Jeśli klucz transakcji zmienia się — przenieś dane
+          if (local && local.id !== a.id) {
+            const oldKey = loginKey + '_' + local.id;
+            const newKey = loginKey + '_' + a.id;
+            if (db[oldKey]?.length && !db[newKey]?.length) db[newKey] = db[oldKey];
+          }
+          return {
+            id: localId, sbId: a.id, name: a.name, broker: a.broker || '',
+            brokerKey: a.broker_key || '', spread: a.spread || null,
+            traderPct: a.trader_pct || null,
+            type: a.type || 'forex', capital: parseFloat(a.capital) || 0,
+            strategy: a.strategy || '', color: a.color || '#00d4a1',
+            currency: a.currency || 'USD',
+            createdAt: new Date(a.created_at).getTime()
+          };
+        });
+        // Zachowaj konta lokalne (jeszcze nie zsynchronizowane z Supabase)
+        const localOnly = existingAccs.filter(x => !x.sbId && !accounts.find(a => a.id === x.id));
+        db.accounts[loginKey] = [...mergedAccs, ...localOnly];
         saveDB(db);
       }
 
@@ -13727,12 +13839,13 @@ async function sbSyncDown(userId, userLogin) {
       const accIds = accounts.map(a => a.id);
       const { data: trades } = await _sb.from('trades').select('*').in('account_id', accIds);
       if (trades?.length) {
+        if (!db.trades) db.trades = {};
         trades.forEach(t => {
           const key = (loginKey || '') + '_' + t.account_id;
-          if (!db[key]) db[key] = [];
-          const idx = db[key].findIndex(x => x.id === t.id);
+          if (!db.trades[key]) db.trades[key] = [];
+          const idx = db.trades[key].findIndex(x => x.id === t.id);
           // Zachowaj istniejące screenshots (Drive URLs) jeśli Supabase nie ma
-          const existing = idx >= 0 ? db[key][idx] : null;
+          const existing = idx >= 0 ? db.trades[key][idx] : null;
           const sbUpdatedAt = new Date(t.updated_at).getTime();
           // Conflict resolution: zachowaj lokalną wersję jeśli jest nowsza
           if (existing && existing.updatedAt > sbUpdatedAt) return;
@@ -13753,8 +13866,8 @@ async function sbSyncDown(userId, userLogin) {
             rulesBroken: Array.isArray(t.rules_broken) ? t.rules_broken : (existing?.rulesBroken || []),
             updatedAt: sbUpdatedAt
           };
-          if (idx >= 0) db[key][idx] = trade;
-          else db[key].push(trade);
+          if (idx >= 0) db.trades[key][idx] = trade;
+          else db.trades[key].push(trade);
         });
         saveDB(db);
       }
@@ -20589,16 +20702,23 @@ function parseMT4CSV(text) {
     const type = (c[2]||'').toLowerCase().trim();
     if (!BUY_SELL.includes(type)) return [];
     const sym = (c[4]||'').toUpperCase().trim();
-    const entry = _num(c[5]), exit = _num(c[9]);
+    const entry = _num(c[5]);
     if (!sym || !entry) return [];
+    const closeTime = (c[8]||'').trim();
+    const exit     = _num(c[9]);
+    // Otwarta pozycja: brak czasu zamknięcia lub cena zamknięcia = 0
+    const isOpen = !closeTime || closeTime.startsWith('0000') || exit === 0;
+    const ticket = _num(c[0]) || null;
     return [{
       id: _uid(), symbol: sym,
       dir: type.startsWith('sell') ? 'short' : 'long',
-      size: _num(c[3]), entry, exit,
+      size: _num(c[3]), entry, exit: isOpen ? null : exit,
       sl: _num(c[6]), tp: _num(c[7]),
       commission: _num(c[10]), swap: _num(c[12]),
-      pnl: _num(c[13]), status: 'closed',
-      date: _dt(c[1]), dateClose: _dt(c[8]),
+      pnl: isOpen ? null : _num(c[13]),
+      status: isOpen ? 'open' : 'closed',
+      date: _dt(c[1]), dateClose: isOpen ? null : _dt(c[8]),
+      mt4Ticket: ticket,
       _src: 'MT4'
     }];
   });
@@ -20614,16 +20734,23 @@ function parseMT4HTML(text) {
     if (cells.length < 13) return;
     const type = (cells[2]||'').toLowerCase();
     if (!BUY_SELL.some(t => type.startsWith(t))) return;
-    const sym = (cells[4]||'').toUpperCase(), entry = _num(cells[5]), exit = _num(cells[9]);
-    if (!sym || !entry || !exit) return;
+    const sym = (cells[4]||'').toUpperCase(), entry = _num(cells[5]);
+    if (!sym || !entry) return;
+    const closeTime = (cells[8]||'').trim();
+    const exit      = _num(cells[9]);
+    // Otwarta pozycja: brak czasu zamknięcia lub cena zamknięcia = 0
+    const isOpen = !closeTime || exit === 0;
+    const ticket = _num(cells[0]) || null;
     trades.push({
       id: _uid(), symbol: sym,
       dir: type.startsWith('sell') ? 'short' : 'long',
-      size: _num(cells[3]), entry, exit,
+      size: _num(cells[3]), entry, exit: isOpen ? null : exit,
       sl: _num(cells[6]), tp: _num(cells[7]),
       commission: _num(cells[10]), swap: _num(cells[12]),
-      pnl: _num(cells[13]), status: 'closed',
-      date: _dt(cells[1]), dateClose: _dt(cells[8]),
+      pnl: isOpen ? null : _num(cells[13]),
+      status: isOpen ? 'open' : 'closed',
+      date: _dt(cells[1]), dateClose: isOpen ? null : _dt(cells[8]),
+      mt4Ticket: ticket,
       _src: 'MT4'
     });
   });
@@ -20917,6 +21044,18 @@ function renderImportPreview(trades, fmt, filename) {
 function confirmImportTrades() {
   const accId = document.getElementById('import-account-sel')?.value;
   if (!accId) return toast('Wybierz konto docelowe', 'error');
+  if (!isProUser()) {
+    const newClosed = _importBuffer.filter(t => !t._dup && t.status === 'closed').length;
+    if (getTotalClosedCount() + newClosed > FREEMIUM_LIMIT) {
+      const allowed = Math.max(0, FREEMIUM_LIMIT - getTotalClosedCount());
+      if (allowed === 0) { showUpsellModal(); return; }
+      toast(`⚠️ Plan Free: możesz dodać jeszcze ${allowed} transakcji. Import ograniczony.`, 'warning');
+      _importBuffer = _importBuffer.filter((t,i) => {
+        if (t._dup || t.status !== 'closed') return true;
+        allowed--; return allowed >= 0;
+      });
+    }
+  }
   const toAdd = _importBuffer.filter(t => !t._dup).map(({ _dup, _src, dateClose, ...rest }) => ({
     ...rest,
     note: (rest.note || '') + (rest.note ? '\n' : '') + 'Import: ' + (_src||''),
@@ -20928,6 +21067,8 @@ function confirmImportTrades() {
   toast(`✓ Zaimportowano ${toAdd.length} transakcji`, 'success');
   resetImportTab();
   if (document.getElementById('page-trades')?.classList.contains('active')) renderTrades();
+  // Natychmiast wyślij do Supabase — zapobiega utracie danych przy kolejnym sbSyncDown
+  if (_sb) setTimeout(() => sbFullSyncUp().catch(() => {}), 500);
 }
 
 function resetImportTab() {
@@ -21423,6 +21564,235 @@ if ('serviceWorker' in navigator) {
       .catch(() => {}); // SW opcjonalny — nie blokuje działania aplikacji
   });
 }
+
+// ===== ONBOARDING =====
+let _obStep = 1;
+
+function shouldShowOnboarding() {
+  if (!state.currentUser) return false;
+  const u = getUsers()[state.currentUser];
+  if (!u || u.onboardingDone) return false;
+  return getAccounts().length === 0;
+}
+
+function showOnboarding() {
+  if (!shouldShowOnboarding()) return;
+  _obStep = 1;
+  _renderObStep();
+  document.getElementById('onboarding-modal')?.classList.add('open');
+}
+
+function closeOnboarding() {
+  document.getElementById('onboarding-modal')?.classList.remove('open');
+  const users = getUsers();
+  if (users[state.currentUser]) {
+    users[state.currentUser].onboardingDone = true;
+    saveUsers(users);
+  }
+}
+
+function obNext() {
+  if (_obStep === 1) {
+    // Krok 1 → 2: stwórz konto
+    const name    = document.getElementById('ob-acc-name')?.value.trim();
+    const capital = parseFloat(document.getElementById('ob-acc-capital')?.value) || 0;
+    const currency= document.getElementById('ob-acc-currency')?.value || 'USD';
+    const broker  = document.getElementById('ob-acc-broker')?.value.trim() || '';
+    if (!name) { toast('Wpisz nazwę konta', 'error'); return; }
+    const db = getDB();
+    if (!db.accounts) db.accounts = {};
+    if (!db.accounts[state.currentUser]) db.accounts[state.currentUser] = [];
+    const newAcc = { id: genId(), name, capital, currency, broker, type: 'forex', createdAt: Date.now() };
+    db.accounts[state.currentUser].push(newAcc);
+    saveDB(db);
+    state.currentAccountId = newAcc.id;
+    refreshTopbarAccount();
+  }
+  if (_obStep === 2) {
+    // Krok 2 → 3: godziny sesji (opcjonalne, skip ok)
+    const from = document.getElementById('ob-session-from')?.value;
+    const to   = document.getElementById('ob-session-to')?.value;
+    if (from && to && state.currentUser) {
+      const users = getUsers();
+      if (users[state.currentUser]) {
+        users[state.currentUser].sessionFrom = from;
+        users[state.currentUser].sessionTo   = to;
+        saveUsers(users);
+      }
+    }
+  }
+  if (_obStep === 3) {
+    // Krok 3: dane demo
+    const wantDemo = document.getElementById('ob-demo-yes')?.checked;
+    if (wantDemo) generateDemoData();
+  }
+  if (_obStep >= 4) { closeOnboarding(); renderAll(); updateFreemiumBadge(); return; }
+  _obStep++;
+  _renderObStep();
+}
+
+function obBack() {
+  if (_obStep <= 1) return;
+  _obStep--;
+  _renderObStep();
+}
+
+function _renderObStep() {
+  const content = document.getElementById('ob-content');
+  const dots = document.querySelectorAll('.ob-dot');
+  dots.forEach((d, i) => d.classList.toggle('active', i + 1 === _obStep));
+  const backBtn = document.getElementById('ob-back-btn');
+  if (backBtn) backBtn.style.visibility = _obStep > 1 ? 'visible' : 'hidden';
+  const nextBtn = document.getElementById('ob-next-btn');
+
+  const steps = {
+    1: `
+      <div style="text-align:center;margin-bottom:24px">
+        <div style="font-size:48px;margin-bottom:12px">📊</div>
+        <div style="font-size:22px;font-weight:800;color:var(--text);margin-bottom:8px">Utwórz swoje pierwsze konto</div>
+        <div style="font-size:14px;color:var(--text3)">Każde konto tradingowe ma osobną historię transakcji i statystyki</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div><label class="form-label-modal">Nazwa konta *</label>
+          <input id="ob-acc-name" class="form-input-modal" placeholder="np. Live EUR, Prop FTMO, Krypto Binance"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div><label class="form-label-modal">Kapitał startowy</label>
+            <input id="ob-acc-capital" class="form-input-modal" type="number" placeholder="10000"></div>
+          <div><label class="form-label-modal">Waluta</label>
+            <select id="ob-acc-currency" class="form-select-modal">
+              <option>USD</option><option>EUR</option><option>GBP</option><option>PLN</option><option>CHF</option><option>BTC</option><option>USDT</option>
+            </select></div>
+        </div>
+        <div><label class="form-label-modal">Broker (opcjonalnie)</label>
+          <input id="ob-acc-broker" class="form-input-modal" placeholder="np. IC Markets, Binance, FTMO"></div>
+      </div>`,
+    2: `
+      <div style="text-align:center;margin-bottom:24px">
+        <div style="font-size:48px;margin-bottom:12px">⏰</div>
+        <div style="font-size:22px;font-weight:800;color:var(--text);margin-bottom:8px">Kiedy handlujesz?</div>
+        <div style="font-size:14px;color:var(--text3)">Ustawimy automatyczne przypomnienia o rytuale przed i po sesji</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+        <div><label class="form-label-modal">Początek sesji</label>
+          <input id="ob-session-from" class="form-input-modal" type="time" value="08:00"></div>
+        <div><label class="form-label-modal">Koniec sesji</label>
+          <input id="ob-session-to" class="form-input-modal" type="time" value="17:00"></div>
+      </div>
+      <div style="padding:12px 14px;background:var(--bg2);border-radius:10px;font-size:13px;color:var(--text2)">
+        💡 Możesz zmienić to w <strong>Ustawieniach → Przypomnienia</strong> w każdej chwili
+      </div>`,
+    3: `
+      <div style="text-align:center;margin-bottom:24px">
+        <div style="font-size:48px;margin-bottom:12px">🎮</div>
+        <div style="font-size:22px;font-weight:800;color:var(--text);margin-bottom:8px">Dane demonstracyjne</div>
+        <div style="font-size:14px;color:var(--text3)">Chcesz zobaczyć jak wygląda aplikacja z wypełnionymi danymi?</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <label style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--bg2);border-radius:10px;cursor:pointer;border:2px solid transparent" id="ob-demo-yes-wrap">
+          <input type="radio" name="ob-demo" id="ob-demo-yes" value="yes" onchange="document.getElementById('ob-demo-yes-wrap').style.borderColor='var(--accent)';document.getElementById('ob-demo-no-wrap').style.borderColor='transparent'">
+          <div><div style="font-weight:600;color:var(--text)">✅ Tak, wygeneruj ~60 dni danych demo</div>
+          <div style="font-size:12px;color:var(--text3)">Transakcje, dziennik, analizy — osobne konto demo, Twoje dane są bezpieczne</div></div>
+        </label>
+        <label style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--bg2);border-radius:10px;cursor:pointer;border:2px solid var(--accent)" id="ob-demo-no-wrap">
+          <input type="radio" name="ob-demo" id="ob-demo-no" value="no" checked onchange="document.getElementById('ob-demo-no-wrap').style.borderColor='var(--accent)';document.getElementById('ob-demo-yes-wrap').style.borderColor='transparent'">
+          <div><div style="font-weight:600;color:var(--text)">➡️ Nie, zaczynam od razu od zera</div>
+          <div style="font-size:12px;color:var(--text3)">Czyste konto, zaczynam wpisywać własne transakcje</div></div>
+        </label>
+      </div>`,
+    4: `
+      <div style="text-align:center;padding:20px 0">
+        <div style="font-size:64px;margin-bottom:16px">🚀</div>
+        <div style="font-size:24px;font-weight:800;color:var(--accent);margin-bottom:12px">Jesteś gotowy!</div>
+        <div style="font-size:14px;color:var(--text2);line-height:1.8;max-width:340px;margin:0 auto">
+          Twoje konto jest skonfigurowane.<br>
+          Zacznij od <strong>Rytuału Otwarcia</strong> przed pierwszą sesją —<br>
+          znajdziesz go w zakładce <strong>Dziennik</strong>.
+        </div>
+        <div style="margin-top:24px;padding:14px 20px;background:rgba(0,212,161,.08);border:1px solid rgba(0,212,161,.25);border-radius:12px;font-size:13px;color:var(--text2);text-align:left;max-width:340px;margin-left:auto;margin-right:auto">
+          <div style="font-weight:700;color:var(--accent);margin-bottom:8px">Plan Free — co masz:</div>
+          <div>✅ Do 50 zamkniętych transakcji</div>
+          <div>✅ Pełny dziennik i rytuały</div>
+          <div>✅ Statystyki i raporty</div>
+          <div>✅ Import CSV/HTML</div>
+          <div style="margin-top:8px;color:var(--text3)">🔓 Plan Pro: bez limitów + AI Coach + więcej</div>
+        </div>
+      </div>`
+  };
+
+  if (content) content.innerHTML = steps[_obStep] || '';
+  if (nextBtn) nextBtn.textContent = _obStep === 4 ? '🚀 Zaczynamy!' : 'Dalej →';
+}
 </script>
+
+<!-- ===== MODAL: UPSELL ===== -->
+<div class="modal-overlay" id="upsell-modal" onclick="if(event.target===this)closeUpsellModal()">
+  <div class="modal" style="max-width:520px;text-align:center">
+    <div style="font-size:52px;margin-bottom:12px">🔒</div>
+    <div style="font-size:22px;font-weight:800;margin-bottom:8px;color:var(--text)">Osiągnięto limit planu Free</div>
+    <div style="font-size:14px;color:var(--text3);margin-bottom:28px">Wykorzystałeś 50 transakcji dostępnych w planie darmowym.<br>Przejdź na Pro — bez limitów, z AI Coach i pełną historią.</div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:28px;text-align:left">
+      <div style="padding:16px;background:var(--bg2);border-radius:12px;border:1px solid var(--border2)">
+        <div style="font-weight:700;margin-bottom:10px;color:var(--text2)">Free</div>
+        <div style="font-size:28px;font-weight:800;color:var(--text);margin-bottom:12px">0 zł</div>
+        <div style="font-size:13px;color:var(--text3);line-height:2">
+          ✅ 50 transakcji<br>
+          ✅ Pełny dziennik<br>
+          ✅ Statystyki<br>
+          ✅ Import CSV<br>
+          ❌ Nieograniczone trans.<br>
+          ❌ AI Coach<br>
+          ❌ Eksport PDF<br>
+        </div>
+      </div>
+      <div style="padding:16px;background:rgba(0,212,161,.06);border-radius:12px;border:2px solid var(--accent);position:relative">
+        <div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--accent);color:#000;font-size:11px;font-weight:700;padding:2px 12px;border-radius:20px">POPULARNY</div>
+        <div style="font-weight:700;margin-bottom:10px;color:var(--accent)">Pro</div>
+        <div style="font-size:28px;font-weight:800;color:var(--text);margin-bottom:2px">29 zł<span style="font-size:14px;color:var(--text3)">/mies.</span></div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:12px">lub 249 zł/rok</div>
+        <div style="font-size:13px;color:var(--text2);line-height:2">
+          ✅ <strong>Bez limitów transakcji</strong><br>
+          ✅ Pełny dziennik<br>
+          ✅ Statystyki<br>
+          ✅ Import CSV<br>
+          ✅ <strong>AI Coach (wkrótce)</strong><br>
+          ✅ <strong>Eksport PDF</strong><br>
+          ✅ <strong>Priorytetowe wsparcie</strong><br>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn-primary" style="width:100%;font-size:15px;padding:14px" onclick="toast('Płatności wkrótce — napisz na dominskipatryk@gmail.com','success');closeUpsellModal()">
+      🚀 Przejdź na Pro — 29 zł/mies.
+    </button>
+    <button class="btn-sm" onclick="closeUpsellModal()" style="margin-top:12px;width:100%;color:var(--text3)">Zostań na planie Free</button>
+    <div style="margin-top:16px;font-size:11px;color:var(--text3)">Pytania? <a href="mailto:dominskipatryk@gmail.com" style="color:var(--accent)">dominskipatryk@gmail.com</a></div>
+  </div>
+</div>
+
+<!-- ===== MODAL: ONBOARDING ===== -->
+<div class="modal-overlay" id="onboarding-modal">
+  <div class="modal" style="max-width:480px">
+    <!-- Header -->
+    <div style="text-align:center;margin-bottom:8px">
+      <div style="font-size:13px;font-weight:700;color:var(--accent);letter-spacing:.05em">TRADER LOG JOURNAL</div>
+    </div>
+    <!-- Step dots -->
+    <div style="display:flex;justify-content:center;gap:8px;margin-bottom:24px">
+      <div class="ob-dot active" style="width:8px;height:8px;border-radius:50%;background:var(--accent);transition:background .2s"></div>
+      <div class="ob-dot"       style="width:8px;height:8px;border-radius:50%;background:var(--bg3);transition:background .2s"></div>
+      <div class="ob-dot"       style="width:8px;height:8px;border-radius:50%;background:var(--bg3);transition:background .2s"></div>
+      <div class="ob-dot"       style="width:8px;height:8px;border-radius:50%;background:var(--bg3);transition:background .2s"></div>
+    </div>
+    <!-- Content -->
+    <div id="ob-content" style="min-height:280px"></div>
+    <!-- Footer -->
+    <div style="display:flex;gap:10px;margin-top:24px">
+      <button id="ob-back-btn" class="btn-sm" style="visibility:hidden" onclick="obBack()">← Wstecz</button>
+      <button id="ob-next-btn" class="btn-primary" style="flex:1" onclick="obNext()">Dalej →</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
