@@ -15563,24 +15563,18 @@ function saveWithdrawal() {
   if (type === 'balance') {
     const actual = parseFloat(document.getElementById('balance-actual')?.value) || 0;
     if (!actual) return toast(t('err_balance_missing'), 'error');
-    const trades = getTrades(state.currentAccountId);
-    const closedPnl = trades.filter(t => t.status === 'closed').reduce((s, t) => s + (t.pnl || 0), 0);
-    const equity = (acc.capital || 0) + closedPnl;
-    amount = actual - equity;
-    // Adjust capital
-    const db = getDB();
-    if (!db.accounts) db.accounts = {};
-    if (db.accounts[acc.id]) db.accounts[acc.id].capital = actual - closedPnl;
-    saveDB(db);
+    const closedPnl = getTrades(state.currentAccountId).filter(t => t.status==='closed').reduce((s,t)=>s+(t.pnl||0),0);
+    amount = actual - ((acc.capital||0) + closedPnl);
+    // Fix: użyj saveAccounts zamiast db.accounts[acc.id] (zły klucz)
+    acc.capital = actual - closedPnl;
+    saveAccounts(accounts);
   } else {
     amount = parseFloat(document.getElementById('withdrawal-amount')?.value) || 0;
     if (!amount) return toast('Wpisz kwotę', 'error');
-    if (type === 'withdrawal') amount = -amount; // ujemna
-    // Update capital
-    const db = getDB();
-    if (!db.accounts) db.accounts = {};
-    if (db.accounts[acc.id]) db.accounts[acc.id].capital = (db.accounts[acc.id].capital || 0) + amount;
-    saveDB(db);
+    if (type === 'withdrawal') amount = -amount;
+    // Fix: użyj saveAccounts zamiast db.accounts[acc.id] (zły klucz)
+    acc.capital = (acc.capital || 0) + amount;
+    saveAccounts(accounts);
   }
 
   // Save withdrawal record
@@ -20731,14 +20725,16 @@ function extractMT4BalanceCSV(text) {
 function extractMT4BalanceHTML(text) {
   const doc = new DOMParser().parseFromString(text, 'text/html');
   const entries = [];
+  const BAL_KEYS = ['balance','credit','deposit','withdrawal','saldo','depozyt','wypłata','wyplata','korekta','adjustment'];
   doc.querySelectorAll('tr').forEach(row => {
     const cells = [...row.querySelectorAll('td')].map(td => td.textContent.trim());
-    if (cells.length < 10) return;
-    const type = (cells[2]||'').toLowerCase();
-    if (!type.includes('balance') && !type.includes('credit') && !type.includes('deposit') && !type.includes('withdrawal')) return;
-    const amount = _num(cells[13]||cells[12]||'0');
+    if (cells.length < 3) return;
+    const type = (cells[2]||'').toLowerCase().trim();
+    if (!BAL_KEYS.some(k => type.includes(k))) return;
+    // Bug fix: sprawdzaj kolejno kolumny — nie łącz stringów przed _num()
+    const amount = _num(cells[13]) || _num(cells[12]) || _num(cells[11]) || 0;
     if (amount === 0) return;
-    entries.push({ amount, date: _dt(cells[1]||cells[8]||''), comment: (cells[11]||cells[3]||type).trim() });
+    entries.push({ amount, date: _dt(cells[1]||cells[8]||''), comment: (cells[4]||cells[3]||type).trim() });
   });
   return _buildBalanceMeta(entries);
 }
@@ -21232,33 +21228,22 @@ function confirmImportTrades() {
   const existing = getTrades(accId);
   saveTrades(accId, [...existing, ...toAdd]);
 
-  // Auto-korekta kapitału startowego i zapis wpłat/wypłat
-  let fixMsg = '', opsMsg = '';
+  // Auto-korekta kapitału startowego
+  // Logika: equity = acc.capital + sum(pnl) — capital musi = initialBalance + depozyty - wypłaty
+  let fixMsg = '';
   if (_importMeta) {
-    const db = getDB(); const accs = getAccounts();
-    const acc = accs.find(a => a.id === accId);
+    const meta = _importMeta;
+    const accs = getAccounts();
+    const acc  = accs.find(a => a.id === accId);
     if (acc) {
-      const meta = _importMeta;
-      if (Math.abs((acc.capital||0) - meta.initialBalance) > 0.01) {
-        acc.capital = meta.initialBalance;
-        if (!db.accounts) db.accounts = {};
-        db.accounts[state.currentUser] = accs;
-        saveDB(db);
-        fixMsg = ` | Kapitał → ${meta.initialBalance.toFixed(2)}`;
-      }
-      const ops = [...meta.deposits, ...meta.withdrawals].sort((a,b)=>(a.date||'')>(b.date||'')?1:-1);
-      if (ops.length) {
-        const existingW = getWithdrawals(accId);
-        const newOps = ops
-          .filter(e => !existingW.some(w => w.date===e.date && Math.abs(w.amount-Math.abs(e.amount))<0.01))
-          .map(e => ({ id:'imp_bal_'+Date.now()+'_'+Math.random().toString(36).slice(2,5),
-            type: e.amount>0?'in':'out', amount: Math.abs(e.amount), date: e.date||'',
-            note: (e.comment||'') + ' (auto-import)' }));
-        if (newOps.length) {
-          db['withdrawals_'+accId] = [...existingW, ...newOps];
-          saveDB(db);
-          opsMsg = ` | +${newOps.length} operacji`;
-        }
+      const depositSum    = meta.deposits.reduce((s,e) => s+e.amount, 0);
+      const withdrawalSum = meta.withdrawals.reduce((s,e) => s+e.amount, 0); // ujemne
+      // Prawidłowy kapitał = initialBalance + wszystkie późniejsze depozyty/wypłaty
+      const correctCapital = meta.initialBalance + depositSum + withdrawalSum;
+      if (Math.abs((acc.capital||0) - correctCapital) > 0.01) {
+        acc.capital = correctCapital;
+        saveAccounts(accs);  // Fix: saveAccounts zamiast db.accounts[acc.id]
+        fixMsg = ` | Kapitał → ${correctCapital.toFixed(2)}`;
       }
     }
   }
