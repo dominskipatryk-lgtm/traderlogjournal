@@ -4809,6 +4809,20 @@ const _SB_ANON = 'sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK';
 const _ADMIN_EMAIL = 'dominskipatryk@gmail.com';
 const _HELP_VIDEO_URL = ''; // ← wklej URL nagranego wideo (YouTube/Loom)
 
+async function apiFetch(url, options = {}, timeoutMs = 10000) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { ...options, signal: ctrl.signal });
+    clearTimeout(timer);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return await res.json();
+  } catch(e) {
+    clearTimeout(timer);
+    throw e;
+  }
+}
+
 // ===== FREEMIUM =====
 const FREEMIUM_LIMIT = 50;
 
@@ -5718,10 +5732,10 @@ function buildTradesTable(trades) {
       <td class="mono">${trade.size ?? '—'}</td>
       <td class="${trade.pnl > 0 ? 'pnl-pos' : trade.pnl < 0 ? 'pnl-neg' : ''}">${trade.pnl != null ? (trade.pnl > 0 ? '+' : '') + fmt(trade.pnl) : '—'}</td>
       <td>
-        <span class="tag">${trade.setup || '—'}</span>
-        ${linkedAnalysis ? `<span onclick="event.stopPropagation();openEditAnalysis('${linkedAnalysis.id}')" title="${linkedAnalysis.title}" style="display:inline-flex;align-items:center;gap:3px;font-size:10px;padding:2px 6px;border-radius:4px;background:var(--blue-dim);color:var(--blue);cursor:pointer;margin-left:4px">🔗 Analiza</span>` : ''}
+        <span class="tag">${escHtml(trade.setup) || '—'}</span>
+        ${linkedAnalysis ? `<span onclick="event.stopPropagation();openEditAnalysis('${linkedAnalysis.id}')" title="${escAttr(linkedAnalysis.title)}" style="display:inline-flex;align-items:center;gap:3px;font-size:10px;padding:2px 6px;border-radius:4px;background:var(--blue-dim);color:var(--blue);cursor:pointer;margin-left:4px">🔗 Analiza</span>` : ''}
       </td>
-      <td><span class="badge badge-${trade.status}">${trade.status === 'open' ? t('status_open') : t('status_closed')}</span>${trade.rulesBroken && trade.rulesBroken.length ? `<span style="display:inline-block;margin-left:4px;font-size:10px;padding:1px 5px;border-radius:4px;background:rgba(255,79,107,.15);color:var(--red);border:1px solid rgba(255,79,107,.3)" title="${trade.rulesBroken.join(', ')}">❌ Reguła złamana</span>` : ''}</td>
+      <td><span class="badge badge-${trade.status}">${trade.status === 'open' ? t('status_open') : t('status_closed')}</span>${trade.rulesBroken && trade.rulesBroken.length ? `<span style="display:inline-block;margin-left:4px;font-size:10px;padding:1px 5px;border-radius:4px;background:rgba(255,79,107,.15);color:var(--red);border:1px solid rgba(255,79,107,.3)" title="${escAttr(trade.rulesBroken.join(', '))}">❌ Reguła złamana</span>` : ''}</td>
       <td><div class="action-btns" onclick="event.stopPropagation()">
         <button class="icon-btn" onclick="openDetailModal('${trade.id}')" title="Szczegóły">👁</button>
         <button class="icon-btn" onclick="openEditModal('${trade.id}')" title="Edytuj">✏️</button>
@@ -5844,7 +5858,7 @@ function renderStatsStrategies() {
     const rc=!rr?'var(--text3)':parseFloat(rr)>=2?'var(--accent)':parseFloat(rr)>=1?'var(--amber)':'var(--red)';
     return `<tr style="border-bottom:1px solid rgba(255,255,255,.03);cursor:pointer" onclick="openDetailModal('${t.id}')">
       <td style="padding:5px 8px;color:var(--text3);font-size:11px;font-family:var(--font-mono)">${formatDate(t.date).slice(0,10)}</td>
-      <td style="padding:5px 8px;font-family:var(--font-mono);font-weight:600">${t.symbol}</td>
+      <td style="padding:5px 8px;font-family:var(--font-mono);font-weight:600">${escHtml(t.symbol)}</td>
       <td style="padding:5px 8px;text-align:center"><span class="badge badge-${t.dir.toLowerCase()}" style="font-size:10px;padding:2px 6px">${t.dir}</span></td>
       <td style="padding:5px 8px;text-align:center;color:var(--text2)">${t.tf||'&#8212;'}</td>
       <td style="padding:5px 8px;text-align:center"><span class="tag" style="font-size:10px">${t.setup||'&#8212;'}</span></td>
@@ -6493,7 +6507,7 @@ function showPostTradeSurvey(tradeId) {
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
       <div>
         <div style="font-size:14px;font-weight:700;color:var(--accent)">📋 ${t('survey_title')}</div>
-        <div style="font-size:12px;color:var(--text3);margin-top:2px">${trade.symbol} · ${trade.dir} ${pnlStr}</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:2px">${escHtml(trade.symbol)} · ${escHtml(trade.dir)} ${pnlStr}</div>
       </div>
       <button onclick="dismissPostTradeSurvey('${tradeId}')" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;padding:0 0 0 12px">×</button>
     </div>
@@ -6943,7 +6957,7 @@ function renderSummary() {
           const rc=!rr?'var(--text3)':parseFloat(rr)>=2?'var(--accent)':parseFloat(rr)>=1?'var(--amber)':'var(--red)';
           return `<tr style="border-bottom:1px solid rgba(255,255,255,.03);cursor:pointer" onclick="openDetailModal('${t.id}')">
             <td style="padding:5px 8px;color:var(--text3);font-size:11px;font-family:var(--font-mono)">${formatDate(t.date).slice(0,10)}</td>
-            <td style="padding:5px 8px;font-family:var(--font-mono);font-weight:600">${t.symbol}</td>
+            <td style="padding:5px 8px;font-family:var(--font-mono);font-weight:600">${escHtml(t.symbol)}</td>
             <td style="padding:5px 8px;text-align:center"><span class="badge badge-${t.dir.toLowerCase()}" style="font-size:10px;padding:2px 6px">${t.dir}</span></td>
             <td style="padding:5px 8px;text-align:center;color:var(--text2)">${t.tf||'&#8212;'}</td>
             <td style="padding:5px 8px;text-align:center"><span class="tag" style="font-size:10px">${t.setup||'&#8212;'}</span></td>
@@ -7611,7 +7625,7 @@ function renderDetailModal() {
     <div class="dv-card">
       <div class="dv-card-head">Parametry transakcji</div>
       <div class="dv-rows">
-        ${dvRow('Instrument', t.symbol, `<input id="dv-symbol" value="${t.symbol}">`, 'mono')}
+        ${dvRow('Instrument', escHtml(t.symbol), `<input id="dv-symbol" value="${escAttr(t.symbol)}">`, 'mono')}
         ${dvRowSelect('Kierunek', t.dir, 'dv-dir',
           [{v:'LONG',l:'LONG'},{v:'SHORT',l:'SHORT'}],
           `<span class="badge badge-${t.dir.toLowerCase()}">${t.dir}</span>`)}
@@ -7646,7 +7660,7 @@ function renderDetailModal() {
         ${dvRowSelect('Status', t.status==='open'?'Otwarta':'Zamknięta', 'dv-status',
           [{v:'open',l:'Otwarta'},{v:'closed',l:'Zamknięta'}],
           `<span class="badge badge-${t.status}">${t.status==='open'?'Otwarta':'Zamknięta'}</span>`, t.status)}
-        ${dvRow('Setup', t.setup ? `<span class="tag">${t.setup}</span>` : '—', `<input id="dv-setup" value="${t.setup||''}">`, '', true)}
+        ${dvRow('Setup', t.setup ? `<span class="tag">${escHtml(t.setup)}</span>` : '—', `<input id="dv-setup" value="${escAttr(t.setup||'')}">`, '', true)}
       </div>
     </div>
     <!-- Poziomy -->
@@ -7832,8 +7846,12 @@ function dvRowPnl(t) {
   </div>`;
 }
 function escHtml(s) {
-  if (!s) return '';
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  if (s == null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function escAttr(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
 // ── quick link from detail modal ──
@@ -9512,7 +9530,7 @@ function calCellHTML(dayNum, key, data, todayStr, otherMonth) {
       const dotColor = t.status === 'open' ? 'var(--amber)' : t.pnl > 0 ? 'var(--green)' : 'var(--red)';
       inner += `<div class="cal-trade-mini" style="color:var(--text2)">
         <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${dotColor};margin-right:3px;vertical-align:middle"></span>
-        <span style="font-family:var(--font-mono);font-size:10px;font-weight:600">${t.symbol}</span>
+        <span style="font-family:var(--font-mono);font-size:10px;font-weight:600">${escHtml(t.symbol)}</span>
         <span style="font-size:10px;color:var(--text3)"> ${t.dir}</span>
       </div>`;
     });
@@ -9620,7 +9638,7 @@ function openCalDay(key, data) {
     </tr></thead>
     <tbody>
     ${data.trades.map(t => `<tr style="cursor:pointer" onclick="openDetailModal('${t.id}')">
-      <td><strong class="mono">${t.symbol}</strong></td>
+      <td><strong class="mono">${escHtml(t.symbol)}</strong></td>
       <td><span class="badge badge-${t.dir.toLowerCase()}">${t.dir}</span></td>
       <td><span class="tag">${t.tf||'—'}</span></td>
       <td><span class="tag">${t.setup||'—'}</span></td>
@@ -10038,13 +10056,18 @@ async function doLogin() {
     // Znajdź email po loginie lub użyj bezpośrednio jako email
     let email = raw;
     if (!raw.includes('@')) {
-      const res = await fetch('https://ygrkcynyduuflzvbkkvo.supabase.co/rest/v1/profiles?login=eq.' + encodeURIComponent(raw) + '&select=email', {
-        headers: { 'apikey': _SB_ANON, 'Authorization': 'Bearer ' + _SB_ANON }
-      });
-      const profiles = await res.json();
+      let profiles;
+      try {
+        profiles = await apiFetch(_SB_URL + '/rest/v1/profiles?login=eq.' + encodeURIComponent(raw) + '&select=email', {
+          headers: { 'apikey': _SB_ANON, 'Authorization': 'Bearer ' + _SB_ANON }
+        });
+      } catch(e) {
+        if (btn) { btn.textContent = t('auth_login_btn'); btn.disabled = false; }
+        return showAuthError('Błąd połączenia z serwerem. Spróbuj ponownie.');
+      }
       if (!profiles?.length || !profiles[0].email) {
         if (btn) { btn.textContent = t('auth_login_btn'); btn.disabled = false; }
-        return showAuthError('Nie znaleziono użytkownika');
+        return showAuthError('Nieprawidłowy login lub hasło');
       }
       email = profiles[0].email;
     }
@@ -10153,10 +10176,12 @@ async function doRegister() {
     if (!_sb) return done('Brak połączenia z serwerem. Odśwież stronę.');
 
     // Sprawdź czy login wolny
-    const chk = await fetch('https://ygrkcynyduuflzvbkkvo.supabase.co/rest/v1/profiles?login=eq.' + encodeURIComponent(login) + '&select=id&limit=1', {
-      headers: { 'apikey': _SB_ANON, 'Authorization': 'Bearer ' + _SB_ANON }
-    });
-    const existing = await chk.json();
+    let existing;
+    try {
+      existing = await apiFetch(_SB_URL + '/rest/v1/profiles?login=eq.' + encodeURIComponent(login) + '&select=id&limit=1', {
+        headers: { 'apikey': _SB_ANON, 'Authorization': 'Bearer ' + _SB_ANON }
+      });
+    } catch(e) { return done('Błąd połączenia z serwerem. Spróbuj ponownie.'); }
     if (existing?.length > 0) return done('Ten login jest już zajęty');
 
     // Zarejestruj w Supabase Auth
@@ -13452,7 +13477,7 @@ function renderMT4Terminal() {
       onclick="openTradeFromMT4Terminal(${p.ticket})">
       <div style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;background:${isLong?'var(--accent-dim)':'var(--red-dim)'};color:${dirColor};white-space:nowrap">${dirIcon}</div>
       <div style="flex:1;min-width:0">
-        <div style="font-weight:700;font-size:13px;font-family:var(--font-mono)">${p.symbol}</div>
+        <div style="font-weight:700;font-size:13px;font-family:var(--font-mono)">${escHtml(p.symbol)}</div>
         <div style="font-size:11px;color:var(--text3)">
           Entry: ${p.entry} · SL: <span style="color:var(--red)">${p.sl||'—'}</span> · TP: <span style="color:var(--accent)">${p.tp||'—'}</span>
         </div>
@@ -15477,7 +15502,7 @@ function buildReportHTML(d) {
   <tbody>
     ${d.trades.map(t => `<tr>
       <td>${dateStr(t.date)}</td>
-      <td><strong>${t.symbol}</strong></td>
+      <td><strong>${escHtml(t.symbol)}</strong></td>
       <td>${t.dir}</td>
       <td>${t.entry ? fmt2(t.entry) : '—'}</td>
       <td>${t.exit ? fmt2(t.exit) : '—'}</td>
@@ -16762,7 +16787,7 @@ function renderRules() {
         <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px">${r.label}${isCustom ? `<span style="margin-left:6px;color:var(--amber);font-size:10px;text-transform:none;letter-spacing:0">${t('rules_reminder_label')}</span>` : ''}
           <span style="margin-left:8px;font-size:10px;padding:1px 6px;border-radius:10px;font-weight:700;${enabled ? 'background:rgba(0,255,163,.15);color:var(--accent)' : 'background:var(--bg4);color:var(--text3)'}">${enabled ? 'Aktywna' : 'Nieaktywna'}</span>
         </div>
-        <div style="font-size:13px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${enabled ? '' : 'text-decoration:line-through'}" title="${desc}">${desc}</div>
+        <div style="font-size:13px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${enabled ? '' : 'text-decoration:line-through'}" title="${escAttr(desc)}">${escHtml(desc)}</div>
       </div>
       <button onclick="toggleRuleEnabled('${r.id}')" title="${enabled ? 'Dezaktywuj' : 'Aktywuj'}" style="background:${enabled ? 'rgba(0,255,163,.12)' : 'var(--bg4)'};border:1px solid ${enabled ? 'var(--accent)' : 'var(--border)'};color:${enabled ? 'var(--accent)' : 'var(--text3)'};border-radius:5px;padding:3px 8px;font-size:11px;cursor:pointer;flex-shrink:0">${enabled ? '✓ Aktywna' : '○ Włącz'}</button>
       <button class="icon-btn del" onclick="deleteRule('${r.id}')" title="${t('delete')}" style="flex-shrink:0">🗑</button>
@@ -18079,7 +18104,7 @@ function removeNoteScreenshot(id) {
   _noteScreenshots = _noteScreenshots.filter(s=>s.id!==id); renderNoteScreenshots();
 }
 
-function escHtml(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+// escHtml and escAttr defined earlier
 
 // ---- WEEKLY REVIEW ----
 
@@ -21528,8 +21553,8 @@ function renderPortfolio() {
       : `<span style="font-size:10px;color:var(--text3);display:block">✏️ aktualizuj</span>`;
     return `<tr>
       <td>
-        <div style="font-weight:700;font-size:13px">${p.symbol}</div>
-        <div style="font-size:11px;color:var(--text3);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.name}">${p.name}</div>
+        <div style="font-weight:700;font-size:13px">${escHtml(p.symbol)}</div>
+        <div style="font-size:11px;color:var(--text3);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escAttr(p.name)}">${escHtml(p.name)}</div>
         ${p.broker ? `<div style="font-size:10px;color:var(--text3)">${p.broker}</div>` : ''}
       </td>
       <td><span class="pf-type-badge ${typeClass}">${p.type}</span></td>
