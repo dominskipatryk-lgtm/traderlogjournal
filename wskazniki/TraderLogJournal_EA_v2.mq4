@@ -76,7 +76,7 @@ int OnInit() {
          if (OrderType() > 1) continue;
          SendSignal("OPEN", OrderTicket(), OrderSymbol(),
                     OrderType(), OrderLots(), OrderOpenPrice(),
-                    OrderStopLoss(), OrderTakeProfit(), 0, 0,
+                    OrderStopLoss(), OrderTakeProfit(), 0, 0, 0, 0,
                     OrderOpenTime(), 0);
          _sentCount++;
       }
@@ -472,7 +472,7 @@ void CheckTradeChanges() {
               MathAbs(prevTrades[j].tp - OrderTakeProfit()) > 0.00001)) {
             SendSignal("MODIFY", OrderTicket(), OrderSymbol(),
                        OrderType(), OrderLots(), OrderOpenPrice(),
-                       OrderStopLoss(), OrderTakeProfit(), 0, 0,
+                       OrderStopLoss(), OrderTakeProfit(), 0, 0, 0, 0,
                        OrderOpenTime(), 0);
             _sentCount++;
          }
@@ -481,7 +481,7 @@ void CheckTradeChanges() {
       if (isNew && SendOnOpen) {
          SendSignal("OPEN", OrderTicket(), OrderSymbol(),
                     OrderType(), OrderLots(), OrderOpenPrice(),
-                    OrderStopLoss(), OrderTakeProfit(), 0, 0,
+                    OrderStopLoss(), OrderTakeProfit(), 0, 0, 0, 0,
                     OrderOpenTime(), 0);
          _sentCount++;
       }
@@ -497,11 +497,11 @@ void CheckTradeChanges() {
          }
          if (!stillOpen &&
              OrderSelect((int)prevTrades[j].ticket, SELECT_BY_TICKET, MODE_HISTORY)) {
-            double net = OrderProfit() + OrderCommission() + OrderSwap();
             SendSignal("CLOSE", OrderTicket(), OrderSymbol(),
                        OrderType(), OrderLots(), OrderOpenPrice(),
                        OrderStopLoss(), OrderTakeProfit(),
-                       OrderClosePrice(), net,
+                       OrderClosePrice(), OrderProfit(),
+                       OrderCommission(), OrderSwap(),
                        OrderOpenTime(), OrderCloseTime());
             _sentCount++;
          }
@@ -526,11 +526,11 @@ void SyncHistory(int days) {
       if (OrderCloseTime() < fromTime) continue;
       if (OrderSymbol() == "") continue;
 
-      double net = OrderProfit() + OrderCommission() + OrderSwap();
       SendSignalHistory(OrderTicket(), OrderSymbol(),
                         OrderType(), OrderLots(), OrderOpenPrice(),
                         OrderStopLoss(), OrderTakeProfit(),
-                        OrderClosePrice(), net,
+                        OrderClosePrice(), OrderProfit(),
+                        OrderCommission(), OrderSwap(),
                         OrderOpenTime(), OrderCloseTime());
       synced++;
       _sentCount++;
@@ -545,24 +545,29 @@ void SyncHistory(int days) {
 void SendSignal(string event, long ticket, string symbol,
                 int orderType, double lots, double entry,
                 double sl, double tp, double closePrice, double profit,
+                double commission, double swap,
                 datetime openTime, datetime closeTime) {
    string dir  = (orderType == OP_BUY) ? "BUY" : "SELL";
    string json = BuildJson(event, ticket, symbol, dir, GetTF(),
                            lots, entry, sl, tp, closePrice, profit,
+                           commission, swap,
                            openTime, closeTime, false);
    HttpPost(ApiUrl + "/rest/v1/mt4_signals", BuildHeaders(false), json);
-   Print("TLJ [", event, "] ", symbol, " ", dir, " lot=", lots, " ticket=#", ticket);
+   Print("TLJ [", event, "] ", symbol, " ", dir, " lot=", lots,
+         " profit=", profit, " comm=", commission, " swap=", swap,
+         " ticket=#", ticket);
 }
 
 void SendSignalHistory(long ticket, string symbol,
                        int orderType, double lots, double entry,
                        double sl, double tp, double closePrice, double profit,
+                       double commission, double swap,
                        datetime openTime, datetime closeTime) {
    string dir  = (orderType == OP_BUY) ? "BUY" : "SELL";
    string json = BuildJson("CLOSE", ticket, symbol, dir, "H1",
                            lots, entry, sl, tp, closePrice, profit,
+                           commission, swap,
                            openTime, closeTime, true);
-   // resolution=merge-duplicates wymaga unique constraint na kolumnie ticket
    HttpPost(ApiUrl + "/rest/v1/mt4_signals?on_conflict=ticket",
             BuildHeaders(true), json);
 }
@@ -571,6 +576,7 @@ string BuildJson(string event, long ticket, string symbol,
                  string dir, string tf,
                  double lots, double entry, double sl, double tp,
                  double closePrice, double profit,
+                 double commission, double swap,
                  datetime openTime, datetime closeTime, bool isHistory) {
    string j = "{";
    j += "\"user_id\":\""   + UserId                            + "\",";
@@ -586,6 +592,8 @@ string BuildJson(string event, long ticket, string symbol,
    j += "\"event\":\""     + event                             + "\",";
    j += "\"close_price\":" + DoubleToString(closePrice, 5)     + ",";
    j += "\"profit\":"      + DoubleToString(profit, 2)         + ",";
+   j += "\"commission\":"  + DoubleToString(commission, 2)     + ",";
+   j += "\"swap\":"        + DoubleToString(swap, 2)           + ",";
    j += "\"open_time\":\"" + TimeToString(openTime, TIME_DATE|TIME_SECONDS) + "\",";
    if (closeTime > 0)
       j += "\"close_time\":\"" + TimeToString(closeTime, TIME_DATE|TIME_SECONDS) + "\",";

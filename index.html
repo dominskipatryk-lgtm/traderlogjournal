@@ -7840,9 +7840,17 @@ function dvRowSelect(key, valDisplay, id, opts, valHtml, curVal) {
 function dvRowPnl(t) {
   const pnlClass = t.pnl > 0 ? 'pnl-pos' : t.pnl < 0 ? 'pnl-neg' : '';
   const pnlStr = t.pnl != null ? (t.pnl > 0 ? '+' : '') + fmt(t.pnl) : '—';
+  const hasBreakdown = (t.commission || t.swap) && t.pnl != null;
+  const grossPnl = hasBreakdown ? t.pnl - (t.commission || 0) - (t.swap || 0) : null;
+  const breakdownHtml = hasBreakdown ? `
+    <div style="font-size:11px;color:var(--text3);margin-top:3px;line-height:1.7">
+      <span>Gross: ${grossPnl >= 0 ? '+' : ''}${fmt(grossPnl)}</span>
+      ${t.commission ? `<span style="margin-left:8px;color:var(--red)">Komisja: ${fmt(t.commission)}</span>` : ''}
+      ${t.swap ? `<span style="margin-left:8px;color:${t.swap >= 0 ? 'var(--accent)' : 'var(--red)'}">Swap: ${fmt(t.swap)}</span>` : ''}
+    </div>` : '';
   return `<div class="dv-row">
-    <span class="dv-key">P&L</span>
-    <span class="dv-val ${pnlClass}" id="dv-pnl-display">${pnlStr}</span>
+    <span class="dv-key">P&L netto</span>
+    <span class="dv-val ${pnlClass}" id="dv-pnl-display" style="flex-direction:column;align-items:flex-start">${pnlStr}${breakdownHtml}</span>
     <span class="dv-edit" style="flex-direction:column;gap:4px">
       <input id="dv-pnl" type="number" step="any" value="${t.pnl??''}">
       <span style="font-size:10px;color:var(--text3)">lub <span style="color:var(--accent);cursor:pointer" onclick="dvAutoPnl()">↻ wylicz automatycznie</span></span>
@@ -13656,9 +13664,11 @@ async function closeMT4Trade(signal) {
     const tradeIdx = trades.findIndex(t => String(t.mt4Ticket) === String(signal.ticket));
 
     if (tradeIdx >= 0) {
-      trades[tradeIdx].exit   = signal.close_price;
-      trades[tradeIdx].pnl    = signal.profit;
-      trades[tradeIdx].status = 'closed';
+      trades[tradeIdx].exit       = signal.close_price;
+      trades[tradeIdx].commission = signal.commission || 0;
+      trades[tradeIdx].swap       = signal.swap || 0;
+      trades[tradeIdx].pnl        = (signal.profit || 0) + (signal.commission || 0) + (signal.swap || 0);
+      trades[tradeIdx].status     = 'closed';
       if (!db.trades) db.trades = {};
       db.trades[key] = trades;
       saveDB(db);
@@ -20717,7 +20727,7 @@ function handleImportFile(file) {
     _importMeta = null;
     if (fmt === 'mt4csv')  _importMeta = extractMT4BalanceCSV(raw);
     if (fmt === 'mt4html') _importMeta = extractMT4BalanceHTML(raw);
-    if (_importMeta) _importMeta.sumPnl = trades.reduce((s,t) => s + (t.pnl||0) + (t.commission||0) + (t.swap||0), 0);
+    if (_importMeta) _importMeta.sumPnl = trades.reduce((s,t) => s + (t.pnl||0), 0); // pnl jest już net (gross+comm+swap)
 
     // Auto-match konta po numerze MT4 z nagłówka pliku
     const mt4Num = extractMT4AccountNumber(raw, fmt);
