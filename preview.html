@@ -13618,7 +13618,9 @@ function stopMT4Listener() {
 async function handleMT4Signal(signal) {
   if (!signal || signal.processed) return;
   if (!signal.id) { console.warn('MT4: sygnał bez id, pomijam', signal); return; }
-  if (!signal.ticket && signal.event !== 'CLOSE') { console.warn('MT4: sygnał bez ticket, pomijam', signal); return; }
+  if (!signal.ticket && signal.event !== 'CLOSE' && signal.event !== 'DEPOSIT' && signal.event !== 'WITHDRAWAL') {
+    console.warn('MT4: sygnał bez ticket, pomijam', signal); return;
+  }
 
   try {
     const { error } = await _sb.from('mt4_signals').update({ processed: true }).eq('id', signal.id);
@@ -13680,6 +13682,8 @@ async function handleMT4Signal(signal) {
       updateMT4Terminal();
     }
     await modifyMT4Trade(signal);
+  } else if (signal.event === 'DEPOSIT' || signal.event === 'WITHDRAWAL') {
+    showMT4BalanceNotification(signal, matchedAccount);
   }
 }
 
@@ -13864,6 +13868,49 @@ function showMT4ClosePrompt(signal, tradeId) {
     if (el) el.textContent = _secs;
     if (_secs <= 0) { clearInterval(interval); if (div.parentElement) div.remove(); }
   }, 1000);
+}
+
+function showMT4BalanceNotification(signal, matchedAcc) {
+  const isDeposit = signal.event === 'DEPOSIT';
+  const amount = Math.abs(signal.profit || 0);
+  const curr = matchedAcc ? getCurrSym(matchedAcc.id) : '$';
+  const accName = matchedAcc ? matchedAcc.name : ('konto #' + signal.mt4_account);
+  const color = isDeposit ? 'var(--accent)' : 'var(--red)';
+  const icon  = isDeposit ? '↑' : '↓';
+  const label = isDeposit ? 'WPŁATA' : 'WYPŁATA';
+
+  const div = document.createElement('div');
+  div.style.cssText = 'position:fixed;top:70px;right:24px;background:var(--bg2);border:2px solid ' + color + ';border-radius:14px;padding:18px 20px;z-index:9999;max-width:340px;box-shadow:0 8px 32px rgba(0,0,0,.6)';
+  div.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+      <span style="font-size:22px">${icon}</span>
+      <div>
+        <div style="font-size:13px;font-weight:700;color:${color}">${label} MT4</div>
+        <div style="font-size:11px;color:var(--text3)">${accName}</div>
+      </div>
+      <div style="margin-left:auto;font-size:20px;font-weight:800;font-family:var(--font-mono);color:${color}">${icon}${fmt(amount)} ${curr}</div>
+    </div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:14px">Wykryto zmianę salda na koncie MT4.<br>Zatwierdź aby zaktualizować saldo w dzienniku.</div>
+    <div style="display:flex;gap:8px">
+      <button class="btn-sm btn-accent" style="flex:1" onclick="confirmMT4Balance('${matchedAcc ? matchedAcc.id : ''}',${signal.profit || 0},this.closest('div[style*=fixed]'))">✓ Zatwierdź</button>
+      <button class="btn-sm" onclick="this.closest('div[style*=fixed]').remove()">Ignoruj</button>
+    </div>`;
+  document.body.appendChild(div);
+}
+
+function confirmMT4Balance(accId, amount, bannerEl) {
+  if (!accId) { toast('Nie znaleziono konta — zaktualizuj ręcznie', 'warning'); if (bannerEl) bannerEl.remove(); return; }
+  const accounts = getAccounts();
+  const acc = accounts.find(a => a.id === accId);
+  if (!acc) return;
+  acc.capital = Math.round(((acc.capital || 0) + amount) * 100) / 100;
+  saveAccounts(accounts);
+  renderAccounts();
+  renderDashboard();
+  if (bannerEl) bannerEl.remove();
+  const label = amount >= 0 ? 'Wpłata' : 'Wypłata';
+  toast(`${label} ${fmt(Math.abs(amount))} ${getCurrSym(accId)} — saldo zaktualizowane ✓`, 'success');
+  if (_sb) sbSyncAccount(acc).catch(() => {});
 }
 
 function showMT4CloseNotification(signal, tradeId) {

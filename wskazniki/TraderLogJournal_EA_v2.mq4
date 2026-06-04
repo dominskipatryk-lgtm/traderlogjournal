@@ -58,6 +58,7 @@ TradeState prevTrades[];
 long       mt4AccountNumber = 0;
 bool       _paused          = false;
 int        _sentCount       = 0;
+double     _prevBalance     = 0;   // do wykrywania wpłat/wypłat
 
 //+------------------------------------------------------------------+
 int OnInit() {
@@ -67,6 +68,7 @@ int OnInit() {
       return INIT_FAILED;
    }
    mt4AccountNumber = AccountInfoInteger(ACCOUNT_LOGIN);
+   _prevBalance     = AccountBalance();
    CreatePanel();
 
    if (SendExistingOnStart && SendOnOpen) {
@@ -509,6 +511,32 @@ void CheckTradeChanges() {
    }
 
    SnapshotTrades();
+
+   // Wykryj wpłatę / wypłatę — zmiana salda bez otwartych pozycji
+   double curBalance = AccountBalance();
+   double diff = NormalizeDouble(curBalance - _prevBalance, 2);
+   if (MathAbs(diff) >= 0.01) {
+      string balType = diff > 0 ? "DEPOSIT" : "WITHDRAWAL";
+      SendBalanceSignal(balType, diff);
+      _prevBalance = curBalance;
+      _sentCount++;
+   }
+}
+
+void SendBalanceSignal(string balType, double amount) {
+   string j = "{";
+   j += "\"user_id\":\""   + UserId                            + "\",";
+   j += "\"mt4_account\":" + IntegerToString(mt4AccountNumber) + ",";
+   j += "\"event\":\""     + balType                           + "\",";
+   j += "\"symbol\":\"BALANCE\",";
+   j += "\"direction\":\"LONG\",";
+   j += "\"profit\":"      + DoubleToString(amount, 2)         + ",";
+   j += "\"commission\":0,\"swap\":0,\"entry\":0,\"sl\":0,\"tp\":0,";
+   j += "\"size\":0,\"close_price\":0,\"ticket\":0,";
+   j += "\"open_time\":\"" + TimeToString(TimeCurrent(), TIME_DATE|TIME_SECONDS) + "\",";
+   j += "\"processed\":false}";
+   HttpPost(ApiUrl + "/rest/v1/mt4_signals", BuildHeaders(false), j);
+   Print("TLJ [", balType, "] kwota=", amount, " nowe saldo=", AccountBalance());
 }
 
 //+------------------------------------------------------------------+
