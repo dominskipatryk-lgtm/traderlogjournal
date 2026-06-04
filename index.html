@@ -14582,6 +14582,11 @@ async function sbSyncAccount(acc) {
   if (!_sb || !state.currentUser) return null;
   const userId = getUsers()[state.currentUser]?.supabaseId;
   if (!userId) { console.warn('sbSyncAccount: brak supabaseId dla', state.currentUser); return null; }
+  // Sprawdź czy sesja Supabase jest ważna — bez niej RLS blokuje z 401
+  try {
+    const { data: { session } } = await _sb.auth.getSession();
+    if (!session) { console.warn('sbSyncAccount: brak aktywnej sesji Supabase — sync pominięty'); return null; }
+  } catch(e) { return null; }
 
   // Payload pełny — jeśli kolumna nie istnieje w Supabase, spróbuj minimalny
   const payloadFull = {
@@ -14638,6 +14643,11 @@ async function sbFullSyncUp() {
   if (!_sb || !state.currentUser) return;
   const userId = getUsers()[state.currentUser]?.supabaseId;
   if (!userId) return;
+  // Sprawdź sesję przed pełnym sync
+  try {
+    const { data: { session } } = await _sb.auth.getSession();
+    if (!session) { console.warn('sbFullSyncUp: brak sesji Supabase — sync pominięty'); return; }
+  } catch(e) { return; }
   toast('⏳ Synchronizuję dane z Supabase...', 'info');
   const accounts = getAccounts();
   let synced = 0;
