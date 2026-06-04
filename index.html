@@ -20847,26 +20847,30 @@ function _uid() { return 'imp_' + Date.now() + '_' + Math.random().toString(36).
 function parseMT4CSV(text) {
   const sep = text.split('\n')[0].includes(';') ? ';' : ',';
   const { hdrs, rows } = _parseCSV(text, sep);
-  const BUY_SELL = ['buy','sell','buy limit','sell limit','buy stop','sell stop'];
   return rows.flatMap(c => {
     if (c.length < 10) return [];
     const type = (c[2]||'').toLowerCase().trim();
-    if (!BUY_SELL.includes(type)) return [];
+    if (!type.startsWith('buy') && !type.startsWith('sell')) return [];
+    // Pomiń anulowane i usunięte zlecenia oczekujące
+    const rowText = c.join(' ').toLowerCase();
+    if (rowText.includes('cancelled') || rowText.includes('deleted') || rowText.includes('cancel')) return [];
     const sym = (c[4]||'').toUpperCase().trim();
     const entry = _num(c[5]);
     if (!sym || !entry) return [];
     const closeTime = (c[8]||'').trim();
     const exit     = _num(c[9]);
-    // Otwarta pozycja: brak czasu zamknięcia lub cena zamknięcia = 0
     const isOpen = !closeTime || closeTime.startsWith('0000') || exit === 0;
     const ticket = _num(c[0]) || null;
+    const grossPnl   = _num(c[13]);
+    const commission = _num(c[10]);
+    const swap       = _num(c[12]);
     return [{
       id: _uid(), symbol: sym,
-      dir: type.startsWith('sell') ? 'short' : 'long',
+      dir: type.startsWith('sell') ? 'SHORT' : 'LONG',
       size: _num(c[3]), entry, exit: isOpen ? null : exit,
       sl: _num(c[6]), tp: _num(c[7]),
-      commission: _num(c[10]), swap: _num(c[12]),
-      pnl: isOpen ? null : _num(c[13]),
+      commission, swap,
+      pnl: isOpen ? null : grossPnl + commission + swap,
       status: isOpen ? 'open' : 'closed',
       date: _dt(c[1]), dateClose: isOpen ? null : _dt(c[8]),
       mt4Ticket: ticket,
@@ -20878,27 +20882,31 @@ function parseMT4CSV(text) {
 // ---- MT4 HTML Statement ----
 function parseMT4HTML(text) {
   const doc = new DOMParser().parseFromString(text, 'text/html');
-  const BUY_SELL = ['buy','sell'];
   const trades = [];
   doc.querySelectorAll('tr').forEach(row => {
     const cells = [...row.querySelectorAll('td')].map(td => td.textContent.trim());
     if (cells.length < 13) return;
     const type = (cells[2]||'').toLowerCase();
-    if (!BUY_SELL.some(t => type.startsWith(t))) return;
+    if (!type.startsWith('buy') && !type.startsWith('sell')) return;
+    // Pomiń anulowane i usunięte zlecenia oczekujące
+    const rowText = cells.join(' ').toLowerCase();
+    if (rowText.includes('cancelled') || rowText.includes('deleted') || rowText.includes('cancel')) return;
     const sym = (cells[4]||'').toUpperCase(), entry = _num(cells[5]);
     if (!sym || !entry) return;
     const closeTime = (cells[8]||'').trim();
     const exit      = _num(cells[9]);
-    // Otwarta pozycja: brak czasu zamknięcia lub cena zamknięcia = 0
     const isOpen = !closeTime || exit === 0;
     const ticket = _num(cells[0]) || null;
+    const grossPnl   = _num(cells[13]);
+    const commission = _num(cells[10]);
+    const swap       = _num(cells[12]);
     trades.push({
       id: _uid(), symbol: sym,
-      dir: type.startsWith('sell') ? 'short' : 'long',
+      dir: type.startsWith('sell') ? 'SHORT' : 'LONG',
       size: _num(cells[3]), entry, exit: isOpen ? null : exit,
       sl: _num(cells[6]), tp: _num(cells[7]),
-      commission: _num(cells[10]), swap: _num(cells[12]),
-      pnl: isOpen ? null : _num(cells[13]),
+      commission, swap,
+      pnl: isOpen ? null : grossPnl + commission + swap,
       status: isOpen ? 'open' : 'closed',
       date: _dt(cells[1]), dateClose: isOpen ? null : _dt(cells[8]),
       mt4Ticket: ticket,
