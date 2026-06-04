@@ -7127,6 +7127,17 @@ function renderAccounts() {
         </div>
       </div>
       <div class="account-balance">${fmt((acc.capital||0)+pnl)}</div>
+      <div style="display:flex;gap:6px;margin-top:10px;margin-bottom:2px" onclick="event.stopPropagation()">
+        <input type="number" step="any" min="0" id="withdraw-input-${acc.id}"
+          placeholder="Kwota"
+          style="flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:5px 8px;font-size:12px;color:var(--text);outline:none;min-width:0"
+          onclick="event.stopPropagation()"
+          onkeydown="if(event.key==='Enter')withdrawFromAccount('${acc.id}')">
+        <button class="btn-sm" style="background:rgba(255,71,87,.12);border-color:var(--red);color:var(--red);flex-shrink:0;font-size:11px;padding:4px 10px"
+          onclick="event.stopPropagation();withdrawFromAccount('${acc.id}')">↓ Wypłata</button>
+        <button class="btn-sm" style="background:rgba(0,212,161,.10);border-color:var(--accent);color:var(--accent);flex-shrink:0;font-size:11px;padding:4px 10px"
+          onclick="event.stopPropagation();depositToAccount('${acc.id}')">↑ Wpłata</button>
+      </div>
       <div class="account-stats">
         <div class="account-stat-item">P&L<div class="account-stat-val ${pnl>=0?'pnl-pos':'pnl-neg'}">${pnl>=0?'+':''}${fmt(pnl)}</div></div>
         <div class="account-stat-item">Win Rate<div class="account-stat-val">${wr}%</div></div>
@@ -7137,6 +7148,44 @@ function renderAccounts() {
   }).join('');
   html += `<div class="add-account-card" onclick="openAccountModal()"><div class="add-icon">+</div><div>Dodaj konto</div></div>`;
   document.getElementById('accounts-grid').innerHTML = html;
+}
+
+function withdrawFromAccount(id) {
+  const input = document.getElementById('withdraw-input-' + id);
+  const amount = parseFloat(input?.value);
+  if (!amount || amount <= 0) { toast('Wpisz kwotę wypłaty', 'error'); return; }
+  const accounts = getAccounts();
+  const acc = accounts.find(a => a.id === id);
+  if (!acc) return;
+  showConfirm(`Wypłata ${fmt(amount)} ${getCurrSym(id)} z konta "${acc.name}"?\n\nSaldo startowe zostanie zmniejszone o tę kwotę.`, () => {
+    acc.capital = (acc.capital || 0) - amount;
+    acc.capital = Math.round(acc.capital * 100) / 100;
+    saveAccounts(accounts);
+    if (input) input.value = '';
+    renderAccounts();
+    renderDashboard();
+    toast(`↓ Wypłata ${fmt(amount)} ${getCurrSym(id)} zarejestrowana`, 'success');
+    if (_sb) sbSyncAccount(acc).catch(() => {});
+  });
+}
+
+function depositToAccount(id) {
+  const input = document.getElementById('withdraw-input-' + id);
+  const amount = parseFloat(input?.value);
+  if (!amount || amount <= 0) { toast('Wpisz kwotę wpłaty', 'error'); return; }
+  const accounts = getAccounts();
+  const acc = accounts.find(a => a.id === id);
+  if (!acc) return;
+  showConfirm(`Wpłata ${fmt(amount)} ${getCurrSym(id)} na konto "${acc.name}"?\n\nSaldo startowe zostanie zwiększone o tę kwotę.`, () => {
+    acc.capital = (acc.capital || 0) + amount;
+    acc.capital = Math.round(acc.capital * 100) / 100;
+    saveAccounts(accounts);
+    if (input) input.value = '';
+    renderAccounts();
+    renderDashboard();
+    toast(`↑ Wpłata ${fmt(amount)} ${getCurrSym(id)} zarejestrowana`, 'success');
+    if (_sb) sbSyncAccount(acc).catch(() => {});
+  });
 }
 
 function selectAccount(id) {
