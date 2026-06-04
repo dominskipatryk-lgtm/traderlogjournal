@@ -20886,7 +20886,7 @@ function parseMT4CSV(text) {
     const swap       = _num(c[12]);
     return [{
       id: _uid(), symbol: sym,
-      dir: type.startsWith('sell') ? 'SHORT' : 'LONG',
+      dir: type.startsWith('sell') ? 'SHORT' : 'LONG', // uppercase zgodne z formularzem
       size: _num(c[3]), entry, exit: isOpen ? null : exit,
       sl: _num(c[6]), tp: _num(c[7]),
       commission, swap,
@@ -20922,7 +20922,7 @@ function parseMT4HTML(text) {
     const swap       = _num(cells[12]);
     trades.push({
       id: _uid(), symbol: sym,
-      dir: type.startsWith('sell') ? 'SHORT' : 'LONG',
+      dir: type.startsWith('sell') ? 'SHORT' : 'LONG', // uppercase zgodne z formularzem
       size: _num(cells[3]), entry, exit: isOpen ? null : exit,
       sl: _num(cells[6]), tp: _num(cells[7]),
       commission, swap,
