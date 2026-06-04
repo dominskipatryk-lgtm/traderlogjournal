@@ -4829,6 +4829,7 @@ const FREEMIUM_LIMIT = 50;
 function isProUser() {
   const u = getUsers()[state.currentUser];
   if (!u) return false;
+  if (u.email === _ADMIN_EMAIL) return true; // właściciel zawsze pro
   return u.subscription === 'pro' || u.subscription === 'admin' || u.role === 'admin' || u.grandfathered === true;
 }
 
@@ -4876,6 +4877,9 @@ function getFreemiumRemaining() {
   return Math.max(0, FREEMIUM_LIMIT - getTotalClosedCount());
 }
 function checkFreemiumLimit() {
+  if (isProUser()) return true;
+  // Sprawdź ponownie grandfathered — sync mógł załadować transakcje po logowaniu
+  autoGrantGrandfathered();
   if (isProUser()) return true;
   const rem = getFreemiumRemaining();
   if (rem <= 0) { showUpsellModal(); return false; }
