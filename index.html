@@ -7214,17 +7214,19 @@ async function saveAccount() {
 
 function deleteAccount(id) {
   showConfirm(t('confirm_delete_account'), async () => {
-    const accounts = getAccounts().filter(a => a.id !== id);
+    const allAccounts = getAccounts();
+    const acc = allAccounts.find(a => a.id === id); // pobierz sbId PRZED usunięciem
+    const accounts = allAccounts.filter(a => a.id !== id);
     saveAccounts(accounts);
     if (state.currentAccountId === id) state.currentAccountId = accounts[0]?.id || null;
     refreshTopbarAccount();
     renderAccounts();
     toast(t('toast_account_deleted'), 'success');
-    // Usuń z Supabase — bez tego sync przy odświeżeniu przywraca stare konto
-    if (_sb) {
+    // Usuń z Supabase używając sbId (nie lokalnego id) — bez tego sync przywraca konto
+    if (_sb && acc?.sbId) {
       try {
-        await _sb.from('trades').delete().eq('account_id', id);
-        await _sb.from('accounts').delete().eq('id', id);
+        await _sb.from('trades').delete().eq('account_id', acc.sbId);
+        await _sb.from('accounts').delete().eq('id', acc.sbId);
       } catch(e) { console.warn('deleteAccount Supabase:', e); }
     }
   });
@@ -21942,7 +21944,7 @@ function _renderObStep() {
 </script>
 
 <!-- ===== MODAL: UPSELL ===== -->
-<div class="modal-overlay" id="upsell-modal" onclick="if(event.target===this)closeUpsellModal()">
+<div class="modal-overlay" id="upsell-modal" onclick="if(event.target===this)closeUpsellModal()" style="z-index:1100">
   <div class="modal" style="max-width:520px;text-align:center">
     <div style="font-size:52px;margin-bottom:12px">🔒</div>
     <div style="font-size:22px;font-weight:800;margin-bottom:8px;color:var(--text)">Osiągnięto limit planu Free</div>
