@@ -2032,6 +2032,14 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
           <div id="mt4-listener-badge" style="margin-bottom:12px;padding:8px 12px;background:var(--bg2);border-radius:8px;border:1px solid var(--border)">
             <span style="color:var(--text3);font-size:12px">⏳ Inicjalizacja…</span>
           </div>
+          <div style="margin-bottom:14px;padding:10px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:8px">
+            <div style="font-size:12px;font-weight:600;margin-bottom:6px">🔧 Diagnostyka — zagubione sygnały</div>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:8px;line-height:1.5">
+              Jeśli widzisz otwarte transakcje które są faktycznie zamknięte — kliknij poniżej. Narzędzie przeskanuje nieprzetworzone sygnały CLOSE z EA i dopasuje je do transakcji.
+            </div>
+            <button id="orphan-scan-btn" onclick="scanOrphanSignals()" class="btn-sm" style="font-size:12px">🔍 Napraw zagubione sygnały</button>
+            <span id="orphan-scan-result" style="font-size:11px;color:var(--text3);margin-left:10px"></span>
+          </div>
           <p style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.6">
             Skopiuj swój <strong>User ID</strong> i wklej go w ustawieniach EA w MetaTrader 4.
             EA automatycznie otworzy panel transakcji przy każdej pozycji.
@@ -13719,10 +13727,14 @@ async function handleMT4Signal(signal) {
     console.warn('MT4: sygnał bez ticket, pomijam', signal); return;
   }
 
-  try {
-    const { error } = await _sb.from('mt4_signals').update({ processed: true }).eq('id', signal.id);
-    if (error) { console.warn('MT4: nie udało się oznaczyć sygnału jako processed, pomijam', error); return; }
-  } catch(e) { console.warn('MT4: błąd oznaczania sygnału', e); return; }
+  // Dla CLOSE: oznacz processed DOPIERO po udanym dopasowaniu (w closeMT4Trade)
+  // Dla pozostałych: oznacz teraz
+  if (signal.event !== 'CLOSE') {
+    try {
+      const { error } = await _sb.from('mt4_signals').update({ processed: true }).eq('id', signal.id);
+      if (error) { console.warn('MT4: nie udało się oznaczyć sygnału jako processed, pomijam', error); return; }
+    } catch(e) { console.warn('MT4: błąd oznaczania sygnału', e); return; }
+  }
 
   // Bug fix: async decrypt mt4Login dla każdego konta (nie z cache który może być pusty)
   _mt4LastSignal = Date.now();
@@ -13815,36 +13827,62 @@ async function closeMT4Trade(signal) {
   for (const acc of accounts) {
     const key = (state.currentUser || '') + '_' + acc.id;
     const trades = (db.trades || {})[key] || [];
-    const tradeIdx = trades.findIndex(t => String(t.mt4Ticket) === String(signal.ticket));
+
+    // --- Dopasowanie 1: po mt4Ticket ---
+    let tradeIdx = trades.findIndex(t => t.mt4Ticket && String(t.mt4Ticket) === String(signal.ticket));
+
+    // --- Dopasowanie 2: fallback po symbol + dir + entry (gdy brak mt4Ticket) ---
+    if (tradeIdx < 0 && signal.ticket) {
+      const dir = signal.direction === 'BUY' ? 'LONG' : 'SHORT';
+      tradeIdx = trades.findIndex(t =>
+        t.status === 'open' &&
+        !t.mt4Ticket &&
+        (t.symbol||'').toUpperCase() === (signal.symbol||'').toUpperCase() &&
+        t.dir === dir &&
+        t.entry && signal.entry &&
+        Math.abs(t.entry - signal.entry) / signal.entry < 0.0005 // tolerancja 0.05%
+      );
+      if (tradeIdx >= 0) {
+        // Zapisz ticket żeby następne sygnały pasowały od razu
+        trades[tradeIdx].mt4Ticket = signal.ticket;
+        console.log('TLJ: Dopasowano fallback ticket #' + signal.ticket + ' → trade ' + trades[tradeIdx].id);
+      }
+    }
 
     if (tradeIdx >= 0) {
       trades[tradeIdx].exit       = signal.close_price;
       trades[tradeIdx].commission = signal.commission || 0;
-      trades[tradeIdx].swap       = signal.swap || 0;
+      trades[tradeIdx].swap       = signal.swap       || 0;
       trades[tradeIdx].pnl        = (signal.profit || 0) + (signal.commission || 0) + (signal.swap || 0);
       trades[tradeIdx].status     = 'closed';
+      trades[tradeIdx].updatedAt  = Date.now();
       if (!db.trades) db.trades = {};
       db.trades[key] = trades;
       saveDB(db);
       renderTrades();
       renderDashboard();
 
+      // Oznacz sygnał jako processed po udanym dopasowaniu
+      if (signal.id && _sb) {
+        _sb.from('mt4_signals').update({ processed: true }).eq('id', signal.id).then(() => {});
+      }
+
       const tradeId = trades[tradeIdx].id;
       if (acc.isBot) {
-        // Konto botowe — prosta notyfikacja, bez wymogu emocji
         const pnl = signal.profit || 0;
         const sign = pnl >= 0 ? '+' : '';
-        const color = pnl >= 0 ? 'var(--accent)' : 'var(--red)';
         toast('🤖 Bot zamknął ' + signal.symbol + ' #' + signal.ticket + '  P&L: ' + sign + '$' + Math.abs(pnl).toFixed(2), pnl >= 0 ? 'success' : 'error');
       } else {
-        // Konto ręczne — otwórz terminal transakcji od razu w trybie edycji
         showMT4ClosePrompt(signal, tradeId);
       }
       return;
     }
   }
-  // Transakcja nie znaleziona — pokaż powiadomienie
+
+  // Transakcja nadal nie znaleziona — NIE oznaczaj jako processed (retry przy następnym logowaniu)
+  console.warn('TLJ: CLOSE #' + signal.ticket + ' (' + signal.symbol + ') — brak dopasowania, sygnał pozostaje nieprzetworzon');
   showMT4CloseNotification(signal, null);
+  // Nie oznaczamy processed — sbSyncDown przy kolejnym logowaniu ponowi próbę
 }
 
 function openTradeFromMT4(signal, targetAccId) {
@@ -14008,6 +14046,85 @@ function confirmMT4Balance(accId, amount, bannerEl) {
   const label = amount >= 0 ? 'Wpłata' : 'Wypłata';
   toast(`${label} ${fmt(Math.abs(amount))} ${getCurrSym(accId)} — saldo zaktualizowane ✓`, 'success');
   if (_sb) sbSyncAccount(acc).catch(() => {});
+}
+
+// ===== SKAN ZAGUBIONYCH SYGNAŁÓW MT4 =====
+
+async function scanOrphanSignals() {
+  if (!_sb) { toast('Brak połączenia z Supabase', 'error'); return; }
+  const btn = document.getElementById('orphan-scan-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Skanowanie…'; }
+
+  try {
+    const uid = state.currentUser ? (getUsers()[state.currentUser]?.supabaseId || '') : '';
+    if (!uid) { toast('Nie zalogowany', 'error'); return; }
+
+    // Pobierz nieprzetworzone sygnały CLOSE z Supabase
+    const { data: signals, error } = await _sb.from('mt4_signals')
+      .select('*')
+      .eq('user_id', uid)
+      .eq('event', 'CLOSE')
+      .eq('processed', false)
+      .order('created_at', { ascending: false })
+      .limit(200);
+
+    if (error) throw error;
+    if (!signals?.length) { toast('Brak nieprzetrzonych sygnałów CLOSE — wszystko OK ✓', 'success'); return; }
+
+    let fixed = 0, skipped = 0;
+    for (const sig of signals) {
+      const accounts = getAccounts();
+      let matched = false;
+      for (const acc of accounts) {
+        const key = (state.currentUser || '') + '_' + acc.id;
+        const db  = getDB();
+        const trades = (db.trades || {})[key] || [];
+
+        // Szukaj po ticket
+        let idx = trades.findIndex(t => t.mt4Ticket && String(t.mt4Ticket) === String(sig.ticket));
+
+        // Fallback: symbol + dir + entry
+        if (idx < 0 && sig.ticket) {
+          const dir = sig.direction === 'BUY' ? 'LONG' : 'SHORT';
+          idx = trades.findIndex(t =>
+            t.status === 'open' &&
+            (t.symbol||'').toUpperCase() === (sig.symbol||'').toUpperCase() &&
+            t.dir === dir &&
+            t.entry && sig.entry &&
+            Math.abs(t.entry - sig.entry) / sig.entry < 0.001
+          );
+          if (idx >= 0) trades[idx].mt4Ticket = sig.ticket;
+        }
+
+        if (idx >= 0) {
+          trades[idx].exit       = sig.close_price;
+          trades[idx].commission = sig.commission || 0;
+          trades[idx].swap       = sig.swap       || 0;
+          trades[idx].pnl        = (sig.profit || 0) + (sig.commission || 0) + (sig.swap || 0);
+          trades[idx].status     = 'closed';
+          trades[idx].updatedAt  = Date.now();
+          db.trades[key] = trades;
+          saveDB(db);
+          await _sb.from('mt4_signals').update({ processed: true }).eq('id', sig.id);
+          fixed++;
+          matched = true;
+          break;
+        }
+      }
+      if (!matched) skipped++;
+    }
+
+    renderTrades();
+    renderDashboard();
+    const msg = `Skan zakończony: ${fixed} transakcji naprawionych` + (skipped ? `, ${skipped} bez dopasowania` : '');
+    toast(msg, fixed > 0 ? 'success' : 'warning');
+    const result = document.getElementById('orphan-scan-result');
+    if (result) result.textContent = msg;
+  } catch(e) {
+    toast('Błąd skanowania: ' + e.message, 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '🔍 Napraw zagubione sygnały'; }
+  }
 }
 
 function showMT4CloseNotification(signal, tradeId) {
