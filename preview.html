@@ -2221,6 +2221,21 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
           </div>
         </div>
 
+        <!-- Preferencje widoku transakcji -->
+        <div class="settings-section">
+          <div class="settings-section-title">📋 Lista transakcji</div>
+          <div class="form-group-modal" style="margin-bottom:0">
+            <label class="form-label-modal">Kolejność wyświetlania</label>
+            <select class="form-select-modal" id="sett-trades-sort" onchange="saveTradesSortPref(this.value)" style="max-width:320px">
+              <option value="newest">Najnowsze na górze (domyślnie)</option>
+              <option value="oldest">Najstarsze na górze (chronologicznie)</option>
+            </select>
+            <div style="font-size:12px;color:var(--text3);margin-top:6px">
+              Dotyczy listy transakcji i widoku dziennego. Nie wpływa na statystyki.
+            </div>
+          </div>
+        </div>
+
         <!-- Smart Reminders -->
         <div class="settings-section">
           <div class="settings-section-title">🔔 Inteligentne przypomnienia</div>
@@ -5745,8 +5760,12 @@ function renderTrades() {
       return raw === emotionVal;
     });
   }
-  const reversed = [...trades].reverse();
-  document.getElementById('trades-table').innerHTML = buildTradesTable(reversed);
+  const sortOrder = localStorage.getItem('tlj-trades-sort') || 'newest';
+  const sorted = [...trades].sort((a, b) => {
+    const da = new Date(a.date).getTime(), db = new Date(b.date).getTime();
+    return sortOrder === 'oldest' ? da - db : db - da;
+  });
+  document.getElementById('trades-table').innerHTML = buildTradesTable(sorted);
 }
 
 function buildTradesTable(trades) {
@@ -5763,7 +5782,10 @@ function buildTradesTable(trades) {
         ? getAnalyses().find(a => a.id === trade.linkedAnalysisId)
         : null;
       return `<tr style="cursor:pointer" onclick="openDetailModal('${trade.id}')">
-      <td><strong class="mono">${trade.symbol}</strong></td>
+      <td>
+        <strong class="mono">${trade.symbol}</strong>
+        ${trade.mt4Ticket ? `<br><span style="font-size:10px;color:var(--text3);font-family:var(--font-mono)">#${trade.mt4Ticket}</span>` : ''}
+      </td>
       <td><span class="badge badge-${trade.dir.toLowerCase()}">${trade.dir}</span></td>
       <td class="mono" style="font-size:11px">${formatDate(trade.date)}</td>
       <td class="mono">${trade.entry ?? '—'}</td>
@@ -10390,6 +10412,8 @@ async function renderSettings() {
   document.getElementById('settings-subtitle').textContent =
     (u.role === 'admin' ? '👑 Administrator' : '👤 Trader') + ' · ' + state.currentUser;
   updateMT4ListenerBadge();
+  const sortSel = document.getElementById('sett-trades-sort');
+  if (sortSel) sortSel.value = localStorage.getItem('tlj-trades-sort') || 'newest';
   document.getElementById('sett-login').value = state.currentUser;
   document.getElementById('sett-name').value  = u.name  || '';
   document.getElementById('sett-email').value = u.email || '';
@@ -11722,6 +11746,11 @@ const T = {
 };
 
 function t(key) { return (T[_lang] && T[_lang][key]) || (T['pl'][key]) || key; }
+
+function saveTradesSortPref(val) {
+  localStorage.setItem('tlj-trades-sort', val);
+  renderTrades();
+}
 
 function setLang(lang) {
   _lang = lang;
