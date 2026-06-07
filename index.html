@@ -4875,7 +4875,7 @@ async function apiFetch(url, options = {}, timeoutMs = 10000) {
 
 // ===== FREEMIUM =====
 const FREEMIUM_LIMIT     = 150;   // ręczne konta
-const FREEMIUM_LIMIT_BOT = 1500;  // konta botów
+const FREEMIUM_LIMIT_BOT = 15000; // konta botów
 
 function _getLimit(accId) {
   const acc = getAccounts().find(a => a.id === (accId || state.currentAccountId));
