@@ -4874,7 +4874,13 @@ async function apiFetch(url, options = {}, timeoutMs = 10000) {
 }
 
 // ===== FREEMIUM =====
-const FREEMIUM_LIMIT = 2000;
+const FREEMIUM_LIMIT     = 150;   // ręczne konta
+const FREEMIUM_LIMIT_BOT = 1500;  // konta botów
+
+function _getLimit(accId) {
+  const acc = getAccounts().find(a => a.id === (accId || state.currentAccountId));
+  return acc?.isBot ? FREEMIUM_LIMIT_BOT : FREEMIUM_LIMIT;
+}
 
 function isProUser() {
   const u = getUsers()[state.currentUser];
@@ -4919,19 +4925,20 @@ function autoGrantGrandfathered() {
     saveUsers(users);
   }
 }
-function getTotalClosedCount() {
+function getTotalClosedCount(accId) {
+  if (accId) return getTrades(accId).filter(t => t.status === 'closed').length;
   return getAccounts().reduce((s, a) => s + getTrades(a.id).filter(t => t.status === 'closed').length, 0);
 }
-function getFreemiumRemaining() {
+function getFreemiumRemaining(accId) {
   if (isProUser()) return Infinity;
-  return Math.max(0, FREEMIUM_LIMIT - getTotalClosedCount());
+  const limit = _getLimit(accId);
+  return Math.max(0, limit - getTotalClosedCount(accId || state.currentAccountId));
 }
 function checkFreemiumLimit() {
   if (isProUser()) return true;
-  // Sprawdź ponownie grandfathered — sync mógł załadować transakcje po logowaniu
   autoGrantGrandfathered();
   if (isProUser()) return true;
-  const rem = getFreemiumRemaining();
+  const rem = getFreemiumRemaining(state.currentAccountId);
   if (rem <= 0) { showUpsellModal(); return false; }
   return true;
 }
@@ -4939,11 +4946,13 @@ function updateFreemiumBadge() {
   const el = document.getElementById('freemium-badge');
   if (!el) return;
   if (isProUser()) { el.style.display = 'none'; return; }
-  const used = getTotalClosedCount();
-  const rem  = Math.max(0, FREEMIUM_LIMIT - used);
+  const accId = state.currentAccountId;
+  const limit = _getLimit(accId);
+  const used  = getTotalClosedCount(accId);
+  const rem   = Math.max(0, limit - used);
   el.style.display = 'flex';
   el.innerHTML = rem > 10
-    ? `<span style="color:var(--text3);font-size:11px">${used}/${FREEMIUM_LIMIT} trans.</span>`
+    ? `<span style="color:var(--text3);font-size:11px">${used}/${limit} trans.</span>`
     : rem > 0
       ? `<span style="color:var(--amber);font-size:11px;font-weight:700">⚠️ ${rem} trans. zostało</span>`
       : `<span style="color:var(--red);font-size:11px;font-weight:700">🔒 Limit osiągnięty</span>`;
@@ -21958,8 +21967,9 @@ function confirmImportTrades() {
   if (!accId) return toast('Wybierz konto docelowe', 'error');
   if (!isProUser()) {
     const newClosed = _importBuffer.filter(t => !t._dup && t.status === 'closed').length;
-    if (getTotalClosedCount() + newClosed > FREEMIUM_LIMIT) {
-      const allowed = Math.max(0, FREEMIUM_LIMIT - getTotalClosedCount());
+    const _impLimit = _getLimit(state.currentAccountId);
+    if (getTotalClosedCount(state.currentAccountId) + newClosed > _impLimit) {
+      const allowed = Math.max(0, _impLimit - getTotalClosedCount(state.currentAccountId));
       if (allowed === 0) { showUpsellModal(); return; }
       toast(`⚠️ Plan Free: możesz dodać jeszcze ${allowed} transakcji. Import ograniczony.`, 'warning');
       _importBuffer = _importBuffer.filter((t,i) => {
