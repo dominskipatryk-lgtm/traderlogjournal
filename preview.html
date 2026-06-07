@@ -7309,8 +7309,11 @@ async function saveAccount() {
   if (!name) return toast(t('err_account_name'), 'error');
   const id    = document.getElementById('acc-id').value || genId();
   const color = document.querySelector('.color-swatch.selected')?.dataset.color || '#00d4a1';
+  // Zachowaj sbId z istniejącego konta — bez tego zmiana nazwy tworzy duplikat w Supabase
+  const existingAcc = getAccounts().find(a => a.id === id);
   const acc = {
     id, name, color,
+    sbId:     existingAcc?.sbId || undefined,
     type:     document.getElementById('acc-type').value,
     broker:   await encryptField(document.getElementById('acc-broker').value),
     capital:  parseFloat(document.getElementById('acc-capital').value) || 0,
