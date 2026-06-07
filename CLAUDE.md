@@ -35,7 +35,7 @@ Zaawansowany dziennik tradingowy SPA — narzędzie do analizy psychologii i wyn
 _ADMIN_EMAIL = 'dominskipatryk@gmail.com'
 _SB_URL      = 'https://ygrkcynyduuflzvbkkvo.supabase.co'
 _SB_ANON     = 'sb_publishable_-aRakEBT-U17VQJHksmK1Q_TbL1cToK'
-FREEMIUM_LIMIT = 50  // max zamkniętych transakcji w planie Free
+FREEMIUM_LIMIT = 2000  // max zamkniętych transakcji w planie Free
 ```
 
 ---
