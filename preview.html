@@ -924,6 +924,13 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 .journal-step-check { margin-left:auto; font-size:18px; flex-shrink:0; }
 .journal-step-body { padding-left:40px; }
 .journal-step-divider { height:1px; background:var(--border); margin:4px 0; }
+.instrument-analysis-card { background:var(--bg3); border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+.icard-header { display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:var(--bg4); border-bottom:1px solid var(--border); gap:10px; }
+.icard-symbol { font-size:15px; font-weight:700; font-family:var(--font-mono); color:var(--accent); letter-spacing:.5px; flex:1; }
+.icard-saved-badge { font-size:11px; color:var(--accent); font-weight:600; white-space:nowrap; }
+.icard-body { padding:14px; }
+.routine-return-banner { display:none; align-items:center; justify-content:space-between; gap:12px; padding:10px 16px; margin-bottom:16px; background:rgba(79,158,255,.08); border:1px solid rgba(79,158,255,.3); border-radius:10px; }
+.routine-return-banner.active { display:flex; }
 .journal-opt-btn {
   padding: 7px 14px; font-size: 12px; font-weight: 600; border-radius: 8px;
   border: 1px solid var(--border); background: var(--bg3); color: var(--text2);
@@ -2355,6 +2362,10 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
                 </div>
               </div>
             </div>
+            <div id="an-unplanned-warning" style="display:none;margin-bottom:8px;padding:10px 14px;background:rgba(255,170,0,.08);border:1px solid rgba(255,170,0,.3);border-radius:8px">
+              <div style="font-size:12px;color:var(--amber);font-weight:600">⚠️ Ten instrument nie był w planie rutyny na dziś</div>
+              <div style="font-size:11px;color:var(--text2);margin-top:3px">Czy jesteś przygotowany do handlu na tym instrumencie? Sprawdź poziomy i bias zanim otworzysz pozycję.</div>
+            </div>
             <div class="form-group-modal">
               <label class="form-label-modal">Data analizy</label>
               <input class="form-input-modal" id="an-date" type="datetime-local" oninput="anAutosave()">
@@ -2466,6 +2477,15 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
               <label class="form-label-modal">Kluczowe poziomy (S/R, OB, FVG…)</label>
               <textarea class="form-input-modal" id="an-levels" style="min-height:60px;line-height:1.7"
                 placeholder="np. Wsparcie: 4500, Opór: 4600, OB H4: 4520–4530" oninput="anAutosave()"></textarea>
+            </div>
+
+            <!-- ROW 7c: Scenariusze -->
+            <div class="form-group-modal full">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                <label class="form-label-modal" style="margin:0">Scenariusze tradingowe</label>
+                <button onclick="addAnScenario()" class="btn-sm" style="font-size:11px">+ Dodaj scenariusz</button>
+              </div>
+              <div id="an-scenarios-list" style="display:flex;flex-direction:column;gap:10px"></div>
             </div>
 
             <!-- ROW 8: Wnioski (full) -->
@@ -2702,75 +2722,10 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 
               <div class="journal-step-divider"></div>
 
-              <!-- KROK 2: Przygotowanie rynkowe -->
-              <div class="journal-step" id="jstep-pre-2">
-                <div class="journal-step-header">
-                  <div class="journal-step-num">2</div>
-                  <div>
-                    <div class="journal-step-title">Przygotowanie rynkowe</div>
-                    <div class="journal-step-sub">Co mówi rynek — zanim otworzysz pierwszą pozycję</div>
-                  </div>
-                  <div id="jstep-pre-2-done" class="journal-step-check" style="display:none">✅</div>
-                </div>
-                <div class="journal-step-body">
-                  <div style="margin-bottom:12px">
-                    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-                      <label class="jlabel" style="margin:0">📅 Sprawdziłem kalendarz ekonomiczny?</label>
-                      <div style="display:flex;gap:6px">
-                        <button onclick="setJournalBtn('pre-calendar',this,'yes','yes');_calendarWarning(false)" class="journal-opt-btn">✅ Tak</button>
-                        <button onclick="setJournalBtn('pre-calendar',this,'no','no');_calendarWarning(true)" class="journal-opt-btn">❌ Nie</button>
-                      </div>
-                      <input type="hidden" id="journal-pre-calendar">
-                    </div>
-                    <div id="journal-calendar-warning" style="display:none;margin-top:10px;padding:12px 14px;background:rgba(255,170,0,.08);border:1px solid rgba(255,170,0,.35);border-radius:10px">
-                      <div style="font-size:13px;font-weight:700;color:var(--amber);margin-bottom:6px">⚠️ Kalendarz makro to fundament analizy rynku</div>
-                      <div style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:10px">
-                        Bez sprawdzenia kalendarza ryzykujesz wejście tuż przed publikacją danych (NFP, CPI, decyzja FED) — rynek może się gwałtownie odwrócić niezależnie od Twojej analizy technicznej.
-                      </div>
-                      <div style="display:flex;gap:8px;flex-wrap:wrap">
-                        <button onclick="showPage('macro');closeSidebar()" class="btn-sm" style="font-size:11px;border-color:var(--amber);color:var(--amber)">📅 Otwórz kalendarz makro</button>
-                        <button onclick="showPage('settings');setTimeout(()=>document.getElementById('sr-monday')?.scrollIntoView({behavior:'smooth'}),300)" class="btn-sm" style="font-size:11px">🔔 Ustaw przypomnienia makro</button>
-                      </div>
-                    </div>
-                    <input id="journal-pre-calendar-notes" class="form-input-modal" style="margin-top:8px;font-size:12px" placeholder="Ważne newsy dziś (NFP, CPI, FED…) — wpisz lub zostaw puste">
-                  </div>
-                  <div style="margin-bottom:12px">
-                    <label class="jlabel">📊 Jakie instrumenty/pary obserwuję dziś?</label>
-                    <input id="journal-pre-instruments" class="form-input-modal" placeholder="np. XAUUSD, EURUSD, US30 — tylko co naprawdę śledzę">
-                  </div>
-                  <div style="margin-bottom:12px">
-                    <label class="jlabel">📍 Kluczowe poziomy S/R na dziś</label>
-                    <textarea id="journal-pre-levels" class="form-input-modal" style="min-height:60px;line-height:1.7" placeholder="XAUUSD: wsparcie 2315, opór 2340&#10;EURUSD: retest 1.0850…"></textarea>
-                  </div>
-                  <div>
-                    <label class="jlabel">📈 Bias rynkowy dziś</label>
-                    <div style="display:flex;gap:6px;flex-wrap:wrap">
-                      <button onclick="setJournalBtn('pre-bias',this,'bullish','bullish')" class="journal-opt-btn">🟢 Byczy</button>
-                      <button onclick="setJournalBtn('pre-bias',this,'bearish','bearish')" class="journal-opt-btn">🔴 Niedźwiedzi</button>
-                      <button onclick="setJournalBtn('pre-bias',this,'neutral','neutral')" class="journal-opt-btn">🟡 Neutralny</button>
-                      <button onclick="setJournalBtn('pre-bias',this,'unknown','unknown')" class="journal-opt-btn">❓ Nie wiem jeszcze</button>
-                    </div>
-                    <input type="hidden" id="journal-pre-bias">
-                  </div>
-                  <div style="margin-bottom:12px">
-                    <label class="jlabel">🌊 Warunki rynkowe dziś</label>
-                    <div style="display:flex;gap:6px;flex-wrap:wrap">
-                      <button onclick="setJournalBtn('pre-conditions',this,'trend','trend')" class="journal-opt-btn">📈 Trend</button>
-                      <button onclick="setJournalBtn('pre-conditions',this,'range','range')" class="journal-opt-btn">📊 Konsolidacja</button>
-                      <button onclick="setJournalBtn('pre-conditions',this,'volatile','volatile')" class="journal-opt-btn">⚡ Wysoka zmienność</button>
-                      <button onclick="setJournalBtn('pre-conditions',this,'unclear','unclear')" class="journal-opt-btn">❓ Niejasne</button>
-                    </div>
-                    <input type="hidden" id="journal-pre-conditions">
-                  </div>
-                </div>
-              </div>
-
-              <div class="journal-step-divider"></div>
-
-              <!-- KROK 3: Plan i reguły -->
+              <!-- KROK 2: Plan i reguły -->
               <div class="journal-step" id="jstep-pre-3">
                 <div class="journal-step-header">
-                  <div class="journal-step-num">3</div>
+                  <div class="journal-step-num">2</div>
                   <div>
                     <div class="journal-step-title">Plan i reguły na dziś</div>
                     <div class="journal-step-sub">Co chcę osiągnąć i czego muszę unikać</div>
@@ -2803,10 +2758,10 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 
               <div class="journal-step-divider"></div>
 
-              <!-- KROK 4: Gotowość i intencja -->
+              <!-- KROK 3: Gotowość i intencja -->
               <div class="journal-step" id="jstep-pre-4">
                 <div class="journal-step-header">
-                  <div class="journal-step-num">4</div>
+                  <div class="journal-step-num">3</div>
                   <div>
                     <div class="journal-step-title">Gotowość i skupienie</div>
                     <div class="journal-step-sub">Ostatnia weryfikacja przed sesją</div>
@@ -2836,6 +2791,61 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
                     <label class="jlabel">💬 Moja intencja na dziś (jedno zdanie)</label>
                     <input id="journal-pre-intention" class="form-input-modal" placeholder="np. Dziś czekam na pewny setup i nie goduję wykresu">
                   </div>
+                </div>
+              </div>
+
+              <div class="journal-step-divider"></div>
+
+              <!-- KROK 4: Terminal Analiz -->
+              <div class="journal-step" id="jstep-pre-2">
+                <div class="journal-step-header">
+                  <div class="journal-step-num">4</div>
+                  <div>
+                    <div class="journal-step-title">Terminal Analiz</div>
+                    <div class="journal-step-sub">Analiza każdego instrumentu — bez wychodzenia z rutyny</div>
+                  </div>
+                  <div id="jstep-pre-2-done" class="journal-step-check" style="display:none">✅</div>
+                </div>
+                <div class="journal-step-body">
+                  <div style="margin-bottom:14px">
+                    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                      <label class="jlabel" style="margin:0">📅 Sprawdziłem kalendarz ekonomiczny?</label>
+                      <div style="display:flex;gap:6px">
+                        <button onclick="setJournalBtn('pre-calendar',this,'yes','yes');_calendarWarning(false)" class="journal-opt-btn">✅ Tak</button>
+                        <button onclick="setJournalBtn('pre-calendar',this,'no','no');_calendarWarning(true)" class="journal-opt-btn">❌ Nie</button>
+                      </div>
+                      <input type="hidden" id="journal-pre-calendar">
+                    </div>
+                    <div id="journal-calendar-warning" style="display:none;margin-top:10px;padding:12px 14px;background:rgba(255,170,0,.08);border:1px solid rgba(255,170,0,.35);border-radius:10px">
+                      <div style="font-size:13px;font-weight:700;color:var(--amber);margin-bottom:6px">⚠️ Kalendarz makro to fundament analizy rynku</div>
+                      <div style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:10px">
+                        Bez sprawdzenia kalendarza ryzykujesz wejście tuż przed publikacją danych (NFP, CPI, decyzja FED) — rynek może się gwałtownie odwrócić niezależnie od Twojej analizy technicznej.
+                      </div>
+                      <div style="display:flex;gap:8px;flex-wrap:wrap">
+                        <button onclick="_returnToRoutineFrom('macro')" class="btn-sm" style="font-size:11px;border-color:var(--amber);color:var(--amber)">📅 Otwórz kalendarz makro</button>
+                        <button onclick="_returnToRoutineFrom('macro','reminders')" class="btn-sm" style="font-size:11px">🔔 Ustaw przypomnienia makro</button>
+                      </div>
+                    </div>
+                    <input id="journal-pre-calendar-notes" class="form-input-modal" style="margin-top:8px;font-size:12px" placeholder="Ważne newsy dziś (NFP, CPI, FED…) — wpisz lub zostaw puste">
+                  </div>
+                  <div style="margin-bottom:14px">
+                    <label class="jlabel">📊 Które instrumenty obserwujesz dziś?</label>
+                    <input id="journal-pre-instruments" class="form-input-modal" placeholder="np. XAUUSD, EURUSD, US30 — rozdziel przecinkami"
+                      oninput="renderInstrumentCards()" onblur="renderInstrumentCards()">
+                    <div style="font-size:11px;color:var(--text3);margin-top:4px">Wpisz instrumenty — dla każdego pojawi się karta analizy</div>
+                  </div>
+                  <div id="instrument-cards-container" style="display:flex;flex-direction:column;gap:14px">
+                    <div style="text-align:center;padding:20px;color:var(--text3);font-size:12px;background:var(--bg3);border-radius:10px;border:1px dashed var(--border)">
+                      Wpisz instrumenty powyżej — pojawią się karty do analizy
+                    </div>
+                  </div>
+                  <div id="instrument-save-all-row" style="display:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+                    <button onclick="saveAllInstrumentAnalyses()" class="btn-sm btn-accent" style="font-size:12px">💾 Zapisz wszystkie jako analizy</button>
+                    <span id="instrument-saved-count" style="font-size:11px;color:var(--text3);margin-left:10px"></span>
+                  </div>
+                  <input type="hidden" id="journal-pre-bias">
+                  <input type="hidden" id="journal-pre-conditions">
+                  <input type="hidden" id="journal-pre-levels" value="">
                 </div>
               </div>
 
@@ -3458,6 +3468,23 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
     <!-- ===== MAKRO KALENDARZ ===== -->
     <div id="page-macro" class="page">
       <div class="page-title">📅 Kalendarz Makroekonomiczny</div>
+
+      <!-- Baner powrotu do rutyny dnia -->
+      <div id="routine-return-banner" class="routine-return-banner">
+        <div style="font-size:13px;color:var(--text2)">📋 Jesteś tutaj z rutyny dnia — sprawdź kalendarz i wróć</div>
+        <button onclick="_backToRoutine()" class="btn-sm btn-accent" style="font-size:12px;white-space:nowrap">← Wróć do rutyny</button>
+      </div>
+
+      <!-- Sugestia przypomnień makro (gdy brak skonfigurowanych) -->
+      <div id="macro-reminder-suggestion" style="display:none;margin-bottom:16px;padding:14px 16px;background:rgba(79,158,255,.06);border:1px solid rgba(79,158,255,.25);border-radius:12px">
+        <div style="font-size:13px;font-weight:600;color:var(--accent);margin-bottom:6px">🔔 Ustaw przypomnienia makro</div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.6">
+          Nie masz jeszcze skonfigurowanych przypomnień o ważnych wydarzeniach. Dodaj przypomnienia poniżej — dostaniesz alert 1h przed NFP, CPI, FOMC i innymi kluczowymi danymi.
+        </div>
+        <button onclick="document.getElementById('macro-rem-title').focus();document.getElementById('macro-reminder-suggestion').style.display='none'" class="btn-sm" style="font-size:12px">
+          + Dodaj pierwsze przypomnienie
+        </button>
+      </div>
 
       <!-- Przypomnienia cykliczne -->
       <div class="summary-card" style="margin-bottom:20px">
@@ -9155,20 +9182,28 @@ async function renderAdmin() {
     ${pendingHtml}
     <table class="user-table">
       <thead><tr>
-        <th>Login</th><th>Nazwa</th><th>Rola</th><th>Status</th><th>Email</th><th>Akcje</th>
+        <th>Login</th><th>Nazwa</th><th>Rola</th><th>Plan</th><th>Email</th><th>Akcje</th>
       </tr></thead>
       <tbody>${allUsers.map(u => {
         const isMe = u.login === state.currentUser;
         const statusColor = u.active ? 'var(--accent)' : 'var(--amber)';
         const statusLabel = u.active ? '✓ Aktywny' : '⏳ Oczekuje';
+        const isPro = u.subscription === 'pro';
+        const isAdminSub = u.subscription === 'admin' || u.role === 'admin';
+        const subLabel = isAdminSub ? '👑 Admin' : isPro ? '⭐ PRO' : 'Free';
+        const subColor = isAdminSub ? 'var(--amber)' : isPro ? 'var(--accent)' : 'var(--text3)';
         return `<tr>
           <td class="mono" style="font-weight:600">${u.login||'—'} ${isMe?'<span style="font-size:10px;color:var(--text3)">(Ty)</span>':''}</td>
           <td>${u.name||'—'}</td>
           <td><span class="${u.role==='admin'?'role-admin':'role-user'}">${u.role==='admin'?'👑 Admin':'👤 Trader'}</span></td>
-          <td><span style="font-size:11px;color:${statusColor}">${statusLabel}</span></td>
+          <td>
+            <span style="font-size:11px;font-weight:700;color:${subColor}">${subLabel}</span>
+            <br><span style="font-size:10px;color:${statusColor}">${statusLabel}</span>
+          </td>
           <td style="font-size:11px;color:var(--text3)">${u.email||'—'}</td>
           <td><div class="action-btns">
             ${!u.active ? `<button class="btn-sm btn-accent" style="font-size:10px" onclick="adminActivateUser('${u.id}')">Aktywuj</button>` : ''}
+            ${u.id && !isAdminSub ? `<button class="btn-sm" style="font-size:10px;${isPro?'color:var(--amber);border-color:var(--amber)':'color:var(--accent);border-color:var(--accent)'}" onclick="adminTogglePro('${u.id}','${u.subscription||'active'}')">${isPro?'→ Free':'⭐ PRO'}</button>` : ''}
             ${!isMe ? `<button class="icon-btn del" onclick="adminDeleteUser('${u.id}','${(u.login||'').replace(/'/g, "\\'")}')">🗑</button>` : ''}
           </div></td>
         </tr>`;
@@ -12249,6 +12284,7 @@ function notifyServerBackup() {
 
 // ===== ANALYSIS NOTES SYSTEM =====
 let _anScreenshots = []; // {id, dataUrl}
+let _anScenarios = []; // [{bias, entry, sl, tp, note}]
 let _anAutosaveTimer = null;
 let _anDraftKey = null;
 let _analysisView = 'list';
@@ -12708,14 +12744,18 @@ function anSymbolInput() {
   const list = document.getElementById('an-symbol-list');
   const dd = document.getElementById('an-symbol-dropdown');
   if (!list||!dd) return;
-  if (!items.length) { dd.style.display='none'; return; }
-  dd.style.display = 'block';
-  list.innerHTML = items.slice(0,8).map(s=>`
-    <div onclick="anSelectSymbol('${s.s}')"
-      style="padding:8px 14px;cursor:pointer;font-family:var(--font-mono);font-size:13px;font-weight:600"
-      onmouseover="this.style.background='var(--accent-dim)'" onmouseout="this.style.background=''">
-      ${s.s}
-    </div>`).join('');
+  if (!items.length) { dd.style.display='none'; } else {
+    dd.style.display = 'block';
+    list.innerHTML = items.slice(0,8).map(s=>`
+      <div onclick="anSelectSymbol('${s.s}')"
+        style="padding:8px 14px;cursor:pointer;font-family:var(--font-mono);font-size:13px;font-weight:600"
+        onmouseover="this.style.background='var(--accent-dim)'" onmouseout="this.style.background=''">
+        ${s.s}
+      </div>`).join('');
+  }
+  clearTimeout(_unplannedSymCheckTimer);
+  if (q.length >= 2) _unplannedSymCheckTimer = setTimeout(() => _checkUnplannedSym(q), 700);
+  else { const _w = document.getElementById('an-unplanned-warning'); if (_w) _w.style.display = 'none'; }
 }
 function anSymbolFocus() { anSymbolInput(); }
 function anSymbolKeydown(e) {
@@ -12953,6 +12993,8 @@ function openNewAnalysis() {
    'an-linked-trade-id'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = '';
   });
+  _anScenarios = [];
+  renderAnScenarios();
   const typeEl = document.getElementById('an-type');
   if (typeEl) typeEl.value = 'technical';
   const dateEl = document.getElementById('an-date');
@@ -12978,6 +13020,7 @@ function openEditAnalysis(id) {
   const a = analyses.find(x => x.id === id);
   if (!a) return;
   _anScreenshots = (a.screenshots||[]).map(s=>({id:genId(),dataUrl:s}));
+  _anScenarios = a.scenarios ? JSON.parse(JSON.stringify(a.scenarios)) : [];
   _anDraftKey = null;
   _anTfMode = 'time';
   const set = (elId, val) => { const el = document.getElementById(elId); if (el) el.value = val||''; };
@@ -12993,6 +13036,7 @@ function openEditAnalysis(id) {
   if (titleEl) titleEl.textContent = 'Edytuj: '+(a.title||'analiza');
   setAnTfFromValue(a.tf||'');
   renderAnScreenshots();
+  renderAnScenarios();
   renderAnLinkedTrades(a.symbol||'');
   populateLinkedTradeSelect(a.symbol||'', a.linkedTradeId||'');
   anSetAutosaveDot('idle');
@@ -13045,6 +13089,7 @@ function saveAnalysis() {
     setupId:     g('an-setup-select')||'',
     linkedTradeId: g('an-linked-trade-id')||'',
     screenshots: _anScreenshots ? _anScreenshots.filter(s => s.dataUrl && !s.uploading).map(s=>s.dataUrl) : [],
+    scenarios:   _anScenarios.filter(sc => sc.bias||sc.entry||sc.sl||sc.tp||sc.note),
     updatedAt:   Date.now(),
   };
   const analyses = getAnalyses();
@@ -13058,6 +13103,8 @@ function saveAnalysis() {
   const _db = getDB(); delete _db['_an_draft_'+(state.currentUser||'')]; saveDB(_db);
   closeModal('analysis-modal');
   renderAnalysisList();
+  window._analysisFromRoutineSym = null;
+  setTimeout(renderInstrumentCards, 100);
   toast('Analiza zapisana ✓', 'success');
 }
 
@@ -13078,60 +13125,110 @@ function discardAnalysis() {
 
 function saveAnalysisAsTrade() {
   const _g = id => { const el = document.getElementById(id); return el ? el.value : ''; };
-  const title   = _g('an-title')||'';
-  const pre     = _g('an-content')||''; // treść analizy → analiza przed wejściem
-  const post    = _g('an-post')||'';
-  const setup   = _g('an-setup')||'';
-  const screens = (_anScreenshots||[]).filter(s => s.dataUrl && !s.uploading).map(s=>s.dataUrl);
+  const symbol     = (_g('an-symbol')||'').trim().toUpperCase();
+  const pre        = _g('an-content')||'';
+  const bias       = _g('an-bias')||'';
+  const title      = _g('an-title')||'';
   const analysisId = _g('an-id') || null;
+  const screens    = (_anScreenshots||[]).filter(s => s.dataUrl && !s.uploading).map(s=>s.dataUrl);
 
-  // Musi być zaznaczona transakcja
-  const linkedTradeId = _selectedTradeForAnalysis;
-  if (!linkedTradeId) {
-    toast('Zaznacz transakcję na pasku poniżej (☑️)', 'error');
-    return;
-  }
+  // Zapisz analizę jeśli ma tytuł
+  if (title) saveAnalysis();
 
-  const trades = getTrades(state.currentAccountId);
-  const idx = trades.findIndex(t => t.id === linkedTradeId);
-  if (idx < 0) { toast('Nie znaleziono transakcji', 'error'); return; }
-
-  // Uzupełnij TYLKO puste pola — nie nadpisuj istniejących danych
-  const t = trades[idx];
-  // Uzupełnij pola — pre łączymy z istniejącym (MT4 tag + opis analizy)
-  if (pre) {
-    if (!t.pre) {
-      t.pre = pre;
-    } else if (!t.pre.includes(pre)) {
-      t.pre = t.pre + '\n\n' + pre;
+  // Otwórz nową transakcję z danymi z analizy
+  openTradeModal();
+  setTimeout(() => {
+    if (symbol) { const el = document.getElementById('t-symbol'); if (el) el.value = symbol; }
+    if (pre)    { const el = document.getElementById('t-pre');    if (el) el.value = pre; }
+    if (bias === 'bullish') { const el = document.getElementById('t-dir'); if (el) el.value = 'LONG'; }
+    if (bias === 'bearish') { const el = document.getElementById('t-dir'); if (el) el.value = 'SHORT'; }
+    if (screens.length) {
+      state.tempScreenshots = screens.map(s => ({id: genId(), dataUrl: s}));
+      renderScreenshotPreviews();
     }
-  }
-  if (post  && !t.post)  t.post  = post;
-  if (setup && !t.setup) t.setup = setup;
-
-  // Screenshoty — dodaj z analizy (nie duplikuj)
-  if (screens.length) {
-    const existing = t.screenshots || [];
-    const newScreens = screens.filter(s => !existing.includes(s));
-    t.screenshots = [...existing, ...newScreens];
-  }
-
-  // Powiąż z analizą
-  t.linkedAnalysisId = analysisId;
-  t.updatedAt = Date.now();
-
-  trades[idx] = t;
-  saveTrades(state.currentAccountId, trades);
-
-  // Zapisz analizę
-  if (title) saveAnalysis(); else closeModal('analysis-modal');
-
-  renderTrades();
-  renderDashboard();
-  _selectedTradeForAnalysis = null;
-  toast('Analiza przypisana do transakcji ✓', 'success');
+    if (analysisId) {
+      const el = document.getElementById('t-linked-analysis-id');
+      if (el) { el.value = analysisId; populateLinkedAnalysisSelect(symbol, analysisId); }
+    }
+    toast('Formularz transakcji wypełniony danymi z analizy ✓', 'success');
+  }, 200);
 }
 
+
+// ===== SCENARIUSZE W NARZĘDZIU ANALIZY =====
+
+function renderAnScenarios() {
+  const list = document.getElementById('an-scenarios-list');
+  if (!list) return;
+  if (!_anScenarios.length) {
+    list.innerHTML = `<div style="text-align:center;padding:14px;color:var(--text3);font-size:12px;background:var(--bg3);border-radius:8px;border:1px dashed var(--border)">
+      Brak scenariuszy — kliknij "+ Dodaj scenariusz" aby zaplanować wejście
+    </div>`;
+    return;
+  }
+  const LABELS = ['A','B','C','D','E'];
+  list.innerHTML = _anScenarios.map((sc, i) => `
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px;position:relative">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <span style="font-size:12px;font-weight:700;color:var(--accent)">Scenariusz ${LABELS[i]||i+1}</span>
+        <button onclick="removeAnScenario(${i})" style="background:none;border:none;cursor:pointer;font-size:13px;color:var(--text3);padding:2px 6px" title="Usuń">✕</button>
+      </div>
+      <div style="margin-bottom:10px">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:5px">Kierunek / Bias</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button onclick="setAnScenarioBias(${i},'bullish',this)" class="journal-opt-btn${sc.bias==='bullish'?' active':''}" style="font-size:11px;padding:3px 10px">🟢 Byczy (Long)</button>
+          <button onclick="setAnScenarioBias(${i},'bearish',this)" class="journal-opt-btn${sc.bias==='bearish'?' active':''}" style="font-size:11px;padding:3px 10px">🔴 Niedźwiedzi (Short)</button>
+          <button onclick="setAnScenarioBias(${i},'neutral',this)" class="journal-opt-btn${sc.bias==='neutral'?' active':''}" style="font-size:11px;padding:3px 10px">🟡 Neutralny</button>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px">
+        <div>
+          <div style="font-size:11px;color:var(--text3);margin-bottom:4px">Strefa wejścia</div>
+          <input class="form-input-modal" value="${sc.entry||''}" placeholder="np. 2315–2320"
+            oninput="_anScenarios[${i}].entry=this.value;anAutosave()" style="font-size:12px">
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--text3);margin-bottom:4px">Stop Loss</div>
+          <input class="form-input-modal" value="${sc.sl||''}" placeholder="np. 2295"
+            oninput="_anScenarios[${i}].sl=this.value;anAutosave()" style="font-size:12px">
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--text3);margin-bottom:4px">Target (TP)</div>
+          <input class="form-input-modal" value="${sc.tp||''}" placeholder="np. 2360"
+            oninput="_anScenarios[${i}].tp=this.value;anAutosave()" style="font-size:12px">
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:4px">Warunek / Trigger</div>
+        <input class="form-input-modal" value="${sc.note||''}" placeholder="np. Jeśli cena przebije 2320 z wolumenem…"
+          oninput="_anScenarios[${i}].note=this.value;anAutosave()" style="font-size:12px">
+      </div>
+    </div>`).join('');
+}
+
+function addAnScenario() {
+  _anScenarios.push({ bias:'', entry:'', sl:'', tp:'', note:'' });
+  renderAnScenarios();
+  anAutosave();
+}
+
+function removeAnScenario(i) {
+  _anScenarios.splice(i, 1);
+  renderAnScenarios();
+  anAutosave();
+}
+
+function setAnScenarioBias(i, val, btn) {
+  _anScenarios[i].bias = val;
+  const row = btn.closest('div[style*="background:var(--bg3)"]');
+  if (row) row.querySelectorAll('.journal-opt-btn').forEach(b => {
+    if (b.getAttribute('onclick')?.includes('setAnScenarioBias')) b.classList.remove('active');
+  });
+  btn.classList.add('active');
+  anAutosave();
+}
+
+// ===== KONIEC SCENARIUSZY =====
 
 function anAutosave() {
   anSetAutosaveDot('saving');
@@ -17636,6 +17733,8 @@ function getDailyScore(dateStr) {
 
 // --- State ---
 let _jSelectedDate = new Date().toISOString().slice(0,10);
+let _routineReturnActive = false;
+let _unplannedSymCheckTimer = null;
 let _jCalYear  = new Date().getFullYear();
 let _jCalMonth = new Date().getMonth();
 let _jCurrentNoteId = null;
@@ -17785,8 +17884,13 @@ function _getJournalOptVal(fieldId) {
 function updateJournalPreProgress() {
   // Krok 1: sen + energia + nastrój
   const s1 = !!(_getJournalOptVal('pre-sleep') && _getJournalOptVal('pre-energy') && getJournalMood('pre'));
-  // Krok 2: bias
-  const s2 = !!(_getJournalOptVal('pre-bias'));
+  // Krok 4 (Terminal Analiz): kalendarz sprawdzony LUB chociaż 1 analiza dla planowanych instrumentów
+  const _tInstr = typeof _parseInstrumentsFromField === 'function' ? _parseInstrumentsFromField() : [];
+  const _tToday = _jSelectedDate || new Date().toISOString().slice(0,10);
+  const _tDone = _tInstr.length > 0 && typeof getAnalyses === 'function'
+    ? getAnalyses().some(a => (a.date||'').startsWith(_tToday) && _tInstr.includes((a.symbol||'').toUpperCase()))
+    : false;
+  const s2 = !!(_getJournalOptVal('pre-calendar') || _tDone);
   // Krok 3: plan
   const s3 = !!(document.getElementById('journal-pre-plan')?.value?.trim());
   // Krok 4: readiness + focus
@@ -17883,6 +17987,7 @@ function loadJournalEntryForm(ds) {
   setFieldVal('journal-pre-intention', entry.preIntention||'');
   setFieldVal('journal-pre-calendar-notes', entry.preCalendarNotes||'');
   setFieldVal('journal-pre-instruments', entry.preInstruments||'');
+  setTimeout(renderInstrumentCards, 50);
   setFieldVal('journal-pre-levels', entry.preLevels||'');
 
   const focusEl = document.getElementById('journal-pre-focus');
@@ -19193,6 +19298,334 @@ function closeDailyBriefing() {
 }
 
 // ===== JOURNAL → ANALYSIS BRIDGE =====
+// ===== TERMINAL ANALIZ — karty instrumentów w rutynie dnia =====
+
+function _parseInstrumentsFromField() {
+  const v = document.getElementById('journal-pre-instruments')?.value || '';
+  return v.split(/[,;/.\s]+/).map(s => s.trim().toUpperCase()).filter(s => s.length >= 2 && s.length <= 12);
+}
+
+function renderInstrumentCards() {
+  const container = document.getElementById('instrument-cards-container');
+  if (!container) return;
+  const symbols = _parseInstrumentsFromField();
+  if (!symbols.length) {
+    container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3);font-size:12px;background:var(--bg3);border-radius:10px;border:1px dashed var(--border)">Wpisz instrumenty powyżej — pojawią się karty do analizy</div>';
+    updateJournalPreProgress();
+    return;
+  }
+  const today = _jSelectedDate || new Date().toISOString().slice(0,10);
+  const todayAnalyses = getAnalyses().filter(a => (a.date||'').startsWith(today));
+  container.innerHTML = symbols.map(sym => {
+    const ex = todayAnalyses.find(a => (a.symbol||'').toUpperCase() === sym);
+    const bias = ex?.bias || '';
+    const biasLabel = bias==='bullish'?'🟢 Byczy':bias==='bearish'?'🔴 Niedźwiedzi':bias==='neutral'?'🟡 Neutralny':'';
+    const scenCount = ex?.scenarios?.length || 0;
+    const preview = [
+      biasLabel,
+      ex?.levels ? ex.levels.split('\n')[0].substring(0,50)+(ex.levels.split('\n')[0].length>50?'…':'') : '',
+      scenCount > 1 ? `${scenCount} scenariusze` : scenCount===1?'1 scenariusz':''
+    ].filter(Boolean).join(' · ');
+    return `<div class="instrument-analysis-card" id="icard-${sym}">
+      <div class="icard-header">
+        <span class="icard-symbol">${sym}</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          ${ex ? '<span class="icard-saved-badge">✅ Analiza gotowa</span>' : ''}
+          <button onclick="openInstrumentAnalysis('${sym}')" class="btn-sm${ex?'':' btn-accent'}" style="font-size:11px">
+            ${ex ? '✏️ Edytuj' : '📈 Analizuj'}
+          </button>
+        </div>
+      </div>
+      ${preview ? `<div class="icard-body" style="font-size:12px;color:var(--text2)">${preview}</div>` : ''}
+    </div>`;
+  }).join('');
+  updateJournalPreProgress();
+}
+
+// Stan tymczasowy kart — scenariusze per instrument
+// _qcState[sym] = { cond: '', scenarios: [{bias,entry,sl,tp,note},...] }
+const _qcState = {};
+
+function _qcEnsure(sym) {
+  if (!_qcState[sym]) _qcState[sym] = { cond: '', scenarios: [{ bias:'', entry:'', sl:'', tp:'', note:'' }] };
+}
+
+function setQuickCond(sym, val, btn) {
+  _qcEnsure(sym);
+  _qcState[sym].cond = val;
+  const card = document.getElementById('icard-' + sym);
+  if (card) card.querySelectorAll(`[onclick*="setQuickCond('${sym}'"]`).forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function setQuickBias(sym, idx, val, btn) {
+  _qcEnsure(sym);
+  _qcState[sym].scenarios[idx].bias = val;
+  const row = document.getElementById(`icard-${sym}-sc-${idx}`);
+  if (row) row.querySelectorAll(`[onclick*="setQuickBias('${sym}',${idx}"]`).forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function addScenario(sym) {
+  _qcEnsure(sym);
+  _qcState[sym].scenarios.push({ bias:'', entry:'', sl:'', tp:'', note:'' });
+  _rerenderCard(sym);
+}
+
+function removeScenario(sym, idx) {
+  _qcEnsure(sym);
+  if (_qcState[sym].scenarios.length <= 1) return;
+  _qcState[sym].scenarios.splice(idx, 1);
+  _rerenderCard(sym);
+}
+
+function _syncScenarioInputs(sym) {
+  _qcEnsure(sym);
+  _qcState[sym].scenarios.forEach((sc, i) => {
+    sc.entry = document.getElementById(`icard-${sym}-sc-${i}-entry`)?.value?.trim() || sc.entry;
+    sc.sl    = document.getElementById(`icard-${sym}-sc-${i}-sl`)?.value?.trim()    || sc.sl;
+    sc.tp    = document.getElementById(`icard-${sym}-sc-${i}-tp`)?.value?.trim()    || sc.tp;
+    sc.note  = document.getElementById(`icard-${sym}-sc-${i}-note`)?.value?.trim()  || sc.note;
+  });
+  _qcState[sym].cond = document.querySelector(`#icard-${sym} .qc-cond-val`)?.dataset.val || _qcState[sym].cond;
+}
+
+function _rerenderCard(sym) {
+  _syncScenarioInputs(sym);
+  const today = _jSelectedDate || new Date().toISOString().slice(0,10);
+  const existing = getAnalyses().find(a => (a.symbol||'').toUpperCase() === sym && (a.date||'').startsWith(today));
+  const card = document.getElementById('icard-' + sym);
+  if (card) card.outerHTML = _buildInstrumentCard(sym, existing);
+  _restoreCardState(sym);
+}
+
+function _restoreCardState(sym) {
+  const st = _qcState[sym];
+  if (!st) return;
+  // Przywróć warunki rynkowe
+  const card = document.getElementById('icard-' + sym);
+  if (!card) return;
+  if (st.cond) {
+    card.querySelectorAll(`[onclick*="setQuickCond('${sym}'"]`).forEach(b => {
+      if (b.getAttribute('onclick').includes(`'${st.cond}'`)) b.classList.add('active');
+    });
+  }
+  // Przywróć bias i pola per scenariusz
+  st.scenarios.forEach((sc, i) => {
+    if (sc.bias) {
+      const row = document.getElementById(`icard-${sym}-sc-${i}`);
+      if (row) row.querySelectorAll(`[onclick*="setQuickBias('${sym}',${i}"]`).forEach(b => {
+        if (b.getAttribute('onclick').includes(`'${sc.bias}'`)) b.classList.add('active');
+      });
+    }
+  });
+}
+
+function _buildInstrumentCard(sym, ex) {
+  _qcEnsure(sym);
+  const st = _qcState[sym];
+  const cond = st.cond || ex?.conditions || '';
+  const LABELS = ['A','B','C','D','E'];
+  const scenHtml = st.scenarios.map((sc, i) => {
+    const bias = sc.bias || '';
+    return `<div id="icard-${sym}-sc-${i}" style="background:var(--bg4);border-radius:8px;padding:10px;margin-bottom:8px;position:relative">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <span style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.5px">Scenariusz ${LABELS[i]||i+1}</span>
+        ${st.scenarios.length > 1 ? `<button onclick="removeScenario('${sym}',${i})" style="background:none;border:none;cursor:pointer;font-size:13px;color:var(--text3);padding:0 2px" title="Usuń scenariusz">✕</button>` : ''}
+      </div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px">
+        <button onclick="setQuickBias('${sym}',${i},'bullish',this)" class="journal-opt-btn${bias==='bullish'?' active':''}" style="font-size:11px;padding:3px 9px">🟢 Byczy</button>
+        <button onclick="setQuickBias('${sym}',${i},'bearish',this)" class="journal-opt-btn${bias==='bearish'?' active':''}" style="font-size:11px;padding:3px 9px">🔴 Niedźwiedzi</button>
+        <button onclick="setQuickBias('${sym}',${i},'neutral',this)" class="journal-opt-btn${bias==='neutral'?' active':''}" style="font-size:11px;padding:3px 9px">🟡 Neutralny</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:6px">
+        <div>
+          <div style="font-size:10px;color:var(--text3);margin-bottom:3px;text-transform:uppercase">Strefa wejścia</div>
+          <input id="icard-${sym}-sc-${i}-entry" class="form-input-modal" value="${sc.entry||''}" placeholder="np. 2315–2320" style="font-size:12px">
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--text3);margin-bottom:3px;text-transform:uppercase">SL</div>
+          <input id="icard-${sym}-sc-${i}-sl" class="form-input-modal" value="${sc.sl||''}" placeholder="np. 2295" style="font-size:12px">
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--text3);margin-bottom:3px;text-transform:uppercase">Target (TP)</div>
+          <input id="icard-${sym}-sc-${i}-tp" class="form-input-modal" value="${sc.tp||''}" placeholder="np. 2360" style="font-size:12px">
+        </div>
+      </div>
+      <input id="icard-${sym}-sc-${i}-note" class="form-input-modal" value="${sc.note||''}" placeholder="Warunek: jeśli cena przebije / odbije od…" style="font-size:12px">
+    </div>`;
+  }).join('');
+
+  const hasPlan = st.scenarios.some(sc => sc.bias || sc.entry || sc.tp);
+  return `<div class="instrument-analysis-card" id="icard-${sym}">
+    <div class="icard-header">
+      <span class="icard-symbol">${sym}</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        ${hasPlan ? '<span class="icard-saved-badge">✅</span>' : ''}
+        <button onclick="saveQuickCard('${sym}')" class="btn-sm btn-accent" style="font-size:11px">💾 Zapisz</button>
+        <button onclick="openInstrumentAnalysis('${sym}')" class="btn-sm" style="font-size:11px" title="Pełna analiza ze screenshotami">📋 Szczegóły</button>
+      </div>
+    </div>
+    <div class="icard-body">
+      <div style="margin-bottom:10px">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px">Warunki rynkowe</div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap">
+          <button onclick="setQuickCond('${sym}','trend',this)" class="journal-opt-btn${cond==='trend'?' active':''}" style="font-size:11px;padding:3px 9px">📈 Trend</button>
+          <button onclick="setQuickCond('${sym}','range',this)" class="journal-opt-btn${cond==='range'?' active':''}" style="font-size:11px;padding:3px 9px">📊 Konsolidacja</button>
+          <button onclick="setQuickCond('${sym}','volatile',this)" class="journal-opt-btn${cond==='volatile'?' active':''}" style="font-size:11px;padding:3px 9px">⚡ Zmienność</button>
+        </div>
+      </div>
+      ${scenHtml}
+      <button onclick="addScenario('${sym}')" class="btn-sm" style="font-size:11px;width:100%;margin-top:4px">+ Dodaj scenariusz</button>
+    </div>
+  </div>`;
+}
+
+function saveQuickCard(sym) {
+  _syncScenarioInputs(sym);
+  _qcEnsure(sym);
+  const today = _jSelectedDate || new Date().toISOString().slice(0,10);
+  const analyses = getAnalyses();
+  const existing = analyses.find(a => (a.symbol||'').toUpperCase() === sym && (a.date||'').startsWith(today));
+  const st = _qcState[sym];
+
+  const a = existing ? { ...existing } : {
+    id: genId(), createdAt: Date.now(),
+    title: sym + ' · ' + today,
+    symbol: sym,
+    date: today + 'T' + new Date().toTimeString().slice(0,5),
+    type: 'technical', screenshots: [], linkedTradeId: null,
+  };
+
+  if (st.cond) a.conditions = st.cond;
+  // Dominujący bias = z scenariusza A
+  if (st.scenarios[0]?.bias) a.bias = st.scenarios[0].bias;
+  // Scenariusze — zapis jako JSON w polu post (nie nadpisuje analizy technicznej)
+  a.scenarios = st.scenarios.filter(sc => sc.bias || sc.entry || sc.tp || sc.note);
+  // Levels — czytelny tekst ze scenariuszy
+  const levelLines = a.scenarios.map((sc, i) => {
+    const LABELS = ['A','B','C','D','E'];
+    const parts = [`Scenariusz ${LABELS[i]||i+1}`];
+    if (sc.entry) parts.push('Wejście: ' + sc.entry);
+    if (sc.sl)    parts.push('SL: ' + sc.sl);
+    if (sc.tp)    parts.push('Target: ' + sc.tp);
+    if (sc.note)  parts.push(sc.note);
+    return parts.join(' | ');
+  });
+  if (levelLines.length) a.levels = levelLines.join('\n');
+  // Dane z pierwszego scenariusza jako liczby (dla kalkulatora R:R)
+  const sc0 = a.scenarios[0] || {};
+  const entryNum = parseFloat(sc0.entry); if (!isNaN(entryNum)) a.entry = entryNum;
+  const slNum    = parseFloat(sc0.sl);    if (!isNaN(slNum))    a.sl    = slNum;
+  const tpNum    = parseFloat(sc0.tp);    if (!isNaN(tpNum))    a.tp    = tpNum;
+  a.updatedAt = Date.now();
+
+  const idx = analyses.findIndex(x => x.id === a.id);
+  if (idx >= 0) analyses[idx] = a; else analyses.push(a);
+  saveAnalyses(analyses);
+  if (_sb && _isOnline) sbSyncAnalysis(a).catch(()=>{});
+
+  delete _qcState[sym];
+  toast(sym + ' — plan zapisany ✓', 'success');
+  renderInstrumentCards();
+  updateJournalPreProgress();
+}
+
+function openInstrumentAnalysis(sym) {
+  const today = _jSelectedDate || new Date().toISOString().slice(0,10);
+  const existing = getAnalyses().find(a => (a.symbol||'').toUpperCase() === sym && (a.date||'').startsWith(today));
+  window._analysisFromRoutineSym = sym;
+  if (existing) {
+    openEditAnalysis(existing.id);
+  } else {
+    openNewAnalysis();
+    setTimeout(() => {
+      const symEl = document.getElementById('an-symbol');
+      const dateEl = document.getElementById('an-date');
+      const titleEl = document.getElementById('an-title');
+      if (symEl) symEl.value = sym;
+      if (dateEl) dateEl.value = today + 'T' + new Date().toTimeString().slice(0,5);
+      if (titleEl) titleEl.value = sym + ' · ' + today;
+      const w = document.getElementById('an-unplanned-warning'); if (w) w.style.display = 'none';
+      anAutosave();
+    }, 100);
+  }
+}
+
+// ===== POWRÓT DO RUTYNY DNIA =====
+
+function _returnToRoutineFrom(page, scrollTarget) {
+  // Auto-zapis rutyny zanim odejdziemy — żeby pola nie zniknęły po powrocie
+  if (typeof saveJournalEntry === 'function') saveJournalEntry();
+  _routineReturnActive = true;
+  showPage(page);
+  closeSidebar();
+  if (scrollTarget === 'reminders') {
+    setTimeout(() => {
+      document.getElementById('macro-reminders-list')?.closest('.summary-card')?.scrollIntoView({behavior:'smooth', block:'start'});
+      document.getElementById('macro-rem-title')?.focus();
+    }, 400);
+  }
+}
+
+function _backToRoutine() {
+  _routineReturnActive = false;
+  const banner = document.getElementById('routine-return-banner');
+  if (banner) banner.classList.remove('active');
+  showPage('journal');
+  // Załaduj zapisany wpis — pola będą wypełnione jak przed wyjściem
+  setTimeout(() => {
+    if (typeof loadJournalEntryForm === 'function') loadJournalEntryForm(_jSelectedDate);
+    // Przewiń do Terminal Analiz (ostatni krok)
+    document.getElementById('jstep-pre-2')?.scrollIntoView({behavior:'smooth', block:'start'});
+  }, 200);
+}
+
+// ===== OSTRZEŻENIE O NIEPLANOWANYM INSTRUMENCIE =====
+
+function _checkUnplannedSym(sym) {
+  const w = document.getElementById('an-unplanned-warning');
+  if (!sym || sym.length < 2) { if (w) w.style.display = 'none'; return; }
+  // Pomiń jeśli otwarto z Terminal Analiz
+  if (window._analysisFromRoutineSym) { if (w) w.style.display = 'none'; return; }
+  const today = new Date().toISOString().slice(0,10);
+  const entry = getJournalEntry(today) || {};
+  const planned = (entry.preInstruments||'').split(/[,;/.\s]+/).map(s=>s.trim().toUpperCase()).filter(Boolean);
+  if (!planned.length) { if (w) w.style.display = 'none'; return; }
+  if (planned.includes(sym.toUpperCase())) { if (w) w.style.display = 'none'; return; }
+  showConfirm(
+    `⚠️ "${sym.toUpperCase()}" nie było w Twoim planie na dziś.\n\nCzy jesteś dobrze przygotowany do handlu na tym instrumencie? Sprawdź poziomy i bias przed wejściem.`,
+    () => { if (w) w.style.display = 'none'; },
+    () => { const el = document.getElementById('an-symbol'); if (el) el.value = ''; if (w) w.style.display = 'none'; }
+  );
+}
+
+// ===== ADMIN — ZMIANA PLANU PRO/FREE =====
+
+async function adminTogglePro(userId, currentSub) {
+  if (!isAdmin()) { toast(t('err_no_perms'), 'error'); return; }
+  const newSub = currentSub === 'pro' ? 'active' : 'pro';
+  const label = newSub === 'pro' ? '⭐ PRO' : 'Free';
+  try {
+    const { data: { session } } = await _sb.auth.getSession();
+    const token = session?.access_token;
+    if (!token) { toast(t('err_no_session'), 'error'); return; }
+    const res = await fetch(_SB_URL + '/rest/v1/profiles?id=eq.' + encodeURIComponent(userId), {
+      method: 'PATCH',
+      headers: {
+        'apikey': _SB_ANON,
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({ subscription: newSub })
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    toast('Plan zmieniony na ' + label + ' ✓', 'success');
+    renderAdmin();
+  } catch(e) { toast('Błąd: ' + e.message, 'error'); }
+}
+
 function createAnalysisFromJournal() {
   const prePlan  = document.getElementById('journal-pre-plan')?.value?.trim();
   const preGoal  = document.getElementById('journal-pre-goal')?.value?.trim();
@@ -20377,6 +20810,12 @@ function renderMacroCalendar() {
   renderMacroReminders();
   renderAnnList();
   if (!_macroNotifyTimer) _macroNotifyTimer = setInterval(checkMacroNotifications, 60000);
+  // Baner powrotu do rutyny
+  const banner = document.getElementById('routine-return-banner');
+  if (banner) banner.classList.toggle('active', !!_routineReturnActive);
+  // Sugestia przypomnień makro gdy brak skonfigurowanych
+  const sugg = document.getElementById('macro-reminder-suggestion');
+  if (sugg) sugg.style.display = getMacroReminders().length > 0 ? 'none' : 'block';
 }
 
 function toggleMacroBell() {

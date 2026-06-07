@@ -5,6 +5,53 @@
 
 ---
 
+## 2026-06-07 (sobota)
+
+### Stan na wejściu
+- `preview.html` = dev, niezdeployowany
+- `index.html` = produkcja (bez dzisiejszych zmian)
+
+### Co zrobiono (preview.html)
+
+#### Terminal Analiz — nowa architektura rutyny dnia
+- Kroki pre-sesji przeorganizowane: Plan (krok 2) → Gotowość (krok 3) → **Terminal Analiz** (krok 4, ostatni)
+- Terminal Analiz to nowy krok: użytkownik wpisuje instrumenty, dla każdego pojawia się karta
+- Karta karty: przycisk "📈 Analizuj" otwiera **pełne okno analizy** (istniejący modal) pre-wypełniony symbolem i datą
+- Jeśli analiza na dany instrument już istnieje dziś → karta pokazuje ✅ + podgląd (bias, poziomy)
+- `renderInstrumentCards()` odświeża karty po każdym zapisie analizy
+- Pasek postępu kroku 4 zalicza się gdy: kalendarz sprawdzony LUB min. 1 analiza dla planowanych instrumentów
+- Stary formularz (globalne poziomy S/R, bias, warunki) usunięty — zastąpiony terminalem
+
+#### Freemium — panel PRO w Admin
+- W tabeli użytkowników dodana kolumna "Plan" (Free / ⭐ PRO / 👑 Admin)
+- Przycisk "⭐ PRO" / "→ Free" per użytkownik → `adminTogglePro(userId, sub)` → PATCH `/profiles` w Supabase
+- Admini i własne konto nie mają przycisku toggle (zabezpieczenie)
+
+#### Powrót do rutyny dnia
+- Przyciski w ostrzeżeniu kalendarza: "Otwórz makro" i "Ustaw przypomnienia" → `_returnToRoutineFrom(page)`
+- Na stronie Makro pojawia się baner "← Wróć do rutyny" gdy wejście z rutyny
+- `_backToRoutine()` wraca do zakładki Journal Pre-sesji i resetuje flagę
+
+#### Ostrzeżenie o nieplanowanym instrumencie
+- W oknie analizy: gdy użytkownik wpisuje symbol, po 700ms sprawdza czy był w planie dnia
+- Jeśli nie był → modal `showConfirm` z pytaniem "Czy jesteś przygotowany?"
+- Jeśli symbol otwarto z Terminal Analiz (`_analysisFromRoutineSym`) → ostrzeżenie pominięte
+
+#### Sugestia przypomnień makro
+- Na stronie Makro, gdy brak skonfigurowanych przypomnień → baner sugestii z przyciskiem
+
+#### Analiza → Transakcja (przepisane)
+- Przycisk "Zapisz jako transakcję" nie wymaga już istniejącej transakcji
+- Otwiera nowy formularz transakcji z pre-wypełnionymi: symbol, pre-analiza, kierunek (z bias), screenshoty, link do analizy
+- Analiza jest najpierw zapisywana, potem otwierany modal transakcji
+
+### Co dalej
+1. Użytkownik testuje Terminal Analiz i zgłasza feedback
+2. Deploy do index.html po akceptacji
+3. Settings — return banner analogicznie jak na Makro
+
+---
+
 ## 2026-06-03 (środa)
 
 ### Stan na wejściu
