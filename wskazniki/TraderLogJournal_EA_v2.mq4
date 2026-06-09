@@ -57,6 +57,7 @@ input int      PyramidDivisions   = 4;        // Faron Mode: podziel odcinek Ent
 #define BTN_SIATKA    "TLJ_BtnSiatka"
 #define EDIT_GRID_N   "TLJ_EGN"
 #define EDIT_PYR_MAX  "TLJ_EditPyrMax"
+#define EDIT_PYR_STP  "TLJ_EditPyrStp"
 
 //--- Stan
 struct TradeState {
@@ -209,7 +210,7 @@ void OnChartEvent(const int id, const long& lparam,
 // PANEL
 //+------------------------------------------------------------------+
 void CreatePanel() {
-   int w = 222, h = 380;
+   int w = 222, h = 404;
    int x = PanelX, y = PanelY;
 
    // Tło
@@ -290,23 +291,27 @@ void CreatePanel() {
    CreateButton(BTN_PYRAMID, x+176, y+281, 38, 22, "PIRA",
                 C'25,35,48',  C'74,96,117', C'45,63,80', 7);
 
+   // Krok PIRA (step pips) — override dla PyramidPips/PyramidDivisions
+   CreateLabel("TLJ_StpLbl", x+8, y+316, "Krok PIRA pips (0=auto):", C'74,96,117', 7, false);
+   CreateEdit(EDIT_PYR_STP, x+162, y+308, 52, 16, DoubleToString(PyramidPips, 1));
+
    // Close buttons
-   CreateButton(BTN_CLOSE_ALL, x+8,   y+307, 66, 18, "Close ALL",
+   CreateButton(BTN_CLOSE_ALL, x+8,   y+331, 66, 18, "Close ALL",
                 C'50,20,20', C'255,100,100', C'100,40,40', 7);
-   CreateButton(BTN_CLOSE_BUY, x+78,  y+307, 66, 18, "Close BUY",
+   CreateButton(BTN_CLOSE_BUY, x+78,  y+331, 66, 18, "Close BUY",
                 C'20,50,30', C'80,200,120',  C'40,100,60', 7);
-   CreateButton(BTN_CLOSE_SEL, x+148, y+307, 66, 18, "Close SELL",
+   CreateButton(BTN_CLOSE_SEL, x+148, y+331, 66, 18, "Close SELL",
                 C'50,20,20', C'255,80,80',   C'100,40,40', 7);
 
-   CreateSep("TLJ_L4", x+8, y+329, w-16);
+   CreateSep("TLJ_L4", x+8, y+353, w-16);
 
    // Pauza / Stop
-   CreateButton(BTN_PAUSE, x+8,   y+335, 100, 22, "⏸  Pauza",
+   CreateButton(BTN_PAUSE, x+8,   y+359, 100, 22, "⏸  Pauza",
                 C'30,45,61', C'122,139,153', C'45,63,80', 8);
-   CreateButton(BTN_STOP,  x+114, y+335, 100, 22, "⏹  Stop EA",
+   CreateButton(BTN_STOP,  x+114, y+359, 100, 22, "⏹  Stop EA",
                 C'61,26,26', C'255,71,87',   C'93,40,40', 8);
 
-   CreateLabel("TLJ_Link", x+10, y+363, "traderlogjournal.com", C'45,63,80', 7, false);
+   CreateLabel("TLJ_Link", x+10, y+387, "traderlogjournal.com", C'45,63,80', 7, false);
 
    ChartRedraw();
 }
@@ -443,7 +448,7 @@ void DeletePanel() {
       "TLJ_K1", "TLJ_K2", "TLJ_K3", "TLJ_K4", "TLJ_K5",
       "TLJ_PnL", "TLJ_Sent", "TLJ_Link",
       "TLJ_CalcHdr", "TLJ_RLbl", "TLJ_SLbl", "TLJ_TPLbl", "TLJ_LotLbl",
-      "TLJ_GNLbl", "TLJ_MxLbl"
+      "TLJ_GNLbl", "TLJ_MxLbl", "TLJ_StpLbl", EDIT_PYR_STP
    };
    for (int i = 0; i < ArraySize(objs); i++) ObjectDelete(0, objs[i]);
    ChartRedraw();
@@ -918,13 +923,15 @@ void CheckAutoPyramid() {
       if (maxLevels <= 0) maxLevels = PyramidMaxLevels;
       if (pyrCount >= maxLevels) continue;
 
-      // --- Faron Mode: krok = (TP - entry) / N ---
-      // Fallback na PyramidPips gdy brak TP lub PyramidDivisions <= 0
+      // Krok: panel Stp > 0 → override; inaczej Faron (TP/N) lub stały PyramidPips
+      double panelStp = StringToDouble(ObjectGetString(0, EDIT_PYR_STP, OBJPROP_TEXT));
       double stepPips;
-      if (PyramidDivisions >= 2 && parentTP > 0) {
+      if (panelStp > 0) {
+         stepPips = panelStp;
+      } else if (PyramidDivisions >= 2 && parentTP > 0) {
          double tpDist = MathAbs(parentTP - entry) / pipSz;
          stepPips = tpDist / PyramidDivisions;
-         if (stepPips < 1.0) stepPips = PyramidPips; // zabezpieczenie przed zerowaniem
+         if (stepPips < 1.0) stepPips = PyramidPips;
       } else {
          stepPips = PyramidPips;
       }
