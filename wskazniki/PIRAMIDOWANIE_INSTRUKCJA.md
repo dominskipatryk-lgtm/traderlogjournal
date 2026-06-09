@@ -180,45 +180,60 @@ PIRA to tryb gdzie EA **sam obserwuje zysk** otwartych pozycji i dokłada kolejn
 ### Jak używać
 
 1. Wypełnij kalkulator i otwórz pozycję przyciskiem **BUY** lub **SELL** (SIATKA musi być WYŁ)
-2. **Ustaw TP na pozycji** (w MT4 lub przy otwieraniu) — bez TP Faron Mode nie działa
-3. Opcjonalnie zmień pole **Mx** — maksymalna liczba dokładek (domyślnie wartość z parametrów EA)
+2. Opcjonalnie ustaw **TP na pozycji** (potrzebne do trybu Faron auto)
+3. Ustaw pola w panelu: **Mx** (max dokładek) i **Stp** (krok w pips, `0` = auto)
 4. Kliknij **PIRA** → zmienia się na **PIRA:WŁ 0x** (zielony)
 5. EA co kilka sekund sprawdza zysk każdej pozycji i dokłada automatycznie
 6. Kliknij ponownie żeby wyłączyć
 
-### Kiedy EA dokłada (Faron Mode — PyramidDivisions ≥ 2)
+### Trzy tryby pracy — jak ustalany jest krok dokładki
+
+| Tryb | Kiedy | Krok |
+|---|---|---|
+| **Faron auto** | `Stp=0` + TP na pozycji + `PyramidDivisions≥2` | `(TP − entry) ÷ PyramidDivisions` |
+| **Stały pips** | `Stp=0` + brak TP lub `PyramidDivisions=0` | `PyramidPips` z parametrów EA |
+| **Panel (override)** | `Stp > 0` (pole w panelu) | wartość z pola `Stp` — nadpisuje oba tryby |
 
 ```
-Krok = (TP − entry) ÷ PyramidDivisions
+Przykład: TP=120p, entry=1.1000, PyramidDivisions=4, Stp=0
+  Krok auto = 120÷4 = 30 pips
+  Dokładka L1 gdy zysk ≥ 30 pips
+  Dokładka L2 gdy zysk ≥ 60 pips
 
-Dokładka L1 gdy zysk ≥ 1 × krok
-Dokładka L2 gdy zysk ≥ 2 × krok
-...do PyramidMaxLevels (pole Mx) dokładek
+Przykład: Stp=20 (panel override, niezależnie od TP i parametrów)
+  Dokładka L1 gdy zysk ≥ 20 pips
+  Dokładka L2 gdy zysk ≥ 40 pips
 ```
 
-### Kiedy EA dokłada (tryb stały — PyramidDivisions = 0)
+### Kiedy używać którego trybu
 
-```
-Dokładka gdy zysk ≥ PyramidPips (np. co 20 pips zysku)
-```
+| Sytuacja | Tryb | Dlaczego |
+|---|---|---|
+| Masz wyraźny TP (S/R, struktura) | **Faron auto** | Krok = naturalny podział trasy, nie wchodzisz za blisko TP |
+| Nie wiesz dokąd pójdzie, grasz momentum | **Stały pips** lub **Panel** | Nie potrzebujesz TP — dokładasz co X pips zysku |
+| Chcesz szybko zmienić krok bez restartu EA | **Panel (Stp)** | Jedna cyfra w panelu, bez wchodzenia w parametry |
+| Skalpowanie / szybkie ruchy (10–20 pip) | **Panel Stp=10** lub **Stały PyramidPips=10** | Mały krok, szybkie zabezpieczenie |
 
 ### Mechanizm wspólnego SL (PyramidMoveSL = true)
 
-Gdy każda kolejna dokładka się otwiera, EA przesuwa **wszystkie** pozycje tej grupy na wspólny SL = wejście poprzedniej pozycji. Mechanika identyczna jak w SIATKA:
+Gdy każda kolejna dokładka się otwiera, EA przesuwa **wszystkie** pozycje tej grupy (parent + wszystkie Ln) na wspólny SL = wejście poprzedniej pozycji:
 
-| Zdarzenie | Wspólny SL | #1 (parent) | L1 | L2 | Net |
+| Zdarzenie | Wspólny SL | #1 (parent) | L1 | L2 | Net w worst case |
 |---|---|---|---|---|---|
-| Otwarto #1 (parent) | techniczny SL | −1% | — | — | **−1%** |
-| L1 otwarta (+1 krok zysku) | entry #1 | 0% (BE) | −1% | — | **−1%** |
-| L2 otwarta (+2 kroki zysku) | entry L1 | +1% | 0% (BE) | −1% | **0%** ← zero |
-| L3 otwarta (+3 kroki zysku) | entry L2 | +2% | +1% | 0% (BE) | **+2%** |
+| Otwarto #1 | techniczny SL | −1% | — | — | **−1%** |
+| L1 otwarta (+1 krok) | entry #1 | 0% (BE) | −1% | — | **−1%** |
+| L2 otwarta (+2 kroki) | entry L1 | +1% | 0% (BE) | −1% | **0%** ← zero |
+| L3 otwarta (+3 kroki) | entry L2 | +2% | +1% | 0% (BE) | **+2%** |
 
-> **Zero po L2** (drugiej dokładce) — od tego momentu nawet trafienie SL daje wynik ≥ 0%.
+> **Zero po L2** — po drugiej dokładce (trzecia pozycja w grupie) nawet trafienie SL daje wynik netto ≥ 0%. Działa w każdym z trzech trybów.
 
-### Co widać w panelu gdy PIRA jest włączona
+**Gdy SL zostaje trafiony:** MT4 zamyka automatycznie wszystkie pozycje grupy na tym samym poziomie cenowym (mają wspólny SL price). PIRA toggle pozostaje włączony — gdy otworzysz nową pozycję, EA zaczyna piramidować od nowa.
+
+### Co widać w panelu
 
 ```
-[PIRA:WŁ 2x]   ← zielony, 2 aktywne dokładki
+Mx:[2]  [PIRA:WŁ 2x]
+Krok PIRA pips (0=auto): [20.0]
 ```
 
 ---
@@ -253,18 +268,25 @@ Zasady:
 
 ---
 
-## 8. Parametry EA — sekcja Piramidowanie
+## 8. Parametry EA i pola panelu — PIRA
 
-Ustawiasz je raz w parametrach EA (dwuklik na EA → Inputs):
+### Pola panelu (zmieniane na żywo, bez restartu EA)
+
+| Pole | Opis |
+|---|---|
+| **Mx** | Maksymalna liczba dokładek per pozycja (domyślnie = `PyramidMaxLevels`) |
+| **Stp** (Krok PIRA pips) | `0` = tryb auto (Faron lub stały pips). `>0` = stały krok override — EA dokłada co tyle pipsów zysku, niezależnie od TP i parametrów |
+
+### Parametry EA (wymagają restartu — dwuklik na EA → Inputs)
 
 | Parametr | Domyślnie | Opis |
 |---|---|---|
 | `AutoPyramid` | `false` | Czy PIRA startuje włączone przy każdym uruchomieniu EA |
 | `PyramidDivisions` | `4` | Faron Mode: dzieli Entry→TP na N równych części. `0` = tryb stały pipsów |
-| `PyramidMaxLevels` | `2` | Maksymalna liczba dokładek PIRA na jedną pozycję |
+| `PyramidMaxLevels` | `2` | Domyślny max dokładek (można zmienić polem Mx bez restartu) |
 | `PyramidRiskPct` | `0.5` | Ryzyko % każdej dokładki PIRA i ADD. `0` = pobiera z pola Ryzyko % |
-| `PyramidMoveSL` | `true` | Czy przesuwać SL poprzedniej pozycji na BE po każdej dokładce |
-| `PyramidPips` | `20.0` | Próg dokładki gdy `PyramidDivisions=0` lub brak TP na pozycji |
+| `PyramidMoveSL` | `true` | Wspólny SL po każdej dokładce (`true` = zalecane) |
+| `PyramidPips` | `20.0` | Krok gdy `Stp=0` i `PyramidDivisions=0` lub brak TP. Domyślna wartość pola Stp przy starcie |
 
 ---
 
@@ -318,33 +340,58 @@ Zarządzanie ryzykiem:
   Po #4: net = +2% gwarantowane przy trafieniu SL
 ```
 
-### PIRA — agresywna (3 dokładki)
+### PIRA tryb 1 — Faron auto z TP (zalecany dla swing trade)
 
 ```
-PyramidDivisions  = 4
-PyramidMaxLevels  = 3
-PyramidRiskPct    = 1.0
-PyramidMoveSL     = true
+Kalkulator:       Ryzyko% = 1.0 | SL = 40 pips | TP = 120 pips
+Parametry EA:     PyramidDivisions=4, PyramidRiskPct=1.0, PyramidMoveSL=true
+Panel:            Mx=3, Stp=0 (auto)
+
+Krok auto = 120÷4 = 30 pips
+Lot każdej dokładki = CalcLot(1%, 30 pip)
+
+L1 otwarta po +30 pip zysku  → wspólny SL → entry#1 (BE)  | net: -1%
+L2 otwarta po +60 pip zysku  → wspólny SL → entry L1      | net:  0%  ← zero
+L3 otwarta po +90 pip zysku  → wspólny SL → entry L2      | net: +2%  ← gwarantowany zysk
+
+Przy pełnym TP (120 pip): parent≈4% + L1≈3% + L2≈2% + L3≈1% = 10%
 ```
 
-### PIRA — konserwatywna (1 dokładka)
+### PIRA tryb 2 — panel override bez TP (momentum / bez planu)
 
 ```
-PyramidDivisions  = 3
-PyramidMaxLevels  = 1
-PyramidRiskPct    = 0.5
-PyramidMoveSL     = true
+Kalkulator:       Ryzyko% = 1.0 | SL = 40 pips
+Panel:            Mx=3, Stp=20 (override — dokładka co 20 pips)
+(TP nie wymagany — EA używa Stp zamiast TP/N)
+
+L1 otwarta po +20 pip zysku  → wspólny SL → entry#1 | net: -1%
+L2 otwarta po +40 pip zysku  → wspólny SL → entry L1 | net:  0%  ← zero
+L3 otwarta po +60 pip zysku  → wspólny SL → entry L2 | net: +2%
+
+Gdy SL zostanie trafiony → MT4 zamyka wszystkie pozycje grupy automatycznie.
 ```
 
-### PIRA — bez TP (stały krok pipsów)
+### PIRA tryb 3 — konserwatywna (1 dokładka, niskie ryzyko)
 
 ```
-PyramidDivisions  = 0
-PyramidPips       = 30.0
-PyramidMaxLevels  = 2
-PyramidRiskPct    = 0.5
+Parametry EA:     PyramidDivisions=4, PyramidRiskPct=0.5, PyramidMaxLevels=1
+Panel:            Mx=1, Stp=0 (auto)
+
+Jedna dokładka L1 co 1 krok zysku, ryzykuje 0.5% konta.
+Po L1: wspólny SL → entry#1 (BE parent). Net = -0.5%.
+Prosta ochrona bez agresywnej piramidy.
 ```
-Dokładka co 30 pipsów zysku, niezależnie od poziomu TP.
+
+### PIRA tryb 4 — skalpowanie (małe kroki, szybkie zabezpieczenie)
+
+```
+Panel:    Mx=3, Stp=10 (dokładka co 10 pips)
+Ryzyko%:  0.5 per dokładka
+
+L1 po +10 pip → wspólny SL → entry#1 | net: -0.5%
+L2 po +20 pip → wspólny SL → entry L1 | net:  0%  ← zero już po 20 pipach!
+L3 po +30 pip → wspólny SL → entry L2 | net: +0.5%
+```
 
 ---
 
