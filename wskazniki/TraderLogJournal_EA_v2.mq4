@@ -624,23 +624,17 @@ int GridLevelFromComment(string comment) {
    return (int)StringToInteger(rest);
 }
 
-// Zwraca ticket otwartej pozycji siatki w tym samym kierunku,
-// otwartej najkrócej przed openedAt (czyli bezpośredni poprzednik).
-long FindPrevGridOrder(int dir, datetime openedAt) {
-   long     best     = 0;
-   datetime bestTime = 0;
+// Zwraca ticket pozycji siatki o poziomie (targetLevel - 1).
+// Szukamy po numerze w komentarzu, NIE po czasie — wszystkie zlecenia
+// siatki mają ten sam OrderOpenTime() bo zostały złożone w jednej pętli.
+long FindPrevGridOrder(int dir, int targetLevel) {
    for (int i = 0; i < OrdersTotal(); i++) {
       if (!OrderSelect(i, SELECT_BY_POS, MODE_TRADES)) continue;
       if (OrderType() != dir)                           continue;
       if (OrderMagicNumber() != MagicNumber)            continue;
-      if (StringFind(OrderComment(), "TLJ_GRID_") < 0) continue;
-      if (OrderOpenTime() >= openedAt)                  continue;
-      if (OrderOpenTime() > bestTime) {
-         bestTime = OrderOpenTime();
-         best     = OrderTicket();
-      }
+      if (GridLevelFromComment(OrderComment()) == targetLevel - 1) return OrderTicket();
    }
-   return best;
+   return 0;
 }
 
 void CheckGridFills() {
@@ -697,13 +691,12 @@ void CheckGridFills() {
 
       // Nowe wypełnienie — przesuń SL poprzedniej pozycji siatki na BE
       if (!OrderSelect((int)currentOpen[j], SELECT_BY_TICKET, MODE_TRADES)) continue;
-      int      myLevel = GridLevelFromComment(OrderComment());
-      datetime myTime  = OrderOpenTime();
-      int      myType  = OrderType();
+      int myLevel = GridLevelFromComment(OrderComment());
+      int myType  = OrderType();
 
       if (myLevel <= 1) continue; // pierwsze zlecenie nie ma poprzednika
 
-      long prevTicket = FindPrevGridOrder(myType, myTime);
+      long prevTicket = FindPrevGridOrder(myType, myLevel);
       if (prevTicket > 0) {
          bool moved = MoveSLtoBreakEven(prevTicket);
          Print("TLJ [GRID FILL] Poziom ", myLevel, " (ticket #", currentOpen[j],
