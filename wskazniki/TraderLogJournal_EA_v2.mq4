@@ -23,6 +23,7 @@ input int      MagicNumber         = 202601;   // Magic zleceń z panelu (0 = ś
 input int      Sync_History_Days   = 0;        // 0 = wyłącz; np. 30 = sync ostatnich 30 dni
 input double   DefaultRiskPct      = 1.0;      // Domyślne ryzyko % (kalkulator)
 input double   DefaultSLPips       = 20.0;     // Domyślny SL w pipsach (kalkulator)
+input int      PipMultiplier       = 1;        // Mnożnik pipsa: 1=forex, 10=złoto 2-cyfrowe (XAU), inne CFD
 
 // --- Piramidowanie ---
 input bool     AutoPyramid        = false;    // Auto-piramidowanie gdy pozycja na +X pips
@@ -450,6 +451,14 @@ void DeletePanel() {
 }
 
 //+------------------------------------------------------------------+
+double GetPipSize(string sym) {
+   double pt = MarketInfo(sym, MODE_POINT);
+   int    dg = (int)MarketInfo(sym, MODE_DIGITS);
+   double base = (dg == 5 || dg == 3) ? pt * 10.0 : pt;
+   return base * PipMultiplier;
+}
+
+//+------------------------------------------------------------------+
 // KALKULATOR LOTA
 //+------------------------------------------------------------------+
 double CalcLot(double riskPct, double slPips) {
@@ -459,10 +468,7 @@ double CalcLot(double riskPct, double slPips) {
 
    double tickVal  = MarketInfo(Symbol(), MODE_TICKVALUE);
    double tickSize = MarketInfo(Symbol(), MODE_TICKSIZE);
-   double point    = MarketInfo(Symbol(), MODE_POINT);
-   int    digits   = (int)MarketInfo(Symbol(), MODE_DIGITS);
-   // 5/3-cyfrowi brokerzy: 1 pip = 10 punktów
-   double pipSz    = (digits == 5 || digits == 3) ? point * 10.0 : point;
+   double pipSz    = GetPipSize(Symbol());
    double pipVal   = tickVal * pipSz / tickSize;
    if (pipVal <= 0) return 0;
 
@@ -501,9 +507,8 @@ void OpenOrder(int orderType) {
    double lot = CalcLot(riskPct, slPips);
    if (lot <= 0) { Alert("TLJ: Błąd kalkulacji lota!"); return; }
 
-   double point  = MarketInfo(Symbol(), MODE_POINT);
    int    digits = (int)MarketInfo(Symbol(), MODE_DIGITS);
-   double pipSz  = (digits == 5 || digits == 3) ? point * 10.0 : point;
+   double pipSz  = GetPipSize(Symbol());
    double price, sl;
 
    if (orderType == OP_BUY) {
@@ -719,9 +724,8 @@ void PlaceGrid(int direction) {
    double lotPerOrder = MathFloor(totalLot / n / lstep) * lstep;
    lotPerOrder = MathMax(lmin, MathMin(lmax, lotPerOrder));
 
-   double point  = MarketInfo(Symbol(), MODE_POINT);
    int    digits = (int)MarketInfo(Symbol(), MODE_DIGITS);
-   double pipSz  = (digits == 5 || digits == 3) ? point * 10.0 : point;
+   double pipSz  = GetPipSize(Symbol());
 
    double basePrice, tp, sl;
    if (direction == OP_BUY) {
@@ -787,9 +791,8 @@ void OpenPyramidOrder(int orderType) {
    double lot = CalcLot(riskPct, slPips);
    if (lot <= 0) { Alert("TLJ: Błąd kalkulacji lota!"); return; }
 
-   double point  = MarketInfo(Symbol(), MODE_POINT);
    int    digits = (int)MarketInfo(Symbol(), MODE_DIGITS);
-   double pipSz  = (digits == 5 || digits == 3) ? point * 10.0 : point;
+   double pipSz  = GetPipSize(Symbol());
    double price, sl;
 
    if (orderType == OP_BUY) {
@@ -842,8 +845,7 @@ void CheckAutoPyramid() {
       double parentTP = OrderTakeProfit();
 
       int    digits = (int)MarketInfo(sym, MODE_DIGITS);
-      double pt     = MarketInfo(sym, MODE_POINT);
-      double pipSz  = (digits == 5 || digits == 3) ? pt * 10.0 : pt;
+      double pipSz  = GetPipSize(sym);
 
       double profitPips;
       if (dir == OP_BUY)
