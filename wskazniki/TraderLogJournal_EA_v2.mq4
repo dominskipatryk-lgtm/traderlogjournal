@@ -770,8 +770,9 @@ void PlaceGrid(int direction) {
          sl = (i == 0) ? NormalizeDouble(entryPrice + slPips   * pipSz, digits)
                        : NormalizeDouble(entryPrice + stepPips * pipSz, digits);
       }
-      // Wszystkie pozycje mają równy lot — SL chroni przez wspólny poziom
-      lot = MathFloor(CalcLot(riskPct, slPips) / lstep) * lstep;
+      // Każda pozycja ryzykuje 1% niezależnie: #1 wg slPips, #2+ wg stepPips
+      lot = (i == 0) ? CalcLot(riskPct, slPips) : CalcLot(riskPct, stepPips);
+      lot = MathFloor(lot / lstep) * lstep;
       lot = MathMax(lmin, MathMin(lmax, lot));
 
       string comment = "TLJ_GRID_" + IntegerToString(i + 1) + "of" + IntegerToString(n);
