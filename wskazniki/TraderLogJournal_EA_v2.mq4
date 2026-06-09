@@ -640,6 +640,29 @@ void CheckGridFills() {
       return;
    }
 
+   // Wykryj zamknięte pozycje siatki (były w _gridOpenTickets, nie ma w currentOpen)
+   bool anyClosed = false;
+   for (int k = 0; k < ArraySize(_gridOpenTickets); k++) {
+      bool stillOpen = false;
+      for (int j = 0; j < ArraySize(currentOpen); j++) {
+         if (_gridOpenTickets[k] == currentOpen[j]) { stillOpen = true; break; }
+      }
+      if (!stillOpen) { anyClosed = true; break; }
+   }
+   if (anyClosed) {
+      int deleted = 0;
+      for (int i = OrdersTotal() - 1; i >= 0; i--) {
+         if (!OrderSelect(i, SELECT_BY_POS, MODE_TRADES)) continue;
+         if (OrderType() < 2)                              continue;
+         if (OrderMagicNumber() != MagicNumber)            continue;
+         if (StringFind(OrderComment(), "TLJ_GRID_") < 0) continue;
+         if (OrderDelete(OrderTicket())) deleted++;
+      }
+      if (deleted > 0)
+         Print("TLJ [GRID SL] Pozycja siatki zamknięta → skasowano ", deleted, " pending orders");
+      _gridInitialized = false;
+   }
+
    // Wykryj nowo wypełnione (są w currentOpen, nie ma w _gridOpenTickets)
    for (int j = 0; j < ArraySize(currentOpen); j++) {
       bool isNew = true;
