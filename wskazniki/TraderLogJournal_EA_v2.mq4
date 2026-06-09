@@ -694,14 +694,24 @@ void CheckGridFills() {
       int myLevel = GridLevelFromComment(OrderComment());
       int myType  = OrderType();
 
-      if (myLevel <= 1) continue; // pierwsze zlecenie nie ma poprzednika
+      if (myLevel <= 1) continue;
 
+      // Wspólny SL = entry poprzedniej pozycji → przesuń WSZYSTKIE otwarte TLJ_GRID_*
       long prevTicket = FindPrevGridOrder(myType, myLevel);
-      if (prevTicket > 0) {
-         bool moved = MoveSLtoBreakEven(prevTicket);
-         Print("TLJ [GRID FILL] Poziom ", myLevel, " (ticket #", currentOpen[j],
-               ") wypełniony → SL #", prevTicket,
-               moved ? " → BE" : " (już na BE lub błąd)");
+      if (prevTicket > 0 && OrderSelect((int)prevTicket, SELECT_BY_TICKET, MODE_TRADES)) {
+         double commonSL = OrderOpenPrice();
+         int    digits   = (int)MarketInfo(Symbol(), MODE_DIGITS);
+         int    cnt      = 0;
+         for (int m = 0; m < OrdersTotal(); m++) {
+            if (!OrderSelect(m, SELECT_BY_POS, MODE_TRADES))  continue;
+            if (OrderType() != myType)                         continue;
+            if (OrderMagicNumber() != MagicNumber)             continue;
+            if (StringFind(OrderComment(), "TLJ_GRID_") < 0)  continue;
+            if (MathAbs(OrderStopLoss() - commonSL) < Point)  continue;
+            if (OrderModify(OrderTicket(), OrderOpenPrice(), commonSL, OrderTakeProfit(), 0, clrNone)) cnt++;
+         }
+         Print("TLJ [GRID FILL] Poziom ", myLevel, " → wspólny SL=",
+               DoubleToString(commonSL, digits), " (przesunięto ", cnt, " SL)");
       }
    }
 
@@ -712,7 +722,7 @@ void CheckGridFills() {
 // SIATKA ZLECEŃ
 // Pierwsze zlecenie: market (BUY/SELL), kolejne N-1: STOP w kierunku transakcji (Faron Mode).
 // TP i SL to stałe poziomy cenowe obliczone od entry 1.
-// Faron Mode: #1 ryzykuje slPips; #2-N ryzykują stepPips każde (SL = wejście poprzedniego).
+// Faron Mode: równe loty (slPips). Gdy N-ta wchodzi → WSZYSTKIE SL → entry (N-1).
 //+------------------------------------------------------------------+
 void PlaceGrid(int direction) {
    double riskPct = StringToDouble(ObjectGetString(0, EDIT_RISK,   OBJPROP_TEXT));
@@ -760,8 +770,8 @@ void PlaceGrid(int direction) {
          sl = (i == 0) ? NormalizeDouble(entryPrice + slPips   * pipSz, digits)
                        : NormalizeDouble(entryPrice + stepPips * pipSz, digits);
       }
-      lot = (i == 0) ? CalcLot(riskPct, slPips) : CalcLot(riskPct, stepPips);
-      lot = MathFloor(lot / lstep) * lstep;
+      // Wszystkie pozycje mają równy lot — SL chroni przez wspólny poziom
+      lot = MathFloor(CalcLot(riskPct, slPips) / lstep) * lstep;
       lot = MathMax(lmin, MathMin(lmax, lot));
 
       string comment = "TLJ_GRID_" + IntegerToString(i + 1) + "of" + IntegerToString(n);
