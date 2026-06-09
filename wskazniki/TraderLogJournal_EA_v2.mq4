@@ -23,7 +23,6 @@ input int      MagicNumber         = 202601;   // Magic zleceń z panelu (0 = ś
 input int      Sync_History_Days   = 0;        // 0 = wyłącz; np. 30 = sync ostatnich 30 dni
 input double   DefaultRiskPct      = 1.0;      // Domyślne ryzyko % (kalkulator)
 input double   DefaultSLPips       = 20.0;     // Domyślny SL w pipsach (kalkulator)
-input int      PipMultiplier       = 1;        // Mnożnik pipsa: 1=forex, 10=złoto 2-cyfrowe (XAU), inne CFD
 
 // --- Piramidowanie ---
 input bool     AutoPyramid        = false;    // Auto-piramidowanie gdy pozycja na +X pips
@@ -451,11 +450,31 @@ void DeletePanel() {
 }
 
 //+------------------------------------------------------------------+
+// Auto-wykrywanie rozmiaru pipsa dla KAŻDEGO instrumentu:
+//   Nieparzyste digits (5,3,1) = broker fractional pip → ×10
+//   Parzyste digits + metal (XAU/XAG/XPT/XPD) = 2-decimal metals → ×10
+//   Wszystko inne (4-digit forex, 2-digit JPY, indeksy, ropa, krypto) → point
+//+------------------------------------------------------------------+
 double GetPipSize(string sym) {
    double pt = MarketInfo(sym, MODE_POINT);
    int    dg = (int)MarketInfo(sym, MODE_DIGITS);
-   double base = (dg == 5 || dg == 3) ? pt * 10.0 : pt;
-   return base * PipMultiplier;
+
+   // Nieparzyste cyfry po przecinku = broker ułamkowy pip (5d forex, 3d JPY, 1d indeksy)
+   if (dg % 2 == 1) return pt * 10.0;
+
+   // Parzyste cyfry: metale szlachetne z 2 miejscami dziesiętnymi (np. XAUUSD 1850.45)
+   // Na tych instrumentach 1 pip konwencjonalnie = 10 punktów
+   if (dg == 2) {
+      string u = sym;
+      StringToUpper(u);
+      if (StringFind(u, "XAU")  >= 0 || StringFind(u, "XAG")  >= 0 ||
+          StringFind(u, "XPT")  >= 0 || StringFind(u, "XPD")  >= 0 ||
+          StringFind(u, "GOLD") >= 0 || StringFind(u, "SILVER") >= 0)
+         return pt * 10.0;
+   }
+
+   // Wszystko inne: punkt = pip (4-digit forex, 2-digit JPY, 0/2-digit indeksy, ropa, krypto)
+   return pt;
 }
 
 //+------------------------------------------------------------------+
