@@ -183,7 +183,7 @@ PIRA to tryb gdzie EA **sam obserwuje zysk** otwartych pozycji i dokłada kolejn
 2. **Ustaw TP na pozycji** (w MT4 lub przy otwieraniu) — bez TP Faron Mode nie działa
 3. Opcjonalnie zmień pole **Mx** — maksymalna liczba dokładek (domyślnie wartość z parametrów EA)
 4. Kliknij **PIRA** → zmienia się na **PIRA:WŁ 0x** (zielony)
-5. EA co `CheckEvery` sekund sprawdza zysk każdej pozycji i dokłada automatycznie
+5. EA co kilka sekund sprawdza zysk każdej pozycji i dokłada automatycznie
 6. Kliknij ponownie żeby wyłączyć
 
 ### Kiedy EA dokłada (Faron Mode — PyramidDivisions ≥ 2)
@@ -193,7 +193,7 @@ Krok = (TP − entry) ÷ PyramidDivisions
 
 Dokładka L1 gdy zysk ≥ 1 × krok
 Dokładka L2 gdy zysk ≥ 2 × krok
-...do PyramidMaxLevels dokładek
+...do PyramidMaxLevels (pole Mx) dokładek
 ```
 
 ### Kiedy EA dokłada (tryb stały — PyramidDivisions = 0)
@@ -201,6 +201,19 @@ Dokładka L2 gdy zysk ≥ 2 × krok
 ```
 Dokładka gdy zysk ≥ PyramidPips (np. co 20 pips zysku)
 ```
+
+### Mechanizm wspólnego SL (PyramidMoveSL = true)
+
+Gdy każda kolejna dokładka się otwiera, EA przesuwa **wszystkie** pozycje tej grupy na wspólny SL = wejście poprzedniej pozycji. Mechanika identyczna jak w SIATKA:
+
+| Zdarzenie | Wspólny SL | #1 (parent) | L1 | L2 | Net |
+|---|---|---|---|---|---|
+| Otwarto #1 (parent) | techniczny SL | −1% | — | — | **−1%** |
+| L1 otwarta (+1 krok zysku) | entry #1 | 0% (BE) | −1% | — | **−1%** |
+| L2 otwarta (+2 kroki zysku) | entry L1 | +1% | 0% (BE) | −1% | **0%** ← zero |
+| L3 otwarta (+3 kroki zysku) | entry L2 | +2% | +1% | 0% (BE) | **+2%** |
+
+> **Zero po L2** (drugiej dokładce) — od tego momentu nawet trafienie SL daje wynik ≥ 0%.
 
 ### Co widać w panelu gdy PIRA jest włączona
 
@@ -216,24 +229,27 @@ Jednorazowe dodanie pozycji do już otwartego trade'a — bez czekania na próg.
 
 | Przycisk | Działanie |
 |---|---|
-| **+ADD BUY** | Otwiera market BUY z ryzykiem `PyramidRiskPct` i SL z pola kalkulatora. Jeśli `PyramidMoveSL=true` → SL ostatniej pozycji BUY przesuwa się na BE |
+| **+ADD BUY** | Otwiera market BUY z ryzykiem `PyramidRiskPct` i SL z pola kalkulatora |
 | **+ADD SELL** | Jak wyżej, dla SELL |
+
+Jeśli `PyramidMoveSL=true` (domyślnie) → po otwarciu EA przesuwa **wszystkie** otwarte pozycje tego kierunku na wspólny SL = wejście poprzedniej pozycji. Identyczna mechanika jak SIATKA i PIRA.
 
 > Przydatne gdy widzisz silny momentum i chcesz ręcznie zdecydować o dokładce zamiast czekać na automatyczny próg.
 
 ---
 
-## 7. Mechanizm Break-Even (auto SL)
+## 7. Mechanizm wspólnego SL (auto)
 
-We wszystkich trzech trybach (SIATKA, PIRA, ADD) działa ten sam mechanizm:
+We wszystkich trzech trybach (SIATKA, PIRA, ADD) działa **ta sama** logika:
 
-**Gdy nowa pozycja zostaje otwarta/wypełniona → SL poprzedniej pozycji automatycznie przesuwa się na jej cenę wejścia.**
+**Gdy nowa pozycja zostaje otwarta/wypełniona → WSZYSTKIE pozycje z grupy przesuwają SL na ten sam wspólny poziom = cena wejścia poprzedniej pozycji.**
 
 Zasady:
-- SL przesuwa się **tylko do przodu** — nigdy w złą stronę
-- Jeśli SL poprzedniej pozycji jest już na BE lub lepiej → nie zmienia się
-- Dla PIRA steruje tym parametr `PyramidMoveSL = true/false`
-- Dla SIATKI i ADD — zawsze aktywne
+- Wspólny SL przesuwa się **tylko w kierunku zysku** — nigdy w złą stronę
+- Wszystkie pozycje grupy mają **ten sam SL** po każdym przesunięciu
+- Dla PIRA i ADD steruje tym parametr `PyramidMoveSL = true/false`
+- Dla SIATKI — zawsze aktywne
+- Gwarantuje **zero strat po 3. pozycji** (gdy każda pozycja ryzykuje 1 krok)
 
 ---
 

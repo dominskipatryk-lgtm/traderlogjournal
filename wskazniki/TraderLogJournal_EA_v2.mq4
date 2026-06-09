@@ -611,6 +611,26 @@ long FindPrevOrder(int dir, long excludeTicket) {
    return best;
 }
 
+// Przesuń SL parenta i wszystkich jego dokładek PIRA na wspólny poziom.
+void MoveAllPyrSLToCommon(long parentTicket, int dir, double commonSL) {
+   string tag = "TLJ_PYR_" + IntegerToString(parentTicket);
+   int    dg  = (int)MarketInfo(Symbol(), MODE_DIGITS);
+   int    cnt = 0;
+   for (int i = 0; i < OrdersTotal(); i++) {
+      if (!OrderSelect(i, SELECT_BY_POS, MODE_TRADES))  continue;
+      if (OrderType()        != dir)                     continue;
+      if (OrderMagicNumber() != MagicNumber)             continue;
+      bool isParent = (OrderTicket() == (int)parentTicket);
+      bool isPyr    = (StringFind(OrderComment(), tag) >= 0);
+      if (!isParent && !isPyr)                           continue;
+      if (MathAbs(OrderStopLoss() - commonSL) < Point)  continue;
+      if (OrderModify(OrderTicket(), OrderOpenPrice(), commonSL, OrderTakeProfit(), 0, clrNone)) cnt++;
+   }
+   if (cnt > 0)
+      Print("TLJ [PYR SL] wspólny SL=", DoubleToString(commonSL, dg),
+            " parent=#", parentTicket, " (", cnt, " pozycji)");
+}
+
 //+------------------------------------------------------------------+
 // SIATKA — wykrywanie wypełnionych LIMIT-ów i przesunięcie SL na BE
 //+------------------------------------------------------------------+
@@ -832,10 +852,24 @@ void OpenPyramidOrder(int orderType) {
    } else {
       Print("TLJ [ADD ", (orderType == OP_BUY ? "BUY" : "SELL"), "]",
             " lot=", lot, " sl=", sl, " ticket=", ticket);
-      // Przesuń SL poprzedniej pozycji na BE
+      // Wspólny SL = entry poprzedniej → przesuń WSZYSTKIE pozycje tego kierunku
       if (PyramidMoveSL) {
          long prev = FindPrevOrder(orderType, (long)ticket);
-         if (prev > 0) MoveSLtoBreakEven(prev);
+         if (prev > 0 && OrderSelect((int)prev, SELECT_BY_TICKET, MODE_TRADES)) {
+            double commonSL = OrderOpenPrice();
+            int    dg       = (int)MarketInfo(Symbol(), MODE_DIGITS);
+            int    cnt      = 0;
+            for (int m = 0; m < OrdersTotal(); m++) {
+               if (!OrderSelect(m, SELECT_BY_POS, MODE_TRADES))  continue;
+               if (OrderType()        != orderType)               continue;
+               if (OrderMagicNumber() != MagicNumber)             continue;
+               if (OrderTicket()      == ticket)                  continue;
+               if (MathAbs(OrderStopLoss() - commonSL) < Point)  continue;
+               if (OrderModify(OrderTicket(), OrderOpenPrice(), commonSL, OrderTakeProfit(), 0, clrNone)) cnt++;
+            }
+            if (cnt > 0)
+               Print("TLJ [ADD SL] wspólny SL=", DoubleToString(commonSL, dg), " (", cnt, " pozycji)");
+         }
       }
    }
 }
@@ -926,21 +960,18 @@ void CheckAutoPyramid() {
          Print("TLJ [PYRAMID L", pyrCount + 1, "] parent=#", ticket,
                " new=#", newTicket, " lot=", lot,
                " zysk=", DoubleToString(profitPips, 1), " pips");
-         // Przesuń SL poprzedniej pozycji na BE (Faron Mode)
+         // Wspólny SL = entry poprzedniej → przesuń parenta i WSZYSTKIE jego dokładki
          if (PyramidMoveSL) {
             long prevTicket = ticket; // domyślnie parent
             if (pyrCount > 0) {
-               // Szukaj L{pyrCount} — ostatnia dokładka przed obecną
                string prevTag = tag + "_L" + IntegerToString(pyrCount);
                for (int k = 0; k < OrdersTotal(); k++) {
                   if (!OrderSelect(k, SELECT_BY_POS, MODE_TRADES)) continue;
-                  if (StringFind(OrderComment(), prevTag) >= 0) {
-                     prevTicket = OrderTicket();
-                     break;
-                  }
+                  if (StringFind(OrderComment(), prevTag) >= 0) { prevTicket = OrderTicket(); break; }
                }
             }
-            MoveSLtoBreakEven(prevTicket);
+            if (OrderSelect((int)prevTicket, SELECT_BY_TICKET, MODE_TRADES))
+               MoveAllPyrSLToCommon(ticket, dir, OrderOpenPrice());
          }
       } else
          Print("TLJ [PYRAMID] Błąd err=", GetLastError(), " parent=#", ticket);
