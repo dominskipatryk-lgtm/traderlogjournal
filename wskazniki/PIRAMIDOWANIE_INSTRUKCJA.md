@@ -275,10 +275,24 @@ Ustawiasz je raz w parametrach EA (dwuklik na EA → Inputs):
 | **Kiedy wejścia** | Od razu — wszystkie pending orders widoczne w MT4 | Stopniowo — EA otwiera market gdy zysk osiągnie próg |
 | **Typ zleceń** | BUY STOP / SELL STOP (pending) | Market (natychmiastowe) |
 | **Kontrola** | Pełna — widzisz wszystko z góry, możesz usunąć | Automatyczna — EA decyduje sam |
+| **Lot** | Równy dla wszystkich = `CalcLot(1%, krok)` | Parent = `CalcLot(Ryzyko%, SL)`, dokładki = `CalcLot(PyrRisk%, krok)` |
 | **Wymaga TP na pozycji** | Nie (TP wpisujesz w kalkulatorze) | Tak (Faron Mode) lub nie (tryb stały pipsów) |
 | **Włączanie** | Kliknij SIATKA:WYŁ → WŁ, potem GRID BUY/SELL | Kliknij PIRA → WŁ (po otwarciu pozycji) |
 | **Anulowanie** | Usuń pending orders; kliknij SIATKA:WŁ → WYŁ | Kliknij PIRA:WŁ żeby wyłączyć |
-| **Najlepsze gdy** | Pewny setup, chcesz mieć gotowy plan | Nie wiesz jak daleko pójdzie ruch, wolisz reagować |
+| **Najlepsze gdy** | Wiesz dokąd idzie rynek, chcesz plan z góry | Nie wiesz jak daleko pójdzie ruch, wolisz reagować |
+
+### Mechanika SL — identyczna w obu trybach
+
+**Różnica jest tylko w sposobie wejścia. Matematyka ryzyka jest taka sama:**
+
+| Zdarzenie | Wspólny SL | Poz. 1 | Poz. 2 | Poz. 3 | Net |
+|---|---|---|---|---|---|
+| Otwarto poz. 1 | techniczny SL | −1% | — | — | **−1%** |
+| Poz. 2 otwarta (+1 krok) | entry poz. 1 | 0% BE | −1% | — | **−1%** |
+| Poz. 3 otwarta (+2 kroki) | entry poz. 2 | +1% | 0% BE | −1% | **0%** ← zero |
+| Poz. 4 otwarta (+3 kroki) | entry poz. 3 | +2% | +1% | 0% BE | **+2%** |
+
+> **Po 3. pozycji zawsze jesteś na zero** — niezależnie czy używasz SIATKI, PIRY czy ADD.
 
 ---
 
