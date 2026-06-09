@@ -712,7 +712,7 @@ void CheckGridFills() {
 // SIATKA ZLECEŃ
 // Pierwsze zlecenie: market (BUY/SELL), kolejne N-1: STOP w kierunku transakcji (Faron Mode).
 // TP i SL to stałe poziomy cenowe obliczone od entry 1.
-// Lot całkowity z kalkulatora podzielony po równo na N zleceń.
+// Faron Mode: #1 ryzykuje slPips; #2-N ryzykują stepPips każde (SL = wejście poprzedniego).
 //+------------------------------------------------------------------+
 void PlaceGrid(int direction) {
    double riskPct = StringToDouble(ObjectGetString(0, EDIT_RISK,   OBJPROP_TEXT));
@@ -727,47 +727,45 @@ void PlaceGrid(int direction) {
    // Krok = TP ÷ N (przestrzeń Entry→TP dzielona na N równych części)
    double stepPips = tpPips / n;
 
-   double totalLot = CalcLot(riskPct, slPips);
-   if (totalLot <= 0) { Alert("TLJ Siatka: Błąd kalkulacji lota"); return; }
-
-   double lstep = MarketInfo(Symbol(), MODE_LOTSTEP);
-   double lmin  = MarketInfo(Symbol(), MODE_MINLOT);
-   double lmax  = MarketInfo(Symbol(), MODE_MAXLOT);
-   double lotPerOrder = MathFloor(totalLot / n / lstep) * lstep;
-   lotPerOrder = MathMax(lmin, MathMin(lmax, lotPerOrder));
+   double lstep  = MarketInfo(Symbol(), MODE_LOTSTEP);
+   double lmin   = MarketInfo(Symbol(), MODE_MINLOT);
+   double lmax   = MarketInfo(Symbol(), MODE_MAXLOT);
 
    int    digits = (int)MarketInfo(Symbol(), MODE_DIGITS);
    double pipSz  = GetPipSize(Symbol());
 
-   double basePrice, tp, sl;
+   double basePrice, tp;
    if (direction == OP_BUY) {
       basePrice = NormalizeDouble(Ask, digits);
-      tp = NormalizeDouble(basePrice + tpPips  * pipSz, digits);
-      sl = NormalizeDouble(basePrice - slPips  * pipSz, digits);
+      tp = NormalizeDouble(basePrice + tpPips * pipSz, digits);
    } else {
       basePrice = NormalizeDouble(Bid, digits);
-      tp = NormalizeDouble(basePrice - tpPips  * pipSz, digits);
-      sl = NormalizeDouble(basePrice + slPips  * pipSz, digits);
+      tp = NormalizeDouble(basePrice - tpPips * pipSz, digits);
    }
 
    int placed = 0;
    for (int i = 0; i < n; i++) {
-      double entryPrice;
-      int    orderType;
+      double entryPrice = 0, sl = 0, lot = 0;
+      int    orderType  = 0;
 
-      // Faron Mode: wejścia idą W KIERUNKU transakcji (dokładamy do zysku)
-      // BUY: kolejne zlecenia WYŻEJ (BUY STOP) — cena musi rosnąć żeby je wypełnić
-      // SELL: kolejne zlecenia NIŻEJ (SELL STOP) — cena musi spadać żeby je wypełnić
+      // Faron Mode (wg Pawła): #1 → pełny SL; #2+ → SL = wejście poprzedniego (= 1 krok = BE #prev)
       if (direction == OP_BUY) {
          entryPrice = NormalizeDouble(basePrice + i * stepPips * pipSz, digits);
          orderType  = (i == 0) ? OP_BUY : OP_BUYSTOP;
+         sl = (i == 0) ? NormalizeDouble(entryPrice - slPips   * pipSz, digits)
+                       : NormalizeDouble(entryPrice - stepPips * pipSz, digits);
       } else {
          entryPrice = NormalizeDouble(basePrice - i * stepPips * pipSz, digits);
          orderType  = (i == 0) ? OP_SELL : OP_SELLSTOP;
+         sl = (i == 0) ? NormalizeDouble(entryPrice + slPips   * pipSz, digits)
+                       : NormalizeDouble(entryPrice + stepPips * pipSz, digits);
       }
+      lot = (i == 0) ? CalcLot(riskPct, slPips) : CalcLot(riskPct, stepPips);
+      lot = MathFloor(lot / lstep) * lstep;
+      lot = MathMax(lmin, MathMin(lmax, lot));
 
       string comment = "TLJ_GRID_" + IntegerToString(i + 1) + "of" + IntegerToString(n);
-      int ticket = OrderSend(Symbol(), orderType, lotPerOrder, entryPrice, 3,
+      int ticket = OrderSend(Symbol(), orderType, lot, entryPrice, 3,
                              sl, tp, comment, MagicNumber, 0,
                              direction == OP_BUY ? clrLime : clrRed);
       if (ticket < 0) {
@@ -782,11 +780,10 @@ void PlaceGrid(int direction) {
             orderType==OP_BUYSTOP?"BUY_STOP":"SELL_STOP")),
             " entry=", DoubleToString(entryPrice, digits),
             " sl=", DoubleToString(sl, digits), " tp=", DoubleToString(tp, digits),
-            " lot=", DoubleToString(lotPerOrder, 2), " ticket=", ticket);
+            " lot=", DoubleToString(lot, 2), " ticket=", ticket);
    }
 
-   Print("TLJ [GRID] Gotowe: ", placed, " zleceń po ", DoubleToString(lotPerOrder,2),
-         " lot, łącznie ", DoubleToString(lotPerOrder*placed,2), " lot");
+   Print("TLJ [GRID] Gotowe: ", placed, " zleceń (Faron Mode — każde 1% ryzyka niezależnie)");
 }
 
 //+------------------------------------------------------------------+
