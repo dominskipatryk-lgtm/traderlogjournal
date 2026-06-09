@@ -20,36 +20,53 @@
 
 ## 1. Co to jest Faron Mode
 
-Strategia piramidowania zysków — otwierasz pierwszą pozycję, a następnie dokładasz kolejne **w kierunku zysku** (nie na retrace). Przestrzeń od wejścia do TP dzielisz na równe części i przy każdym kolejnym przedziale otwierasz nową pozycję. SL poprzedniej przesuwa się na break-even.
+Strategia piramidowania zysków — otwierasz pierwszą pozycję, a następnie dokładasz kolejne **w kierunku zysku** (nie na retrace). Przestrzeń od wejścia do TP dzielisz na N równych kroków. Każda pozycja ryzykuje **1% konta** (lot liczony od kroku). Gdy kolejna pozycja wchodzi — **wszystkie** dotychczasowe SL przesuwają się na wspólny poziom = cena wejścia poprzedniej pozycji.
 
-**Mechanika zarządzania ryzykiem:**
+### Jak działają stop lossy (wspólny poziom)
 
-| Stan | Ryzyko łączne |
-|---|---|
-| 1 pozycja otwarta | 1% |
-| 2 pozycja otwarta → SL #1 na BE | nadal 1% |
-| 3 pozycja otwarta → SL #2 na BE | 0% (handlujesz "za darmo") |
-| 4 pozycja otwarta → SL #3 na BE | jesteś na zysku niezależnie od wyniku |
-
-**Przykład SELL, entry 1.3000, TP 1.2700, N=4 (krok = 75 pips):**
+Przykład SELL, N=4, krok=30 pip (TP=120 pip), każda pozycja ryzykuje 1%:
 
 ```
-Otwarcie:  SELL #1  @ 1.3000  SL 1.3050  TP 1.2700
-+75 pips:  SELL #2  @ 1.2925  SL 1.2925+krok  → SL #1 przesuwa się na 1.3000 (BE)
-+150 pips: SELL #3  @ 1.2850  SL 1.2850+krok  → SL #2 przesuwa się na 1.2925 (BE)
-+225 pips: SELL #4  @ 1.2775  SL 1.2775+krok  → SL #3 przesuwa się na 1.2850 (BE)
-+300 pips: TARGET — wszystkie pozycje zamknięte na TP 1.2700
+SELL #1 @ 1.1000  SL=1.1060 (techniczny)   TP=1.0880
+SELL #2 @ 1.0970  SL=1.1000 (= entry#1)    TP=1.0880
+SELL #3 @ 1.0940  SL=1.0970 (= entry#2)    TP=1.0880
+SELL #4 @ 1.0910  SL=1.0940 (= entry#3)    TP=1.0880
 ```
 
-**Wynik przy pełnej piramidzie (ryzykujesz 1%):**
+Gdy każda kolejna pozycja zostaje wypełniona → **WSZYSTKIE SL przesuwają się razem**:
 
-| Pozycja | Zysk |
-|---|---|
-| #1 (300 pips) | ~2% |
-| #2 (225 pips) | ~3% |
-| #3 (150 pips) | ~2% |
-| #4 (75 pips) | ~1% |
-| **Łącznie** | **~8% przy ryzyku 1%** → R:R 1:8 |
+| Zdarzenie | Wspólny SL | #1 | #2 | #3 | #4 | Net |
+|---|---|---|---|---|---|---|
+| Start — #1 otwarta | 1.1060 | −1% | — | — | — | **−1%** |
+| #2 wchodzi | 1.1000 | 0% (BE) | −1% | — | — | **−1%** |
+| #3 wchodzi | 1.0970 | +1% | 0% (BE) | −1% | — | **0%** ← zero |
+| #4 wchodzi | 1.0940 | +2% | +1% | 0% (BE) | −1% | **+2%** ← gwarantowany zysk |
+
+> **Zero po 3. pozycji** — od tego momentu nawet trafienie SL daje zysk netto ≥ 0%.
+
+### Wynik przy pełnym TP (N=4, krok = 1 jednostka ryzyka)
+
+Każda pozycja zarabia tyle kroków do TP ile ma przed sobą:
+
+| Pozycja | Kroki do TP | Zysk |
+|---|---|---|
+| #1 | 4 kroki | **4%** |
+| #2 | 3 kroki | **3%** |
+| #3 | 2 kroki | **2%** |
+| #4 | 1 krok | **1%** |
+| **Łącznie** | | **10% przy ryzyku 1%** → R:R **1:10** |
+
+### Porównanie — ile pozycji warto ustawić?
+
+| N pozycji | Zysk przy TP | Zero po | Wzór |
+|---|---|---|---|
+| 3 | **6%** | #3 | 3+2+1 |
+| **4** | **10%** | **#3** | **4+3+2+1** |
+| 5 | **15%** | #3 | 5+4+3+2+1 |
+| 6 | **21%** | #3 | 6+5+4+3+2+1 |
+
+> Wzór ogólny: `N × (N+1) / 2 %` przy ryzyku 1% na pozycję.
+> Bez względu na N — **zawsze jesteś na zero po 3. pozycji**.
 
 ---
 
@@ -124,29 +141,30 @@ Siatka stawia **wszystkie zlecenia naraz** jako pending STOP orders — widzisz 
 
 EA automatycznie oblicza **krok = TP ÷ N** i stawia zlecenia.
 
-### Co EA robi po kliknięciu GRID▲ (BUY, N=4, SL=30, TP=120)
+### Co EA robi po kliknięciu GRID BUY (N=4, SL=50, TP=120)
 
 ```
 Krok = 120 ÷ 4 = 30 pips
+Lot  = CalcLot(Ryzyko%, 30 pip)  ← jednakowy dla wszystkich
 
-Zlecenie 1: BUY market    @ Ask        SL = Ask−30p   TP = Ask+120p
-Zlecenie 2: BUY STOP      @ Ask+30p    SL = Ask−30p   TP = Ask+120p
-Zlecenie 3: BUY STOP      @ Ask+60p    SL = Ask−30p   TP = Ask+120p
-Zlecenie 4: BUY STOP      @ Ask+90p    SL = Ask−30p   TP = Ask+120p
+Zlecenie 1: BUY market  @ Ask       SL = Ask−50p        TP = Ask+120p
+Zlecenie 2: BUY STOP    @ Ask+30p   SL = Ask (=entry#1)  TP = Ask+120p
+Zlecenie 3: BUY STOP    @ Ask+60p   SL = Ask+30p (=entry#2) TP = Ask+120p
+Zlecenie 4: BUY STOP    @ Ask+90p   SL = Ask+60p (=entry#3) TP = Ask+120p
 ```
 
-- Wszystkie zlecenia mają **ten sam TP** (stały poziom cenowy)
-- Wszystkie zlecenia mają **ten sam SL** (stały poziom cenowy)
-- Lot na każde zlecenie = lot_całkowity ÷ N
+- Wszystkie zlecenia mają **ten sam TP** i **jednakowy lot** (liczony od kroku)
+- Każde zlecenie #2+ ma SL ustawiony na wejście poprzedniego (1 krok niżej)
+- Zlecenie #1 ma **techniczny SL** z pola kalkulatora (może być szerszy niż krok)
 
-### Automatyczne przesunięcie SL na BE
+### Automatyczne przesunięcie wspólnego SL
 
-Gdy każdy STOP się wypełni, EA automatycznie przesuwa SL poprzedniego zlecenia na jego cenę wejścia (break-even):
+Gdy każdy STOP się wypełni, EA przesuwa **wszystkie** otwarte pozycje siatki na ten sam wspólny poziom = cena wejścia poprzedniej pozycji:
 
 ```
-Zlecenie 2 wypełnione → SL zlecenia 1 przesuwa się na Ask (BE)
-Zlecenie 3 wypełnione → SL zlecenia 2 przesuwa się na Ask+30p (BE)
-Zlecenie 4 wypełnione → SL zlecenia 3 przesuwa się na Ask+60p (BE)
+Zlecenie 2 wypełnione → WSZYSTKIE SL → Ask       (= entry#1, BE dla #1)
+Zlecenie 3 wypełnione → WSZYSTKIE SL → Ask+30p   (= entry#2, BE dla #2, +1krok dla #1)
+Zlecenie 4 wypełnione → WSZYSTKIE SL → Ask+60p   (= entry#3, BE dla #3, zysk dla #1,#2)
 ```
 
 ### Anulowanie siatki
@@ -250,19 +268,24 @@ Ustawiasz je raz w parametrach EA (dwuklik na EA → Inputs):
 
 ## 10. Przykłady konfiguracji
 
-### SIATKA — klasyczny Faron 1:8
+### SIATKA — klasyczny Faron 1:10
 
 ```
-Kalkulator:  Ryzyko% = 1.0 | SL = 50 pips | TP = 200 pips
+Kalkulator:  Ryzyko% = 1.0 | SL = 50 pips | TP = 120 pips
 Siatka N:    4
-Krok (auto): 200 ÷ 4 = 50 pips
+Krok (auto): 120 ÷ 4 = 30 pips
+Lot (auto):  CalcLot(1%, 30 pip) — jednakowy dla wszystkich
 
-Wynik przy pełnej piramidzie:
-  Pozycja 1 (200 pips do TP): ~2%
-  Pozycja 2 (150 pips do TP): ~1.5%
-  Pozycja 3 (100 pips do TP): ~1%
-  Pozycja 4 (50 pips do TP):  ~0.5%
-  Łącznie: ~5% przy ryzyku 1%
+Wynik przy pełnym TP:
+  Pozycja 1 (4 kroki = 120 pip): 4%
+  Pozycja 2 (3 kroki =  90 pip): 3%
+  Pozycja 3 (2 kroki =  60 pip): 2%
+  Pozycja 4 (1 krok  =  30 pip): 1%
+  Łącznie: 10% przy ryzyku 1% → R:R 1:10
+
+Zarządzanie ryzykiem:
+  Po #3: net = 0% (nawet jeśli SL — wychodzisz na zero)
+  Po #4: net = +2% gwarantowane przy trafieniu SL
 ```
 
 ### PIRA — agresywna (3 dokładki)
