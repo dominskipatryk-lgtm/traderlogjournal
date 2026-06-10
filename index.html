@@ -574,7 +574,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
 .summary-card-title { font-family: var(--font-head); font-size: 14px; font-weight: 700; margin-bottom: 16px; color: var(--text2); }
 .progress-bar { height: 6px; background: var(--bg3); border-radius: 3px; overflow: hidden; margin-top: 4px; }
 .progress-fill { height: 100%; border-radius: 3px; transition: width .4s; }
-.win-rate-display { font-family: var(--font-head); font-size: 42px; font-weight: 800; color: var(--accent); letter-spacing: -2px; }
+.win-rate-display { font-family: var(--font-head); font-size: 32px; font-weight: 800; color: var(--accent); letter-spacing: -1px; }
 .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; font-family: var(--font-mono); background: var(--bg3); border: 1px solid var(--border); color: var(--text2); margin: 2px; }
 
 /* Lightbox */
@@ -1483,6 +1483,10 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
           </optgroup>
         </select>
         <div class="draft-indicator" id="draft-indicator-trades" onclick="showPage('drafts')" title="Masz niezapisane wersje robocze">▸ Wersje robocze <span id="draft-count-trades"></span></div>
+        <select class="filter-select" id="trades-sort-select" onchange="saveTradesSortPref(this.value);renderTrades()" title="Kolejność transakcji" style="font-size:12px">
+          <option value="newest">↓ Najnowsze</option>
+          <option value="oldest">↑ Najstarsze</option>
+        </select>
         <button class="btn-sm" onclick="exportTradesToCSV()" style="margin-left:auto;font-size:12px" title="Eksportuj do CSV">⬇ CSV</button>
         <button class="btn-sm btn-accent" onclick="openTradeModalWithDraftCheck()">+ Nowa transakcja</button>
       </div>
@@ -1589,10 +1593,7 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
           style="padding:10px 20px;background:none;border:none;color:var(--text3);font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px">
           🎯 Strategie i Setupy
         </button>
-        <button class="tools-tab" onclick="switchToolsTab('brokers')" id="ttab-brokers"
-          style="padding:10px 20px;background:none;border:none;color:var(--text3);font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px">
-          💱 Kalkulator prowizji
-        </button>
+        
         <button class="tools-tab" onclick="switchToolsTab('rules')" id="ttab-rules"
           style="padding:10px 20px;background:none;border:none;color:var(--text3);font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px">
           📏 Reguły
@@ -1736,25 +1737,10 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
           <button class="btn-sm" onclick="unifiedFillFromAccount()" style="font-size:11px;width:100%;margin-bottom:12px">⬇ Uzupełnij kapitał z aktywnego konta</button>
           <div id="u-result" style="display:none;background:var(--bg);border:1px solid var(--border2);border-radius:10px;padding:14px;font-size:13px"></div>
         </div>
-      </div>
-    </div>
 
-      <!-- TAB: Strategie i Setupy -->
-      <div id="tools-tab-strategies" style="display:none">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
-          <div>
-            <div class="page-title">🎯 Strategie i Setupy</div>
-            <div class="page-subtitle">Zdefiniuj swoje strategie, setupy i ich założenia — używane w formularzach analizy i transakcji</div>
-          </div>
-          <button class="btn-sm btn-accent" onclick="openNewStrategy()">+ Nowa strategia</button>
-        </div>
-        <div id="tools-strategies-container">
-          <div style="color:var(--text3);font-size:13px;text-align:center;padding:40px">⏳ Ładowanie...</div>
-        </div>
-      </div>
-
-      <!-- TAB: Kalkulator prowizji -->
-      <div id="tools-tab-brokers" style="display:none">
+            <!-- Sekcja: Kalkulator kosztów transakcji (w zakładce Kalkulator) -->
+      <div id="tools-section-brokers" style="margin-top:32px;padding-top:24px;border-top:2px solid var(--border)">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:16px">💱 Kalkulator kosztów transakcji</div>
         <div class="page-title" style="margin-bottom:20px">💱 Kalkulator kosztów transakcji</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:800px">
           <div class="summary-card">
@@ -1819,7 +1805,20 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
         </div>
       </div>
 
-      <!-- TAB: Rozliczenia PIT -->
+      </div>
+    </div>      <!-- TAB: Strategie i Setupy -->
+      <div id="tools-tab-strategies" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+          <div>
+            <div class="page-title">🎯 Strategie i Setupy</div>
+            <div class="page-subtitle">Zdefiniuj swoje strategie, setupy i ich założenia — używane w formularzach analizy i transakcji</div>
+          </div>
+          <button class="btn-sm btn-accent" onclick="openNewStrategy()">+ Nowa strategia</button>
+        </div>
+        <div id="tools-strategies-container">
+          <div style="color:var(--text3);font-size:13px;text-align:center;padding:40px">⏳ Ładowanie...</div>
+        </div>
+      </div>      <!-- TAB: Rozliczenia PIT -->
       <div id="tools-tab-tax" style="display:none">
         <div class="page-title" style="margin-bottom:4px">🧾 Rozliczenia podatkowe</div>
         <div class="page-subtitle" style="margin-bottom:20px">Raport do PIT-38 — zyski kapitałowe z transakcji tradingowych</div>
@@ -2001,6 +2000,9 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
           </div>
           <button class="btn-sm btn-accent" onclick="saveProfileSettings()">💾 Zapisz profil</button>
         </div>
+
+        <!-- Plan / Subscription -->
+        <div class="settings-section" id="sett-plan-section"></div>
 
         <!-- Sync Supabase -->
         <div class="settings-section">
@@ -2217,21 +2219,6 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
               Screenshoty są automatycznie przechowywane w bezpiecznym cloud storage (Supabase).
               Każde zdjęcie jest prywatne — widoczne tylko dla Ciebie po zalogowaniu.
               Nie wymagają żadnej dodatkowej konfiguracji.
-            </div>
-          </div>
-        </div>
-
-        <!-- Preferencje widoku transakcji -->
-        <div class="settings-section">
-          <div class="settings-section-title">📋 Lista transakcji</div>
-          <div class="form-group-modal" style="margin-bottom:0">
-            <label class="form-label-modal">Kolejność wyświetlania</label>
-            <select class="form-select-modal" id="sett-trades-sort" onchange="saveTradesSortPref(this.value)" style="max-width:320px">
-              <option value="newest">Najnowsze na górze (domyślnie)</option>
-              <option value="oldest">Najstarsze na górze (chronologicznie)</option>
-            </select>
-            <div style="font-size:12px;color:var(--text3);margin-top:6px">
-              Dotyczy listy transakcji i widoku dziennego. Nie wpływa na statystyki.
             </div>
           </div>
         </div>
@@ -3581,6 +3568,10 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
       </div>
 
       <!-- Widget Investing.com -->
+      <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 14px;background:rgba(255,184,0,.07);border:1px solid rgba(255,184,0,.25);border-radius:8px;margin-bottom:12px;font-size:12px;color:var(--text2);line-height:1.5">
+        <span style="flex-shrink:0;width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,0.15);border:1.5px solid rgba(255,255,255,0.5);display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;font-family:sans-serif">⏱</span>
+        <div><strong style="color:var(--amber)">Ważne: ustaw strefę czasową</strong> — kliknij ikonę zegara / strefy (widoczna w górnym prawym rogu kalendarza poniżej) i wybierz swoją strefę, np. <strong>Warsaw (UTC+2)</strong>. Nie odbywa się to automatycznie.</div>
+      </div>
       <div class="summary-card" style="padding:0;overflow:hidden">
         <iframe
           src="https://sslecal2.investing.com?ecoDayBackground=1a1d23&columns=exc_flags,exc_currency,exc_importance,exc_actual,exc_forecast,exc_previous&features=datepicker,timezone&countries=25,32,6,37,72,22,17,39,14,10,35,43,56,36,110,11,26,12,4,5&calType=week&timeZone=88&lang=1"
@@ -5533,7 +5524,15 @@ function refreshTopbarAccount() {
   if (roleEl && state.currentUser) {
     const users = getUsers();
     const u = users[state.currentUser];
-    if (u) roleEl.textContent = u.role === 'admin' ? 'Admin' : 'Trader';
+    if (u) {
+      if (u.role === 'admin') {
+        roleEl.innerHTML = '<span style="color:var(--amber)">👑 Admin</span>';
+      } else if (u.subscription === 'pro' || u.grandfathered) {
+        roleEl.innerHTML = '<span style="color:var(--accent)">⭐ Pro</span>';
+      } else {
+        roleEl.innerHTML = '<span style="color:var(--text3)">Free</span>';
+      }
+    }
   }
 }
 function renderTopbarAccount() { refreshTopbarAccount(); }
@@ -5800,7 +5799,17 @@ function buildTradesTable(trades) {
       <td class="mono">${trade.entry ?? '—'}</td>
       <td class="mono">${trade.exit ?? '—'}</td>
       <td class="mono">${trade.size ?? '—'}</td>
-      <td class="${trade.pnl > 0 ? 'pnl-pos' : trade.pnl < 0 ? 'pnl-neg' : ''}">${trade.pnl != null ? (trade.pnl > 0 ? '+' : '') + fmt(trade.pnl) : '—'}</td>
+      <td class="${trade.pnl > 0 ? 'pnl-pos' : trade.pnl < 0 ? 'pnl-neg' : ''}" style="min-width:90px">
+        ${trade.pnl != null ? (trade.pnl > 0 ? '+' : '') + fmt(trade.pnl) : '—'}
+        ${(trade.commission || trade.swap) ? (() => {
+          const grossPnl = trade.pnl - (trade.commission||0) - (trade.swap||0);
+          return '<div style="font-size:10px;color:var(--text3);margin-top:2px;line-height:1.5;font-family:var(--font-mono)">'
+            + 'gross: ' + (grossPnl>=0?'+':'') + fmt(grossPnl)
+            + (trade.commission ? ' | kom: <span style=\"color:var(--red)\">' + fmt(trade.commission) + '</span>' : '')
+            + (trade.swap ? ' | swap: <span style=\"color:' + (trade.swap>=0?'var(--accent)':'var(--red)') + '\">' + fmt(trade.swap) + '</span>' : '')
+            + '</div>';
+        })() : ''}
+      </td>
       <td>
         <span class="tag">${escHtml(trade.setup) || '—'}</span>
         ${linkedAnalysis ? `<span onclick="event.stopPropagation();openEditAnalysis('${linkedAnalysis.id}')" title="${escAttr(linkedAnalysis.title)}" style="display:inline-flex;align-items:center;gap:3px;font-size:10px;padding:2px 6px;border-radius:4px;background:var(--blue-dim);color:var(--blue);cursor:pointer;margin-left:4px">🔗 Analiza</span>` : ''}
@@ -6746,6 +6755,8 @@ function renderSummary() {
   const totalLossAmt = losses.reduce((s,t)=>s+(t.pnl||0),0);
   // FIX: Profit Factor — gross profit / abs(gross loss)
   const profitFactor = totalLossAmt < 0 ? (totalGross / Math.abs(totalLossAmt)).toFixed(2) : '\u221e';
+  const totalCommissions = closed.reduce((s,t) => s + Math.abs(t.commission||0), 0);
+  const totalSwaps = closed.reduce((s,t) => s + (t.swap||0), 0);
   const equity = startCapital + totalPnl;
   const returnPct = startCapital > 0 ? (totalPnl/startCapital*100).toFixed(2) : null;
   // Recovery Factor = Net P&L / Max Drawdown
@@ -6908,12 +6919,12 @@ function renderSummary() {
   <!-- TOP CARDS -->
   <div class="summary-grid" style="grid-template-columns:repeat(auto-fit,minmax(155px,1fr));margin-bottom:16px">
     <div class="summary-card"><div class="summary-card-title">Win Rate</div><div class="win-rate-display">${winRate}%</div><div class="progress-bar" style="margin-top:8px"><div class="progress-fill" style="width:${winRate}%;background:var(--accent)"></div></div><div style="font-size:11px;color:var(--text3);margin-top:5px">${wins.length}W &middot; ${losses.length}L &middot; ${breakevens.length}BE</div></div>
-    <div class="summary-card"><div class="summary-card-title">Całkowity P&L</div><div class="stat-value ${totalPnl>=0?'green':'red'}" style="font-size:26px;letter-spacing:-1px">${totalPnl>=0?'+':''}${fmt(totalPnl)}</div>${returnPct?`<div style="font-size:12px;color:var(--text2);margin-top:4px">Zwrot: <strong>${returnPct}%</strong></div>`:''}<div style="font-size:11px;color:var(--text3)">Equity: ${fmt(equity)} ${curr}</div></div>
-    <div class="summary-card"><div class="summary-card-title">Avg R:R</div><div style="font-family:var(--font-head);font-size:28px;font-weight:800;color:var(--amber);letter-spacing:-1px">${avgRR!=null?'1:'+avgRR.toFixed(2):rrFromPnl!=null?'1:'+rrFromPnl.toFixed(2):'&#8212;'}</div>${beWR!=null?`<div style="font-size:11px;color:var(--text2)">BE WR: <strong>${beWR.toFixed(1)}%</strong> <span style="color:${winRate>=beWR?'var(--green)':'var(--red)'}">${winRate>=beWR?'&#10003;':'&#10007;'}</span></div>`:''}<div style="font-size:11px;color:var(--text3)">EV: ${ev!=null?(ev>=0?'+':'')+fmt(ev):'&#8212;'}</div></div>
-    <div class="summary-card"><div class="summary-card-title">Profit Factor <span class="metric-help" data-tip="Zysk brutto / Strata brutto.\n<1 = stratny system\n1–1.5 = przeciętny\n>1.5 = dobry\n>2 = bardzo dobry">?</span></div><div style="font-family:var(--font-head);font-size:28px;font-weight:800;color:${parseFloat(profitFactor)>=1.5?'var(--accent)':parseFloat(profitFactor)>=1?'var(--amber)':'var(--red)'}">${profitFactor}</div><div style="font-size:11px;color:var(--text2);margin-top:4px">Zysk: <span class="pnl-pos">+${fmt(totalGross)}</span></div><div style="font-size:11px;color:var(--text3)">Strata: <span class="pnl-neg">${fmt(totalLossAmt)}</span></div></div>
-    <div class="summary-card"><div class="summary-card-title">Max Drawdown <span class="metric-help" data-tip="Największy spadek kapitału od szczytu.\nIm niższy %, tym lepsze zarządzanie ryzykiem.\n<10% = świetny\n10–20% = akceptowalny\n>20% = niebezpieczny">?</span></div><div style="font-family:var(--font-head);font-size:24px;font-weight:800;color:${maxDDPct>20?'var(--red)':maxDDPct>10?'var(--amber)':'var(--text)'}">${maxDDPct.toFixed(2)}%</div><div style="font-size:12px;color:var(--text2);margin-top:4px">${fmt(maxDD)} ${curr}</div><div style="font-size:11px;color:var(--text3)">Recovery: ${recoveryFactor?recoveryFactor+'x':'&#8212;'}</div></div>
-    <div class="summary-card"><div class="summary-card-title">Sharpe Ratio <span class="metric-help" data-tip="Zwrot na jednostkę ryzyka (annualizowany).\n<0 = gorszy niż bez ryzyka\n0–1 = akceptowalny\n1–2 = dobry\n>2 = bardzo dobry\nMin. 5 zamkniętych transakcji.">?</span></div><div style="font-family:var(--font-head);font-size:28px;font-weight:800;color:${sharpe&&parseFloat(sharpe)>=1?'var(--accent)':sharpe&&parseFloat(sharpe)>=0?'var(--amber)':'var(--red)'}">${sharpe||'&#8212;'}</div><div style="font-size:11px;color:var(--text3);margin-top:4px">${sharpe?parseFloat(sharpe)>=2?'Bardzo dobry':parseFloat(sharpe)>=1?'Dobry':parseFloat(sharpe)>=0?'Akceptowalny':'Słaby':'min. 5 trans.'}</div></div>
-    <div class="summary-card"><div class="summary-card-title">CAGR / Zwrot <span class="metric-help" data-tip="CAGR — roczna stopa wzrostu skumulowanego.\nUmożliwia porównanie wyników z różnych okresów.\nMin. 30 dni historii.\nHPR = łączny zwrot bez normalizacji czasu.">?</span></div>${cagr!=null?`<div style="font-family:var(--font-head);font-size:26px;font-weight:800;letter-spacing:-1px;color:${cagr>0?'var(--accent)':cagr<0?'var(--red)':'var(--text)'}">${(cagr>=0?'+':'')+fmtPct(cagr)}</div><div style="font-size:11px;color:var(--text3);margin-bottom:4px">roczna · ${cagrNote}</div>`:`<div style="font-family:var(--font-head);font-size:22px;font-weight:800;color:var(--text2)">&#8212;</div><div style="font-size:11px;color:var(--amber);margin-bottom:4px">${cagrNote||'min. 30 dni'}</div>`}${hpr!=null?`<div style="font-size:13px;color:var(--text2)">HPR: <strong class="${hpr>=0?'pnl-pos':'pnl-neg'}">${hpr>=0?'+':''}${fmtPct(hpr)}</strong></div>`:''}</div>
+    <div class="summary-card"><div class="summary-card-title">Całkowity P&L</div><div class="stat-value ${totalPnl>=0?'green':'red'}" style="font-size:32px;letter-spacing:-1px">${totalPnl>=0?'+':''}${fmt(totalPnl)}</div>${returnPct?`<div style="font-size:12px;color:var(--text2);margin-top:4px">Zwrot: <strong>${returnPct}%</strong></div>`:''}<div style="font-size:11px;color:var(--text3)">Equity: ${fmt(equity)} ${curr}</div></div>
+    <div class="summary-card"><div class="summary-card-title">Avg R:R</div><div style="font-family:var(--font-head);font-size:32px;font-weight:800;color:var(--amber);letter-spacing:-1px">${avgRR!=null?'1:'+avgRR.toFixed(2):rrFromPnl!=null?'1:'+rrFromPnl.toFixed(2):'&#8212;'}</div>${beWR!=null?`<div style="font-size:11px;color:var(--text2)">BE WR: <strong>${beWR.toFixed(1)}%</strong> <span style="color:${winRate>=beWR?'var(--green)':'var(--red)'}">${winRate>=beWR?'&#10003;':'&#10007;'}</span></div>`:''}<div style="font-size:11px;color:var(--text3)">EV: ${ev!=null?(ev>=0?'+':'')+fmt(ev):'&#8212;'}</div></div>
+    <div class="summary-card"><div class="summary-card-title">Profit Factor <span class="metric-help" data-tip="Zysk brutto / Strata brutto.\n<1 = stratny system\n1–1.5 = przeciętny\n>1.5 = dobry\n>2 = bardzo dobry">?</span></div><div style="font-family:var(--font-head);font-size:32px;font-weight:800;color:${parseFloat(profitFactor)>=1.5?'var(--accent)':parseFloat(profitFactor)>=1?'var(--amber)':'var(--red)'}">${profitFactor}</div><div style="font-size:11px;color:var(--text2);margin-top:4px">Zysk: <span class="pnl-pos">+${fmt(totalGross)}</span></div><div style="font-size:11px;color:var(--text3)">Strata: <span class="pnl-neg">${fmt(totalLossAmt)}</span></div></div>
+    <div class="summary-card"><div class="summary-card-title">Max Drawdown <span class="metric-help" data-tip="Największy spadek kapitału od szczytu.\nIm niższy %, tym lepsze zarządzanie ryzykiem.\n<10% = świetny\n10–20% = akceptowalny\n>20% = niebezpieczny">?</span></div><div style="font-family:var(--font-head);font-size:32px;font-weight:800;color:${maxDDPct>20?'var(--red)':maxDDPct>10?'var(--amber)':'var(--text)'}">${maxDDPct.toFixed(2)}%</div><div style="font-size:12px;color:var(--text2);margin-top:4px">${fmt(maxDD)} ${curr}</div><div style="font-size:11px;color:var(--text3)">Recovery: ${recoveryFactor?recoveryFactor+'x':'&#8212;'}</div></div>
+    <div class="summary-card"><div class="summary-card-title">Sharpe Ratio <span class="metric-help" data-tip="Zwrot na jednostkę ryzyka (annualizowany).\n<0 = gorszy niż bez ryzyka\n0–1 = akceptowalny\n1–2 = dobry\n>2 = bardzo dobry\nMin. 5 zamkniętych transakcji.">?</span></div><div style="font-family:var(--font-head);font-size:32px;font-weight:800;color:${sharpe&&parseFloat(sharpe)>=1?'var(--accent)':sharpe&&parseFloat(sharpe)>=0?'var(--amber)':'var(--red)'}">${sharpe||'&#8212;'}</div><div style="font-size:11px;color:var(--text3);margin-top:4px">${sharpe?parseFloat(sharpe)>=2?'Bardzo dobry':parseFloat(sharpe)>=1?'Dobry':parseFloat(sharpe)>=0?'Akceptowalny':'Słaby':'min. 5 trans.'}</div></div>
+    <div class="summary-card"><div class="summary-card-title">CAGR / Zwrot <span class="metric-help" data-tip="CAGR — roczna stopa wzrostu skumulowanego.\nUmożliwia porównanie wyników z różnych okresów.\nMin. 30 dni historii.\nHPR = łączny zwrot bez normalizacji czasu.">?</span></div>${cagr!=null?`<div style="font-family:var(--font-head);font-size:32px;font-weight:800;letter-spacing:-1px;color:${cagr>0?'var(--accent)':cagr<0?'var(--red)':'var(--text)'}">${(cagr>=0?'+':'')+fmtPct(cagr)}</div><div style="font-size:11px;color:var(--text3);margin-bottom:4px">roczna · ${cagrNote}</div>`:`<div style="font-family:var(--font-head);font-size:22px;font-weight:800;color:var(--amber)">${cagrNote||'min. 30 dni'}</div>`}${hpr!=null?`<div style="font-size:13px;color:var(--text2)">HPR: <strong class="${hpr>=0?'pnl-pos':'pnl-neg'}">${hpr>=0?'+':''}${fmtPct(hpr)}</strong></div>`:''}</div>
   </div>
 
   <!-- ROW 2: Rentowność | Drawdown | Struktura -->
@@ -6944,6 +6955,8 @@ function renderSummary() {
       ${mRow('Zysk brutto','+'+fmt(totalGross),null,'var(--green)')}
       ${mRow('Strata brutto',fmt(totalLossAmt),null,'var(--red)')}
       ${mRow('Zysk netto',(totalPnl>=0?'+':'')+fmt(totalPnl),null,totalPnl>=0?'var(--accent)':'var(--red)')}
+      ${totalCommissions > 0 ? mRow('Łączna prowizja','-'+fmt(totalCommissions),null,'var(--red)','Suma prowizji brokerskich dla wszystkich zamkniętych transakcji.') : ''}
+      ${totalSwaps !== 0 ? mRow('Swap łącznie',(totalSwaps>=0?'+':'')+fmt(totalSwaps),null,totalSwaps>=0?'var(--accent)':'var(--red)') : ''}
       ${mRow('Profit Factor',profitFactor,null,parseFloat(profitFactor)>=1.5?'var(--accent)':parseFloat(profitFactor)>=1?'var(--amber)':'var(--red)')}
       <div style="margin-top:12px"><div style="font-size:11px;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">LONG vs SHORT</div>
       <table style="width:100%;font-size:11px;border-collapse:collapse">
@@ -10280,7 +10293,7 @@ async function doLogin() {
       name: profile.name || profile.login,
       email: profile.email || email,
       role: profile.role || 'user',
-      subscription: profile.role === 'admin' ? 'admin' : 'active',
+      subscription: profile.role === 'admin' ? 'admin' : (profile.subscription || 'active'),
       supabaseId: data.user.id,
       createdAt: Date.now(),
     };
@@ -10417,14 +10430,64 @@ function copyLoginToClipboard() {
 
 
 // ===== SETTINGS PAGE =====
+function _renderPlanSection(u) {
+  const el = document.getElementById('sett-plan-section');
+  if (!el) return;
+  const isAdmin  = u.role === 'admin' || u.subscription === 'admin';
+  const isPro    = !isAdmin && (u.subscription === 'pro' || u.grandfathered === true);
+  const isFree   = !isAdmin && !isPro;
+  const totalClosed = getTotalClosedCount();
+  const limit = 50;
+
+  let badge, details, action = '';
+  if (isAdmin) {
+    badge   = '<span style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,180,0,.15);color:var(--amber);border:1px solid var(--amber);border-radius:20px;padding:4px 14px;font-size:13px;font-weight:700">👑 Administrator</span>';
+    details = '<p style="font-size:13px;color:var(--text2);margin:10px 0 0;line-height:1.6">Pełny dostęp do wszystkich funkcji. Brak limitów transakcji.</p>';
+  } else if (isPro) {
+    const label = u.grandfathered ? 'Pro (grandfathered)' : 'Pro';
+    badge   = `<span style="display:inline-flex;align-items:center;gap:6px;background:rgba(0,212,161,.15);color:var(--accent);border:1px solid var(--accent);border-radius:20px;padding:4px 14px;font-size:13px;font-weight:700">⭐ ${label}</span>`;
+    details = '<p style="font-size:13px;color:var(--text2);margin:10px 0 0;line-height:1.6">Masz dostęp do wszystkich funkcji — bez limitu transakcji, AI Coach i pełna historia.</p>';
+  } else {
+    const rem  = Math.max(0, limit - totalClosed);
+    const pct  = Math.min(100, Math.round(totalClosed / limit * 100));
+    const barColor = pct >= 100 ? 'var(--red)' : pct >= 80 ? 'var(--amber)' : 'var(--accent)';
+    badge   = '<span style="display:inline-flex;align-items:center;gap:6px;background:var(--bg3);color:var(--text2);border:1px solid var(--border);border-radius:20px;padding:4px 14px;font-size:13px;font-weight:700">Free</span>';
+    details = `
+      <div style="margin-top:12px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px">
+          <span style="color:var(--text2)">Zamknięte transakcje: <strong>${totalClosed} / ${limit}</strong></span>
+          <span style="color:${barColor};font-weight:700">${pct}%</span>
+        </div>
+        <div style="height:7px;background:var(--bg);border-radius:4px;overflow:hidden;margin-bottom:10px">
+          <div style="width:${pct}%;height:100%;background:${barColor};border-radius:4px;transition:width .3s"></div>
+        </div>
+        <p style="font-size:12px;color:var(--text3);line-height:1.6;margin:0">
+          ${rem > 0 ? `Pozostało <strong style="color:${barColor}">${rem}</strong> transakcji w planie Free.` : '<strong style="color:var(--red)">Osiągnąłeś limit planu Free.</strong>'}
+          Plan Pro odblokuje nieograniczoną historię, AI Coach i eksport danych.
+        </p>
+      </div>`;
+    action = `<button class="btn-sm btn-accent" onclick="showUpsellModal()" style="margin-top:14px;font-size:13px;padding:8px 18px">⭐ Przejdź na Pro — 29 zł/mies.</button>`;
+  }
+
+  el.innerHTML = `
+    <div class="settings-section-title">📋 Twój plan</div>
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      ${badge}
+    </div>
+    ${details}
+    ${action}
+  `;
+}
+
 async function renderSettings() {
   if (!state.currentUser) return;
   const users = getUsers();
   const u = users[state.currentUser] || {};
   document.getElementById('settings-subtitle').textContent =
     (u.role === 'admin' ? '👑 Administrator' : '👤 Trader') + ' · ' + state.currentUser;
+  _renderPlanSection(u);
   updateMT4ListenerBadge();
-  const sortSel = document.getElementById('sett-trades-sort');
+  const sortSel = document.getElementById('trades-sort-select');
   if (sortSel) sortSel.value = localStorage.getItem('tlj-trades-sort') || 'newest';
   document.getElementById('sett-login').value = state.currentUser;
   document.getElementById('sett-name').value  = u.name  || '';
@@ -14358,7 +14421,7 @@ async function sbSyncDown(userId, userLogin) {
                   localUsers[p.login] = {
                     pass: '__supabase__', name: p.name || p.login,
                     email: p.email || '', role: p.role || 'user',
-                    subscription: p.role === 'admin' ? 'admin' : 'active',
+                    subscription: p.role === 'admin' ? 'admin' : (p.subscription || 'active'),
                     supabaseId: p.id, active: p.active,
                     createdAt: new Date(p.created_at).getTime()
                   };
@@ -15601,15 +15664,7 @@ function finishRoutineAction() {
       _todayEntry.sessionStart = Date.now();
       saveJournalEntryData(_jSelectedDate, _todayEntry);
     }
-    // Komunikat gotowości po chwili
-    setTimeout(() => {
-      const rm = document.getElementById('readiness-msg');
-      if (rm) {
-        rm.style.display = 'block';
-        // Auto-ukryj po 8 sekundach jeśli user nie kliknął
-        setTimeout(() => { if (rm) rm.style.display = 'none'; }, 8000);
-      }
-    }, 900);
+    // Komunikat gotowości pojawi się dopiero po zapisaniu formularza rutyny
   } else if (_routineMode === 'after') {
     // Nawiguj do dziennika → sekcja "Po sesji" + pokaż przycisk wylogowania
     showPage('journal');
@@ -15648,8 +15703,14 @@ function updateRoutineProgress() {
   const done  = document.querySelectorAll(selector + '.done').length;
   const el = document.getElementById('routine-progress');
   if (el) {
-    el.textContent = done + '/' + total + ' ukończonych';
-    el.style.color = done === total ? 'var(--accent)' : 'var(--text3)';
+    if (done === total && _routineMode === 'before') {
+      const planFilled = !!(document.getElementById('journal-pre-plan')?.value?.trim());
+      el.textContent = planFilled ? done + '/' + total + ' ukończonych' : done + '/' + total + ' ✓ — uzupełnij formularz w Dzienniku';
+      el.style.color = planFilled ? 'var(--accent)' : 'var(--amber)';
+    } else {
+      el.textContent = done + '/' + total + ' ukończonych';
+      el.style.color = done === total ? 'var(--accent)' : 'var(--text3)';
+    }
   }
 }
 
@@ -17264,7 +17325,7 @@ function checkRulesBeforeSave() {
 }
 
 function switchToolsTab(tab) {
-  ['calculator','strategies','brokers','rules','tax','import'].forEach(t => {
+  ['calculator','strategies','rules','tax','import'].forEach(t => {
     const el = document.getElementById('tools-tab-' + t);
     const btn = document.getElementById('ttab-' + t);
     if (el) el.style.display = t === tab ? 'block' : 'none';
@@ -17274,7 +17335,7 @@ function switchToolsTab(tab) {
     }
   });
   if (tab === 'strategies') renderToolsStrategies();
-  if (tab === 'brokers') initBrokerCalc();
+  if (tab === 'calculator') initBrokerCalc();
   if (tab === 'rules') renderRules();
   if (tab === 'tax') initTaxReport();
   if (tab === 'import') initImportTab();
@@ -17391,7 +17452,7 @@ function openNewStrategyInline() {
 
 function initBrokerCalc() {
   const sel = document.getElementById('bc-broker');
-  if (!sel || sel.options.length > 1) return;
+  if (!sel || sel.options.length > 2) return;
   Object.entries(BROKER_COMMISSIONS).forEach(([key, val]) => {
     const opt = document.createElement('option');
     opt.value = key;
@@ -17869,19 +17930,19 @@ function getDailyScore(dateStr) {
   const plan   = entry?.prePlan?.trim()    ? 25 : 0;
   const review = entry?.postReview?.trim() ? 25 : 0;
 
-  let emotions = 20;
+  let emotions = 0;
   if (dayTrades.length > 0) {
     const withEmo = dayTrades.filter(tr => tr.emotionPre || tr.emotionPost).length;
     emotions = Math.round(withEmo / dayTrades.length * 20);
   }
 
-  let survey = 20;
+  let survey = 0;
   if (closedDay.length > 0) {
     const surveyed = closedDay.filter(tr => tr.tradeRating).length;
     survey = Math.round(surveyed / closedDay.length * 20);
   }
 
-  let rules = 10;
+  let rules = 0;
   if (closedDay.length > 0) {
     rules = closedDay.some(tr => tr.rulesBroken?.length > 0) ? 0 : 10;
   }
@@ -17975,7 +18036,7 @@ function renderJournalCal() {
     const ds = _jCalYear+'-'+String(_jCalMonth+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
     const entry = getJournalEntry(ds);
     const isFuture = ds > today;
-    const sc = (!isFuture && (entry || true)) ? getDailyScore(ds) : { hasData: false, total: 0 };
+    const sc = (!isFuture && entry) ? getDailyScore(ds) : { hasData: false, total: 0 };
     const hasEntry = entry && (entry.prePlan || entry.postReview);
     let scoreClass = '';
     if (!isFuture && sc.hasData) {
@@ -18349,6 +18410,16 @@ function saveJournalEntry() {
   renderJournalCal();
   updateJournalPreProgress();
   updateJournalPostProgress();
+  // Pokaż banner "gotowy" dopiero po zapisaniu rutyny z uzupełnionym planem
+  if (entry.prePlan && entry.prePlan.trim() && entry.preReadiness) {
+    setTimeout(() => {
+      const rm = document.getElementById('readiness-msg');
+      if (rm) {
+        rm.style.display = 'block';
+        setTimeout(() => { if (rm) rm.style.display = 'none'; }, 8000);
+      }
+    }, 400);
+  }
 }
 
 function formatDatePL(ds) {
@@ -20001,7 +20072,7 @@ async function appInit() {
             name: profile.name || profile.login,
             email: profile.email || session.user.email,
             role: profile.role || 'user',
-            subscription: profile.role === 'admin' ? 'admin' : 'active',
+            subscription: profile.role === 'admin' ? 'admin' : (profile.subscription || 'active'),
             supabaseId: session.user.id,
             createdAt: Date.now(),
           };
@@ -21553,10 +21624,9 @@ function _col(hdrs, ...names) {
 function _num(s) { return parseFloat(String(s||0).replace(/[^\d.\-]/g,'')) || 0; }
 function _dt(s) {
   if (!s) return '';
-  // MT4 format: 2024.01.15 10:30:00
+  // MT4 format: 2024.01.15 10:30:00 — zachowaj oryginalną datę brokera, nie konwertuj do UTC
   const clean = s.replace(/(\d{4})\.(\d{2})\.(\d{2})/, '$1-$2-$3').replace(' ','T');
-  const d = new Date(clean);
-  return isNaN(d.getTime()) ? s.slice(0,16) : d.toISOString().slice(0,16);
+  return /^\d{4}-\d{2}-\d{2}/.test(clean) ? clean.slice(0,16) : s.slice(0,16);
 }
 function _uid() { return 'imp_' + Date.now() + '_' + Math.random().toString(36).slice(2,6); }
 
