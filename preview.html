@@ -7328,10 +7328,10 @@ async function saveAccount() {
     id, name, color,
     sbId:     existingAcc?.sbId || undefined,
     type:     document.getElementById('acc-type').value,
-    broker:   await encryptField(document.getElementById('acc-broker').value),
+    broker:   document.getElementById('acc-broker').value,
     capital:  parseFloat(document.getElementById('acc-capital').value) || 0,
     currency: document.getElementById('acc-currency').value || 'USD',
-    mt4Login: await encryptField(document.getElementById('acc-mt4-login').value || ''),
+    mt4Login: document.getElementById('acc-mt4-login').value || '',
     isBot:    document.getElementById('acc-is-bot')?.checked || false,
   };
   const accounts = getAccounts();
