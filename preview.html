@@ -13848,9 +13848,7 @@ async function handleMT4Signal(signal) {
   let matchedAccount = null;
   for (const a of accounts) {
     const rawLogin = a.mt4Login;
-    const login = rawLogin
-      ? (String(rawLogin).startsWith('enc_') ? await decryptField(rawLogin) : rawLogin)
-      : null;
+    const login = rawLogin ? await decryptField(rawLogin) : null;
     if (login && String(login).trim() === String(signal.mt4_account).trim()) {
       matchedAccount = a;
       break;
