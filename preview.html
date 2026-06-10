@@ -14320,6 +14320,8 @@ async function sbSyncDown(userId, userLogin) {
             type: a.type || 'forex', capital: parseFloat(a.capital) || 0,
             strategy: a.strategy || '', color: a.color || '#00d4a1',
             currency: a.currency || 'USD',
+            mt4Login: local?.mt4Login || '',
+            isBot: local?.isBot || false,
             createdAt: new Date(a.created_at).getTime()
           };
         });
