@@ -1898,9 +1898,15 @@ textarea.form-input-modal { resize: vertical; min-height: 80px; line-height: 1.5
         <div id="import-preview-wrap" style="display:none">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
             <div id="import-summary-text" style="font-size:13px"></div>
-            <div style="display:flex;gap:8px">
-              <button class="btn-sm" onclick="resetImportTab()">↩ Anuluj</button>
-              <button class="btn-sm btn-accent" id="import-confirm-btn" onclick="confirmImportTrades()">✓ Importuj</button>
+            <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+              <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);cursor:pointer;user-select:none" title="Zaktualizuje pnl/komisja/swap dla transakcji z pasującym numerem ticketu MT4">
+                <input type="checkbox" id="import-update-pnl" style="accent-color:var(--accent)">
+                Aktualizuj P&amp;L istniejących (po tickecie MT4)
+              </label>
+              <div style="display:flex;gap:8px">
+                <button class="btn-sm" onclick="resetImportTab()">↩ Anuluj</button>
+                <button class="btn-sm btn-accent" id="import-confirm-btn" onclick="confirmImportTrades()">✓ Importuj</button>
+              </div>
             </div>
           </div>
           <div class="table-wrap" style="max-height:420px;overflow-y:auto">
@@ -5593,8 +5599,8 @@ function renderDashboard() {
     </div>` : '';
   document.getElementById('dash-stats').innerHTML = `
     ${ctaBanner}
-    <div class="stat-card"><div class="stat-label">Kapitał</div><div class="stat-value">${fmt(equity)} <span style="font-size:12px;color:var(--text3)">${curr}</span></div><div class="stat-sub">Start: ${fmt(acc.capital)} ${curr}</div></div>
-    <div class="stat-card"><div class="stat-label">P&L Total</div><div class="stat-value ${totalPnl>=0?'green':'red'}">${totalPnl>=0?'+':''}${fmt(totalPnl)} <span style="font-size:12px;color:var(--text3)">${curr}</span></div><div class="stat-sub">${closed.length} zamkniętych</div></div>
+    <div class="stat-card"><div class="stat-label">Balans konta</div><div class="stat-value">${fmt(equity)} <span style="font-size:12px;color:var(--text3)">${curr}</span></div><div class="stat-sub" style="line-height:1.6">Depozyt: ${fmt(acc.capital)} ${curr}<br><span class="${totalPnl>=0?'pnl-pos':'pnl-neg'}" style="font-size:11px">P&L netto: ${totalPnl>=0?'+':''}${fmt(totalPnl)} ${curr}</span></div></div>
+    <div class="stat-card"><div class="stat-label">P&L netto</div><div class="stat-value ${totalPnl>=0?'green':'red'}">${totalPnl>=0?'+':''}${fmt(totalPnl)} <span style="font-size:12px;color:var(--text3)">${curr}</span></div><div class="stat-sub">${closed.length} zamkniętych</div></div>
     <div class="stat-card"><div class="stat-label">Win Rate</div><div class="stat-value amber">${winRate}%</div><div class="stat-sub">${wins.length}W / ${losses.length}L</div></div>
     <div class="stat-card"><div class="stat-label">Risk/Reward</div><div class="stat-value">${rr}</div><div class="stat-sub">Śr. win: ${fmt(avgWin)} ${curr}</div></div>
     <div class="stat-card"><div class="stat-label">Otwarte</div><div class="stat-value">${trades.filter(t=>t.status==='open').length}</div><div class="stat-sub">Pozycje aktywne</div></div>
@@ -5803,10 +5809,10 @@ function buildTradesTable(trades) {
         ${trade.pnl != null ? (trade.pnl > 0 ? '+' : '') + fmt(trade.pnl) : '—'}
         ${(trade.commission || trade.swap) ? (() => {
           const grossPnl = trade.pnl - (trade.commission||0) - (trade.swap||0);
-          return '<div style="font-size:10px;color:var(--text3);margin-top:2px;line-height:1.5;font-family:var(--font-mono)">'
-            + 'gross: ' + (grossPnl>=0?'+':'') + fmt(grossPnl)
-            + (trade.commission ? ' | kom: <span style=\"color:var(--red)\">' + fmt(trade.commission) + '</span>' : '')
-            + (trade.swap ? ' | swap: <span style=\"color:' + (trade.swap>=0?'var(--accent)':'var(--red)') + '\">' + fmt(trade.swap) + '</span>' : '')
+          return '<div style="font-size:10px;color:var(--text3);margin-top:3px;line-height:1.7;font-family:var(--font-mono)">'
+            + '<span style="color:var(--text3)">gross: </span><span>' + (grossPnl>=0?'+':'') + fmt(grossPnl) + '</span>'
+            + (trade.commission ? ' <span style="color:var(--text3)">kom: </span><span style="color:var(--red)">' + fmt(trade.commission) + '</span>' : '')
+            + (trade.swap ? ' <span style="color:var(--text3)">swap: </span><span style="color:' + (trade.swap>=0?'var(--accent)':'var(--red)') + '">' + (trade.swap>=0?'+':'') + fmt(trade.swap) + '</span>' : '')
             + '</div>';
         })() : ''}
       </td>
@@ -6919,7 +6925,7 @@ function renderSummary() {
   <!-- TOP CARDS -->
   <div class="summary-grid" style="grid-template-columns:repeat(auto-fit,minmax(155px,1fr));margin-bottom:16px">
     <div class="summary-card"><div class="summary-card-title">Win Rate</div><div class="win-rate-display">${winRate}%</div><div class="progress-bar" style="margin-top:8px"><div class="progress-fill" style="width:${winRate}%;background:var(--accent)"></div></div><div style="font-size:11px;color:var(--text3);margin-top:5px">${wins.length}W &middot; ${losses.length}L &middot; ${breakevens.length}BE</div></div>
-    <div class="summary-card"><div class="summary-card-title">Całkowity P&L</div><div class="stat-value ${totalPnl>=0?'green':'red'}" style="font-size:32px;letter-spacing:-1px">${totalPnl>=0?'+':''}${fmt(totalPnl)}</div>${returnPct?`<div style="font-size:12px;color:var(--text2);margin-top:4px">Zwrot: <strong>${returnPct}%</strong></div>`:''}<div style="font-size:11px;color:var(--text3)">Equity: ${fmt(equity)} ${curr}</div></div>
+    <div class="summary-card"><div class="summary-card-title">Całkowity P&L <span style="font-size:10px;color:var(--text3);font-weight:400">(netto)</span></div><div class="stat-value ${totalPnl>=0?'green':'red'}" style="font-size:32px;letter-spacing:-1px">${totalPnl>=0?'+':''}${fmt(totalPnl)}</div>${returnPct?`<div style="font-size:12px;color:var(--text2);margin-top:4px">Zwrot: <strong>${returnPct}%</strong></div>`:''}<div style="font-size:11px;color:var(--text3);margin-top:4px;line-height:1.7">Depozyt: <span style="color:var(--text2)">${fmt(startCapital)} ${curr}</span>${totalCommissions>0?`<br>Prowizje: <span style="color:var(--red)">-${fmt(totalCommissions)} ${curr}</span>`:''}${totalSwaps!==0?`<br>Swap: <span style="color:${totalSwaps>=0?'var(--accent)':'var(--red)'}">${totalSwaps>=0?'+':''}${fmt(totalSwaps)} ${curr}</span>`:''}<br>Balans: <span style="color:var(--text);font-weight:600">${fmt(equity)} ${curr}</span></div></div>
     <div class="summary-card"><div class="summary-card-title">Avg R:R</div><div style="font-family:var(--font-head);font-size:32px;font-weight:800;color:var(--amber);letter-spacing:-1px">${avgRR!=null?'1:'+avgRR.toFixed(2):rrFromPnl!=null?'1:'+rrFromPnl.toFixed(2):'&#8212;'}</div>${beWR!=null?`<div style="font-size:11px;color:var(--text2)">BE WR: <strong>${beWR.toFixed(1)}%</strong> <span style="color:${winRate>=beWR?'var(--green)':'var(--red)'}">${winRate>=beWR?'&#10003;':'&#10007;'}</span></div>`:''}<div style="font-size:11px;color:var(--text3)">EV: ${ev!=null?(ev>=0?'+':'')+fmt(ev):'&#8212;'}</div></div>
     <div class="summary-card"><div class="summary-card-title">Profit Factor <span class="metric-help" data-tip="Zysk brutto / Strata brutto.\n<1 = stratny system\n1–1.5 = przeciętny\n>1.5 = dobry\n>2 = bardzo dobry">?</span></div><div style="font-family:var(--font-head);font-size:32px;font-weight:800;color:${parseFloat(profitFactor)>=1.5?'var(--accent)':parseFloat(profitFactor)>=1?'var(--amber)':'var(--red)'}">${profitFactor}</div><div style="font-size:11px;color:var(--text2);margin-top:4px">Zysk: <span class="pnl-pos">+${fmt(totalGross)}</span></div><div style="font-size:11px;color:var(--text3)">Strata: <span class="pnl-neg">${fmt(totalLossAmt)}</span></div></div>
     <div class="summary-card"><div class="summary-card-title">Max Drawdown <span class="metric-help" data-tip="Największy spadek kapitału od szczytu.\nIm niższy %, tym lepsze zarządzanie ryzykiem.\n<10% = świetny\n10–20% = akceptowalny\n>20% = niebezpieczny">?</span></div><div style="font-family:var(--font-head);font-size:32px;font-weight:800;color:${maxDDPct>20?'var(--red)':maxDDPct>10?'var(--amber)':'var(--text)'}">${maxDDPct.toFixed(2)}%</div><div style="font-size:12px;color:var(--text2);margin-top:4px">${fmt(maxDD)} ${curr}</div><div style="font-size:11px;color:var(--text3)">Recovery: ${recoveryFactor?recoveryFactor+'x':'&#8212;'}</div></div>
@@ -7978,14 +7984,27 @@ function dvRowPnl(t) {
   const hasBreakdown = (t.commission || t.swap) && t.pnl != null;
   const grossPnl = hasBreakdown ? t.pnl - (t.commission || 0) - (t.swap || 0) : null;
   const breakdownHtml = hasBreakdown ? `
-    <div style="font-size:11px;color:var(--text3);margin-top:3px;line-height:1.7">
-      <span>Gross: ${grossPnl >= 0 ? '+' : ''}${fmt(grossPnl)}</span>
-      ${t.commission ? `<span style="margin-left:8px;color:var(--red)">Komisja: ${fmt(t.commission)}</span>` : ''}
-      ${t.swap ? `<span style="margin-left:8px;color:${t.swap >= 0 ? 'var(--accent)' : 'var(--red)'}">Swap: ${fmt(t.swap)}</span>` : ''}
+    <div style="margin-top:7px;border:1px solid rgba(255,255,255,.07);border-radius:7px;overflow:hidden;font-size:11px;font-family:var(--font-mono)">
+      <div style="display:flex;justify-content:space-between;padding:5px 10px;background:var(--bg3)">
+        <span style="color:var(--text3)">Zysk brutto</span>
+        <span class="${grossPnl>=0?'pnl-pos':'pnl-neg'}">${grossPnl>=0?'+':''}${fmt(grossPnl)}</span>
+      </div>
+      ${t.commission ? `<div style="display:flex;justify-content:space-between;padding:5px 10px;border-top:1px solid rgba(255,255,255,.04)">
+        <span style="color:var(--text3)">Komisja brokera</span>
+        <span style="color:var(--red)">${fmt(t.commission)}</span>
+      </div>` : ''}
+      ${t.swap ? `<div style="display:flex;justify-content:space-between;padding:5px 10px;border-top:1px solid rgba(255,255,255,.04)">
+        <span style="color:var(--text3)">Swap</span>
+        <span style="color:${t.swap>=0?'var(--accent)':'var(--red)'}">${t.swap>=0?'+':''}${fmt(t.swap)}</span>
+      </div>` : ''}
+      <div style="display:flex;justify-content:space-between;padding:6px 10px;border-top:1px solid rgba(255,255,255,.1);background:rgba(${t.pnl>0?'0,212,161':'229,57,57'},.08)">
+        <span style="color:var(--text2);font-weight:600">= Netto</span>
+        <span class="${pnlClass}" style="font-weight:700">${pnlStr}</span>
+      </div>
     </div>` : '';
   return `<div class="dv-row">
-    <span class="dv-key">P&L netto</span>
-    <span class="dv-val ${pnlClass}" id="dv-pnl-display" style="flex-direction:column;align-items:flex-start">${pnlStr}${breakdownHtml}</span>
+    <span class="dv-key">P&L</span>
+    <span class="dv-val ${pnlClass}" id="dv-pnl-display" style="flex-direction:column;align-items:flex-start">${hasBreakdown ? breakdownHtml : pnlStr}</span>
     <span class="dv-edit" style="flex-direction:column;gap:4px">
       <input id="dv-pnl" type="number" step="any" value="${t.pnl??''}">
       <span style="font-size:10px;color:var(--text3)">lub <span style="color:var(--accent);cursor:pointer" onclick="dvAutoPnl()">↻ wylicz automatycznie</span></span>
@@ -13971,9 +13990,9 @@ async function closeMT4Trade(signal) {
 
       const tradeId = trades[tradeIdx].id;
       if (acc.isBot) {
-        const pnl = signal.profit || 0;
+        const pnl = (signal.profit || 0) + (signal.commission || 0) + (signal.swap || 0);
         const sign = pnl >= 0 ? '+' : '';
-        toast('🤖 Bot zamknął ' + signal.symbol + ' #' + signal.ticket + '  P&L: ' + sign + '$' + Math.abs(pnl).toFixed(2), pnl >= 0 ? 'success' : 'error');
+        toast('🤖 Bot zamknął ' + signal.symbol + ' #' + signal.ticket + '  P&L netto: ' + sign + '$' + Math.abs(pnl).toFixed(2), pnl >= 0 ? 'success' : 'error');
       } else {
         showMT4ClosePrompt(signal, tradeId);
       }
@@ -21941,15 +21960,21 @@ function renderImportPreview(trades, fmt, filename) {
   // Deduplication check against selected account
   const accId = document.getElementById('import-account-sel')?.value;
   const existing = accId ? getTrades(accId) : [];
-  const withFlags = trades.map(tr => ({
-    ...tr,
-    _dup: existing.some(ex =>
+  const withFlags = trades.map(tr => {
+    // Priorytet: dedup po numerze ticketu MT4
+    const byTicket = tr.mt4Ticket
+      ? existing.find(ex => ex.mt4Ticket && String(ex.mt4Ticket) === String(tr.mt4Ticket))
+      : null;
+    const byDateEntry = !byTicket && existing.some(ex =>
       ex.symbol === tr.symbol &&
       ex.date && tr.date &&
       ex.date.slice(0,15) === tr.date.slice(0,15) &&
       Math.abs((_num(ex.entry) - tr.entry)) < 0.0001
-    )
-  }));
+    );
+    const isDup = !!(byTicket || byDateEntry);
+    const pnlDiffers = byTicket && tr.pnl != null && Math.abs((byTicket.pnl||0) - tr.pnl) > 0.005;
+    return { ...tr, _dup: isDup, _dupTicketId: byTicket?.id || null, _pnlDiffers: pnlDiffers };
+  });
 
   const newCnt = withFlags.filter(t => !t._dup).length;
   const dupCnt = withFlags.filter(t =>  t._dup).length;
@@ -22002,14 +22027,16 @@ function renderImportPreview(trades, fmt, filename) {
           ⚠️ Wykryto numer konta MT4 <strong>#${det}</strong> — brak dopasowania. Wybierz konto ręcznie.</div>`;
   }
 
+  const pnlUpdateCnt = withFlags.filter(t => t._dup && t._pnlDiffers).length;
   document.getElementById('import-summary-text').innerHTML =
     `<span style="color:var(--text3)">Format: </span><strong>${FMT[fmt]||fmt}</strong>&ensp;` +
     `<span style="color:var(--green);font-weight:700">✓ ${newCnt} nowych</span>` +
-    (dupCnt ? `&ensp;<span style="color:var(--text3)">⊘ ${dupCnt} duplikatów (pominięte)</span>` : '') +
+    (dupCnt ? `&ensp;<span style="color:var(--text3)">⊘ ${dupCnt} duplikatów</span>` : '') +
+    (pnlUpdateCnt ? `&ensp;<span style="color:var(--amber);font-weight:600">↻ ${pnlUpdateCnt} z innym P&L</span>` : '') +
     accountHtml + balanceHtml;
 
   const btn = document.getElementById('import-confirm-btn');
-  if (btn) btn.disabled = newCnt === 0;
+  if (btn) btn.disabled = newCnt === 0 && pnlUpdateCnt === 0;
 
   const tbody = document.getElementById('import-preview-tbody');
   if (!tbody) return;
@@ -22017,8 +22044,12 @@ function renderImportPreview(trades, fmt, filename) {
   tbody.innerHTML = withFlags.slice(0, 300).map(tr => {
     const dc  = tr.dir === 'long' ? 'var(--green)' : 'var(--red)';
     const pc  = tr.pnl >= 0 ? 'var(--green)' : 'var(--red)';
-    const op  = tr._dup ? 0.35 : 1;
-    const dup = tr._dup ? '<span style="font-size:9px;background:var(--bg3);color:var(--text3);padding:1px 4px;border-radius:3px;margin-left:4px">dup</span>' : '';
+    const op  = (tr._dup && !tr._pnlDiffers) ? 0.35 : 1;
+    const dup = tr._dup
+      ? (tr._pnlDiffers
+          ? '<span style="font-size:9px;background:rgba(255,193,7,0.2);color:var(--amber);padding:1px 4px;border-radius:3px;margin-left:4px" title="P&L różni się — użyj opcji Aktualizuj P&L">↻ P&L</span>'
+          : '<span style="font-size:9px;background:var(--bg3);color:var(--text3);padding:1px 4px;border-radius:3px;margin-left:4px">dup</span>')
+      : '';
     return `<tr style="opacity:${op}">
       <td style="padding:7px 10px;font-size:12px;white-space:nowrap;color:var(--text3)">${(tr.date||tr.dateClose||'—').replace('T',' ')}</td>
       <td style="padding:7px 10px;font-weight:700">${tr.symbol}${dup}</td>
@@ -22051,15 +22082,29 @@ function confirmImportTrades() {
       });
     }
   }
-  const toAdd = _importBuffer.filter(t => !t._dup).map(({ _dup, _src, dateClose, ...rest }) => ({
+  const updatePnl = document.getElementById('import-update-pnl')?.checked;
+  const toAdd = _importBuffer.filter(t => !t._dup).map(({ _dup, _src, _dupTicketId, _pnlDiffers, dateClose, ...rest }) => ({
     ...rest,
     note: (rest.note || '') + (rest.note ? '\n' : '') + 'Import: ' + (_src||''),
     dateClose: dateClose || undefined
   }));
-  if (!toAdd.length) return toast('Brak nowych transakcji do importu', 'error');
 
-  const existing = getTrades(accId);
-  saveTrades(accId, [...existing, ...toAdd]);
+  // Aktualizuj P&L istniejących transakcji gdy checkbox zaznaczony
+  let updateCnt = 0;
+  let trades = getTrades(accId);
+  if (updatePnl) {
+    const toUpdate = _importBuffer.filter(t => t._dup && t._dupTicketId && t._pnlDiffers);
+    toUpdate.forEach(imp => {
+      const idx = trades.findIndex(ex => ex.id === imp._dupTicketId);
+      if (idx < 0) return;
+      trades[idx] = { ...trades[idx], pnl: imp.pnl, commission: imp.commission, swap: imp.swap };
+      updateCnt++;
+    });
+  }
+
+  if (!toAdd.length && updateCnt === 0) return toast('Brak nowych transakcji ani aktualizacji do wykonania', 'error');
+
+  saveTrades(accId, [...trades, ...toAdd]);
 
   // Auto-korekta kapitału startowego
   // Logika: equity = acc.capital + sum(pnl) — capital musi = initialBalance + depozyty - wypłaty
@@ -22081,7 +22126,8 @@ function confirmImportTrades() {
     }
   }
 
-  toast(`✓ Zaimportowano ${toAdd.length} transakcji${fixMsg}`, 'success');
+  const updateMsg = updateCnt > 0 ? ` | ↻ zaktualizowano P&L: ${updateCnt}` : '';
+  toast(`✓ Zaimportowano ${toAdd.length} transakcji${updateMsg}${fixMsg}`, 'success');
   resetImportTab();
   if (document.getElementById('page-trades')?.classList.contains('active')) renderTrades();
   // Natychmiast wyślij do Supabase — zapobiega utracie danych przy kolejnym sbSyncDown

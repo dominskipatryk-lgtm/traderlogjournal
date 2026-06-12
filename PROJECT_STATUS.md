@@ -1,5 +1,5 @@
 # TraderLogJournal — Status Projektu
-> Ostatnia aktualizacja: 2026-06-03
+> Ostatnia aktualizacja: 2026-06-13
 
 ---
 
@@ -93,22 +93,48 @@
 
 ---
 
-## Co jest w PREVIEW ale NIE w PRODUKCJI
+## Niezcommitowane zmiany (git status 2026-06-13)
 
-> Commit `3f8c1b8` (01.06.2026) + dzisiejsze zmiany — **czeka na deploy**
+> Wszystkie poniższe zmiany są w lokalnych plikach ale **NIE w git/GitHub Pages**
 
-### Gotowe w preview.html
+### index.html + preview.html — sesje 2026-06-09 do 2026-06-11
+- [x] Fix: subscription Pro wczytywana z Supabase (było hardkodowane 'active')
+- [x] Fix: EA enc:: prefix (było enc_ — konto nigdy nie matchowało)
+- [x] Fix: sbSyncDown gubił mt4Login i isBot po sync
+- [x] Fix: usunięto szyfrowanie broker/mt4Login (było przyczyną problemów)
+- [x] UI: badge planu (Pro/Free/Admin) w sidebarze + sekcja ustawień
+- [x] P&L: toast bota = net (profit+commission+swap)
+- [x] P&L: import deduplicacja po mt4Ticket (priorytet nad data+entry)
+- [x] P&L: checkbox "Aktualizuj P&L istniejących" przy imporcie
+- [x] P&L: badge "↻ P&L" dla transakcji z innym P&L przy imporcie
+- [x] UI: dashboard "Balans konta" = Depozyt + P&L netto
+- [x] UI: stats "Całkowity P&L" z sub-liniami (Depozyt/Prowizje/Swap/Balans)
+- [x] UI: detail modal — tabela kosztów (Zysk brutto / Komisja / Swap / = Netto)
+
+### wskazniki/ — nowe/zmienione pliki (untracked)
+- [ ] `TraderLogJournal_FIBO_DCA_v1.mq4` — nowy EA (FIBO GRID + DCA Manager)
+- [ ] `FIBO_DCA_INSTRUKCJA.md` — instrukcja do nowego EA
+- [ ] `IB FIRST HOUR EA.mq4` / `IB FIRST HOUR EA - EXPERT.mq4` — do przeglądu
+- [ ] `RANGE_BREAKOUT_WSKAZNIK.mq4` — do przeglądu
+- [ ] `SUPPORT_RESISTANCE_HIGH_VOLUME_BOXES.mq4` — do przeglądu
+- [ ] `VRVP Pro MT4.mq4` / `.ex4` — do przeglądu
+- [x] `TraderLogJournal_EA_v2.mq4` — GetPipSize pełny rewrite (krypto 1.0, indeksy 1.0)
+- [x] `PIRAMIDOWANIE_INSTRUKCJA.md` — zaktualizowana
+
+---
+
+## Co jest w PREVIEW ale NIE w PRODUKCJI (stary dług z 2026-06-03)
+
+> Te funkcje są w preview.html ale status w index.html do weryfikacji
+
+### Do sprawdzenia czy w index.html
 - [ ] **BUG-01**: Status badge tygodnia ("Do uzupełnienia" / "Zamknięty ✅")
 - [ ] **BUG-02**: Redirect z przypomnienia → bezpośrednio do weekly tab
-- [ ] **BUG-03**: Transakcje tygodnia w weekly review — rozwijane karty z entry/exit/emocjami
+- [ ] **BUG-03**: Transakcje tygodnia w weekly review — rozwijane karty
 - [ ] **BUG-04**: Miesięczny przegląd — metryki, top3/bottom3, refleksja, cele
-- [ ] **BUG-05**: Roczny przegląd — breakdown miesięczny, słownik błędów, refleksja
-- [ ] **FREEMIUM**: Limit 50 zamkniętych transakcji + badge w sidebar + modal Upsell
-- [ ] **ONBOARDING**: 4-krokowy modal dla nowego użytkownika (konto → sesje → demo → start)
-- [ ] **FIX KRYTYCZNY**: otwarte transakcje MT4 importowane jako `open` (nie `closed`)
-- [ ] **FIX KRYTYCZNY**: `mt4Ticket` zapisywany przy imporcie → EA może dopasować
-- [ ] **FIX KRYTYCZNY**: migracja danych `db[key]` → `db.trades[key]`
-- [ ] **FIX KRYTYCZNY**: `getTrades` czyta z obu lokalizacji (backward compat)
+- [ ] **BUG-05**: Roczny przegląd — breakdown miesięczny, słownik błędów
+- [ ] **FREEMIUM**: Limit 50 zamkniętych transakcji + badge + modal Upsell
+- [ ] **ONBOARDING**: 4-krokowy modal dla nowego użytkownika
 
 ---
 
